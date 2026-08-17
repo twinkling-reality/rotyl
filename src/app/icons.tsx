@@ -1,12 +1,14 @@
 /**
- * The eight icons the interface uses.
+ * The nine icons the interface uses.
  *
  * Path data from Lucide (ISC licence, © Lucide Contributors), copied rather
  * than depended on: this is about a kilobyte of geometry, and a package plus a
  * bundler plugin plus a version to track is a poor trade for that.
  *
  * `sliders-horizontal` for the style control rather than a wand or sparkles —
- * it opens parameter controls, and nothing here is magic.
+ * it opens parameter controls, and nothing here is magic. `mouse-pointer-click`
+ * for object selection for the same reason: it is a click that selects a thing,
+ * not a spell.
  */
 import type { JSX } from 'preact';
 
@@ -35,6 +37,18 @@ export function EraserIcon(props: IconProps): JSX.Element {
       <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" />
       <path d="M22 21H7" />
       <path d="m5 11 9 9" />
+    </Icon>
+  );
+}
+
+export function PointerClickIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <path d="M14 4.1 12 6" />
+      <path d="m5.1 8-2.9-.8" />
+      <path d="m6 12-1.9 2" />
+      <path d="M7.2 2.2 8 5.1" />
+      <path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z" />
     </Icon>
   );
 }

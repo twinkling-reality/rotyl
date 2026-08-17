@@ -1,17 +1,17 @@
 import type { JSX } from 'preact';
-import type { BrushMode } from '../core/render/rotyl-engine.ts';
-import { BrushIcon, ContrastIcon, EraserIcon, SlidersIcon, TrashIcon } from './icons.tsx';
+import type { Tool } from './tool.ts';
+import { BrushIcon, ContrastIcon, EraserIcon, PointerClickIcon, SlidersIcon, TrashIcon } from './icons.tsx';
 
 export interface ToolbarProps {
-  readonly tool: BrushMode;
-  readonly onToolChange: (tool: BrushMode) => void;
+  readonly tool: Tool;
+  readonly onToolChange: (tool: Tool) => void;
   readonly onClear: () => void;
   readonly onInvert: () => void;
   readonly stylePanelOpen: boolean;
   readonly onToggleStylePanel: () => void;
 }
 
-interface ToolProps {
+interface ToolButtonProps {
   readonly label: string;
   readonly icon: JSX.Element;
   readonly onClick: () => void;
@@ -25,7 +25,7 @@ interface ToolProps {
  * the viewport is too narrow for the full toolbar. `aria-label` carries the
  * name regardless, so collapsing to icons costs nothing to a screen reader.
  */
-function Tool({ label, icon, onClick, className, pressed, expanded }: ToolProps): JSX.Element {
+function ToolButton({ label, icon, onClick, className, pressed, expanded }: ToolButtonProps): JSX.Element {
   return (
     <button
       type="button"
@@ -52,8 +52,17 @@ export function Toolbar({
 }: ToolbarProps): JSX.Element {
   return (
     <div class="toolbar" role="toolbar" aria-label="Selection and style">
-      <Tool
-        label="Select"
+      <ToolButton
+        label="Object"
+        icon={<PointerClickIcon />}
+        pressed={tool === 'object'}
+        className={tool === 'object' ? 'tool--active' : ''}
+        onClick={() => {
+          onToolChange('object');
+        }}
+      />
+      <ToolButton
+        label="Brush"
         icon={<BrushIcon />}
         pressed={tool === 'paint'}
         className={tool === 'paint' ? 'tool--active' : ''}
@@ -61,7 +70,7 @@ export function Toolbar({
           onToolChange('paint');
         }}
       />
-      <Tool
+      <ToolButton
         label="Erase"
         icon={<EraserIcon />}
         pressed={tool === 'erase'}
@@ -73,12 +82,12 @@ export function Toolbar({
 
       <span class="toolbar__divider" aria-hidden="true" />
 
-      <Tool label="Clear" icon={<TrashIcon />} onClick={onClear} />
-      <Tool label="Invert" icon={<ContrastIcon />} onClick={onInvert} />
+      <ToolButton label="Clear" icon={<TrashIcon />} onClick={onClear} />
+      <ToolButton label="Invert" icon={<ContrastIcon />} onClick={onInvert} />
 
       <span class="toolbar__divider" aria-hidden="true" />
 
-      <Tool
+      <ToolButton
         label="Style"
         icon={<SlidersIcon />}
         expanded={stylePanelOpen}

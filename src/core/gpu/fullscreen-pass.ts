@@ -19,7 +19,16 @@ export interface FullscreenPassOptions {
   /** Fragment WGSL. The shared vertex stage is prepended automatically. */
   readonly fragmentWgsl: string;
   readonly bindGroupLayout: GPUBindGroupLayout;
-  readonly targetFormat: GPUTextureFormat;
+  /**
+   * One format, or several for a pass that writes several targets at once.
+   *
+   * Several is rare and deliberate: it exists for the one pass that has to
+   * produce separate single-channel planes, where the alternative is running
+   * the same expensive sampling three times. Watch
+   * `maxColorAttachmentBytesPerSample`, which is 32 by default — four
+   * rgba32float targets do not fit, and the pipeline fails to create.
+   */
+  readonly targetFormat: GPUTextureFormat | readonly GPUTextureFormat[];
   readonly entryPoint?: string;
 }
 
@@ -36,6 +45,8 @@ export class FullscreenPass {
       code: `${fullscreenVertexWgsl}\n${fragmentWgsl}`,
     });
 
+    const formats = typeof targetFormat === 'string' ? [targetFormat] : targetFormat;
+
     this.pipeline = device.createRenderPipeline({
       label,
       layout: device.createPipelineLayout({
@@ -46,7 +57,7 @@ export class FullscreenPass {
       fragment: {
         module,
         entryPoint: options.entryPoint ?? 'fragmentMain',
-        targets: [{ format: targetFormat }],
+        targets: formats.map((format) => ({ format })),
       },
       primitive: { topology: 'triangle-list' },
     });
@@ -62,16 +73,24 @@ export class FullscreenPass {
     bindGroup: GPUBindGroup,
     dynamicOffsets?: readonly number[],
   ): void {
+    this.runTargets(encoder, [targetView], bindGroup, dynamicOffsets);
+  }
+
+  /** The several-targets form, for a pass that writes separate planes. */
+  runTargets(
+    encoder: GPUCommandEncoder,
+    views: readonly GPUTextureView[],
+    bindGroup: GPUBindGroup,
+    dynamicOffsets?: readonly number[],
+  ): void {
     const pass = encoder.beginRenderPass({
       label: this.#label,
-      colorAttachments: [
-        {
-          view: targetView,
-          loadOp: 'clear',
-          storeOp: 'store',
-          clearValue: { r: 0, g: 0, b: 0, a: 1 },
-        },
-      ],
+      colorAttachments: views.map((view) => ({
+        view,
+        loadOp: 'clear' as const,
+        storeOp: 'store' as const,
+        clearValue: { r: 0, g: 0, b: 0, a: 1 },
+      })),
     });
     pass.setPipeline(this.pipeline);
     if (dynamicOffsets) {

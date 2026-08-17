@@ -10,7 +10,8 @@ import { decodeImageFile, describeImageLoadError } from '../platform/image-file.
 import { uploadImageToTexture } from '../platform/texture-upload.ts';
 import { exportFilename, exportImage } from '../platform/image-export.ts';
 import { DEFAULT_COMIC_CONTROLS, type ComicControls } from '../core/style/comic-params.ts';
-import type { BrushMode } from '../core/render/rotyl-engine.ts';
+import type { Tool } from './tool.ts';
+import type { PerceptionStatus, SelectIntent } from '../core/perception/perception-store.ts';
 
 interface LoadedFile {
   readonly file: File;
@@ -22,12 +23,33 @@ interface LoadedFile {
 const DEFAULT_BRUSH_FRACTION = 0.06;
 const BRUSH_STEP = 1.25;
 
+/**
+ * What the perception layer is doing, in the status line.
+ *
+ * The download is the only one worth a percentage: it is tens of megabytes and
+ * happens once, so a bare "Loading" would look indistinguishable from a hang.
+ * The other two are hundreds of milliseconds and a number would just flicker.
+ */
+function describePerception(status: PerceptionStatus): string | undefined {
+  switch (status.kind) {
+    case 'loading':
+      return `Downloading the object model, ${String(Math.round(status.progress * 100))}%`;
+    case 'understanding':
+      return 'Reading the image';
+    case 'thinking':
+      return 'Finding the object';
+    default:
+      return undefined;
+  }
+}
+
 export function App(): JSX.Element {
   const state = useRotyl();
 
   const [loaded, setLoaded] = useState<LoadedFile | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
-  const [tool, setTool] = useState<BrushMode>('paint');
+  const [tool, setTool] = useState<Tool>('paint');
+  const [perception, setPerception] = useState<PerceptionStatus>({ kind: 'idle' });
   const [brushRadius, setBrushRadius] = useState(64);
   const [controls, setControls] = useState<ComicControls>(DEFAULT_COMIC_CONTROLS);
   const [stylePanelOpen, setStylePanelOpen] = useState(false);
@@ -65,6 +87,7 @@ export function App(): JSX.Element {
       // 192 MB for a 48 megapixel photograph.
       bitmap.close();
       runtime.engine.markSourceUploaded();
+      runtime.perception.setFrame(runtime.engine.sceneFrame);
 
       // Never zero: a tiny or extreme-aspect image would give a brush that
       // paints nothing, and the grow key multiplies, so it could never recover.
@@ -91,6 +114,22 @@ export function App(): JSX.Element {
       setHistoryRevision(runtime.engine.document.revision);
     });
   }, [runtime]);
+
+  useEffect(() => {
+    if (!runtime) return undefined;
+    return runtime.perception.subscribe(() => {
+      setPerception(runtime.perception.status);
+    });
+  }, [runtime]);
+
+  // Selecting the tool, not using it, is what starts the download and the
+  // frame encode — so both overlap with the user deciding where to click
+  // rather than following it.
+  useEffect(() => {
+    if (!runtime || !loaded) return;
+    if (tool === 'object') void runtime.perception.prepare();
+    else runtime.perception.endPrompt();
+  }, [runtime, loaded, tool]);
 
   useEffect(() => {
     runtime?.engine.setControls(controls);
@@ -155,6 +194,9 @@ export function App(): JSX.Element {
       if (isTypingTarget(event.target)) return;
 
       switch (event.key) {
+        case 'o':
+          setTool('object');
+          break;
         case 'b':
           setTool('paint');
           break;
@@ -240,6 +282,10 @@ export function App(): JSX.Element {
   }
 
   const selection = runtime?.engine.document;
+  const status = busy ?? describePerception(perception);
+  // Object selection can fail on its own — a download that will not complete,
+  // a runtime the browser will not start — and it has no other surface.
+  const notice = error ?? (perception.kind === 'failed' ? perception.message : undefined);
   // historyRevision is read so that undo and redo re-evaluate when the log moves.
   void historyRevision;
 
@@ -247,7 +293,7 @@ export function App(): JSX.Element {
     <div class="app">
       <TopBar
         {...(loaded ? { file: { name: loaded.name, width: loaded.width, height: loaded.height } } : {})}
-        {...(busy ? { status: busy } : {})}
+        {...(status ? { status } : {})}
         canUndo={selection?.canUndo ?? false}
         canRedo={selection?.canRedo ?? false}
         onUndo={() => selection?.undo()}
@@ -266,7 +312,14 @@ export function App(): JSX.Element {
             paused={busy !== undefined}
             fitRequest={fitRequest}
             onSelectionChanged={() => {
+              // A brush stroke ends whatever object was being refined: the next
+              // object click should ask a fresh question rather than adding a
+              // point to a prompt the user has moved on from.
+              runtime.perception.endPrompt();
               setHistoryRevision(runtime.engine.document.revision);
+            }}
+            onObjectPicked={(point, intent: SelectIntent) => {
+              void runtime.perception.select(point, intent);
             }}
           >
             {/*
@@ -303,7 +356,7 @@ export function App(): JSX.Element {
           ) : null}
         </div>
       ) : (
-        <DropZone onFile={(file) => void openFile(file)} notice={error} />
+        <DropZone onFile={(file) => void openFile(file)} notice={notice} />
       )}
 
       {/*
@@ -312,7 +365,7 @@ export function App(): JSX.Element {
         image is loaded had no visible surface at all.
       */}
       <div class="announcer" role="status" aria-live="polite">
-        {loaded && error ? <p class="notice notice--floating">{error}</p> : null}
+        {loaded && notice ? <p class="notice notice--floating">{notice}</p> : null}
       </div>
     </div>
   );

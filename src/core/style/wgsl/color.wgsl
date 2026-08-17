@@ -10,6 +10,20 @@ fn luminance(c: vec3f) -> f32 {
   return dot(c, REC709);
 }
 
+// The sRGB encode, in software.
+//
+// Normally the hardware does this when the composite writes through an sRGB
+// view, and doing it by hand would be a second, redundant encode. There is one
+// consumer that is not a display: a segmentation model, which was trained on
+// ordinary encoded image files and expects values in that space. Feeding it
+// linear light instead is not a subtle error — every shadow arrives several
+// stops too dark.
+fn linearToSrgb(c: vec3f) -> vec3f {
+  let low = c * 12.92;
+  let high = 1.055 * pow(max(c, vec3f(0.0)), vec3f(1.0 / 2.4)) - 0.055;
+  return select(high, low, c <= vec3f(0.0031308));
+}
+
 // Oklab (Ottosson). Lightness in Oklab is perceptually uniform, which is why
 // the cel bands are quantised there: quantising the three linear RGB channels
 // independently steps each one at a different luminance and produces green and

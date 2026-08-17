@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'preact/hooks';
 import type { JSX } from 'preact';
 import type { RotylRuntime } from './use-rotyl.ts';
-import type { BrushMode } from '../core/render/rotyl-engine.ts';
+import { isBrush, type Tool } from './tool.ts';
+import type { SelectIntent } from '../core/perception/perception-store.ts';
 import { OVERLAY_HIDDEN, OVERLAY_VISIBLE } from '../core/render/display-renderer.ts';
 import { canvasToImage, panBy, screenToCanvas, zoomAbout } from '../core/view/view-transform.ts';
 
 export interface ViewportProps {
   readonly runtime: RotylRuntime;
-  readonly tool: BrushMode;
+  readonly tool: Tool;
   readonly brushRadius: number;
   readonly overlayVisible: boolean;
   /** True while a blocking operation owns the GPU, e.g. an export. */
@@ -15,6 +16,8 @@ export interface ViewportProps {
   /** Increment to refit the image; the only way back from a lost view. */
   readonly fitRequest: number;
   readonly onSelectionChanged: () => void;
+  /** A click with the object tool, in image pixels. */
+  readonly onObjectPicked: (point: { x: number; y: number }, intent: SelectIntent) => void;
   /** Overlaid on the canvas — the toolbar, so it centres on the image. */
   readonly children?: JSX.Element | JSX.Element[];
 }
@@ -41,6 +44,7 @@ export function Viewport({
   paused,
   fitRequest,
   onSelectionChanged,
+  onObjectPicked,
   children,
 }: ViewportProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -48,8 +52,8 @@ export function Viewport({
 
   // Props the animation frame and event handlers read. Kept in a ref so the
   // listeners can be attached once instead of being torn down on every change.
-  const settings = useRef({ tool, brushRadius, overlayVisible, paused, onSelectionChanged });
-  settings.current = { tool, brushRadius, overlayVisible, paused, onSelectionChanged };
+  const settings = useRef({ tool, brushRadius, overlayVisible, paused, onSelectionChanged, onObjectPicked });
+  settings.current = { tool, brushRadius, overlayVisible, paused, onSelectionChanged, onObjectPicked };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -127,6 +131,12 @@ export function Viewport({
     const moveCursor = (event: PointerEvent): void => {
       const cursor = cursorRef.current;
       if (!cursor) return;
+      // The ring shows a brush footprint. The object tool has none — it asks
+      // about whatever is under one point — so it uses the ordinary cursor.
+      if (!isBrush(settings.current.tool)) {
+        setCursorVisible(false);
+        return;
+      }
       setCursorVisible(true);
       const rect = canvas.getBoundingClientRect();
       const scale = rect.width > 0 ? canvas.width / rect.width : 1;
@@ -143,6 +153,11 @@ export function Viewport({
 
     let panning = false;
     let lastPan = { x: 0, y: 0 };
+    // A press with the object tool that has not yet moved far enough to be a
+    // drag. Deciding on release rather than on press is what lets one gesture
+    // be both "select this" and "pan", with no modifier to learn.
+    let pendingPick: { x: number; y: number; intent: SelectIntent } | undefined;
+    const DRAG_SLOP = 6;
     // The pointer that owns the current gesture. A second finger or pen landing
     // mid-stroke would otherwise feed its own coordinates into the same stroke,
     // drawing a line between two hands.
@@ -153,8 +168,11 @@ export function Viewport({
       activePointer = event.pointerId;
       canvas.setPointerCapture(event.pointerId);
 
-      // Middle button, or shift held, pans instead of painting.
-      if (event.button === 1 || event.shiftKey) {
+      const active = settings.current.tool;
+
+      // Middle button pans everywhere; shift-drag pans in the brush tools,
+      // where a drag already means something else.
+      if (event.button === 1 || (event.shiftKey && isBrush(active))) {
         panning = true;
         lastPan = { x: event.clientX, y: event.clientY };
         return;
@@ -164,13 +182,32 @@ export function Viewport({
         return;
       }
 
+      if (!isBrush(active)) {
+        pendingPick = {
+          x: event.clientX,
+          y: event.clientY,
+          intent: event.altKey ? 'exclude' : event.shiftKey ? 'include' : 'object',
+        };
+        return;
+      }
+
       strokeRadius = settings.current.brushRadius;
-      engine.beginStroke(settings.current.tool, strokeRadius, 0.85, toImage(event));
+      engine.beginStroke(active, strokeRadius, 0.85, toImage(event));
     };
 
     const onPointerMove = (event: PointerEvent): void => {
       moveCursor(event);
       if (activePointer !== undefined && event.pointerId !== activePointer) return;
+
+      // Far enough from where it started to be a drag rather than a click.
+      if (
+        pendingPick &&
+        Math.hypot(event.clientX - pendingPick.x, event.clientY - pendingPick.y) > DRAG_SLOP
+      ) {
+        lastPan = { x: pendingPick.x, y: pendingPick.y };
+        pendingPick = undefined;
+        panning = true;
+      }
 
       if (panning) {
         const rect = canvas.getBoundingClientRect();
@@ -202,7 +239,14 @@ export function Viewport({
     };
 
     const onPointerUp = (event: PointerEvent): void => {
+      const pick = pendingPick;
+      pendingPick = undefined;
       if (!endGesture(event)) return;
+
+      if (pick) {
+        settings.current.onObjectPicked(toImage(event), pick.intent);
+        return;
+      }
       if (!engine.isStroking) return;
       engine.commitStroke();
       settings.current.onSelectionChanged();
@@ -212,6 +256,7 @@ export function Viewport({
     // rejection, a scroll takeover. Committing it would record a stroke the
     // user did not finish, so it is discarded.
     const onPointerCancel = (event: PointerEvent): void => {
+      pendingPick = undefined;
       if (!endGesture(event)) return;
       engine.cancelStroke();
     };
@@ -261,7 +306,10 @@ export function Viewport({
 
   return (
     <div class="viewport">
-      <canvas ref={canvasRef} class="viewport__canvas viewport__canvas--brushing" />
+      <canvas
+        ref={canvasRef}
+        class={`viewport__canvas${isBrush(tool) ? ' viewport__canvas--brushing' : ''}`}
+      />
       <div ref={cursorRef} class="brush-cursor" aria-hidden="true" />
       {children}
     </div>

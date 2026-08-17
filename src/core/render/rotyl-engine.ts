@@ -9,6 +9,7 @@ import { CompositeRenderer } from './composite-renderer.ts';
 import { DisplayRenderer, OVERLAY_VISIBLE, type OverlayState } from './display-renderer.ts';
 import { outputDimensions, type Dimensions } from './resolution.ts';
 import { fitToCanvas, type Size, type ViewTransform } from '../view/view-transform.ts';
+import type { SceneFrame } from '../perception/segmentation-engine.ts';
 
 export type BrushMode = 'paint' | 'erase';
 
@@ -23,6 +24,8 @@ interface LiveStroke {
 
 interface Media {
   readonly sourceTexture: GPUTexture;
+  /** Created once: every consumer wants linear light, and views are not free. */
+  readonly sourceView: GPUTextureView;
   readonly sourceSize: Dimensions;
   readonly outputSize: Dimensions;
   readonly composite: GPUTexture;
@@ -136,6 +139,7 @@ export class RotylEngine {
 
     this.#media = {
       sourceTexture,
+      sourceView: sourceTexture.createView({ label: 'source-srgb', format: SOURCE_VIEW_FORMAT }),
       sourceSize,
       outputSize,
       composite,
@@ -245,11 +249,18 @@ export class RotylEngine {
   }
 
   #replayContext(media: Media): MaskReplayContext {
-    return {
-      refiner: this.#refiner,
-      guideView: media.sourceTexture.createView({ format: SOURCE_VIEW_FORMAT }),
-      guideSize: media.sourceSize,
-    };
+    return { refiner: this.#refiner, guideView: media.sourceView, guideSize: media.sourceSize };
+  }
+
+  /**
+   * The loaded frame, as something that can be perceived rather than drawn.
+   *
+   * Handing out the view rather than the texture is deliberate: a segmentation
+   * engine reads the photograph and must never be in a position to write it.
+   */
+  get sceneFrame(): SceneFrame | undefined {
+    const media = this.#media;
+    return media ? { view: media.sourceView, size: media.sourceSize } : undefined;
   }
 
   #updateMask(encoder: GPUCommandEncoder, media: Media): void {
