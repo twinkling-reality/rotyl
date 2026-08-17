@@ -1,3 +1,4 @@
 clips/
+.bundle/
 # results.json is checked in: it is the evidence for the README.
 results-*.json

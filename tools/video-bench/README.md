@@ -200,10 +200,18 @@ Getting one 1080p frame onto the GPU, fenced:
 ### The demuxer
 
 mediabunny 1.55.1, MPL-2.0. Built through Rotyl's own Vite, importing only
-`Input`, `MP4`, `BlobSource` and `EncodedPacketSink`: **166.6 KB raw, 38.1 KB
-gzipped.** Adding `QTFF`, which is what a phone or a camera writes, costs 64
-bytes gzipped: it is the same demuxer with a different brand list. Adding `WEBM`
-costs 15.4 KB, because it is not.
+`Input`, `MP4`, `BlobSource` and `EncodedPacketSink` — `node
+tools/video-bench/bundle-size.mjs`:
+
+| formats         | raw    | gzip    |
+| --------------- | ------ | ------- |
+| `MP4`           | 166 KB | 38.1 KB |
+| `MP4 QTFF`      | 167 KB | 38.2 KB |
+| `MP4 QTFF WEBM` | 243 KB | 53.6 KB |
+
+QuickTime, which is what a phone or a camera writes, costs 64 bytes gzipped: it
+is the same demuxer with a different brand list. Matroska costs 15.4 KB, because
+it is not.
 
 The current application bundle is 46.3 KB gzipped, so this is not
 going in it — it gets the same treatment as the inference runtime, a dynamic
