@@ -18,3 +18,31 @@ export function uploadImageToTexture(device: GPUDevice, bitmap: ImageBitmap, tex
     { width: bitmap.width, height: bitmap.height },
   );
 }
+
+/**
+ * A decoded video frame, into the same texture an image would go into.
+ *
+ * A sibling rather than a widened parameter, because a VideoFrame reports its
+ * size under different names and because the colour question is different
+ * enough to deserve stating.
+ *
+ * A frame arrives as NV12 in some YCbCr space, usually BT.709 with limited
+ * range, and the browser converts it here. MEASURED (tools/video-bench): what
+ * lands in an `rgba8unorm` texture is the same sRGB-encoded byte an image
+ * decodes to, within one code on a losslessly encoded probe, and the sRGB view
+ * downstream then does the decode in hardware exactly as it does for a
+ * photograph. Writing it through an `rgba8unorm-srgb` view instead encodes it
+ * twice and is wrong by 73 codes at mid grey.
+ *
+ * So there is no video colour path. There is the colour path, and this is one
+ * more thing that arrives already in it.
+ */
+export function uploadFrameToTexture(device: GPUDevice, frame: VideoFrame, texture: GPUTexture): void {
+  device.queue.copyExternalImageToTexture(
+    { source: frame, flipY: false },
+    { texture, premultipliedAlpha: false },
+    // Display size, not coded size: a decoder pads to a macroblock multiple, so
+    // a 1080-high clip is 1088 coded, and the last eight rows are not picture.
+    { width: frame.displayWidth, height: frame.displayHeight },
+  );
+}

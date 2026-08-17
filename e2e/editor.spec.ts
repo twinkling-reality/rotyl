@@ -11,7 +11,10 @@ import { dirname, join } from 'node:path';
  * pointer drive the engine, and that the download produces bytes.
  */
 
-const fixture = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'sample.png');
+const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
+const fixture = join(fixtures, 'sample.png');
+const clip = join(fixtures, 'sample.mp4');
+const webm = join(fixtures, 'sample.webm');
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -287,5 +290,59 @@ test('explains itself when handed a file it cannot decode', async ({ page }) => 
 
   await expect(page.getByText(/not an image Rotyl can read/i)).toBeVisible();
   // And the drop zone is still usable rather than stuck in a loading state.
+  await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
+});
+
+test('opens a video, scrubs it, and selects on a frame', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(clip);
+
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  await expect(page.getByText('sample.mp4')).toBeVisible();
+
+  const timeline = page.getByRole('slider', { name: 'Frame' });
+  await expect(timeline).toBeVisible();
+  // The frame count comes from walking the container's index, so this asserts
+  // the index was built and not that a duration was divided by a frame rate.
+  await expect(page.getByText('1 / 60')).toBeVisible();
+
+  // A frame is a picture, and the proof that scrubbing works is that the
+  // picture changes. Comparing what was drawn is the only thing that shows it;
+  // the slider moving shows only that the slider moves.
+  const first = await canvas.screenshot();
+
+  await timeline.fill('40');
+  await expect(page.getByText('41 / 60')).toBeVisible();
+  await expect(async () => {
+    const later = await canvas.screenshot();
+    expect(Buffer.compare(first, later)).not.toBe(0);
+  }).toPass();
+
+  // Scrubbing backwards costs a seek rather than a decode, and is the case that
+  // breaks if the decoder is fed forward regardless.
+  await timeline.fill('3');
+  await expect(page.getByText('4 / 60')).toBeVisible();
+  await expect(async () => {
+    const back = await canvas.screenshot();
+    expect(Buffer.compare(first, back)).not.toBe(0);
+  }).toPass();
+
+  // The selection works on a frame exactly as it works on a photograph.
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  const undo = page.getByRole('button', { name: 'Undo' });
+  await expect(undo).toBeDisabled();
+  await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.45);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.55, box.y + box.height * 0.55, { steps: 8 });
+  await page.mouse.up();
+  await expect(undo).toBeEnabled();
+});
+
+test('refuses a video it cannot decode, by name', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(webm);
+  await expect(page.getByText('WebM and Matroska are not supported yet. MP4 and MOV work.')).toBeVisible();
+  // Refused, not half-loaded: the drop zone is still the thing on screen.
   await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
 });

@@ -17,6 +17,7 @@
     "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build"
   },
   "dependencies": {
+    "mediabunny": "1.55.1",
     "onnxruntime-web": "1.27.0",
     "preact": "10.29.8"
   },
@@ -28,7 +29,6 @@
   "devDependencies": {
     "@playwright/test": "1.62.1",
     "@webgpu/types": "0.1.71",
-    "mediabunny": "^1.55.1",
     "oxlint": "1.78.0",
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "3.9.6",

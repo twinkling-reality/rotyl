@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { useRotyl, type RotylRuntime } from './use-rotyl.ts';
 import { DropZone } from './DropZone.tsx';
@@ -6,8 +6,14 @@ import { TopBar } from './TopBar.tsx';
 import { Toolbar } from './Toolbar.tsx';
 import { StylePanel } from './StylePanel.tsx';
 import { Viewport } from './Viewport.tsx';
+import { Timeline } from './Timeline.tsx';
 import { decodeImageFile, describeImageLoadError } from '../platform/image-file.ts';
-import { uploadImageToTexture } from '../platform/texture-upload.ts';
+import { uploadFrameToTexture, uploadImageToTexture } from '../platform/texture-upload.ts';
+// Static, and deliberately so: this decides WHICH loader to use, so it cannot
+// itself be behind the loader's dynamic import. It reads sixteen bytes and
+// pulls in nothing.
+import { describeVideoLoadError, looksLikeVideo } from '../platform/video/video-file.ts';
+import type { FrameProvider } from '../platform/video/frame-provider.ts';
 import { exportFilename, exportImage } from '../platform/image-export.ts';
 import { defaultControls, type StyleControls, type StyleDefinition } from '../core/style/style.ts';
 import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
@@ -20,6 +26,8 @@ interface LoadedFile {
   readonly name: string;
   readonly width: number;
   readonly height: number;
+  /** Present for a video, absent for a photograph. */
+  readonly video?: { readonly frameCount: number; readonly frameRate: number };
 }
 
 const DEFAULT_BRUSH_FRACTION = 0.06;
@@ -74,6 +82,19 @@ export function App(): JSX.Element {
   const [fitRequest, setFitRequest] = useState(0);
   /** The runtime generation whose device currently holds the decoded pixels. */
   const [mediaGeneration, setMediaGeneration] = useState<number | undefined>(undefined);
+  const [frame, setFrame] = useState(0);
+  const [scrubbing, setScrubbing] = useState(false);
+
+  /**
+   * The decoder, and the texture it uploads into.
+   *
+   * Refs rather than state for the reason the engine is: neither participates
+   * in reconciliation, and the texture is written to thirty times a second. The
+   * provider owns no GPU resources, so it survives a lost device while the
+   * texture does not — hence the generation stamped alongside it.
+   */
+  const providerRef = useRef<FrameProvider | undefined>(undefined);
+  const sourceRef = useRef<{ texture: GPUTexture; generation: number } | undefined>(undefined);
 
   const runtime: RotylRuntime | undefined = state.status === 'ready' ? state.runtime : undefined;
 
@@ -84,9 +105,51 @@ export function App(): JSX.Element {
     (runtime !== undefined && loaded !== undefined && mediaGeneration !== runtime.generation);
   const activity = busy ?? (restoring ? 'Restoring' : undefined);
 
+  /**
+   * Put one frame of the open video into the source texture.
+   *
+   * loadMedia is NOT called here. Its job is to allocate for a new piece of
+   * media, and doing it per frame would rebuild the selection mask and three
+   * render pipelines thirty times a second. A video's dimensions do not change,
+   * so the allocation happens once and this only writes pixels.
+   */
+  const showFrame = useCallback(
+    async (target: RotylRuntime, index: number, settled: boolean): Promise<void> => {
+      const provider = providerRef.current;
+      const source = sourceRef.current;
+      if (!provider || !source || source.generation !== target.generation) return;
+
+      const shown = await provider.readFrame(index, (decoded) => {
+        uploadFrameToTexture(target.device, decoded, source.texture);
+      });
+      // False means a later request has already replaced this one, which is the
+      // ordinary case while scrubbing.
+      if (!shown) return;
+
+      target.engine.markSourceUploaded();
+      // Only once the scrub has stopped. What the model understands about a
+      // frame is expensive and the pixels are still moving until then.
+      if (settled) target.perception.setFrame(target.engine.sceneFrame);
+    },
+    [],
+  );
+
   const uploadInto = useCallback(
-    async (target: RotylRuntime, file: File, selection: 'clear' | 'keep'): Promise<boolean> => {
-      const decoded = await decodeImageFile(file, target.maxTextureDimension);
+    async (
+      target: RotylRuntime,
+      media: LoadedFile,
+      selection: 'clear' | 'keep',
+      index: number,
+    ): Promise<boolean> => {
+      if (media.video) {
+        const texture = target.engine.loadMedia({ width: media.width, height: media.height }, selection);
+        sourceRef.current = { texture, generation: target.generation };
+        setMediaGeneration(target.generation);
+        await showFrame(target, index, true);
+        return true;
+      }
+
+      const decoded = await decodeImageFile(media.file, target.maxTextureDimension);
       if (!decoded.ok) {
         setError(describeImageLoadError(decoded.error));
         return false;
@@ -94,6 +157,7 @@ export function App(): JSX.Element {
 
       const { bitmap, width, height } = decoded.value;
       const texture = target.engine.loadMedia({ width, height }, selection);
+      sourceRef.current = { texture, generation: target.generation };
       uploadImageToTexture(target.device, bitmap, texture);
       // Released immediately: an ImageBitmap holds a full RGBA copy, which is
       // 192 MB for a 48 megapixel photograph.
@@ -103,7 +167,7 @@ export function App(): JSX.Element {
       setMediaGeneration(target.generation);
       return true;
     },
-    [],
+    [showFrame],
   );
 
   const openFile = useCallback(
@@ -118,7 +182,37 @@ export function App(): JSX.Element {
       setError(undefined);
       setBusy('Opening');
 
-      if (!(await uploadInto(runtime, file, 'clear'))) {
+      providerRef.current?.dispose();
+      providerRef.current = undefined;
+      setFrame(0);
+      setScrubbing(false);
+
+      let media: LoadedFile = { file, name: file.name, width: 1, height: 1 };
+      const format = await looksLikeVideo(file);
+      if (format !== 'unknown') {
+        // The demuxer, and everything it pulls in, arrives only for someone who
+        // has actually opened a video — the same treatment the inference
+        // runtime gets, and for the same reason: 38 KB gzipped is an absurd
+        // thing to put in front of someone who wants to paint on a photograph.
+        const { FrameProvider } = await import('../platform/video/frame-provider.ts');
+        const opened = await FrameProvider.open(file, runtime.maxTextureDimension);
+        if (!opened.ok) {
+          setError(describeVideoLoadError(opened.error));
+          setBusy(undefined);
+          return;
+        }
+        providerRef.current = opened.value;
+        const { width, height, timeline } = opened.value.info;
+        media = {
+          file,
+          name: file.name,
+          width,
+          height,
+          video: { frameCount: timeline.frameCount, frameRate: timeline.frameRate },
+        };
+      }
+
+      if (!(await uploadInto(runtime, media, 'clear', 0))) {
         setBusy(undefined);
         return;
       }
@@ -127,7 +221,7 @@ export function App(): JSX.Element {
       // Never zero: a tiny or extreme-aspect image would give a brush that
       // paints nothing, and the grow key multiplies, so it could never recover.
       setBrushRadius(Math.max(1, Math.round(Math.min(width, height) * DEFAULT_BRUSH_FRACTION)));
-      setLoaded({ file, name: file.name, width, height });
+      setLoaded({ ...media, width, height });
       setHistoryRevision(runtime.engine.document.revision);
       setBusy(undefined);
     },
@@ -145,8 +239,19 @@ export function App(): JSX.Element {
   // the work, and replaying it is what the renderer does with it anyway.
   useEffect(() => {
     if (!runtime || !loaded || mediaGeneration === runtime.generation) return;
-    void uploadInto(runtime, loaded.file, 'keep');
-  }, [runtime, loaded, mediaGeneration, uploadInto]);
+    // The frame index is carried across too: a video comes back where it was,
+    // for the same reason the view does.
+    void uploadInto(runtime, loaded, 'keep', frame);
+  }, [runtime, loaded, mediaGeneration, uploadInto, frame]);
+
+  // The decoder holds an open file and a hardware decode session, neither of
+  // which the garbage collector is in any hurry about.
+  useEffect(() => {
+    return () => {
+      providerRef.current?.dispose();
+      providerRef.current = undefined;
+    };
+  }, []);
 
   // The engine owns the selection; this only mirrors enough of it to drive the
   // undo and redo buttons.
@@ -178,14 +283,30 @@ export function App(): JSX.Element {
     // Not while a rebuild is in flight: there is no frame to read yet, and
     // asking for one is reported as a failure rather than as a wait.
     if (!runtime || !loaded || restoring) return;
+    // Not mid-scrub: each frame would start an encode the next one discards.
+    if (scrubbing) return;
     if (isPrompt(tool)) void runtime.perception.prepare();
     else runtime.perception.endPrompt();
-  }, [runtime, loaded, tool, restoring]);
+  }, [runtime, loaded, tool, restoring, scrubbing, frame]);
 
   useEffect(() => {
     runtime?.engine.setStyle(style);
     runtime?.engine.setControls(controls);
   }, [runtime, style, controls]);
+
+  const onScrub = useCallback(
+    (next: number, settled: boolean): void => {
+      if (!runtime) return;
+      setFrame(next);
+      setScrubbing(!settled);
+      // The same tier a style slider drops to while it is moving, and for the
+      // same reason: the chain re-runs on every frame that arrives, and at full
+      // quality that is 79 ms of work per pointer sample.
+      runtime.engine.setQuality(settled ? 'full' : 'draft');
+      void showFrame(runtime, next, settled);
+    },
+    [runtime, showFrame],
+  );
 
   const onExport = useCallback(async (): Promise<void> => {
     if (!runtime || !loaded) return;
@@ -373,53 +494,63 @@ export function App(): JSX.Element {
 
       {loaded && runtime ? (
         <div class="editor">
-          <Viewport
-            runtime={runtime}
-            tool={tool}
-            brushRadius={brushRadius}
-            overlayVisible={overlayVisible}
-            paused={activity !== undefined}
-            fitRequest={fitRequest}
-            candidates={candidates}
-            chosenCandidate={chosenCandidate}
-            promptAnchor={promptAnchor}
-            onChooseCandidate={(rank) => {
-              runtime.perception.choose(rank);
-            }}
-            onSelectionChanged={() => {
-              // A brush stroke ends whatever object was being refined: the next
-              // object click should ask a fresh question rather than adding a
-              // point to a prompt the user has moved on from.
-              runtime.perception.endPrompt();
-              setHistoryRevision(runtime.engine.document.revision);
-            }}
-            onObjectPicked={(point, intent: SelectIntent) => {
-              void runtime.perception.select(point, intent);
-            }}
-            onBoxPicked={(box) => {
-              void runtime.perception.selectBox(box);
-            }}
-          >
-            {/*
+          <div class="stage">
+            <Viewport
+              runtime={runtime}
+              tool={tool}
+              brushRadius={brushRadius}
+              overlayVisible={overlayVisible}
+              paused={activity !== undefined}
+              fitRequest={fitRequest}
+              candidates={candidates}
+              chosenCandidate={chosenCandidate}
+              promptAnchor={promptAnchor}
+              onChooseCandidate={(rank) => {
+                runtime.perception.choose(rank);
+              }}
+              onSelectionChanged={() => {
+                // A brush stroke ends whatever object was being refined: the next
+                // object click should ask a fresh question rather than adding a
+                // point to a prompt the user has moved on from.
+                runtime.perception.endPrompt();
+                setHistoryRevision(runtime.engine.document.revision);
+              }}
+              onObjectPicked={(point, intent: SelectIntent) => {
+                void runtime.perception.select(point, intent);
+              }}
+              onBoxPicked={(box) => {
+                void runtime.perception.selectBox(box);
+              }}
+            >
+              {/*
               Rendered inside the viewport, not beside it. Positioned against
               the editor it centred on the whole editor including the docked
               panel, so it drifted off the image the moment the panel opened.
             */}
-            <Toolbar
-              tool={tool}
-              onToolChange={setTool}
-              onClear={() => {
-                runtime.engine.document.apply({ kind: 'clear' });
-              }}
-              onInvert={() => {
-                runtime.engine.document.apply({ kind: 'invert' });
-              }}
-              stylePanelOpen={stylePanelOpen}
-              onToggleStylePanel={() => {
-                setStylePanelOpen((open) => !open);
-              }}
-            />
-          </Viewport>
+              <Toolbar
+                tool={tool}
+                onToolChange={setTool}
+                onClear={() => {
+                  runtime.engine.document.apply({ kind: 'clear' });
+                }}
+                onInvert={() => {
+                  runtime.engine.document.apply({ kind: 'invert' });
+                }}
+                stylePanelOpen={stylePanelOpen}
+                onToggleStylePanel={() => {
+                  setStylePanelOpen((open) => !open);
+                }}
+              />
+            </Viewport>
+            {loaded.video ? (
+              <Timeline
+                frameCount={loaded.video.frameCount}
+                frameRate={loaded.video.frameRate}
+                frame={frame}
+                onScrub={onScrub}
+              />
+            ) : null}
+          </div>
           {stylePanelOpen ? (
             <StylePanel
               styles={STYLES}

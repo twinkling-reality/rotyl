@@ -47,8 +47,9 @@ export function DropZone({ onFile, notice }: DropZoneProps): JSX.Element {
         }}
       >
         <span class="dropzone__primary">Drop a file, or click to browse</span>
-        {/* Images only for now; promising video the loader refuses would be a lie. */}
-        <span class="dropzone__secondary">PNG, JPEG, WebP, AVIF or GIF</span>
+        {/* Named exactly, and only what the loader accepts: WebM plays in the
+            browser and is refused here, so listing "video" would be a lie. */}
+        <span class="dropzone__secondary">PNG, JPEG, WebP, AVIF, GIF, MP4 or MOV</span>
       </button>
 
       {notice ? <p class="notice">{notice}</p> : null}
@@ -56,7 +57,7 @@ export function DropZone({ onFile, notice }: DropZoneProps): JSX.Element {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/mp4,video/quicktime"
         class="visually-hidden"
         // Not a tab stop: the button above is the control, and a
         // visually-hidden input would otherwise be an invisible focus stop

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      mediabunny:
+        specifier: 1.55.1
+        version: 1.55.1
       onnxruntime-web:
         specifier: 1.27.0
         version: 1.27.0
@@ -21,9 +24,6 @@ importers:
       '@webgpu/types':
         specifier: 0.1.71
         version: 0.1.71
-      mediabunny:
-        specifier: ^1.55.1
-        version: 1.55.1
       oxlint:
         specifier: 1.78.0
         version: 1.78.0(oxlint-tsgolint@7.0.2001)

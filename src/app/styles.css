@@ -748,3 +748,46 @@ button {
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * The timeline.
+ *
+ * Docked under the canvas rather than floated over it: a scrubber that covers
+ * the bottom of the picture hides the thing being scrubbed. It borrows the
+ * style panel's slider wholesale, because it is the same instrument.
+ */
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 var(--s-4);
+  height: var(--h-toolbar);
+  border-top: 1px solid var(--line-subtle);
+  background: var(--bg);
+}
+
+.timeline__track {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline__time,
+.timeline__count {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.timeline__count {
+  color: var(--text-tertiary);
+}
+
+/* The canvas and its timeline are one thing, and the editor lays out rows. */
+.stage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
