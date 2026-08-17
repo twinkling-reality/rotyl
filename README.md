@@ -240,7 +240,12 @@ of geometry did not justify a dependency.
 ## Known limits
 
 - Images only. The renderer takes a source texture rather than an image, which
-  is the seam video would arrive through, but no video pipeline exists.
+  is the seam video would arrive through, but no video pipeline exists — no
+  decode, no frame index on the command log, nothing in the interface. What
+  does exist is the answer to whether one could be built: see
+  `tools/edgetam-export`, which produces the two graphs tracking needs and
+  demonstrates them holding a mask across ten frames, mask-for-mask identical
+  to the PyTorch tracker. Building it is untouched work.
 - The print screen's pitch is a fraction of the image, not a distance in pixels,
   because that is what makes the preview and the export the same picture. At
   100% zoom on a very large photograph the dots are correspondingly large.
