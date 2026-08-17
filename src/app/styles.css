@@ -1,0 +1,637 @@
+/*
+ * Rotyl's design system.
+ *
+ * Hierarchy comes from size, spacing and position — never from weight. Nothing
+ * in the interface is heavier than 500, and the wordmark is the same 15px as
+ * the dropzone's own line of text. The image is the only thing on screen with
+ * any visual weight, which is the point of the product.
+ *
+ * Fonts: Geist and Geist Mono (SIL OFL 1.1), subset to latin and clamped to the
+ * weights actually used. See public/fonts/LICENSE.txt and the README.
+ */
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/geist-latin-300-500.woff2') format('woff2');
+  font-weight: 300 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/geist-mono-latin-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Neutrals are pure greys: any tint would compete with the photograph. */
+  --bg: oklch(99% 0 0);
+  --surface: oklch(97.4% 0 0);
+  --surface-sunken: oklch(95.6% 0 0);
+  --line-subtle: oklch(92.7% 0 0);
+  --line: oklch(89.8% 0 0);
+  --line-strong: oklch(82% 0 0);
+  --text-tertiary: oklch(62.5% 0 0);
+  --text-secondary: oklch(50% 0 0);
+  --text-primary: oklch(21.5% 0 0);
+
+  /*
+   * Chroma 0.11, not the 0.20 of a typical product blue. Same familiar hue,
+   * desaturated far enough that it reads as ink rather than as branding — and
+   * it appears in exactly three places: focus rings, the drag-over dropzone,
+   * and a focused slider. Never on a tool, never on Export.
+   */
+  --accent: oklch(52% 0.11 252);
+  --accent-weak: oklch(97.8% 0.012 252);
+  --danger: oklch(53% 0.19 27);
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+
+  --r-sm: 3px;
+  --r-md: 5px;
+  --r-lg: 8px;
+  --r-media: 2px;
+
+  --h-bar: 52px;
+  --h-toolbar: 44px;
+  --h-tool: 36px;
+  --h-control: 32px;
+  --w-panel: 280px;
+
+  --fs-md: 15px;
+  --fs-base: 13px;
+  --fs-sm: 12px;
+  --fs-xs: 11px;
+  --fs-mono: 11.5px;
+
+  --ls-md: -0.009em;
+  --ls-base: -0.003em;
+
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+
+  --dur-fast: 100ms;
+  --dur: 140ms;
+  --dur-slow: 220ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Exactly one elevation, on exactly one element: the floating toolbar, which
+     sits over arbitrary photographic content a border alone cannot separate. */
+  --shadow-toolbar: 0 1px 2px oklch(0% 0 0 / 0.04), 0 8px 24px oklch(0% 0 0 / 0.06);
+
+  --z-overlay: 10;
+  --z-cursor: 20;
+  --z-bar: 40;
+  --z-panel: 45;
+  --z-toolbar: 50;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family:
+    'Geist',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  /* ss03 is Geist's tailed lowercase l, which disambiguates 1/l/I in filenames. */
+  font-feature-settings: 'ss03';
+  font-size: var(--fs-base);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-base);
+  line-height: 18px;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: var(--r-sm);
+}
+
+button {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  /* 1.5 renders as exactly 1 CSS pixel at 16px — Lucide's default of 2 gives
+     1.33px, visibly heavier than Geist's stems and blurry at dpr 2. */
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+
+.mono {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: var(--fs-mono);
+  letter-spacing: 0.01em;
+}
+
+/* ---------- shell ---------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.top-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: var(--h-bar);
+  flex: none;
+  padding: 0 var(--s-4) 0 var(--s-5);
+  background: var(--bg);
+  z-index: var(--z-bar);
+}
+
+.top-bar--editing {
+  border-bottom: 1px solid var(--line-subtle);
+}
+
+.wordmark {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-md);
+  margin: 0;
+}
+
+.file-status {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  justify-self: center;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+.file-status__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 32ch;
+}
+
+/* The centred column is the first thing to go: a long filename would otherwise
+   overrun the wordmark on the left and the Export button on the right, since a
+   grid track sizes to its content before it will overlap. */
+@media (max-width: 720px) {
+  .file-status {
+    display: none;
+  }
+}
+
+.file-status__separator {
+  color: var(--text-tertiary);
+}
+
+.file-status__meta {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.top-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  justify-self: end;
+}
+
+/* ---------- controls ---------- */
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--h-control);
+  height: var(--h-control);
+  border-radius: var(--r-sm);
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.icon-button:disabled {
+  color: var(--line-strong);
+  cursor: default;
+}
+
+/* The only filled control in the application. */
+.export-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: var(--h-control);
+  padding: 0 var(--s-3);
+  margin-left: var(--s-2);
+  border-radius: var(--r-md);
+  background: var(--text-primary);
+  color: var(--bg);
+  font-size: 12.5px;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.export-button:hover:not(:disabled) {
+  opacity: 0.86;
+}
+
+.export-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ---------- empty state ---------- */
+
+.dropzone-region {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: var(--s-7);
+  min-height: 0;
+}
+
+.dropzone {
+  width: min(560px, 72vw);
+  aspect-ratio: 16 / 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  /* A solid hairline, not a dashed one: dashes read as a CMS placeholder. */
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--bg);
+  color: var(--text-primary);
+  transition:
+    border-color var(--dur) var(--ease-out),
+    background var(--dur) var(--ease-out);
+}
+
+.dropzone:hover {
+  border-color: var(--line-strong);
+}
+
+/* Border width stays 1px in every state — thickening it would shift the layout. */
+.dropzone--over {
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
+.dropzone__primary {
+  font-size: var(--fs-md);
+  letter-spacing: var(--ls-md);
+}
+
+.dropzone__secondary {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.notice {
+  margin: var(--s-4) 0 0;
+  font-size: var(--fs-sm);
+  color: var(--danger);
+  max-width: 52ch;
+  text-align: center;
+}
+
+.notice--quiet {
+  color: var(--text-secondary);
+}
+
+/* ---------- editor ---------- */
+
+.editor {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.viewport {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  /* So the toolbar can respond to the space it actually has, which changes
+     when the style panel docks — a window-width media query cannot see that. */
+  container-type: inline-size;
+  /* One step darker than the page, so the image reads as an object on a
+     surface rather than as the surface itself. */
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.viewport__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The brush draws its own cursor, which must show the radius in image space. */
+  touch-action: none;
+}
+
+.viewport__canvas--brushing {
+  cursor: none;
+}
+
+.brush-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: var(--z-cursor);
+  will-change: transform;
+  /*
+   * White / dark / white sandwich. It carries its own contrast, so it stays
+   * legible on any imagery — unlike a difference blend, which is mathematically
+   * invisible against mid-grey, a very common photographic value.
+   */
+  border: 1.25px solid oklch(17% 0 0 / 0.92);
+  box-shadow:
+    0 0 0 1px oklch(100% 0 0 / 0.9),
+    inset 0 0 0 1px oklch(100% 0 0 / 0.9);
+  /* Never transitioned: the cursor must track the pointer with zero lag. */
+}
+
+.toolbar {
+  position: absolute;
+  bottom: var(--s-5);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - var(--s-6));
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: var(--h-toolbar);
+  padding: var(--s-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--bg);
+  box-shadow: var(--shadow-toolbar);
+  z-index: var(--z-toolbar);
+}
+
+.toolbar__divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--s-1);
+  background: var(--line);
+  flex: none;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: var(--h-tool);
+  min-width: var(--h-tool);
+  padding: 0 var(--s-3);
+  border-radius: var(--r-sm);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  white-space: nowrap;
+  transition:
+    background var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out);
+}
+
+.tool:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.tool:disabled {
+  color: var(--line-strong);
+  cursor: default;
+}
+
+/* Exactly one element in the interface is black at a time: the active tool. */
+.tool--active {
+  background: var(--text-primary);
+  color: var(--bg);
+}
+
+.tool--active:hover {
+  background: var(--text-primary);
+  color: var(--bg);
+}
+
+/* A disclosure toggle, not a tool — so it must not compete for that one black. */
+.tool--open {
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+/* Below this the full toolbar is wider than the canvas it floats over, so it
+   collapses to icons. Every button keeps its aria-label and title. */
+@container (max-width: 520px) {
+  .tool__label {
+    display: none;
+  }
+
+  .tool {
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+/* ---------- style panel ---------- */
+
+.style-panel {
+  flex: none;
+  width: var(--w-panel);
+  max-width: 45vw;
+  padding: var(--s-5) var(--s-4);
+  border-left: 1px solid var(--line-subtle);
+  background: var(--bg);
+  z-index: var(--z-panel);
+  overflow-y: auto;
+}
+
+.style-panel__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--s-4);
+}
+
+.style-panel__title {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  margin: 0;
+}
+
+.style-panel__hint {
+  /* Not --text-tertiary: at 3.47:1 it is below the 4.5:1 AA minimum, and this
+     is 11.5px text. Tertiary is reserved for non-text marks. */
+  color: var(--text-secondary);
+}
+
+.slider-field {
+  margin-bottom: var(--s-4);
+}
+
+.slider-field__labels {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--s-2);
+}
+
+.slider-field__name {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.slider-field__value {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * A 2px track with a hairline knob. The weight of a native range input reads
+ * as a form control; this reads as an instrument.
+ */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 24px;
+  background: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(
+    to right,
+    var(--text-primary) 0 var(--fill, 50%),
+    var(--line) var(--fill, 50%) 100%
+  );
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--text-primary);
+}
+
+.slider::-moz-range-track {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line);
+}
+
+.slider::-moz-range-progress {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--text-primary);
+}
+
+.slider::-moz-range-thumb {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--text-primary);
+}
+
+.announcer {
+  position: absolute;
+  bottom: var(--s-5);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toolbar);
+  pointer-events: none;
+}
+
+.notice--floating {
+  margin: 0;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  box-shadow: var(--shadow-toolbar);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* 0.01ms rather than 0: transitionend still fires, so nothing awaiting it deadlocks. */
+    --dur-fast: 0.01ms;
+    --dur: 0.01ms;
+    --dur-slow: 0.01ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
