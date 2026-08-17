@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn"
+  },
+  "env": { "browser": true, "es2024": true },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-imports": "error",
+    "eqeqeq": "error",
+    "no-console": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/core/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": ["preact", "preact/hooks", "preact/jsx-runtime"],
+            "patterns": ["../app/*", "../platform/*", "**/app/**", "**/platform/**"]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["test/**", "e2e/**", "*.config.ts"],
+      "rules": { "no-console": "off" }
+    },
+    {
+      "files": ["src/core/color/oklab.ts"],
+      "rules": { "no-underscore-dangle": "off" }
+    }
+  ],
+  "ignorePatterns": ["dist", "node_modules", ".scratch"]
+}

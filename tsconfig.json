@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "types": ["@webgpu/types", "vite/client"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+
+    // Mandatory: TS 7's lib.dom declares the WebGPU interfaces but omits the
+    // GPUTextureUsage/GPUBufferUsage/GPUShaderStage/GPUMapMode/GPUColorWrite
+    // runtime value namespaces, so @webgpu/types must supply them and the two
+    // declaration sets collide on the interfaces they share.
+    "skipLibCheck": true,
+
+    "noEmit": true,
+    "rootDir": ".",
+    "resolveJsonModule": true
+  },
+  "include": ["src", "test", "e2e", "*.config.ts"]
+}

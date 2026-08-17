@@ -1,0 +1,38 @@
+{
+  "name": "rotyl",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --force",
+    "lint": "oxlint --type-aware",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build"
+  },
+  "dependencies": {
+    "preact": "10.29.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "webgpu"
+    ]
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@webgpu/types": "0.1.71",
+    "oxlint": "1.78.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "prettier": "3.9.6",
+    "typescript": "7.0.2",
+    "vite": "8.2.1",
+    "vitest": "4.1.10",
+    "webgpu": "0.4.0"
+  }
+}

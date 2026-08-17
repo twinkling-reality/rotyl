@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "autoPort": false,
+  "configurations": [
+    {
+      "name": "rotyl",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev", "--port", "5180", "--strictPort"],
+      "port": 5180
+    }
+  ]
+}

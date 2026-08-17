@@ -1,0 +1,37 @@
+{
+  // The architectural boundary, enforced by the compiler rather than by convention.
+  //
+  // src/core is the Rotyl engine: document model, colour math, view transform,
+  // mask, style pipeline and renderer. It must remain free of the DOM so it can
+  // run in a Web Worker, in Node (which is how every shader is unit-tested
+  // against Dawn), and in a future native host. Omitting "dom" from lib means
+  // any reference to window/document/HTMLElement/ImageBitmap fails to compile
+  // here, even though the app config would happily accept it.
+  //
+  // Browser-only concerns (decode, upload, encode, file input) live in
+  // src/platform, which may import core but never the reverse.
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "types": ["@webgpu/types"],
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["src/core"]
+}
