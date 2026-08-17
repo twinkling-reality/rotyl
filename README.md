@@ -186,6 +186,47 @@ out. The filter runs during replay rather than once, so the command log holds
 the model's own 256 px answer, 64 KB, and export reconstructs the
 boundary against the full-resolution image rather than magnifying a preview's.
 
+## Video, so far
+
+Open an MP4 or a MOV and the timeline appears. Scrub it and every frame goes
+through the same renderer a photograph does: the same style chain, the same
+composite, the same selection. Tracking does not exist yet, so a selection
+belongs to the frame it was made on.
+
+**There is no such thing as decoding frame N.** There is decoding from the
+keyframe at or before N and discarding what comes between, so what a scrub costs
+is set by keyframe spacing and by nothing else. Measured on 1080p30: the next
+frame costs 0.46 ms, a seek costs 12 ms on a clip with one-second keyframes and
+88 ms on the same content with a single keyframe. That one fact is the whole
+design of the frame provider — one decoder is held open and fed forward, and it
+re-seeks only when the target is behind the playhead or when a keyframe lies
+between the two, which is exactly when starting again is cheaper than
+continuing.
+
+Frames are addressed by index, and the index is built by walking the container
+rather than by dividing a duration by a frame rate. A variable frame rate, or
+the two-frame offset an edit list introduces on an ordinary file with B-frames,
+would both make "frame 1043" mean something different to the decoder than to the
+person who selected it — and eventually to the command log, which is what a
+frame index has to be exact for.
+
+**A decoded frame needs no colour path of its own.** It arrives as YCbCr, and
+what lands in the source texture is the same sRGB-encoded byte an image decodes
+to, within one code on a losslessly encoded probe. The sRGB view downstream then
+does the decode in hardware, exactly as it does for a photograph. Writing it
+through an sRGB view instead encodes it twice and is wrong by 73 codes at mid
+grey, which is the kind of thing that is obvious in a measurement and invisible
+in a review.
+
+The demuxer is mediabunny, reached through a dynamic import, so a session that
+never opens a video never fetches it. MP4 and QuickTime only: they share one
+demuxer, so accepting `.mov` costs 64 bytes, where Matroska is a second demuxer
+at 15 KB carrying codecs whose decode has not been measured here.
+
+What decided all of this, and what it cost to find out, is in
+`tools/video-bench` — including the two numbers that say tracking cannot live in
+the render loop.
+
 ## Measured
 
 Apple M3 Pro, Chrome. Medians over repeated runs, GPU-fenced.
@@ -217,9 +258,25 @@ A click is flat because the model always works at 1024 px square; only building
 that input scales with the photograph. Refinement adds 2 ms per engine mask to a
 mask rebuild at 24 MP, and a rebuild happens once per edit, not per frame.
 
-Bundle: 137 KB of JavaScript (47 KB gzipped), plus 31 KB of subset fonts. Two
-runtime dependencies, and the second is code-split: nothing of the inference
-runtime is fetched unless the Object tool is used.
+Video, on an ordinary 1080p30 clip:
+
+|                                  | 1 s keyframes | one keyframe |
+| -------------------------------- | ------------- | ------------ |
+| walk the container's index       | 1.8 ms        | 1.6 ms       |
+| decode the next frame            | 0.46 ms       | 0.46 ms      |
+| seek to an arbitrary frame       | 12 ms         | 88 ms        |
+| frame onto the GPU               | 0.9 ms        | 0.9 ms       |
+| render one new frame, draft tier | 16 ms         | 16 ms        |
+
+The last row is the whole renderer — style chain, composite and display — re-run
+because the source pixels changed, which is what every scrubbed frame is. It is
+also where the next work is: with nothing selected the styled layer is
+multiplied by a zero mask and thrown away, so most of those 16 ms buys nothing.
+
+Bundle: 141 KB of JavaScript (47 KB gzipped), plus 31 KB of subset fonts. Three
+runtime dependencies, and two of them are code-split: 36 KB gzipped of inference
+runtime that only the Object tool fetches, and 33 KB of demuxer that only a
+video fetches.
 
 ## Type and fonts
 
@@ -239,13 +296,22 @@ of geometry did not justify a dependency.
 
 ## Known limits
 
-- Images only. The renderer takes a source texture rather than an image, which
-  is the seam video would arrive through, but no video pipeline exists — no
-  decode, no frame index on the command log, nothing in the interface. What
-  does exist is the answer to whether one could be built: see
-  `tools/edgetam-export`, which produces the two graphs tracking needs and
-  demonstrates them holding a mask across ten frames, mask-for-mask identical
-  to the PyTorch tracker. Building it is untouched work.
+- Video can be opened and scrubbed, and nothing else. The command log has no
+  frame index, so a selection is not attached to the frame it was made on: scrub
+  away and it stays where it was drawn. Tracking does not exist. What is known
+  about building it is measured — `tools/video-bench` puts memory attention at
+  59 ms a frame on WebGPU and 38 at half precision, which with the encoder and
+  the decoder makes a tracked frame around 90 ms, so tracking runs behind the
+  playhead rather than in the render loop. The graphs it needs are produced by
+  `tools/edgetam-export`, which also demonstrates them holding a mask across ten
+  frames, mask-for-mask identical to the PyTorch tracker.
+- Video cannot be exported. Export renders one frame, which is the still it
+  always was.
+- WebM and Matroska are refused, by signature, with a message that says so.
+  They are a second demuxer at 15 KB and mostly carry codecs whose decode has
+  not been measured here.
+- Only one file per session: opening a second means reloading the page. That
+  predates video and is more obvious with it.
 - The print screen's pitch is a fraction of the image, not a distance in pixels,
   because that is what makes the preview and the export the same picture. At
   100% zoom on a very large photograph the dots are correspondingly large.
@@ -255,9 +321,16 @@ of geometry did not justify a dependency.
   about the object, answered by the model — not a subtraction from the mask, so
   removing a region that is already selected is still the eraser's job.
 - Object selection runs on the inference runtime's own WebGPU device, not
-  Rotyl's: it declines to accept an external one. The consequence is that the
-  model's input crosses back through system memory, 12 MB per image. Its
-  17 MB of embeddings do not, which is the number that would have mattered.
+  Rotyl's: it declines to accept an external one, and asked again against
+  1.27.0 it still does — the execution provider's `device` option fails session
+  creation whether or not the device is built with the features the runtime
+  asks for. The consequence is that the model's input crosses back through
+  system memory, 12 MB per image, which is 2.4 ms and not the bottleneck it
+  looked like. Its 17 MB of embeddings do not cross, which is the number that
+  would have mattered. For video the crossing is avoidable entirely: a
+  VideoFrame belongs to no device, so the tensor can be built on the runtime's
+  own device, which does take a GPU buffer as an input and returns the same
+  answer bit for bit.
 - The mask decoder is silently wrong on that runtime's older JSEP backend —
   no error, an all-zero confidence, and a mask of the wrong object — so the
   build is pinned. See `edgetam-engine.ts`.
