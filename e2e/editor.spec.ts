@@ -218,6 +218,51 @@ test('collapses the toolbar rather than clipping it on a narrow viewport', async
   await expect(page.getByRole('button', { name: 'Erase' })).toBeVisible();
 });
 
+test('rebuilds itself when the graphics device is lost', async ({ page }) => {
+  // The one thing only a browser can answer about recovery: that a real lost
+  // device is survivable. `device.destroy()` from outside the app is the
+  // closest thing to a driver reset that can be triggered on demand, and it
+  // invalidates every GPU object exactly as one would.
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const bounds = await canvas.boundingBox();
+  expect(bounds).not.toBeNull();
+  if (!bounds) return;
+
+  await page.mouse.move(bounds.x + bounds.width * 0.4, bounds.y + bounds.height * 0.4);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width * 0.6, bounds.y + bounds.height * 0.6, { steps: 10 });
+  await page.mouse.up();
+
+  const undo = page.getByRole('button', { name: 'Undo' });
+  await expect(undo).toBeEnabled();
+
+  const before = await page.evaluate(() => globalThis.rotyl?.generation ?? -1);
+  expect(before).toBe(0);
+  await page.evaluate(() => globalThis.rotyl?.device.destroy());
+
+  // A new device, and the image back on it, without anyone being asked to
+  // reload.
+  await expect.poll(() => page.evaluate(() => globalThis.rotyl?.generation ?? -1)).toBeGreaterThan(before);
+  await expect(page.getByText(/graphics device was lost/i)).toBeHidden();
+  await expect(page.getByText('Restoring')).toBeHidden();
+  await expect(canvas).toBeVisible();
+
+  // The selection is made of commands, and commands do not live on the GPU.
+  await expect(undo).toBeEnabled();
+
+  // And it still works, which a canvas showing the right pixels would not
+  // prove on its own.
+  await page.mouse.move(bounds.x + bounds.width * 0.3, bounds.y + bounds.height * 0.7);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width * 0.35, bounds.y + bounds.height * 0.75, { steps: 6 });
+  await page.mouse.up();
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByRole('button', { name: 'Redo' })).toBeEnabled();
+});
+
 test('does not let a stray drop navigate the page away', async ({ page }) => {
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();

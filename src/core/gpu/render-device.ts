@@ -55,24 +55,38 @@ export async function acquireRenderDevice(gpu: GPU | undefined): Promise<DeviceR
 }
 
 /**
- * Run `onLost` when the device is lost for a reason that is not our own
- * teardown.
+ * Watch a device, and get back the way to give it up.
  *
- * Recovering from `'destroyed'` would fight the caller's own disposal and loop
- * forever, so that case is deliberately ignored.
+ * `onLost` runs for a loss WE DID NOT CAUSE. The returned function destroys the
+ * device and marks that as deliberate, which is the whole distinction: a device
+ * torn down by the caller must not trigger a rebuild, or disposal and recovery
+ * would fight each other forever. Reading `'destroyed'` from the reason cannot
+ * make that distinction, because a device destroyed by something else is a
+ * device we have genuinely lost and should recover from.
  *
- * NOT IMPLEMENTED: automatic recovery. The app currently asks for a reload. The
- * pieces for something better are in place — the selection command log is
- * authoritative, so recovery would be rebuild resources, re-decode the source,
- * replay the log — but none of that is written, and an unimplemented recovery
- * path described as if it existed is worse than none.
+ * Recovery itself is not here: it means a new device, rebuilt resources, a
+ * re-decoded source and a replayed command log, and only the host knows where
+ * those come from. What is here is the signal, and the guarantee that our own
+ * teardown does not raise it.
  *
- * When it is written, it must restart from `requestAdapter`: an adapter can
- * only ever produce one device, so holding the old adapter is useless.
+ * A rebuild must restart from `requestAdapter`: an adapter can only ever
+ * produce one device, so holding the old adapter is useless.
  */
-export function onDeviceLost(device: GPUDevice, onLost: (reason: string) => void): void {
+export function watchDevice(
+  // Narrowed to what is actually touched, which is also what makes the rule
+  // above checkable without a GPU.
+  device: Pick<GPUDevice, 'lost' | 'destroy'>,
+  onLost: (reason: string) => void,
+): () => void {
+  let released = false;
+
   void device.lost.then((info) => {
-    if (info.reason === 'destroyed') return;
+    if (released) return;
     onLost(info.reason || 'unknown');
   });
+
+  return () => {
+    released = true;
+    device.destroy();
+  };
 }

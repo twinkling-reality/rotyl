@@ -1,6 +1,6 @@
 import { OUTPUT_FORMAT, OUTPUT_VIEW_FORMAT, SOURCE_FORMAT, SOURCE_VIEW_FORMAT } from '../gpu/formats.ts';
 import { ResourcePool } from '../gpu/resource-pool.ts';
-import { SelectionDocument } from '../document/selection-document.ts';
+import type { SelectionDocument } from '../document/selection-document.ts';
 import { hasAnyCoverage, type BrushStroke, type StrokePoint } from '../document/selection-command.ts';
 import { SelectionMask, type MaskReplayContext } from '../mask/selection-mask.ts';
 import { MaskRefiner } from '../mask/mask-refiner.ts';
@@ -52,11 +52,18 @@ interface Media {
  *   style      re-runs only when the source or a style control changes
  *   composite  re-runs when the selection changes (one pass)
  *   display    re-runs when the view or overlay changes (one pass)
+ *
+ * THE DOCUMENT IS PASSED IN, NOT CREATED HERE, and that is what makes a lost
+ * graphics device survivable. Everything this class owns belongs to one
+ * GPUDevice and dies with it; the command log belongs to the work and does not.
+ * Recovery is therefore a new engine on a new device around the same document,
+ * rather than a special path through this one.
  */
 export class RotylEngine {
-  readonly document = new SelectionDocument();
+  readonly document: SelectionDocument;
 
   readonly #device: GPUDevice;
+  readonly #unsubscribe: () => void;
   readonly #maxTextureDimension: number;
   readonly #composite: CompositeRenderer;
   readonly #display: DisplayRenderer;
@@ -77,18 +84,23 @@ export class RotylEngine {
   #maskRevision = -1;
 
   constructor(
+    document: SelectionDocument,
     device: GPUDevice,
     maxTextureDimension: number,
     canvasFormat: GPUTextureFormat,
     background: readonly [number, number, number],
   ) {
+    this.document = document;
     this.#device = device;
     this.#maxTextureDimension = maxTextureDimension;
     this.#composite = new CompositeRenderer(device);
     this.#display = new DisplayRenderer(device, canvasFormat, background);
     this.#refiner = new MaskRefiner(device);
 
-    this.document.subscribe(() => {
+    // Released on dispose. The document outlives any one engine, so a
+    // subscription left behind would keep a dead engine reachable and marking
+    // itself dirty for the rest of the session.
+    this.#unsubscribe = this.document.subscribe(() => {
       this.#maskRevision = -1;
       this.#compositeDirty = true;
     });
@@ -126,8 +138,13 @@ export class RotylEngine {
    * garbage collector — a full-resolution photograph is hundreds of megabytes,
    * and "load several images in a row" is the shortest path to exhausting a
    * tab's memory.
+   *
+   * `selection` is required rather than defaulted because both answers are
+   * right somewhere and the wrong one is silent: a different photograph must
+   * not inherit the last one's selection, and the same photograph arriving
+   * again after a lost device must not lose it.
    */
-  loadMedia(sourceSize: Dimensions): GPUTexture {
+  loadMedia(sourceSize: Dimensions, selection: 'clear' | 'keep'): GPUTexture {
     this.#media?.mask.dispose();
     this.#media?.pool.dispose();
 
@@ -165,7 +182,7 @@ export class RotylEngine {
       pool,
     };
 
-    this.document.reset();
+    if (selection === 'clear') this.document.reset();
     this.#live = undefined;
     this.#maskRevision = -1;
     this.#styleDirty = true;
@@ -388,6 +405,7 @@ export class RotylEngine {
   }
 
   dispose(): void {
+    this.#unsubscribe();
     this.#media?.mask.dispose();
     this.#media?.pool.dispose();
     this.#media = undefined;

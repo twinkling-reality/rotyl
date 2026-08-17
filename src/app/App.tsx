@@ -72,8 +72,39 @@ export function App(): JSX.Element {
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [historyRevision, setHistoryRevision] = useState(0);
   const [fitRequest, setFitRequest] = useState(0);
+  /** The runtime generation whose device currently holds the decoded pixels. */
+  const [mediaGeneration, setMediaGeneration] = useState<number | undefined>(undefined);
 
   const runtime: RotylRuntime | undefined = state.status === 'ready' ? state.runtime : undefined;
+
+  // A lost device takes the source texture with it. The command log survives in
+  // ordinary memory, so putting the image back is the whole of recovery here.
+  const restoring =
+    (state.status === 'ready' && state.recovering) ||
+    (runtime !== undefined && loaded !== undefined && mediaGeneration !== runtime.generation);
+  const activity = busy ?? (restoring ? 'Restoring' : undefined);
+
+  const uploadInto = useCallback(
+    async (target: RotylRuntime, file: File, selection: 'clear' | 'keep'): Promise<boolean> => {
+      const decoded = await decodeImageFile(file, target.maxTextureDimension);
+      if (!decoded.ok) {
+        setError(describeImageLoadError(decoded.error));
+        return false;
+      }
+
+      const { bitmap, width, height } = decoded.value;
+      const texture = target.engine.loadMedia({ width, height }, selection);
+      uploadImageToTexture(target.device, bitmap, texture);
+      // Released immediately: an ImageBitmap holds a full RGBA copy, which is
+      // 192 MB for a 48 megapixel photograph.
+      bitmap.close();
+      target.engine.markSourceUploaded();
+      target.perception.setFrame(target.engine.sceneFrame);
+      setMediaGeneration(target.generation);
+      return true;
+    },
+    [],
+  );
 
   const openFile = useCallback(
     async (file: File): Promise<void> => {
@@ -87,22 +118,12 @@ export function App(): JSX.Element {
       setError(undefined);
       setBusy('Opening');
 
-      const decoded = await decodeImageFile(file, runtime.maxTextureDimension);
-      if (!decoded.ok) {
+      if (!(await uploadInto(runtime, file, 'clear'))) {
         setBusy(undefined);
-        setError(describeImageLoadError(decoded.error));
         return;
       }
 
-      const { bitmap, width, height } = decoded.value;
-      const texture = runtime.engine.loadMedia({ width, height });
-      uploadImageToTexture(runtime.device, bitmap, texture);
-      // Released immediately: an ImageBitmap holds a full RGBA copy, which is
-      // 192 MB for a 48 megapixel photograph.
-      bitmap.close();
-      runtime.engine.markSourceUploaded();
-      runtime.perception.setFrame(runtime.engine.sceneFrame);
-
+      const { width, height } = runtime.engine.sourceSize ?? { width: 1, height: 1 };
       // Never zero: a tiny or extreme-aspect image would give a brush that
       // paints nothing, and the grow key multiplies, so it could never recover.
       setBrushRadius(Math.max(1, Math.round(Math.min(width, height) * DEFAULT_BRUSH_FRACTION)));
@@ -110,7 +131,7 @@ export function App(): JSX.Element {
       setHistoryRevision(runtime.engine.document.revision);
       setBusy(undefined);
     },
-    [runtime],
+    [runtime, uploadInto],
   );
 
   // Open a file that arrived before the device was ready.
@@ -119,6 +140,13 @@ export function App(): JSX.Element {
     setPending(undefined);
     void openFile(pending);
   }, [runtime, pending, openFile]);
+
+  // Put the image back on a rebuilt device, keeping the selection: the log is
+  // the work, and replaying it is what the renderer does with it anyway.
+  useEffect(() => {
+    if (!runtime || !loaded || mediaGeneration === runtime.generation) return;
+    void uploadInto(runtime, loaded.file, 'keep');
+  }, [runtime, loaded, mediaGeneration, uploadInto]);
 
   // The engine owns the selection; this only mirrors enough of it to drive the
   // undo and redo buttons.
@@ -147,10 +175,12 @@ export function App(): JSX.Element {
   // switching between them carries the prompt rather than ending it: draw a
   // box, then shift-click to correct what it caught.
   useEffect(() => {
-    if (!runtime || !loaded) return;
+    // Not while a rebuild is in flight: there is no frame to read yet, and
+    // asking for one is reported as a failure rather than as a wait.
+    if (!runtime || !loaded || restoring) return;
     if (isPrompt(tool)) void runtime.perception.prepare();
     else runtime.perception.endPrompt();
-  }, [runtime, loaded, tool]);
+  }, [runtime, loaded, tool, restoring]);
 
   useEffect(() => {
     runtime?.engine.setStyle(style);
@@ -321,7 +351,7 @@ export function App(): JSX.Element {
   }
 
   const selection = runtime?.engine.document;
-  const status = busy ?? describePerception(perception);
+  const status = activity ?? describePerception(perception);
   // Object selection can fail on its own — a download that will not complete,
   // a runtime the browser will not start — and it has no other surface.
   const notice = error ?? (perception.kind === 'failed' ? perception.message : undefined);
@@ -338,7 +368,7 @@ export function App(): JSX.Element {
         onUndo={() => selection?.undo()}
         onRedo={() => selection?.redo()}
         onExport={() => void onExport()}
-        exportDisabled={!loaded || busy !== undefined}
+        exportDisabled={!loaded || activity !== undefined}
       />
 
       {loaded && runtime ? (
@@ -348,7 +378,7 @@ export function App(): JSX.Element {
             tool={tool}
             brushRadius={brushRadius}
             overlayVisible={overlayVisible}
-            paused={busy !== undefined}
+            paused={activity !== undefined}
             fitRequest={fitRequest}
             candidates={candidates}
             chosenCandidate={chosenCandidate}
