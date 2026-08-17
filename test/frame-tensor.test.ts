@@ -75,8 +75,13 @@ let anisotropic: Tensor;
 beforeAll(async () => {
   const { device } = await testDevice();
   const encoder = new FrameTensorEncoder(device, { size: SIZE, mean: MEAN, std: STD });
+  // Every source outlives its case and is released with the device. Creating
+  // and destroying textures between cases is churn the Dawn Node binding
+  // tolerates poorly, and it shows up as a worker abort rather than a failure.
+  const sources: GPUTexture[] = [];
   disposeWithTestDevice(() => {
     encoder.dispose();
+    for (const source of sources) source.destroy();
   });
 
   const run = async (width: number, height: number, pixels: Uint8Array): Promise<Tensor> => {
@@ -86,6 +91,7 @@ beforeAll(async () => {
       viewFormats: [SOURCE_VIEW_FORMAT],
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     });
+    sources.push(source);
     writeTextureRgba(device, source, width, height, pixels);
 
     const commands = device.createCommandEncoder();
@@ -93,7 +99,6 @@ beforeAll(async () => {
     device.queue.submit([commands.finish()]);
 
     const values = await encoder.read();
-    source.destroy();
 
     return {
       at: (channel, x, y) => values[channel * SIZE * SIZE + y * SIZE + x] ?? Number.NaN,

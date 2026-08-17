@@ -225,6 +225,41 @@ describe('the expensive half', () => {
   });
 });
 
+describe('teardown', () => {
+  it('releases an engine that arrives after it', async () => {
+    let release: ((engine: SegmentationEngine) => void) | undefined;
+    const document = new SelectionDocument();
+    const { engine, recorded } = fakeEngine();
+    let disposedEngine = false;
+    const wrapped: SegmentationEngine = {
+      encode: (scene) => engine.encode(scene),
+      decode: (embedding, prompt) => engine.decode(embedding, prompt),
+      dispose: () => {
+        disposedEngine = true;
+      },
+    };
+    const store = new PerceptionStore(
+      document,
+      () =>
+        new Promise<SegmentationEngine>((resolve) => {
+          release = resolve;
+        }),
+    );
+    store.setFrame(FRAME);
+
+    const pending = store.select({ x: 10, y: 10 }, 'object');
+    store.dispose();
+    release?.(wrapped);
+    await pending;
+
+    // A twenty-megabyte model finishing loading after the editor has gone is
+    // not an error, but keeping it is a leak.
+    expect(disposedEngine).toBe(true);
+    expect(recorded.encodes.length).toBe(0);
+    expect(document.appliedCommands.length).toBe(0);
+  });
+});
+
 describe('a result the user has moved past', () => {
   it('never lands, even when it arrives last', async () => {
     // The first decode is made to finish after the second, which is the case

@@ -88,6 +88,7 @@ export class PerceptionStore {
 
   /** Discards results from prompts the user has already moved past. */
   #sequence = 0;
+  #disposed = false;
 
   constructor(document: SelectionDocument, load: EngineLoader) {
     this.#document = document;
@@ -196,9 +197,15 @@ export class PerceptionStore {
 
   dispose(): void {
     this.#sequence++;
+    this.#disposed = true;
+    // Clearing the frame is what makes an encode still in flight release its
+    // own result: it checks the frame it was reading against the current one
+    // and disposes rather than storing an embedding nobody will ever free.
+    this.#frame = undefined;
     this.#releaseEmbedding();
     this.#engine?.dispose();
     this.#engine = undefined;
+    // A load in flight has nowhere to arrive; `#ensureEngine` releases it.
     this.#loading = undefined;
     this.#listeners.clear();
   }
@@ -223,6 +230,10 @@ export class PerceptionStore {
       const engine = await this.#load((progress) => {
         if (this.#status.kind === 'loading') this.#setStatus({ kind: 'loading', progress });
       });
+      if (this.#disposed) {
+        engine.dispose();
+        throw new Error('PerceptionStore: disposed while the engine was loading');
+      }
       this.#engine = engine;
       this.#setStatus({ kind: 'ready' });
       return engine;
