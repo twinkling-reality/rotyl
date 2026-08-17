@@ -17,6 +17,7 @@
     "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build"
   },
   "dependencies": {
+    "onnxruntime-web": "1.27.0",
     "preact": "10.29.8"
   },
   "pnpm": {

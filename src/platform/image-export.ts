@@ -6,6 +6,7 @@ import { SOURCE_FORMAT, SOURCE_VIEW_FORMAT } from '../core/gpu/formats.ts';
 import type { SelectionCommand } from '../core/document/selection-command.ts';
 import type { ComicControls } from '../core/style/comic-params.ts';
 import type { CompositeRenderer } from '../core/render/composite-renderer.ts';
+import type { MaskRefiner } from '../core/mask/mask-refiner.ts';
 
 export type ExportFormat = 'png' | 'jpeg';
 
@@ -14,6 +15,7 @@ export interface ExportOptions {
   readonly maxTextureDimension: number;
   /** Borrowed from the engine so export does not duplicate the pipeline set. */
   readonly renderer: CompositeRenderer;
+  readonly refiner: MaskRefiner;
   /** The original file, re-decoded so export is never limited by the preview cap. */
   readonly file: Blob;
   readonly commands: readonly SelectionCommand[];
@@ -44,7 +46,7 @@ const JPEG_QUALITY = 0.92;
  * 256-byte alignment WebGPU imposes on texture-to-buffer copies.
  */
 export async function exportImage(options: ExportOptions): Promise<ExportResult> {
-  const { device, maxTextureDimension, renderer, file, commands, controls, format } = options;
+  const { device, maxTextureDimension, renderer, refiner, file, commands, controls, format } = options;
 
   const decoded = await decodeImageFile(file, maxTextureDimension);
   if (!decoded.ok) throw new Error('The original file could no longer be decoded.');
@@ -85,6 +87,7 @@ export async function exportImage(options: ExportOptions): Promise<ExportResult>
     await renderExport({
       device,
       renderer,
+      refiner,
       sourceTexture,
       sourceSize: { width, height },
       commands,

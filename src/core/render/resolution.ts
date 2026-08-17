@@ -51,3 +51,21 @@ export function outputDimensions(
 export function shortEdge({ width, height }: Dimensions): number {
   return Math.min(width, height);
 }
+
+/**
+ * Fit a working buffer to `shortEdge` while preserving the source aspect ratio.
+ *
+ * Every stage that derives its own resolution from a requested apparent scale
+ * ends here — the style chain's flatten and ink buffers, and the mask
+ * refinement's statistics buffer. Never enlarges: a stage asking for more
+ * resolution than the source has would be inventing detail.
+ */
+export function bufferSizeForShortEdge(source: Dimensions, target: number): Dimensions {
+  const sourceShort = Math.min(source.width, source.height);
+  if (sourceShort <= 0) return { width: 1, height: 1 };
+  const scale = Math.min(1, target / sourceShort);
+  return {
+    width: Math.max(1, Math.round(source.width * scale)),
+    height: Math.max(1, Math.round(source.height * scale)),
+  };
+}

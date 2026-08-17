@@ -1,7 +1,8 @@
 import type { CompositeRenderer } from './composite-renderer.ts';
 import { SelectionMask } from '../mask/selection-mask.ts';
+import type { MaskRefiner } from '../mask/mask-refiner.ts';
 import { outputDimensions, type Dimensions } from './resolution.ts';
-import { OUTPUT_VIEW_FORMAT } from '../gpu/formats.ts';
+import { OUTPUT_VIEW_FORMAT, SOURCE_VIEW_FORMAT } from '../gpu/formats.ts';
 import type { SelectionCommand } from '../document/selection-command.ts';
 import type { ComicControls } from '../style/comic-params.ts';
 
@@ -17,6 +18,8 @@ export interface ExportRequest {
    * preview's, so the next interactive frame reallocates once.
    */
   readonly renderer: CompositeRenderer;
+  /** Borrowed for the same reason, and used only if the log holds engine masks. */
+  readonly refiner: MaskRefiner;
   /** Full-resolution source, re-decoded from the original file. */
   readonly sourceTexture: GPUTexture;
   readonly sourceSize: Dimensions;
@@ -50,7 +53,7 @@ export function exportDimensions(source: Dimensions, maxTextureDimension: number
  * use-after-free that presents as an intermittent hard crash.
  */
 export async function renderExport(request: ExportRequest): Promise<void> {
-  const { device, renderer, sourceTexture, sourceSize, commands, controls, target } = request;
+  const { device, renderer, refiner, sourceTexture, sourceSize, commands, controls, target } = request;
 
   const outputSize = { width: target.width, height: target.height };
   const mask = new SelectionMask(
@@ -64,7 +67,15 @@ export async function renderExport(request: ExportRequest): Promise<void> {
   try {
     const encoder = device.createCommandEncoder({ label: 'export' });
     mask.beginFrame();
-    mask.replay(encoder, commands);
+    refiner.beginFrame();
+    // Engine masks are refined against the full-resolution source at export
+    // resolution, not magnified from the preview's matte — the same argument
+    // that makes a brush stroke replay exactly rather than being upscaled.
+    mask.replay(encoder, commands, {
+      refiner,
+      guideView: sourceTexture.createView({ format: SOURCE_VIEW_FORMAT }),
+      guideSize: sourceSize,
+    });
 
     const compositeRequest = {
       sourceTexture,

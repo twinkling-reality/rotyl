@@ -2,7 +2,8 @@ import { OUTPUT_FORMAT, OUTPUT_VIEW_FORMAT, SOURCE_FORMAT, SOURCE_VIEW_FORMAT } 
 import { ResourcePool } from '../gpu/resource-pool.ts';
 import { SelectionDocument } from '../document/selection-document.ts';
 import { hasAnyCoverage, type BrushStroke, type StrokePoint } from '../document/selection-command.ts';
-import { SelectionMask } from '../mask/selection-mask.ts';
+import { SelectionMask, type MaskReplayContext } from '../mask/selection-mask.ts';
+import { MaskRefiner } from '../mask/mask-refiner.ts';
 import { DEFAULT_COMIC_CONTROLS, type ComicControls, type StyleQuality } from '../style/comic-params.ts';
 import { CompositeRenderer } from './composite-renderer.ts';
 import { DisplayRenderer, OVERLAY_VISIBLE, type OverlayState } from './display-renderer.ts';
@@ -49,6 +50,7 @@ export class RotylEngine {
   readonly #maxTextureDimension: number;
   readonly #composite: CompositeRenderer;
   readonly #display: DisplayRenderer;
+  readonly #refiner: MaskRefiner;
 
   #media: Media | undefined;
   #controls: ComicControls = DEFAULT_COMIC_CONTROLS;
@@ -73,6 +75,7 @@ export class RotylEngine {
     this.#maxTextureDimension = maxTextureDimension;
     this.#composite = new CompositeRenderer(device);
     this.#display = new DisplayRenderer(device, canvasFormat, background);
+    this.#refiner = new MaskRefiner(device);
 
     this.document.subscribe(() => {
       this.#maskRevision = -1;
@@ -241,10 +244,18 @@ export class RotylEngine {
     return this.#styleDirty || this.#compositeDirty || this.#displayDirty || this.#maskRevision === -1;
   }
 
+  #replayContext(media: Media): MaskReplayContext {
+    return {
+      refiner: this.#refiner,
+      guideView: media.sourceTexture.createView({ format: SOURCE_VIEW_FORMAT }),
+      guideSize: media.sourceSize,
+    };
+  }
+
   #updateMask(encoder: GPUCommandEncoder, media: Media): void {
     const revision = this.document.revision;
     if (this.#maskRevision !== revision) {
-      media.mask.replay(encoder, this.document.appliedCommands);
+      media.mask.replay(encoder, this.document.appliedCommands, this.#replayContext(media));
       this.#maskRevision = revision;
       if (this.#live) this.#live.stamped = 0;
     }
@@ -272,6 +283,7 @@ export class RotylEngine {
 
     const encoder = this.#device.createCommandEncoder({ label: 'frame' });
     media.mask.beginFrame();
+    this.#refiner.beginFrame();
 
     const request = {
       sourceTexture: media.sourceTexture,
@@ -340,6 +352,11 @@ export class RotylEngine {
     return this.#composite;
   }
 
+  /** Borrowed by export for the same reason, and on the same terms. */
+  get maskRefiner(): MaskRefiner {
+    return this.#refiner;
+  }
+
   invalidateStyle(): void {
     this.#styleDirty = true;
   }
@@ -350,5 +367,6 @@ export class RotylEngine {
     this.#media = undefined;
     this.#composite.dispose();
     this.#display.dispose();
+    this.#refiner.dispose();
   }
 }

@@ -1,10 +1,26 @@
 import { MASK_FORMAT } from '../gpu/formats.ts';
 import { ResourcePool } from '../gpu/resource-pool.ts';
 import { FullscreenPass } from '../gpu/fullscreen-pass.ts';
-import type { BrushStroke, CoverageMask, SelectionCommand } from '../document/selection-command.ts';
+import type { BrushStroke, SelectionCommand } from '../document/selection-command.ts';
+import type { Dimensions } from '../render/resolution.ts';
+import type { MaskRefiner } from './mask-refiner.ts';
 import colorWgsl from '../style/wgsl/color.wgsl?raw';
 import brushStampWgsl from './wgsl/brush-stamp.wgsl?raw';
 import maskOpWgsl from './wgsl/mask-op.wgsl?raw';
+
+/**
+ * What a replay needs in order to reconstruct an engine mask's boundary.
+ *
+ * The refiner is borrowed rather than owned, for the reason export borrows the
+ * composite renderer: a second copy is a duplicate of every pipeline in it, and
+ * building one per export churned Dawn hard enough to destabilise it.
+ */
+export interface MaskReplayContext {
+  readonly refiner: MaskRefiner;
+  /** An sRGB view of the full-resolution source. */
+  readonly guideView: GPUTextureView;
+  readonly guideSize: Dimensions;
+}
 
 /** segment (x0, y0, x1, y1) followed by brush (radius, hardness, polarity, unused). */
 const FLOATS_PER_INSTANCE = 8;
@@ -319,31 +335,69 @@ export class SelectionMask {
    * about objects the user has not selected. None of that reaches the renderer
    * except through this call, applied deliberately and recorded in the command
    * log like any other edit.
+   *
+   * An engine mask is a few hundred pixels square whatever the photograph is,
+   * so something has to decide where its boundary really lies. With `refine`
+   * set that is the guided filter, reading the image itself; without it the
+   * sampler simply magnifies, which is correct for a mask that already has the
+   * resolution it needs.
    */
-  applyCoverage(encoder: GPUCommandEncoder, mask: CoverageMask, op: 'replace' | 'add' | 'subtract'): void {
+  applyCoverage(
+    encoder: GPUCommandEncoder,
+    command: Extract<SelectionCommand, { kind: 'applyMask' }>,
+    context?: MaskReplayContext,
+  ): void {
+    const { mask, op, refine } = command;
     const staging = this.#device.createTexture({
       label: 'applied-coverage',
       size: { width: mask.width, height: mask.height },
       format: MASK_FORMAT,
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     });
-    // Engine masks are routinely far smaller than the media; the sampler
-    // magnifies, which is where boundary refinement would eventually live.
     this.#device.queue.writeTexture(
       { texture: staging },
       mask.coverage,
       { bytesPerRow: mask.width, rowsPerImage: mask.height },
       { width: mask.width, height: mask.height },
     );
-
-    this.#runOperation(encoder, op, staging);
-    // Held until the next frame: the pass reads this texture when the command
-    // buffer is submitted, not when it is recorded.
+    // Held until the next frame: the passes below read these textures when the
+    // command buffer is submitted, not when it is recorded.
     this.#retired.push(staging);
+
+    let incoming = staging;
+    if (refine) {
+      if (!context) {
+        // Silently magnifying instead would produce a plausible mask with the
+        // wrong boundary, which is far worse than refusing.
+        throw new Error('SelectionMask: a refined mask needs a replay context to refine against');
+      }
+      const refined = this.#device.createTexture({
+        label: 'refined-coverage',
+        size: { width: this.width, height: this.height },
+        format: MASK_FORMAT,
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
+      });
+      this.#retired.push(refined);
+      context.refiner.refine(encoder, {
+        guideView: context.guideView,
+        guideSize: context.guideSize,
+        coarse: staging,
+        target: refined.createView(),
+        targetSize: { width: this.width, height: this.height },
+        settings: refine,
+      });
+      incoming = refined;
+    }
+
+    this.#runOperation(encoder, op, incoming);
   }
 
   /** Rebuild the whole mask from a command log. */
-  replay(encoder: GPUCommandEncoder, commands: readonly SelectionCommand[]): void {
+  replay(
+    encoder: GPUCommandEncoder,
+    commands: readonly SelectionCommand[],
+    context?: MaskReplayContext,
+  ): void {
     this.clear(encoder);
     for (const command of commands) {
       switch (command.kind) {
@@ -360,7 +414,7 @@ export class SelectionMask {
           this.invert(encoder);
           break;
         case 'applyMask':
-          this.applyCoverage(encoder, command.mask, command.op);
+          this.applyCoverage(encoder, command, context);
           break;
       }
     }

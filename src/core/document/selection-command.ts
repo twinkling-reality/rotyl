@@ -14,6 +14,8 @@
  * Every coordinate here is in IMAGE space, never screen space.
  */
 
+import type { RefineSettings } from '../mask/refine-params.ts';
+
 export interface StrokePoint {
   readonly x: number;
   readonly y: number;
@@ -29,9 +31,14 @@ export interface BrushStroke {
 }
 
 /**
- * A mask produced outside the brush — today only by tests, tomorrow by a
- * segmentation engine. Stored as full-resolution 8-bit coverage so it replays
- * exactly like every other command.
+ * A mask produced outside the brush: by a segmentation engine, or by a test.
+ *
+ * Stored at whatever resolution produced it, which for an engine is a few
+ * hundred pixels square regardless of the photograph. Keeping it small is the
+ * point — it is a resolution-independent statement about the image in exactly
+ * the way a stroke's coordinates are, so replaying it into a larger mask
+ * reconstructs the boundary rather than magnifying an old one, and no edit ever
+ * costs a full-resolution snapshot.
  */
 export interface CoverageMask {
   readonly width: number;
@@ -81,5 +88,16 @@ export type SelectionCommand =
    * except through a command like this one, applied deliberately and undoably.
    * An engine that could write the render mask directly would collapse the
    * distinction between what Rotyl understands and what Rotyl draws.
+   *
+   * `refine` carries the settings the boundary was reconstructed with rather
+   * than reading a module-level default, so that replaying an old log
+   * reproduces the mask it produced at the time. Omitting it magnifies the
+   * coverage as given, which is what a test wants and what a hand-authored
+   * full-resolution mask needs.
    */
-  | { readonly kind: 'applyMask'; readonly mask: CoverageMask; readonly op: 'replace' | 'add' | 'subtract' };
+  | {
+      readonly kind: 'applyMask';
+      readonly mask: CoverageMask;
+      readonly op: 'replace' | 'add' | 'subtract';
+      readonly refine?: RefineSettings;
+    };

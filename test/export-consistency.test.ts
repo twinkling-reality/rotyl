@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { disposeWithTestDevice, readTextureRgba, testDevice, writeTextureRgba } from './gpu-harness.ts';
 import { renderExport } from '../src/core/render/export-renderer.ts';
 import { CompositeRenderer } from '../src/core/render/composite-renderer.ts';
+import { MaskRefiner } from '../src/core/mask/mask-refiner.ts';
 import {
   OUTPUT_FORMAT,
   OUTPUT_VIEW_FORMAT,
@@ -58,11 +59,13 @@ function centreStroke(size: number): SelectionCommand {
 async function exportAt(size: number): Promise<Uint8Array> {
   const { device } = await testDevice();
   const renderer = new CompositeRenderer(device);
+  const refiner = new MaskRefiner(device);
   // Released with the device rather than here: tearing a pipeline set down
   // immediately after the frame that used it is exactly the churn the Dawn
   // Node binding is least stable under.
   disposeWithTestDevice(() => {
     renderer.dispose();
+    refiner.dispose();
   });
 
   const sourcePixels = gradientImage(size, size);
@@ -84,6 +87,7 @@ async function exportAt(size: number): Promise<Uint8Array> {
   await renderExport({
     device,
     renderer,
+    refiner,
     sourceTexture,
     sourceSize: { width: size, height: size },
     // The stroke is expressed as a fraction of this image, so the same

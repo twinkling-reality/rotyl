@@ -1,8 +1,8 @@
 import { FullscreenPass, UniformRing } from '../gpu/fullscreen-pass.ts';
 import { ResourcePool } from '../gpu/resource-pool.ts';
 import { SCALAR_FORMAT, WORKING_FORMAT } from '../gpu/formats.ts';
-import { bufferSizeForShortEdge, type ComicParams } from './comic-params.ts';
-import type { Dimensions } from '../render/resolution.ts';
+import type { ComicParams } from './comic-params.ts';
+import { bufferSizeForShortEdge, type Dimensions } from '../render/resolution.ts';
 
 import colorWgsl from './wgsl/color.wgsl?raw';
 import inkWgsl from './wgsl/ink.wgsl?raw';

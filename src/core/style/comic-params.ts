@@ -193,17 +193,3 @@ export function resolveComicParams(
     styleMix: strength < NO_OP_FADE ? strength / NO_OP_FADE : 1,
   };
 }
-
-/** Fit a buffer to `shortEdge` while preserving the source aspect ratio. */
-export function bufferSizeForShortEdge(
-  source: { width: number; height: number },
-  shortEdge: number,
-): { width: number; height: number } {
-  const sourceShort = Math.min(source.width, source.height);
-  if (sourceShort <= 0) return { width: 1, height: 1 };
-  const scale = Math.min(1, shortEdge / sourceShort);
-  return {
-    width: Math.max(1, Math.round(source.width * scale)),
-    height: Math.max(1, Math.round(source.height * scale)),
-  };
-}

@@ -105,6 +105,7 @@ export function App(): JSX.Element {
         device: runtime.device,
         maxTextureDimension: runtime.maxTextureDimension,
         renderer: runtime.engine.compositeRenderer,
+        refiner: runtime.engine.maskRefiner,
         file: loaded.file,
         commands: runtime.engine.document.appliedCommands,
         controls,
