@@ -36,17 +36,15 @@ it for real through Dawn in Node, with no browser and no mocks.
 ### The render path
 
 ```
-source ──┬─────────────────────────────────────────────┐
-         │                                             │
-         └─► flatten (small buffer)                    │
-               └─► ink (medium buffer)                 │
-                     └─► cel + ink ──► styled ──┐      │
-                                                ▼      ▼
-                                     composite: mix(source, styled, mask)
-                                                ▼
-                                         ┌──────┴──────┐
-                                    export file   display pass
-                                                  (view + overlay)
+source ──┬──────────────────────────────────┐
+         │                                  │
+         └─► style chain ──► styled ──┐     │
+                                      ▼     ▼
+                        composite: mix(source, styled, mask)
+                                      ▼
+                               ┌──────┴──────┐
+                          export file   display pass
+                                        (view + overlay)
 ```
 
 Three things follow from this shape:
@@ -62,23 +60,50 @@ display pass, which export never reaches, so a UI affordance cannot leak into a
 saved file.
 
 **Boundaries have no seam.** Every stage before the composite runs over the
-whole image. Masking earlier would be cheaper but wrong: the flatten and ink
-kernels sample well outside their own pixel, so pixels just inside the selection
-would be computed from zeroed neighbours and draw a halo.
+whole image. Masking earlier would be cheaper but wrong: a style's kernels
+sample well outside their own pixel, so pixels just inside the selection would
+be computed from zeroed neighbours and draw a halo.
+
+### A style is a texture and a mix
+
+Nothing outside `src/core/style` knows what a style does. One declares its
+controls as named values in 0..1 and turns the source into a styled texture at
+output resolution; the compositor blends it through the mask and knows nothing
+else. The UI builds its sliders from the declaration, so a style is a directory
+and a line in `styles.ts` — the engine, the export path, the composite and the
+panel are untouched.
+
+**Comic** flattens with an anisotropic Kuwahara filter, finds contours with a
+flow-based difference of Gaussians along the structure tensor, then quantises to
+cel bands and multiplies the ink over them. Nineteen passes over three
+differently-sized buffers.
+
+**Print** separates the image into four ink densities and screens each one at
+its own angle, over warm paper, slightly misregistered. Three passes, only the
+last at output resolution.
+
+They share the colour maths, a box downsample and the shape of a fullscreen
+pass, and nothing else. That is the test: the second style landed without a line
+changing in the compositor, and both are held to the same contract by the same
+harness in `test/style-harness.ts`.
 
 ### Resolution is derived, not configured
 
-The flatten (anisotropic Kuwahara) and ink (flow-based DoG) stages each have a
-characteristic radius. Written the obvious way that radius is a pixel count
-which must grow with resolution to keep the look constant — and cost then grows
-with the _fourth_ power of resolution.
+Both styles have a characteristic length — a Kuwahara radius, a screen pitch.
+Written the obvious way that length is a pixel count which must grow with
+resolution to keep the look constant, and cost then grows with the _fourth_
+power of resolution.
 
-So it is inverted: each stage declares the apparent scale it wants as a fraction
-of the image, and its buffer resolution is derived to hold the radius near a
-constant. Cost becomes linear in pixels, and "more detail" buys resolution
-rather than kernel width. Because every length is a fraction of the image and
-never of the output buffer, preview and export compose identically — that is a
-property of `comic-params.ts` alone, and it is tested there exactly.
+So it is inverted. Each stage declares the apparent scale it wants as a fraction
+of the image, and its buffer resolution is _derived_ to hold that scale. Cost
+becomes linear in pixels, "more detail" buys resolution rather than kernel
+width, and a coarser halftone costs less rather than more — a screen carries no
+detail below its own cell, so the buffer feeding it shrinks as the dots grow.
+
+Because every length is a fraction of the image and never of the output buffer,
+preview and export compose identically. That is a property of the two parameter
+modules alone, and it is tested in each of them exactly, across every output
+size and quality tier.
 
 ### The selection is a command log
 
@@ -147,6 +172,11 @@ The style chain only re-runs when a style control changes, never while brushing
 slider drag the chain drops to a draft tier: 8.9 ms at default detail on a 12 MP
 image, 27 ms at maximum detail.
 
+Those three rows are the comic style. The print chain has not been timed the
+same way; it is three passes against nineteen, and only one of them runs at
+output resolution, so it should be well under the comic figures — but that is an
+argument, not a measurement.
+
 Object selection, once the model is loaded:
 
 |                                | 1 MP  | 24 MP |
@@ -158,7 +188,7 @@ A click is flat because the model always works at 1024 px square; only building
 that input scales with the photograph. Refinement adds 2 ms per engine mask to a
 mask rebuild at 24 MP, and a rebuild happens once per edit, not per frame.
 
-Bundle: 118 KB of JavaScript (40 KB gzipped), plus 31 KB of subset fonts. Two
+Bundle: 130 KB of JavaScript (44 KB gzipped), plus 31 KB of subset fonts. Two
 runtime dependencies, and the second is code-split: nothing of the inference
 runtime is fetched unless the Object tool is used.
 
@@ -182,6 +212,9 @@ of geometry did not justify a dependency.
 
 - Images only. The renderer takes a source texture rather than an image, which
   is the seam video would arrive through, but no video pipeline exists.
+- The print screen's pitch is a fraction of the image, not a distance in pixels,
+  because that is what makes the preview and the export the same picture. At
+  100% zoom on a very large photograph the dots are correspondingly large.
 - Object selection needs the network once, to fetch the model, and around 36 MB
   of it. The image never leaves the machine; the model has to arrive on it.
 - The three candidates each click produces are kept but not offered. Only the
