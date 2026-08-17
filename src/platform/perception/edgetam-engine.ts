@@ -179,9 +179,12 @@ export async function loadEdgeTamEngine(options: EdgeTamOptions): Promise<Segmen
   const ort = await import('onnxruntime-web/webgpu');
   ort.env.wasm.wasmPaths = { wasm: ortWasmUrl };
 
-  // Decided before anything is downloaded, from the hardware rather than from
-  // the runtime: this build exposes no device until a session exists, and by
-  // then twenty megabytes have already been fetched.
+  // Decided from the adapter rather than from the runtime, and before anything
+  // is downloaded. The native build does expose its device once the module is
+  // imported, so asking it would be possible — but the answer would then depend
+  // on the runtime having started, which is an ordering dependency this
+  // decision does not need and which the JSEP build cannot satisfy at all.
+  // Shader-f16 is a property of the hardware; ask the hardware.
   const variant = edgetamVariant(supportsF16);
   const total = variantBytes(variant);
   const { encoder, decoder } = await createSessions(ort, variant, (received) => {
