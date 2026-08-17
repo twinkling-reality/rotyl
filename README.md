@@ -117,6 +117,15 @@ is the shape that was drawn rather than a magnified approximation.
 reach the renderer, and it is how object selection connects — deliberately, and
 undoably.
 
+It is also what makes a lost graphics device survivable. Everything the renderer
+owns belongs to one `GPUDevice` and dies with it; the log belongs to the work
+and does not, so the document is created outside the engine and handed to each
+one in turn. A loss costs the decoded pixels, which are read from the file
+again, and nothing else: a new device, a new engine around the same log, the
+image re-uploaded, and the view carried across so the canvas comes back where it
+was. Three rebuilds inside a minute is a driver that will keep doing it, and
+that is the point at which it says so rather than looping.
+
 ## Selecting an object
 
 Click one with the Object tool and the whole thing is selected. Shift-click adds
@@ -250,8 +259,9 @@ of geometry did not justify a dependency.
 - Preview is capped at 4096 px on the long edge to bound memory. Export always
   renders at full resolution, so for larger images the preview is a downscale of
   the export rather than identical to it.
-- A lost GPU device asks for a reload. The command log makes real recovery
-  cheap to add, but it is not implemented.
+- A lost GPU device is rebuilt around, but object selection pays for it: the
+  inference runtime's own device goes with ours, so the model is loaded again on
+  the next click. Its weights are in Cache Storage, so nothing is re-downloaded.
 - Erasing away an entire selection without pressing Clear leaves the selection
   overlay on, because coverage is inferred from the command log rather than read
   back from the GPU.
