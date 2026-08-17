@@ -1,0 +1,11 @@
+# Pinned to what the export was verified against. The transformers version
+# matters most: EdgeTamVideoModel, the full tracker, arrived in 5.x and is what
+# makes exporting the memory modules possible at all.
+numpy==2.5.2
+onnx==1.22.0
+onnxruntime==1.28.0
+pillow==12.3.0
+timm==1.0.28
+torch==2.13.0
+torchvision==0.28.0
+transformers==5.15.0

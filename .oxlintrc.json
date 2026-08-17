@@ -6,7 +6,10 @@
     "suspicious": "error",
     "perf": "warn"
   },
-  "env": { "browser": true, "es2024": true },
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
   "rules": {
     "typescript/no-explicit-any": "error",
     "typescript/consistent-type-imports": "error",
@@ -28,12 +31,16 @@
     },
     {
       "files": ["test/**", "e2e/**", "*.config.ts"],
-      "rules": { "no-console": "off" }
+      "rules": {
+        "no-console": "off"
+      }
     },
     {
       "files": ["src/core/color/oklab.ts"],
-      "rules": { "no-underscore-dangle": "off" }
+      "rules": {
+        "no-underscore-dangle": "off"
+      }
     }
   ],
-  "ignorePatterns": ["dist", "node_modules", ".scratch"]
+  "ignorePatterns": ["dist", "node_modules", ".scratch", "tools/*/venv"]
 }
