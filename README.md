@@ -190,8 +190,32 @@ boundary against the full-resolution image rather than magnifying a preview's.
 
 Open an MP4 or a MOV and the timeline appears. Scrub it and every frame goes
 through the same renderer a photograph does: the same style chain, the same
-composite, the same selection. Tracking does not exist yet, so a selection
-belongs to the frame it was made on.
+composite, the same selection. Export saves the frame on screen at full
+resolution, named for it. Tracking does not exist yet.
+
+**A selection belongs to the frame it was made on, and to no other.** The
+tempting alternative is to hold the last selection forward until something
+replaces it, and it is wrong for the reason everything else here is stated in
+image pixels: a stroke says where something was when it was drawn, so carrying
+frame 3's stroke to frame 200 puts it wherever the object has since moved away
+from. So the log is sparse — a frame nobody has edited has nothing selected —
+and the hole that leaves is exactly the one tracking fills, by producing frame
+200's command from frame 3's prompt rather than by the log pretending it already
+had one.
+
+Two things follow, and both are the difference between honest and usable. The
+timeline marks the frames that carry an edit, because a selection that vanishes
+when you scrub and leaves no trace is a selection nobody can find again. And
+undo moves the playhead to whatever it undid: the log is one list with one
+cursor, so undo means the last thing you did, which may be somewhere you are not
+looking — an edit disappearing in front of you is undo, and an edit disappearing
+off screen is a bug report. Following the cursor also disarms the sharp edge,
+since the next stroke discards the redo tail and now does it on the frame the
+user is actually on.
+
+A still image is a one-frame document. `frame` is required on every command
+rather than optional, so there is no second shape to reason about and no branch
+anywhere asking which kind of file this is.
 
 **There is no such thing as decoding frame N.** There is decoding from the
 keyframe at or before N and discarding what comes between, so what a scrub costs
@@ -302,17 +326,19 @@ of geometry did not justify a dependency.
 
 ## Known limits
 
-- Video can be opened and scrubbed, and nothing else. The command log has no
-  frame index, so a selection is not attached to the frame it was made on: scrub
-  away and it stays where it was drawn. Tracking does not exist. What is known
-  about building it is measured — `tools/video-bench` puts memory attention at
+- Video can be opened, scrubbed, selected on, and exported one frame at a time.
+  Tracking does not exist, so a selection has to be made on each frame it should
+  apply to. What is known about building it is measured — `tools/video-bench` puts memory attention at
   59 ms a frame on WebGPU and 38 at half precision, which with the encoder and
   the decoder makes a tracked frame around 90 ms, so tracking runs behind the
   playhead rather than in the render loop. The graphs it needs are produced by
   `tools/edgetam-export`, which also demonstrates them holding a mask across ten
   frames, mask-for-mask identical to the PyTorch tracker.
-- Video cannot be exported. Export renders one frame, which is the still it
-  always was.
+- Exporting a video writes one frame as a still. There is no encoder and no
+  muxer, so "export the clip" is untouched work.
+- Clear and Invert act on the frame being shown, not on the clip. That falls
+  out of every command naming its frame, and there is no way to say "all
+  frames" yet.
 - WebM and Matroska are refused, by signature, with a message that says so.
   They are a second demuxer at 15 KB and mostly carry codecs whose decode has
   not been measured here.
