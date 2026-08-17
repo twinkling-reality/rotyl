@@ -766,9 +766,37 @@ button {
   background: var(--bg);
 }
 
-.timeline__track {
+.timeline__scrubber {
+  position: relative;
   flex: 1;
   min-width: 0;
+}
+
+.timeline__track {
+  display: block;
+  width: 100%;
+}
+
+/* Aligned to the track, which the thumb insets by half its own width. */
+.timeline__marks {
+  position: absolute;
+  inset: 0 5.5px;
+  pointer-events: none;
+}
+
+/*
+ * An edited frame. Two pixels of accent under the track rather than a flag on
+ * it: the marks have to be findable at a glance and must not be mistaken for
+ * something draggable.
+ */
+.timeline__mark {
+  position: absolute;
+  bottom: 4px;
+  width: 2px;
+  height: 5px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--accent);
 }
 
 .timeline__time,

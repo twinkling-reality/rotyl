@@ -311,6 +311,9 @@ export class PerceptionStore {
       mask: proposal.mask,
       op: 'add',
       refine: DEFAULT_REFINE_SETTINGS,
+      // The frame the PROMPT was answered against, which is not necessarily the
+      // one being shown by the time the answer arrives.
+      frame: this.#frame?.frame ?? 0,
     });
     this.#committedRevision = this.#document.revision;
   }

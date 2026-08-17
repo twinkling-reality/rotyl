@@ -48,16 +48,38 @@ export class SelectionDocument {
     this.#bump();
   }
 
-  undo(): void {
-    if (!this.canUndo) return;
+  /**
+   * Step back one command, and say which one.
+   *
+   * ONE CURSOR OVER ONE LIST, EVEN ACROSS FRAMES, and the returned command is
+   * what makes that honest rather than merely simple. Undo means "the last
+   * thing I did", which may be on a frame that is not being shown; a caller
+   * that moves the view to the returned command's frame turns an edit
+   * disappearing somewhere invisible into an edit disappearing in front of you.
+   *
+   * It also disarms the sharp edge in `apply`. The redo tail is discarded on
+   * the next edit, so undoing another frame's work and then drawing would
+   * destroy it — but a caller that follows the cursor is now on that frame, and
+   * the sequence is the ordinary single-frame one it has always been.
+   *
+   * A per-frame cursor was the alternative and it is worse: "undo" would stop
+   * meaning the last thing you did, and a list per frame cannot express the
+   * order two frames were edited in, which is the only thing anybody remembers.
+   */
+  undo(): SelectionCommand | undefined {
+    if (!this.canUndo) return undefined;
     this.#applied--;
     this.#bump();
+    return this.#commands[this.#applied];
   }
 
-  redo(): void {
-    if (!this.canRedo) return;
+  /** Step forward one command, and say which one. See `undo`. */
+  redo(): SelectionCommand | undefined {
+    if (!this.canRedo) return undefined;
+    const command = this.#commands[this.#applied];
     this.#applied++;
     this.#bump();
+    return command;
   }
 
   /** Drop the entire history, for loading a new document. */

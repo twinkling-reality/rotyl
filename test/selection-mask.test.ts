@@ -60,7 +60,7 @@ const horizontalStroke = {
 
 describe('brush stamping', () => {
   it('covers the stroke and leaves the rest untouched', async () => {
-    const coverage = await replayed([{ kind: 'paint', stroke: horizontalStroke }]);
+    const coverage = await replayed([{ kind: 'paint', stroke: horizontalStroke, frame: 0 }]);
 
     expect(at(coverage, 64, 64)).toBeGreaterThan(250);
     expect(at(coverage, 24, 64)).toBeGreaterThan(250);
@@ -71,7 +71,7 @@ describe('brush stamping', () => {
   });
 
   it('writes an antialiased edge rather than a binary one', async () => {
-    const coverage = await replayed([{ kind: 'paint', stroke: horizontalStroke }]);
+    const coverage = await replayed([{ kind: 'paint', stroke: horizontalStroke, frame: 0 }]);
     // Walking down the stroke's edge must pass through intermediate values;
     // that gradient is what removes the need for any feathering stage.
     const column: number[] = [];
@@ -83,7 +83,7 @@ describe('brush stamping', () => {
 
   it('produces a soft radial falloff for a low-hardness brush', async () => {
     const coverage = await replayed([
-      { kind: 'paint', stroke: { points: [{ x: 64, y: 64 }], radius: 30, hardness: 0 } },
+      { kind: 'paint', stroke: { points: [{ x: 64, y: 64 }], radius: 30, hardness: 0 }, frame: 0 },
     ]);
     expect(at(coverage, 64, 64)).toBeGreaterThan(250);
     // Halfway out the coverage should be meaningfully reduced, not still solid.
@@ -98,6 +98,7 @@ describe('brush stamping', () => {
     const doubledBack = await replayed([
       {
         kind: 'paint',
+        frame: 0,
         stroke: {
           points: [
             { x: 24, y: 64 },
@@ -109,7 +110,9 @@ describe('brush stamping', () => {
         },
       },
     ]);
-    const single = await replayed([{ kind: 'paint', stroke: { ...horizontalStroke, hardness: 0.5 } }]);
+    const single = await replayed([
+      { kind: 'paint', stroke: { ...horizontalStroke, hardness: 0.5 }, frame: 0 },
+    ]);
 
     for (const [x, y] of [
       [64, 64],
@@ -124,20 +127,26 @@ describe('brush stamping', () => {
 describe('mask operations', () => {
   it('erases what was painted', async () => {
     const coverage = await replayed([
-      { kind: 'paint', stroke: horizontalStroke },
-      { kind: 'erase', stroke: { points: [{ x: 64, y: 64 }], radius: 10, hardness: 1 } },
+      { kind: 'paint', stroke: horizontalStroke, frame: 0 },
+      { kind: 'erase', stroke: { points: [{ x: 64, y: 64 }], radius: 10, hardness: 1 }, frame: 0 },
     ]);
     expect(at(coverage, 64, 64)).toBeLessThan(5);
     expect(at(coverage, 100, 64)).toBeGreaterThan(250);
   });
 
   it('clears everything', async () => {
-    const coverage = await replayed([{ kind: 'paint', stroke: horizontalStroke }, { kind: 'clear' }]);
+    const coverage = await replayed([
+      { kind: 'paint', stroke: horizontalStroke, frame: 0 },
+      { kind: 'clear', frame: 0 },
+    ]);
     expect(coverage.every((value) => value === 0)).toBe(true);
   });
 
   it('inverts', async () => {
-    const coverage = await replayed([{ kind: 'paint', stroke: horizontalStroke }, { kind: 'invert' }]);
+    const coverage = await replayed([
+      { kind: 'paint', stroke: horizontalStroke, frame: 0 },
+      { kind: 'invert', frame: 0 },
+    ]);
     expect(at(coverage, 64, 64)).toBeLessThan(5);
     expect(at(coverage, 64, 10)).toBeGreaterThan(250);
   });
@@ -151,7 +160,7 @@ describe('mask operations', () => {
     engineMask.coverage[9] = 255;
     engineMask.coverage[10] = 255;
 
-    const coverage = await replayed([{ kind: 'applyMask', mask: engineMask, op: 'replace' }]);
+    const coverage = await replayed([{ kind: 'applyMask', mask: engineMask, op: 'replace', frame: 0 }]);
     expect(at(coverage, 64, 64)).toBeGreaterThan(200);
     expect(at(coverage, 4, 4)).toBeLessThan(40);
   });
@@ -160,9 +169,9 @@ describe('mask operations', () => {
 describe('replay', () => {
   it('is deterministic, which is what makes undo and device-loss recovery the same operation', async () => {
     const commands: SelectionCommand[] = [
-      { kind: 'paint', stroke: horizontalStroke },
-      { kind: 'erase', stroke: { points: [{ x: 50, y: 64 }], radius: 8, hardness: 0.7 } },
-      { kind: 'invert' },
+      { kind: 'paint', stroke: horizontalStroke, frame: 0 },
+      { kind: 'erase', stroke: { points: [{ x: 50, y: 64 }], radius: 8, hardness: 0.7 }, frame: 0 },
+      { kind: 'invert', frame: 0 },
     ];
 
     const first = await replayed(commands);
@@ -171,8 +180,8 @@ describe('replay', () => {
   });
 
   it('reproduces a prefix exactly, so undo needs no snapshots', async () => {
-    const prefix: SelectionCommand[] = [{ kind: 'paint', stroke: horizontalStroke }];
-    const full: SelectionCommand[] = [...prefix, { kind: 'invert' }];
+    const prefix: SelectionCommand[] = [{ kind: 'paint', stroke: horizontalStroke, frame: 0 }];
+    const full: SelectionCommand[] = [...prefix, { kind: 'invert', frame: 0 }];
 
     const afterUndo = await replayed(prefix);
     const direct = await replayed(prefix);

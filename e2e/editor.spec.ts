@@ -346,3 +346,104 @@ test('refuses a video it cannot decode, by name', async ({ page }) => {
   // Refused, not half-loaded: the drop zone is still the thing on screen.
   await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
 });
+
+test('keeps a selection on the frame it was made on', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  const timeline = page.getByRole('slider', { name: 'Frame' });
+  const undo = page.getByRole('button', { name: 'Undo' });
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  // The brush draws its own ring at the pointer, so the pointer is parked off
+  // the canvas before every capture. Otherwise the comparison is measuring
+  // where the mouse happens to be.
+  const park = async (): Promise<void> => {
+    await page.mouse.move(box.x + box.width / 2, box.y - 30);
+  };
+
+  await timeline.fill('40');
+  await expect(page.getByText('41 / 60')).toBeVisible();
+  await park();
+  const clean40 = await canvas.screenshot();
+
+  await timeline.fill('20');
+  await expect(page.getByText('21 / 60')).toBeVisible();
+  await park();
+  const clean20 = await canvas.screenshot();
+
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.4);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.55, { steps: 10 });
+  await page.mouse.up();
+  await expect(undo).toBeEnabled();
+  await park();
+  const selected20 = await canvas.screenshot();
+  expect(Buffer.compare(clean20, selected20)).not.toBe(0);
+
+  // The one thing that makes a per-frame selection findable again.
+  await expect(page.locator('.timeline__mark')).toHaveCount(1);
+
+  // A stroke says where something was on frame 20. Frame 40 gets it back
+  // exactly as it was, because the stroke was never a statement about it.
+  await timeline.fill('40');
+  await expect(page.getByText('41 / 60')).toBeVisible();
+  await park();
+  await expect(async () => {
+    expect(Buffer.compare(await canvas.screenshot(), clean40)).toBe(0);
+  }).toPass();
+  // Gone from the screen, still in the log.
+  await expect(undo).toBeEnabled();
+
+  await timeline.fill('20');
+  await expect(page.getByText('21 / 60')).toBeVisible();
+  await park();
+  await expect(async () => {
+    expect(Buffer.compare(await canvas.screenshot(), selected20)).toBe(0);
+  }).toPass();
+});
+
+test('exports the frame on screen, named for it', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(clip);
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.getByRole('slider', { name: 'Frame' }).fill('23');
+  await expect(page.getByText('24 / 60')).toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export' }).click();
+  const saved = await download;
+  // Named for the frame, because exporting three of them should not write the
+  // same file three times.
+  expect(saved.suggestedFilename()).toBe('sample-rotyl-f00024.png');
+  expect(await saved.path()).toBeTruthy();
+});
+
+test('undo goes to the frame it undid', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  const timeline = page.getByRole('slider', { name: 'Frame' });
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  await timeline.fill('15');
+  await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.45);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.55, box.y + box.height * 0.55, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.locator('.timeline__mark')).toHaveCount(1);
+
+  await timeline.fill('50');
+  await expect(page.getByText('51 / 60')).toBeVisible();
+
+  // Undoing something on another frame would otherwise happen where nobody can
+  // see it, and the next stroke would discard it for good.
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByText('16 / 60')).toBeVisible();
+  await expect(page.locator('.timeline__mark')).toHaveCount(0);
+});

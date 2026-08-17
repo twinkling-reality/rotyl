@@ -1,7 +1,12 @@
 import { OUTPUT_FORMAT, OUTPUT_VIEW_FORMAT, SOURCE_FORMAT, SOURCE_VIEW_FORMAT } from '../gpu/formats.ts';
 import { ResourcePool } from '../gpu/resource-pool.ts';
 import type { SelectionDocument } from '../document/selection-document.ts';
-import { hasAnyCoverage, type BrushStroke, type StrokePoint } from '../document/selection-command.ts';
+import {
+  commandsForFrame,
+  hasAnyCoverage,
+  type BrushStroke,
+  type StrokePoint,
+} from '../document/selection-command.ts';
 import { SelectionMask, type MaskReplayContext } from '../mask/selection-mask.ts';
 import { MaskRefiner } from '../mask/mask-refiner.ts';
 import {
@@ -17,6 +22,7 @@ import { DisplayRenderer, OVERLAY_VISIBLE, type OverlayState } from './display-r
 import { outputDimensions, type Dimensions } from './resolution.ts';
 import { fitToCanvas, type Size, type ViewTransform } from '../view/view-transform.ts';
 import type { SceneFrame } from '../perception/segmentation-engine.ts';
+import type { SelectionCommand } from '../document/selection-command.ts';
 
 export type BrushMode = 'paint' | 'erase';
 
@@ -77,11 +83,29 @@ export class RotylEngine {
   #overlay: OverlayState = OVERLAY_VISIBLE;
   #live: LiveStroke | undefined;
 
+  /**
+   * The frame the document is being edited and drawn at.
+   *
+   * Zero for a photograph, which is a one-frame document. Core knows a frame is
+   * an integer and nothing else: what it indexes, how it is decoded and what it
+   * costs to reach are all the platform layer's business.
+   */
+  #frame = 0;
+
   #styleDirty = true;
   #compositeDirty = true;
   #displayDirty = true;
   /** Document revision the mask currently reflects; -1 forces a rebuild. */
   #maskRevision = -1;
+  /**
+   * Frame the mask currently reflects.
+   *
+   * Tracked SEPARATELY from the revision because scrubbing changes which
+   * commands apply without changing the log at all. Keying the rebuild on the
+   * revision alone would leave the previous frame's selection on screen, and it
+   * would look like a caching bug rather than a missing frame.
+   */
+  #maskFrame = 0;
 
   constructor(
     document: SelectionDocument,
@@ -120,6 +144,22 @@ export class RotylEngine {
 
   get view(): ViewTransform {
     return this.#view;
+  }
+
+  get frame(): number {
+    return this.#frame;
+  }
+
+  /** Which frame's edits are in effect. Everything else about a frame is the host's. */
+  setFrame(frame: number): void {
+    if (frame === this.#frame) return;
+    this.#frame = frame;
+    this.#compositeDirty = true;
+  }
+
+  /** The commands in effect right now: this frame's, and no others. */
+  get frameCommands(): readonly SelectionCommand[] {
+    return commandsForFrame(this.document.appliedCommands, this.#frame);
   }
 
   get style(): StyleDefinition {
@@ -182,7 +222,12 @@ export class RotylEngine {
       pool,
     };
 
-    if (selection === 'clear') this.document.reset();
+    if (selection === 'clear') {
+      this.document.reset();
+      // Paired with the reset, not with the allocation: a new document starts
+      // at its first frame, and a rebuild after a lost device must not.
+      this.#frame = 0;
+    }
     this.#live = undefined;
     this.#maskRevision = -1;
     this.#styleDirty = true;
@@ -265,7 +310,10 @@ export class RotylEngine {
       radius: live.radius,
       hardness: live.hardness,
     };
-    this.document.apply(live.mode === 'paint' ? { kind: 'paint', stroke } : { kind: 'erase', stroke });
+    const frame = this.#frame;
+    this.document.apply(
+      live.mode === 'paint' ? { kind: 'paint', stroke, frame } : { kind: 'erase', stroke, frame },
+    );
   }
 
   cancelStroke(): void {
@@ -280,7 +328,13 @@ export class RotylEngine {
   }
 
   get needsRender(): boolean {
-    return this.#styleDirty || this.#compositeDirty || this.#displayDirty || this.#maskRevision === -1;
+    return (
+      this.#styleDirty ||
+      this.#compositeDirty ||
+      this.#displayDirty ||
+      this.#maskRevision === -1 ||
+      this.#maskFrame !== this.#frame
+    );
   }
 
   #replayContext(media: Media): MaskReplayContext {
@@ -295,14 +349,19 @@ export class RotylEngine {
    */
   get sceneFrame(): SceneFrame | undefined {
     const media = this.#media;
-    return media ? { view: media.sourceView, size: media.sourceSize } : undefined;
+    return media ? { view: media.sourceView, size: media.sourceSize, frame: this.#frame } : undefined;
   }
 
   #updateMask(encoder: GPUCommandEncoder, media: Media): void {
     const revision = this.document.revision;
-    if (this.#maskRevision !== revision) {
-      media.mask.replay(encoder, this.document.appliedCommands, this.#replayContext(media));
+    if (this.#maskRevision !== revision || this.#maskFrame !== this.#frame) {
+      // Only this frame's commands. The guide is the frame on screen, which is
+      // the frame they were made on, so the boundary is reconstructed against
+      // the pixels it was drawn against. That stops being automatic when a
+      // tracker starts producing commands for frames it was not prompted on.
+      media.mask.replay(encoder, this.frameCommands, this.#replayContext(media));
       this.#maskRevision = revision;
+      this.#maskFrame = this.#frame;
       if (this.#live) this.#live.stamped = 0;
     }
 
@@ -361,7 +420,7 @@ export class RotylEngine {
       // With nothing selected there is no "unselected region" to distinguish,
       // so the overlay is suppressed entirely rather than lifting the whole
       // image toward paper the moment it loads.
-      const showsSelection = this.#live !== undefined || hasAnyCoverage(this.document.appliedCommands);
+      const showsSelection = this.#live !== undefined || hasAnyCoverage(this.frameCommands);
       const overlay = showsSelection ? this.#overlay : { lift: 0, contour: 0 };
 
       this.#display.render(

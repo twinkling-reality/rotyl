@@ -14,8 +14,9 @@ import { uploadFrameToTexture, uploadImageToTexture } from '../platform/texture-
 // pulls in nothing.
 import { describeVideoLoadError, looksLikeVideo } from '../platform/video/video-file.ts';
 import type { FrameProvider } from '../platform/video/frame-provider.ts';
-import { exportFilename, exportImage } from '../platform/image-export.ts';
+import { exportFilename, exportImage, imageFileSource, type ExportSource } from '../platform/image-export.ts';
 import { defaultControls, type StyleControls, type StyleDefinition } from '../core/style/style.ts';
+import { editedFrames } from '../core/document/selection-command.ts';
 import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
 import { isPrompt, type Tool } from './tool.ts';
 import type { PerceptionStatus, SelectIntent } from '../core/perception/perception-store.ts';
@@ -299,13 +300,35 @@ export function App(): JSX.Element {
       if (!runtime) return;
       setFrame(next);
       setScrubbing(!settled);
+      // Both, in this order. The engine decides which commands apply, and the
+      // provider decides which pixels do; a frame where those two disagree is a
+      // selection drawn over somebody else's picture.
+      runtime.engine.setFrame(next);
       // The same tier a style slider drops to while it is moving, and for the
       // same reason: the chain re-runs on every frame that arrives, and at full
-      // quality that is 79 ms of work per pointer sample.
+      // quality that is 105 ms of work per pointer sample.
       runtime.engine.setQuality(settled ? 'full' : 'draft');
       void showFrame(runtime, next, settled);
     },
     [runtime, showFrame],
+  );
+
+  /**
+   * Undo and redo, following the cursor to wherever it went.
+   *
+   * The log is one list with one cursor, and undo means the last thing you did
+   * — which may be on a frame you are not looking at. Moving the view there is
+   * what keeps that honest: an edit vanishing in front of you is undo, and an
+   * edit vanishing somewhere off screen is a bug report.
+   */
+  const stepHistory = useCallback(
+    (direction: 'undo' | 'redo'): void => {
+      if (!runtime) return;
+      const command = direction === 'undo' ? runtime.engine.document.undo() : runtime.engine.document.redo();
+      if (!command || command.frame === runtime.engine.frame) return;
+      onScrub(command.frame, true);
+    },
+    [runtime, onScrub],
   );
 
   const onExport = useCallback(async (): Promise<void> => {
@@ -313,13 +336,34 @@ export function App(): JSX.Element {
     setBusy('Exporting');
     setError(undefined);
     try {
+      const provider = providerRef.current;
+      // A video frame is already full resolution as the decoder hands it over,
+      // so there is nothing to go back to the file for. A photograph is decoded
+      // again, because the preview may have been capped.
+      const source: ExportSource =
+        loaded.video && provider
+          ? {
+              width: provider.info.width,
+              height: provider.info.height,
+              async fill(device, texture) {
+                const shown = await provider.readFrame(frame, (decoded) => {
+                  uploadFrameToTexture(device, decoded, texture);
+                });
+                if (!shown) throw new Error('That frame could not be decoded again.');
+              },
+              release: () => undefined,
+            }
+          : await imageFileSource(loaded.file, runtime.maxTextureDimension);
+
       const result = await exportImage({
         device: runtime.device,
         maxTextureDimension: runtime.maxTextureDimension,
         renderer: runtime.engine.compositeRenderer,
         refiner: runtime.engine.maskRefiner,
-        file: loaded.file,
-        commands: runtime.engine.document.appliedCommands,
+        source,
+        // The frame on screen is the frame exported, so it is that frame's
+        // commands and no others.
+        commands: runtime.engine.frameCommands,
         style,
         controls,
         format: 'png',
@@ -328,7 +372,7 @@ export function App(): JSX.Element {
       const url = URL.createObjectURL(result.blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = exportFilename(loaded.name, 'png');
+      link.download = exportFilename(loaded.name, 'png', loaded.video ? frame : undefined);
       link.click();
       // Revoked on the next task so the download has taken the reference; a
       // leaked object URL pins the whole encoded image in memory.
@@ -343,7 +387,7 @@ export function App(): JSX.Element {
       runtime.engine.invalidateStyle();
       setBusy(undefined);
     }
-  }, [runtime, loaded, style, controls]);
+  }, [runtime, loaded, style, controls, frame]);
 
   // --- keyboard ---
   useEffect(() => {
@@ -357,11 +401,9 @@ export function App(): JSX.Element {
       (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName));
 
     const onKeyDown = (event: KeyboardEvent): void => {
-      const engine = runtime.engine;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
         event.preventDefault();
-        if (event.shiftKey) engine.document.redo();
-        else engine.document.undo();
+        stepHistory(event.shiftKey ? 'redo' : 'undo');
         return;
       }
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -430,7 +472,7 @@ export function App(): JSX.Element {
       globalThis.removeEventListener('keyup', onKeyUp);
       globalThis.removeEventListener('blur', restoreOverlay);
     };
-  }, [runtime, loaded]);
+  }, [runtime, loaded, stepHistory]);
 
   // A file dropped anywhere other than the drop zone would otherwise be opened
   // by the browser itself, navigating away and discarding the session.
@@ -478,6 +520,9 @@ export function App(): JSX.Element {
   const notice = error ?? (perception.kind === 'failed' ? perception.message : undefined);
   // historyRevision is read so that undo and redo re-evaluate when the log moves.
   void historyRevision;
+  // Which frames carry an edit. A per-frame selection that leaves no trace on
+  // the timeline is a selection nobody can find again.
+  const edited = selection ? editedFrames(selection.appliedCommands) : [];
 
   return (
     <div class="app">
@@ -486,8 +531,12 @@ export function App(): JSX.Element {
         {...(status ? { status } : {})}
         canUndo={selection?.canUndo ?? false}
         canRedo={selection?.canRedo ?? false}
-        onUndo={() => selection?.undo()}
-        onRedo={() => selection?.redo()}
+        onUndo={() => {
+          stepHistory('undo');
+        }}
+        onRedo={() => {
+          stepHistory('redo');
+        }}
         onExport={() => void onExport()}
         exportDisabled={!loaded || activity !== undefined}
       />
@@ -531,10 +580,10 @@ export function App(): JSX.Element {
                 tool={tool}
                 onToolChange={setTool}
                 onClear={() => {
-                  runtime.engine.document.apply({ kind: 'clear' });
+                  runtime.engine.document.apply({ kind: 'clear', frame: runtime.engine.frame });
                 }}
                 onInvert={() => {
-                  runtime.engine.document.apply({ kind: 'invert' });
+                  runtime.engine.document.apply({ kind: 'invert', frame: runtime.engine.frame });
                 }}
                 stylePanelOpen={stylePanelOpen}
                 onToggleStylePanel={() => {
@@ -547,6 +596,7 @@ export function App(): JSX.Element {
                 frameCount={loaded.video.frameCount}
                 frameRate={loaded.video.frameRate}
                 frame={frame}
+                edited={edited}
                 onScrub={onScrub}
               />
             ) : null}

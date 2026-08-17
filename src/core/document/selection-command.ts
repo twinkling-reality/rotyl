@@ -8,10 +8,15 @@
  *                     full-resolution mask per edit (48 MB each at 48 MP)
  *   device-loss       a lost GPUDevice is recovered by rebuilding resources
  *   recovery          and replaying the log; nothing user-visible is lost
- *   future video      a per-frame keyframe log is the same structure with a
- *                     frame index attached
+ *   video             every command carries the frame it was made on, and the
+ *                     mask for a frame is folded from that frame's commands
  *
  * Every coordinate here is in IMAGE space, never screen space.
+ *
+ * A STILL IMAGE IS A ONE-FRAME DOCUMENT. `frame` is required rather than
+ * optional so there is no second shape to reason about and no branch anywhere
+ * asking whether this is a video: a photograph's edits are all at frame 0, and
+ * every rule below is then the same rule.
  */
 
 import type { RefineSettings } from '../mask/refine-params.ts';
@@ -48,7 +53,11 @@ export interface CoverageMask {
 }
 
 /**
- * Whether the log leaves any coverage behind.
+ * Whether these commands leave any coverage behind.
+ *
+ * Takes ONE FRAME'S commands, from `commandsForFrame`. Handed the whole log it
+ * would report coverage for a frame that has none, which is the one direction
+ * this is allowed to be wrong in but not for a reason anyone would want.
  *
  * Used to decide whether the selection overlay should be drawn at all: lifting
  * "everything unselected" toward paper when nothing is selected would wash out
@@ -75,7 +84,37 @@ export function hasAnyCoverage(commands: readonly SelectionCommand[]): boolean {
   return false;
 }
 
-export type SelectionCommand =
+/**
+ * The commands that decide what is selected on one frame.
+ *
+ * EXACT MATCH, NOT "AT OR BEFORE", and that is the whole of the video model.
+ * The alternative reading is the obvious one and it is wrong: a stroke's
+ * coordinates say where something was when it was drawn, so replaying frame 3's
+ * stroke onto frame 200 puts it wherever the object has since moved away from,
+ * and the error grows with the distance. A command describes a moment, and
+ * asking for a different moment is asking a question it cannot answer.
+ *
+ * So the log is SPARSE: a frame nobody has edited has nothing selected, and
+ * says so. The hole that leaves is exactly the hole tracking fills — a keyframe
+ * prompt at frame 3 and a tracker that can say where that object is at frame
+ * 200 will produce frame 200's command, rather than the log pretending it
+ * already had one. That is why this returns a list to fold rather than reaching
+ * into the log directly: a tracker's output joins the fold on the same terms as
+ * anything a person did, and the log never has to hold a mask per frame.
+ */
+export function commandsForFrame(
+  commands: readonly SelectionCommand[],
+  frame: number,
+): readonly SelectionCommand[] {
+  return commands.filter((command) => command.frame === frame);
+}
+
+/** Which frames carry an edit, ascending. What a timeline marks. */
+export function editedFrames(commands: readonly SelectionCommand[]): readonly number[] {
+  return [...new Set(commands.map((command) => command.frame))].toSorted((a, b) => a - b);
+}
+
+export type SelectionCommand = { readonly frame: number } & (
   | { readonly kind: 'paint'; readonly stroke: BrushStroke }
   | { readonly kind: 'erase'; readonly stroke: BrushStroke }
   | { readonly kind: 'clear' }
@@ -100,4 +139,5 @@ export type SelectionCommand =
       readonly mask: CoverageMask;
       readonly op: 'replace' | 'add' | 'subtract';
       readonly refine?: RefineSettings;
-    };
+    }
+);

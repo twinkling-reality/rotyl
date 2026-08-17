@@ -18,6 +18,7 @@ const BACKGROUND = [0.94, 0.94, 0.94] as const;
 const SIZE = { width: 64, height: 64 };
 const STROKE: SelectionCommand = {
   kind: 'paint',
+  frame: 0,
   stroke: { points: [{ x: 32, y: 32 }], radius: 10, hardness: 1 },
 };
 
@@ -75,5 +76,98 @@ describe('reloading an image', () => {
       document.apply(STROKE);
     }).not.toThrow();
     expect(document.appliedCommands.length).toBe(1);
+  });
+});
+
+/**
+ * The frame index, from the engine's side.
+ *
+ * A selection belongs to the frame it was made on. These four cases are the
+ * whole of that rule where it meets the renderer: which commands apply, which
+ * frame a new stroke is stamped with, that scrubbing alone is enough to force a
+ * rebuild, and that a still image never has to think about any of it.
+ */
+describe('editing at a frame', () => {
+  let device: GPUDevice;
+
+  beforeAll(async () => {
+    ({ device } = await testDevice());
+  });
+
+  const engineOn = (document: SelectionDocument): RotylEngine => {
+    const engine = new RotylEngine(document, device, 4096, 'bgra8unorm', BACKGROUND);
+    disposeWithTestDevice(() => {
+      engine.dispose();
+    });
+    return engine;
+  };
+
+  it('applies only the commands made on the frame being shown', () => {
+    const document = new SelectionDocument();
+    const engine = engineOn(document);
+    engine.loadMedia(SIZE, 'clear');
+
+    document.apply({ ...STROKE, frame: 0 });
+    document.apply({ ...STROKE, frame: 7 });
+    document.apply({ ...STROKE, frame: 7 });
+
+    expect(engine.frameCommands.length).toBe(1);
+    engine.setFrame(7);
+    expect(engine.frameCommands.length).toBe(2);
+    engine.setFrame(3);
+    expect(engine.frameCommands.length).toBe(0);
+  });
+
+  it('stamps a committed stroke with the frame it was drawn on', () => {
+    const document = new SelectionDocument();
+    const engine = engineOn(document);
+    engine.loadMedia(SIZE, 'clear');
+
+    engine.setFrame(12);
+    engine.beginStroke('paint', 8, 1, { x: 20, y: 20 });
+    engine.commitStroke();
+
+    expect(document.appliedCommands[0]?.frame).toBe(12);
+  });
+
+  it('needs a render after a scrub, with the log untouched', () => {
+    const document = new SelectionDocument();
+    const engine = engineOn(document);
+    engine.loadMedia(SIZE, 'clear');
+    document.apply({ ...STROKE, frame: 4 });
+
+    // Drained the way the render loop drains it, so what is left is only what
+    // the scrub itself dirtied.
+    engine.render(
+      device
+        .createTexture({
+          size: SIZE,
+          format: 'bgra8unorm',
+          usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        })
+        .createView(),
+      SIZE,
+    );
+    expect(engine.needsRender).toBe(false);
+
+    const revision = document.revision;
+    engine.setFrame(4);
+    // The revision is the same; the frame is not. Keying the mask rebuild on
+    // the revision alone would leave the previous frame's selection on screen.
+    expect(document.revision).toBe(revision);
+    expect(engine.needsRender).toBe(true);
+  });
+
+  it('starts a new document back at its first frame, and a recovered one where it was', () => {
+    const document = new SelectionDocument();
+    const engine = engineOn(document);
+    engine.loadMedia(SIZE, 'clear');
+    engine.setFrame(9);
+
+    engine.loadMedia(SIZE, 'keep');
+    expect(engine.frame).toBe(9);
+
+    engine.loadMedia(SIZE, 'clear');
+    expect(engine.frame).toBe(0);
   });
 });

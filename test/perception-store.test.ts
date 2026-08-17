@@ -92,9 +92,10 @@ function fakeEngine(options: FakeOptions = {}): { engine: SegmentationEngine; re
  * grows a field the store actually reads, this stops compiling instead of
  * quietly handing it undefined.
  */
-const frame = (label: string, width: number, height: number): SceneFrame => ({
+const frame = (label: string, width: number, height: number, index = 0): SceneFrame => ({
   view: { label, __brand: 'GPUTextureView' },
   size: { width, height },
+  frame: index,
 });
 
 const FRAME = frame('first', 800, 600);
@@ -118,6 +119,7 @@ function appliedMasks(document: SelectionDocument): Extract<SelectionCommand, { 
 
 const STROKE: SelectionCommand = {
   kind: 'paint',
+  frame: 0,
   stroke: { points: [{ x: 10, y: 10 }], radius: 5, hardness: 1 },
 };
 

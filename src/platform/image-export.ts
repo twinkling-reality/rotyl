@@ -10,14 +10,49 @@ import type { MaskRefiner } from '../core/mask/mask-refiner.ts';
 
 export type ExportFormat = 'png' | 'jpeg';
 
+/**
+ * Where the full-resolution pixels come from.
+ *
+ * Export does not re-read the preview texture, which may have been capped for
+ * memory — it goes back to the original. What "the original" is differs between
+ * a photograph and a frame of a video, and this is the whole of that
+ * difference: everything after it is one path.
+ */
+export interface ExportSource {
+  readonly width: number;
+  readonly height: number;
+  /** Fill a texture of exactly these dimensions. */
+  fill(device: GPUDevice, texture: GPUTexture): Promise<void>;
+  /** Always called, including when the render fails. */
+  release(): void;
+}
+
+/** The original photograph, decoded again at full size. */
+export async function imageFileSource(file: Blob, maxDimension: number): Promise<ExportSource> {
+  const decoded = await decodeImageFile(file, maxDimension);
+  if (!decoded.ok) throw new Error('The original file could no longer be decoded.');
+  const { bitmap, width, height } = decoded.value;
+  return {
+    width,
+    height,
+    fill(device, texture) {
+      uploadImageToTexture(device, bitmap, texture);
+      return Promise.resolve();
+    },
+    release() {
+      // An ImageBitmap holds a full RGBA copy: 192 MB for a 48 megapixel photograph.
+      bitmap.close();
+    },
+  };
+}
+
 export interface ExportOptions {
   readonly device: GPUDevice;
   readonly maxTextureDimension: number;
   /** Borrowed from the engine so export does not duplicate the pipeline set. */
   readonly renderer: CompositeRenderer;
   readonly refiner: MaskRefiner;
-  /** The original file, re-decoded so export is never limited by the preview cap. */
-  readonly file: Blob;
+  readonly source: ExportSource;
   readonly commands: readonly SelectionCommand[];
   readonly style: StyleDefinition;
   readonly controls: StyleControls;
@@ -47,11 +82,9 @@ const JPEG_QUALITY = 0.92;
  * 256-byte alignment WebGPU imposes on texture-to-buffer copies.
  */
 export async function exportImage(options: ExportOptions): Promise<ExportResult> {
-  const { device, maxTextureDimension, renderer, refiner, file, commands, style, controls, format } = options;
-
-  const decoded = await decodeImageFile(file, maxTextureDimension);
-  if (!decoded.ok) throw new Error('The original file could no longer be decoded.');
-  const { bitmap, width, height } = decoded.value;
+  const { device, maxTextureDimension, renderer, refiner, source, commands, style, controls, format } =
+    options;
+  const { width, height } = source;
 
   // Everything from here is inside the try: a full-resolution source texture is
   // hundreds of megabytes, and every step below can fail.
@@ -64,7 +97,7 @@ export async function exportImage(options: ExportOptions): Promise<ExportResult>
       viewFormats: [SOURCE_VIEW_FORMAT],
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     });
-    uploadImageToTexture(device, bitmap, sourceTexture);
+    await source.fill(device, sourceTexture);
 
     const size = exportDimensions({ width, height }, maxTextureDimension);
     const canvas = new OffscreenCanvas(size.width, size.height);
@@ -111,13 +144,19 @@ export async function exportImage(options: ExportOptions): Promise<ExportResult>
     }
     return { blob, width: size.width, height: size.height };
   } finally {
-    bitmap.close();
+    source.release();
     sourceTexture?.destroy();
   }
 }
 
-/** Filename for an export, derived from the original. */
-export function exportFilename(originalName: string, format: ExportFormat): string {
+/**
+ * Filename for an export, derived from the original.
+ *
+ * A frame number when there is one, because exporting three frames of the same
+ * clip would otherwise write the same name three times.
+ */
+export function exportFilename(originalName: string, format: ExportFormat, frame?: number): string {
   const stem = originalName.replace(/\.[^.]+$/, '') || 'image';
-  return `${stem}-rotyl.${format === 'png' ? 'png' : 'jpg'}`;
+  const at = frame === undefined ? '' : `-f${String(frame + 1).padStart(5, '0')}`;
+  return `${stem}-rotyl${at}.${format === 'png' ? 'png' : 'jpg'}`;
 }

@@ -49,6 +49,7 @@ function gradientImage(width: number, height: number): Uint8Array {
 function centreStroke(size: number): SelectionCommand {
   return {
     kind: 'paint',
+    frame: 0,
     stroke: {
       points: [{ x: size / 2, y: size / 2 }],
       radius: size * 0.3,

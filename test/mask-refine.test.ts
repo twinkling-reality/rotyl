@@ -163,7 +163,15 @@ beforeAll(async () => {
     const encoder = device.createCommandEncoder();
     selection.replay(
       encoder,
-      [{ kind: 'applyMask', mask, op: 'replace', ...(refine ? { refine: DEFAULT_REFINE_SETTINGS } : {}) }],
+      [
+        {
+          kind: 'applyMask',
+          mask,
+          op: 'replace',
+          frame: 0,
+          ...(refine ? { refine: DEFAULT_REFINE_SETTINGS } : {}),
+        },
+      ],
       context,
     );
     encoder.copyTextureToBuffer(

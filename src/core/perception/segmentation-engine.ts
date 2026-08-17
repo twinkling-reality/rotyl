@@ -21,6 +21,17 @@ export interface SceneFrame {
   /** An sRGB view of the full-resolution source, so sampling yields linear light. */
   readonly view: GPUTextureView;
   readonly size: Dimensions;
+  /**
+   * Which frame of the document this is; zero for a photograph.
+   *
+   * Carried here rather than passed alongside for the same reason the frame's
+   * size is: a prompt answered against one frame and committed against another
+   * would land on the wrong pixels, and nothing downstream could tell. Note
+   * that the VIEW's identity does not change between video frames — only its
+   * contents do — so this is also the only field that distinguishes two frames
+   * of the same clip.
+   */
+  readonly frame: number;
 }
 
 /**
