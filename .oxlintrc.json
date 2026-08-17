@@ -30,7 +30,7 @@
       }
     },
     {
-      "files": ["test/**", "e2e/**", "*.config.ts"],
+      "files": ["test/**", "e2e/**", "tools/**", "*.config.ts"],
       "rules": {
         "no-console": "off"
       }

@@ -1,0 +1,1405 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "readback": {
+    "what": "1024x1024x3 float32 = 12.58 MB, the EdgeTAM input tensor",
+    "fence": "queue.onSubmittedWorkDone() before every read; mapAsync awaited",
+    "real_encoder_1920x1080": {
+      "pass_and_copy_fenced": {
+        "n": 20,
+        "median": 0.9,
+        "min": 0.6,
+        "max": 1.3
+      },
+      "map_and_copy_out": {
+        "n": 20,
+        "median": 1.4,
+        "min": 1.2,
+        "max": 1.6
+      },
+      "total": {
+        "n": 20,
+        "median": 2.2,
+        "min": 1.9,
+        "max": 2.7
+      }
+    },
+    "real_encoder_4032x3024": {
+      "pass_and_copy_fenced": {
+        "n": 20,
+        "median": 1.2,
+        "min": 1.1,
+        "max": 1.7
+      },
+      "map_and_copy_out": {
+        "n": 20,
+        "median": 1.3,
+        "min": 1.1,
+        "max": 1.5
+      },
+      "total": {
+        "n": 20,
+        "median": 2.6,
+        "min": 2.3,
+        "max": 2.9
+      }
+    },
+    "parts": {
+      "copy_to_buffer_fenced": {
+        "n": 20,
+        "median": 0.2,
+        "min": 0.2,
+        "max": 0.4
+      },
+      "map_only": {
+        "n": 20,
+        "median": 0.7,
+        "min": 0.5,
+        "max": 0.9
+      },
+      "map_and_copy": {
+        "n": 20,
+        "median": 1.8,
+        "min": 1.6,
+        "max": 2.1
+      },
+      "host_memcpy": {
+        "n": 20,
+        "median": 1,
+        "min": 0.9,
+        "max": 3.3
+      }
+    },
+    "sustained": [
+      {
+        "depth": 1,
+        "frames": 60,
+        "ms_per_frame": 1.872,
+        "fps": 534,
+        "mb_per_s": 6723
+      },
+      {
+        "depth": 2,
+        "frames": 60,
+        "ms_per_frame": 1.197,
+        "fps": 836,
+        "mb_per_s": 10515
+      },
+      {
+        "depth": 3,
+        "frames": 60,
+        "ms_per_frame": 1.617,
+        "fps": 619,
+        "mb_per_s": 7783
+      },
+      {
+        "depth": 4,
+        "frames": 60,
+        "ms_per_frame": 1.237,
+        "fps": 809,
+        "mb_per_s": 10175
+      }
+    ]
+  },
+  "readback:wall-seconds": 0.7,
+  "ort-device": {
+    "version": "1.27.0",
+    "device_before_session": null,
+    "assigning_our_device": true,
+    "session_create_ms": 421,
+    "device_after_session": {
+      "isGPUDevice": true,
+      "label": "",
+      "maxTextureDimension2D": 8192
+    },
+    "device_is_ours": false,
+    "gpu_buffer_input": {
+      "ok": true,
+      "outputs": [
+        "memory_features",
+        "memory_positions"
+      ],
+      "agreement": {
+        "memory_features": {
+          "max_abs_diff": 0,
+          "max_abs_value": 5.842066287994385,
+          "elements": 32768
+        },
+        "memory_positions": {
+          "max_abs_diff": 0,
+          "max_abs_value": 1,
+          "elements": 32768
+        }
+      },
+      "run_ms_cpu_input": 19.6,
+      "run_ms_gpu_input": 18
+    },
+    "ort_device_accepts_videoframe": {
+      "ok": true
+    }
+  },
+  "ort-device:wall-seconds": 1.2,
+  "attention": {
+    "what": "the two graphs tracking needs, run on the runtime Rotyl already ships",
+    "ort_version": "1.27.0",
+    "memory_attention": {
+      "fetch_ms": 66,
+      "model_mb": 69.6,
+      "webgpu": {
+        "session_create_ms": 83,
+        "run_ms_cpu_outputs": {
+          "n": 15,
+          "median": 61.1,
+          "min": 60,
+          "max": 65.5
+        },
+        "session_create_ms_gpu_outputs": 60,
+        "run_ms_gpu_outputs": {
+          "n": 15,
+          "median": 59.9,
+          "min": 58.8,
+          "max": 63.1
+        }
+      },
+      "wasm": {
+        "session_create_ms": 44,
+        "run_ms_cpu_outputs": {
+          "n": 15,
+          "median": 1951.3,
+          "min": 1914,
+          "max": 1987.7
+        },
+        "session_create_ms_gpu_outputs": 0,
+        "run_ms_gpu_outputs": "skipped"
+      }
+    },
+    "memory_encoder": {
+      "fetch_ms": 23,
+      "model_mb": 6.7,
+      "webgpu": {
+        "session_create_ms": 63,
+        "run_ms_cpu_outputs": {
+          "n": 15,
+          "median": 19.1,
+          "min": 18.7,
+          "max": 19.7
+        },
+        "session_create_ms_gpu_outputs": 59,
+        "run_ms_gpu_outputs": {
+          "n": 15,
+          "median": 18.5,
+          "min": 18.3,
+          "max": 18.7
+        }
+      },
+      "wasm": {
+        "session_create_ms": 44,
+        "run_ms_cpu_outputs": {
+          "n": 15,
+          "median": 349.9,
+          "min": 348.2,
+          "max": 367.4
+        },
+        "session_create_ms_gpu_outputs": 0,
+        "run_ms_gpu_outputs": "skipped"
+      }
+    }
+  },
+  "attention:wall-seconds": 42.6,
+  "bank-rampup": {
+    "valid_64": {
+      "n": 10,
+      "median": 59.2,
+      "min": 58.6,
+      "max": 62.6
+    },
+    "valid_576": {
+      "n": 10,
+      "median": 59.1,
+      "min": 58.7,
+      "max": 63.5
+    },
+    "valid_1600": {
+      "n": 10,
+      "median": 58.9,
+      "min": 58.7,
+      "max": 59.9
+    },
+    "valid_3648": {
+      "n": 10,
+      "median": 58.7,
+      "min": 58.4,
+      "max": 59.1
+    }
+  },
+  "bank-rampup:wall-seconds": 3.2,
+  "half-precision": {
+    "what": "the tracking graphs at half precision, against the same inputs",
+    "memory_attention": {
+      "fp32": {
+        "model_mb": 69.6,
+        "session_create_ms": 48,
+        "run_ms": {
+          "n": 15,
+          "median": 58.3,
+          "min": 58.1,
+          "max": 58.6
+        }
+      },
+      "fp16": {
+        "model_mb": 34.9,
+        "session_create_ms": 37,
+        "run_ms": {
+          "n": 15,
+          "median": 37.8,
+          "min": 37.5,
+          "max": 38.1
+        },
+        "agreement_vs_fp32": {
+          "conditioned_features": {
+            "max_abs_diff": 0.07429,
+            "mean_abs_diff": 0.008951,
+            "max_abs_value": 2.527
+          }
+        }
+      }
+    },
+    "memory_encoder": {
+      "fp32": {
+        "model_mb": 6.7,
+        "session_create_ms": 54,
+        "run_ms": {
+          "n": 15,
+          "median": 18.7,
+          "min": 18.4,
+          "max": 19
+        }
+      },
+      "fp16": {
+        "model_mb": 3.5,
+        "session_create_ms": 55,
+        "run_ms": {
+          "n": 15,
+          "median": 15.1,
+          "min": 14.8,
+          "max": 16.5
+        },
+        "agreement_vs_fp32": {
+          "memory_features": {
+            "max_abs_diff": 2.47975,
+            "mean_abs_diff": 0.042457,
+            "max_abs_value": 4.696
+          },
+          "memory_positions": {
+            "max_abs_diff": 0.00329,
+            "mean_abs_diff": 0.000072,
+            "max_abs_value": 1
+          }
+        }
+      }
+    }
+  },
+  "half-precision:wall-seconds": 3.1,
+  "decode": {
+    "1080p30-gop30": {
+      "demux": {
+        "packets": 300,
+        "key_packets": 10,
+        "bytes": 11382912,
+        "open_and_read_config_ms": 9.6,
+        "walk_all_packets_ms": {
+          "n": 3,
+          "median": 1.7,
+          "min": 1.6,
+          "max": 2.1
+        },
+        "mb_per_s": 6696,
+        "packets_per_s": 176471
+      },
+      "new_decoder_to_first_frame": {
+        "first": 10.5,
+        "later": {
+          "n": 5,
+          "median": 10.6,
+          "min": 9.7,
+          "max": 10.9
+        }
+      },
+      "decode_only": {
+        "frames": 300,
+        "ms": 140.2,
+        "fps": 2140,
+        "first_frame_ms": 10.7
+      },
+      "decode_and_upload": {
+        "frames": 300,
+        "ms": 220.4,
+        "fps": 1361,
+        "first_frame_ms": 10
+      },
+      "seek": {
+        "per_seek": [
+          {
+            "target": 0.4,
+            "ms": 24,
+            "decoded": 10
+          },
+          {
+            "target": 3.7,
+            "ms": 12.4,
+            "decoded": 22
+          },
+          {
+            "target": 1.2,
+            "ms": 8.1,
+            "decoded": 6
+          },
+          {
+            "target": 8.9,
+            "ms": 14.3,
+            "decoded": 26
+          },
+          {
+            "target": 5.5,
+            "ms": 9.9,
+            "decoded": 14
+          },
+          {
+            "target": 9.7,
+            "ms": 12.9,
+            "decoded": 22
+          },
+          {
+            "target": 2.1,
+            "ms": 6.6,
+            "decoded": 4
+          },
+          {
+            "target": 6.3,
+            "ms": 8.2,
+            "decoded": 10
+          }
+        ],
+        "ms": {
+          "n": 8,
+          "median": 12.4,
+          "min": 6.6,
+          "max": 24
+        },
+        "frames_decoded": {
+          "n": 8,
+          "median": 14,
+          "min": 4,
+          "max": 26
+        }
+      },
+      "upload": {
+        "frame": {
+          "width": 1920,
+          "height": 1080,
+          "format": "NV12",
+          "colorSpace": {
+            "primaries": "bt709",
+            "transfer": "bt709",
+            "matrix": "bt709",
+            "fullRange": false
+          }
+        },
+        "copyExternalImageToTexture_videoframe": {
+          "n": 30,
+          "median": 0.9,
+          "min": 0.7,
+          "max": 1
+        },
+        "importExternalTexture_and_pass": {
+          "n": 30,
+          "median": 0.1,
+          "min": 0,
+          "max": 0.2
+        },
+        "createImageBitmap_then_copy": {
+          "n": 10,
+          "median": 1.6,
+          "min": 1.2,
+          "max": 1.9
+        }
+      }
+    },
+    "1080p30-gop300": {
+      "demux": {
+        "packets": 300,
+        "key_packets": 1,
+        "bytes": 11000965,
+        "open_and_read_config_ms": 10.3,
+        "walk_all_packets_ms": {
+          "n": 3,
+          "median": 1.7,
+          "min": 1.6,
+          "max": 1.7
+        },
+        "mb_per_s": 6471,
+        "packets_per_s": 176471
+      },
+      "new_decoder_to_first_frame": {
+        "first": 10.4,
+        "later": {
+          "n": 5,
+          "median": 9.8,
+          "min": 9.7,
+          "max": 10.6
+        }
+      },
+      "decode_only": {
+        "frames": 300,
+        "ms": 134.6,
+        "fps": 2229,
+        "first_frame_ms": 10.1
+      },
+      "decode_and_upload": {
+        "frames": 300,
+        "ms": 134.7,
+        "fps": 2227,
+        "first_frame_ms": 10
+      },
+      "seek": {
+        "per_seek": [
+          {
+            "target": 0.4,
+            "ms": 22.8,
+            "decoded": 10
+          },
+          {
+            "target": 3.7,
+            "ms": 68.5,
+            "decoded": 112
+          },
+          {
+            "target": 1.2,
+            "ms": 39.9,
+            "decoded": 34
+          },
+          {
+            "target": 8.9,
+            "ms": 126,
+            "decoded": 268
+          },
+          {
+            "target": 5.5,
+            "ms": 86.6,
+            "decoded": 164
+          },
+          {
+            "target": 9.7,
+            "ms": 135.9,
+            "decoded": 292
+          },
+          {
+            "target": 2.1,
+            "ms": 51.1,
+            "decoded": 64
+          },
+          {
+            "target": 6.3,
+            "ms": 98.2,
+            "decoded": 188
+          }
+        ],
+        "ms": {
+          "n": 8,
+          "median": 86.6,
+          "min": 22.8,
+          "max": 135.9
+        },
+        "frames_decoded": {
+          "n": 8,
+          "median": 164,
+          "min": 10,
+          "max": 292
+        }
+      },
+      "upload": {
+        "frame": {
+          "width": 1920,
+          "height": 1080,
+          "format": "NV12",
+          "colorSpace": {
+            "primaries": "bt709",
+            "transfer": "bt709",
+            "matrix": "bt709",
+            "fullRange": false
+          }
+        },
+        "copyExternalImageToTexture_videoframe": {
+          "n": 30,
+          "median": 0.8,
+          "min": 0.7,
+          "max": 1
+        },
+        "importExternalTexture_and_pass": {
+          "n": 30,
+          "median": 0.1,
+          "min": 0,
+          "max": 0.2
+        },
+        "createImageBitmap_then_copy": {
+          "n": 10,
+          "median": 1.7,
+          "min": 1.2,
+          "max": 1.7
+        }
+      }
+    }
+  },
+  "decode:wall-seconds": 2.1,
+  "colour": {
+    "what": "known sRGB patches, encoded to h264 and brought back",
+    "patches": 16,
+    "probe-444-lossless": {
+      "colorSpace": {
+        "primaries": "bt709",
+        "transfer": "bt709",
+        "matrix": "bt709",
+        "fullRange": false
+      },
+      "format": "I444",
+      "external_to_rgba8unorm": {
+        "worst": 1,
+        "median_abs": 1,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "16,16,16",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "32,32,32",
+            "got": "31,31,31",
+            "delta": "-1,-1,-1"
+          },
+          {
+            "want": "64,64,64",
+            "got": "64,64,64",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "96,96,96",
+            "got": "95,95,95",
+            "delta": "-1,-1,-1"
+          },
+          {
+            "want": "128,128,128",
+            "got": "128,128,128",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "160,160,160",
+            "got": "160,160,160",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "192,192,192",
+            "got": "192,192,192",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "235,235,235",
+            "got": "235,235,235",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "255,1,0",
+            "delta": "0,1,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,1",
+            "delta": "0,0,1"
+          },
+          {
+            "want": "0,0,255",
+            "got": "1,0,255",
+            "delta": "1,0,0"
+          },
+          {
+            "want": "255,255,0",
+            "got": "254,255,0",
+            "delta": "-1,0,0"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,254,255",
+            "delta": "0,-1,0"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,0,254",
+            "delta": "0,0,-1"
+          }
+        ]
+      },
+      "external_to_rgba8unorm_srgb": {
+        "worst": 73,
+        "median_abs": 13,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "71,71,71",
+            "delta": "55,55,55"
+          },
+          {
+            "want": "32,32,32",
+            "got": "98,98,98",
+            "delta": "66,66,66"
+          },
+          {
+            "want": "64,64,64",
+            "got": "137,137,137",
+            "delta": "73,73,73"
+          },
+          {
+            "want": "96,96,96",
+            "got": "164,164,164",
+            "delta": "68,68,68"
+          },
+          {
+            "want": "128,128,128",
+            "got": "188,188,188",
+            "delta": "60,60,60"
+          },
+          {
+            "want": "160,160,160",
+            "got": "208,208,208",
+            "delta": "48,48,48"
+          },
+          {
+            "want": "192,192,192",
+            "got": "225,225,225",
+            "delta": "33,33,33"
+          },
+          {
+            "want": "235,235,235",
+            "got": "246,246,246",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "255,13,0",
+            "delta": "0,13,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,13",
+            "delta": "0,0,13"
+          },
+          {
+            "want": "0,0,255",
+            "got": "13,0,255",
+            "delta": "13,0,0"
+          },
+          {
+            "want": "255,255,0",
+            "got": "255,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,0,255",
+            "delta": "0,0,0"
+          }
+        ]
+      },
+      "copyExternalImageToTexture": {
+        "worst": 1,
+        "median_abs": 1,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "16,16,16",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "32,32,32",
+            "got": "31,31,31",
+            "delta": "-1,-1,-1"
+          },
+          {
+            "want": "64,64,64",
+            "got": "64,64,64",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "96,96,96",
+            "got": "95,95,95",
+            "delta": "-1,-1,-1"
+          },
+          {
+            "want": "128,128,128",
+            "got": "128,128,128",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "160,160,160",
+            "got": "160,160,160",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "192,192,192",
+            "got": "192,192,192",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "235,235,235",
+            "got": "235,235,235",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "255,1,0",
+            "delta": "0,1,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,1",
+            "delta": "0,0,1"
+          },
+          {
+            "want": "0,0,255",
+            "got": "1,0,255",
+            "delta": "1,0,0"
+          },
+          {
+            "want": "255,255,0",
+            "got": "254,255,0",
+            "delta": "-1,0,0"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,254,255",
+            "delta": "0,-1,0"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,0,254",
+            "delta": "0,0,-1"
+          }
+        ]
+      }
+    },
+    "probe-420-tv": {
+      "colorSpace": {
+        "primaries": "bt709",
+        "transfer": "bt709",
+        "matrix": "bt709",
+        "fullRange": false
+      },
+      "format": "NV12",
+      "external_to_rgba8unorm": {
+        "worst": 11,
+        "median_abs": 2,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "14,14,14",
+            "delta": "-2,-2,-2"
+          },
+          {
+            "want": "32,32,32",
+            "got": "35,35,35",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "64,64,64",
+            "got": "73,73,73",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "96,96,96",
+            "got": "107,107,107",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "128,128,128",
+            "got": "139,139,139",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "160,160,160",
+            "got": "169,169,169",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "192,192,192",
+            "got": "199,199,199",
+            "delta": "7,7,7"
+          },
+          {
+            "want": "235,235,235",
+            "got": "238,238,238",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "255,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,0,255",
+            "got": "0,0,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,255,0",
+            "got": "254,255,0",
+            "delta": "-1,0,0"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,254,255",
+            "delta": "0,-1,0"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,0,254",
+            "delta": "0,0,-1"
+          }
+        ]
+      },
+      "external_to_rgba8unorm_srgb": {
+        "worst": 82,
+        "median_abs": 12,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "67,67,67",
+            "delta": "51,51,51"
+          },
+          {
+            "want": "32,32,32",
+            "got": "103,103,103",
+            "delta": "71,71,71"
+          },
+          {
+            "want": "64,64,64",
+            "got": "146,146,146",
+            "delta": "82,82,82"
+          },
+          {
+            "want": "96,96,96",
+            "got": "173,173,173",
+            "delta": "77,77,77"
+          },
+          {
+            "want": "128,128,128",
+            "got": "195,195,195",
+            "delta": "67,67,67"
+          },
+          {
+            "want": "160,160,160",
+            "got": "213,213,213",
+            "delta": "53,53,53"
+          },
+          {
+            "want": "192,192,192",
+            "got": "229,229,229",
+            "delta": "37,37,37"
+          },
+          {
+            "want": "235,235,235",
+            "got": "247,247,247",
+            "delta": "12,12,12"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "255,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,1",
+            "delta": "0,0,1"
+          },
+          {
+            "want": "0,0,255",
+            "got": "1,0,255",
+            "delta": "1,0,0"
+          },
+          {
+            "want": "255,255,0",
+            "got": "255,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,0,255",
+            "delta": "0,0,0"
+          }
+        ]
+      },
+      "copyExternalImageToTexture": {
+        "worst": 11,
+        "median_abs": 2,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "14,14,14",
+            "delta": "-2,-2,-2"
+          },
+          {
+            "want": "32,32,32",
+            "got": "35,35,35",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "64,64,64",
+            "got": "73,73,73",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "96,96,96",
+            "got": "107,107,107",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "128,128,128",
+            "got": "139,139,139",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "160,160,160",
+            "got": "169,169,169",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "192,192,192",
+            "got": "199,199,199",
+            "delta": "7,7,7"
+          },
+          {
+            "want": "235,235,235",
+            "got": "238,238,238",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "255,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,0,255",
+            "got": "0,0,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,255,0",
+            "got": "254,255,0",
+            "delta": "-1,0,0"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,254,255",
+            "delta": "0,-1,0"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,0,254",
+            "delta": "0,0,-1"
+          }
+        ]
+      }
+    },
+    "probe-420-pc": {
+      "colorSpace": {
+        "primaries": "bt709",
+        "transfer": "bt709",
+        "matrix": "bt709",
+        "fullRange": false
+      },
+      "format": "NV12",
+      "external_to_rgba8unorm": {
+        "worst": 11,
+        "median_abs": 2,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "14,14,14",
+            "delta": "-2,-2,-2"
+          },
+          {
+            "want": "32,32,32",
+            "got": "35,35,35",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "64,64,64",
+            "got": "73,73,73",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "96,96,96",
+            "got": "107,107,107",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "128,128,128",
+            "got": "139,139,139",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "160,160,160",
+            "got": "169,169,169",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "192,192,192",
+            "got": "199,199,199",
+            "delta": "7,7,7"
+          },
+          {
+            "want": "235,235,235",
+            "got": "238,238,238",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "254,0,0",
+            "delta": "-1,0,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,0,255",
+            "got": "0,0,254",
+            "delta": "0,0,-1"
+          },
+          {
+            "want": "255,255,0",
+            "got": "255,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,255,254",
+            "delta": "0,0,-1"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,0,255",
+            "delta": "0,0,0"
+          }
+        ]
+      },
+      "external_to_rgba8unorm_srgb": {
+        "worst": 82,
+        "median_abs": 12,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "67,67,67",
+            "delta": "51,51,51"
+          },
+          {
+            "want": "32,32,32",
+            "got": "103,103,103",
+            "delta": "71,71,71"
+          },
+          {
+            "want": "64,64,64",
+            "got": "146,146,146",
+            "delta": "82,82,82"
+          },
+          {
+            "want": "96,96,96",
+            "got": "173,173,173",
+            "delta": "77,77,77"
+          },
+          {
+            "want": "128,128,128",
+            "got": "195,195,195",
+            "delta": "67,67,67"
+          },
+          {
+            "want": "160,160,160",
+            "got": "213,213,213",
+            "delta": "53,53,53"
+          },
+          {
+            "want": "192,192,192",
+            "got": "229,229,229",
+            "delta": "37,37,37"
+          },
+          {
+            "want": "235,235,235",
+            "got": "247,247,247",
+            "delta": "12,12,12"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "255,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,0,255",
+            "got": "0,0,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,255,0",
+            "got": "255,255,1",
+            "delta": "0,0,1"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,1,255",
+            "delta": "0,1,0"
+          }
+        ]
+      },
+      "copyExternalImageToTexture": {
+        "worst": 11,
+        "median_abs": 2,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "14,14,14",
+            "delta": "-2,-2,-2"
+          },
+          {
+            "want": "32,32,32",
+            "got": "35,35,35",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "64,64,64",
+            "got": "73,73,73",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "96,96,96",
+            "got": "107,107,107",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "128,128,128",
+            "got": "139,139,139",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "160,160,160",
+            "got": "169,169,169",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "192,192,192",
+            "got": "199,199,199",
+            "delta": "7,7,7"
+          },
+          {
+            "want": "235,235,235",
+            "got": "238,238,238",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "254,0,0",
+            "delta": "-1,0,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,0,255",
+            "got": "0,0,254",
+            "delta": "0,0,-1"
+          },
+          {
+            "want": "255,255,0",
+            "got": "255,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,255,254",
+            "delta": "0,0,-1"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,0,255",
+            "delta": "0,0,0"
+          }
+        ]
+      }
+    }
+  },
+  "colour:wall-seconds": 0.1,
+  "shared-device": {
+    "what": "whether onnxruntime-web 1.27 will run on a device it did not create",
+    "adapter_features": [
+      "depth32float-stencil8",
+      "rg11b10ufloat-renderable",
+      "texture-formats-tier1",
+      "bgra8unorm-storage",
+      "texture-compression-bc",
+      "dual-source-blending",
+      "core-features-and-limits",
+      "float32-filterable",
+      "indirect-first-instance",
+      "texture-compression-astc-sliced-3d",
+      "float32-blendable",
+      "texture-compression-astc",
+      "texture-compression-etc2",
+      "depth-clip-control",
+      "texture-compression-bc-sliced-3d",
+      "clip-distances",
+      "timestamp-query",
+      "texture-formats-tier2",
+      "shader-f16",
+      "primitive-index",
+      "texture-component-swizzle",
+      "subgroups"
+    ],
+    "attempts": {
+      "ep_option_features_matched": {
+        "session_error": "Error: Can't create a session. ERROR_CODE: 1, ERROR_MESSAGE: Failed to wait for the operation:3"
+      },
+      "ep_option_no_features": {
+        "session_error": "Error: Can't create a session. ERROR_CODE: 1, ERROR_MESSAGE: Failed to wait for the operation:3"
+      },
+      "env_device_features_matched": {
+        "session_error": "24244792"
+      }
+    }
+  },
+  "shared-device:wall-seconds": 0.1
+}

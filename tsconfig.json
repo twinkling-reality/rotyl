@@ -30,5 +30,5 @@
     "rootDir": ".",
     "resolveJsonModule": true
   },
-  "include": ["src", "test", "e2e", "*.config.ts"]
+  "include": ["src", "test", "e2e", "tools/video-bench", "*.config.ts"]
 }

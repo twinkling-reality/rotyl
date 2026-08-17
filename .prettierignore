@@ -7,3 +7,5 @@ pnpm-lock.yaml
 tools/edgetam-export/venv
 tools/edgetam-export/onnx
 tools/edgetam-export/fixture
+tools/video-bench/clips
+tools/video-bench/results.json
