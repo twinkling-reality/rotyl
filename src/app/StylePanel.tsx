@@ -1,9 +1,12 @@
 import type { JSX } from 'preact';
-import type { ComicControls } from '../core/style/comic-params.ts';
+import type { StyleControls, StyleDefinition } from '../core/style/style.ts';
 
 export interface StylePanelProps {
-  readonly controls: ComicControls;
-  readonly onChange: (controls: ComicControls) => void;
+  readonly styles: readonly StyleDefinition[];
+  readonly style: StyleDefinition;
+  readonly controls: StyleControls;
+  readonly onStyleChange: (style: StyleDefinition) => void;
+  readonly onChange: (controls: StyleControls) => void;
   readonly onInteractionChange: (dragging: boolean) => void;
 }
 
@@ -58,30 +61,55 @@ function Slider({ label, value, onInput, onInteractionChange }: SliderProps): JS
  * A popover centred over the image would cover the very thing the user is
  * judging while they drag Strength. Docking costs 280px of viewport and makes
  * the result continuously visible, which for this product is the whole point.
+ *
+ * The sliders are BUILT FROM THE STYLE, not written here. A style declares its
+ * controls and this renders them, so a style with three of them needs no UI
+ * code of its own — which is the same seam the renderer has, arriving at the
+ * one layer where it would otherwise be tempting to special-case.
  */
-export function StylePanel({ controls, onChange, onInteractionChange }: StylePanelProps): JSX.Element {
+export function StylePanel({
+  styles,
+  style,
+  controls,
+  onStyleChange,
+  onChange,
+  onInteractionChange,
+}: StylePanelProps): JSX.Element {
   return (
     <aside class="style-panel" aria-label="Style controls">
       <div class="style-panel__header">
-        <h2 class="style-panel__title">Comic</h2>
+        <div class="style-choice" role="group" aria-label="Style">
+          {styles.map((candidate) => {
+            const active = candidate.id === style.id;
+            return (
+              <button
+                key={candidate.id}
+                type="button"
+                aria-pressed={active}
+                class={`style-choice__option${active ? ' style-choice__option--active' : ''}`}
+                onClick={() => {
+                  onStyleChange(candidate);
+                }}
+              >
+                {candidate.name}
+              </button>
+            );
+          })}
+        </div>
         <span class="style-panel__hint mono">local</span>
       </div>
-      <Slider
-        label="Strength"
-        value={controls.strength}
-        onInput={(strength) => {
-          onChange({ ...controls, strength });
-        }}
-        onInteractionChange={onInteractionChange}
-      />
-      <Slider
-        label="Detail"
-        value={controls.detail}
-        onInput={(detail) => {
-          onChange({ ...controls, detail });
-        }}
-        onInteractionChange={onInteractionChange}
-      />
+
+      {style.controls.map((spec) => (
+        <Slider
+          key={spec.key}
+          label={spec.label}
+          value={controls[spec.key] ?? spec.initial}
+          onInput={(value) => {
+            onChange({ ...controls, [spec.key]: value });
+          }}
+          onInteractionChange={onInteractionChange}
+        />
+      ))}
     </aside>
   );
 }

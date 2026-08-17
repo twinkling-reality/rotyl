@@ -6,7 +6,7 @@
  * RGB channels independently produces green/red/magenta blotches at band
  * boundaries, because each channel steps at a different luminance.
  *
- * Mirrors the WGSL in `style/wgsl/color.wgsl`; the two are kept in agreement by
+ * Mirrors the WGSL in `color/color.wgsl`; the two are kept in agreement by
  * the colour tests.
  *
  * The `l_` / `m_` / `s_` names are Ottosson's own notation for the cube-rooted

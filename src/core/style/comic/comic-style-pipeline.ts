@@ -1,12 +1,13 @@
-import { FullscreenPass, UniformRing } from '../gpu/fullscreen-pass.ts';
-import { ResourcePool } from '../gpu/resource-pool.ts';
-import { SCALAR_FORMAT, WORKING_FORMAT } from '../gpu/formats.ts';
-import type { ComicParams } from './comic-params.ts';
-import { bufferSizeForShortEdge, type Dimensions } from '../render/resolution.ts';
+import { FullscreenPass, UniformRing } from '../../gpu/fullscreen-pass.ts';
+import { DeferredRelease, ResourcePool } from '../../gpu/resource-pool.ts';
+import { SCALAR_FORMAT, WORKING_FORMAT } from '../../gpu/formats.ts';
+import { COMIC_CONTROLS, resolveComicParams, type ComicParams } from './comic-params.ts';
+import { bufferSizeForShortEdge, shortEdge, type Dimensions } from '../../render/resolution.ts';
+import type { StyleControls, StyleDefinition, StylePipeline, StyleQuality, StyledLayer } from '../style.ts';
 
-import colorWgsl from './wgsl/color.wgsl?raw';
+import colorWgsl from '../../color/color.wgsl?raw';
+import downsampleWgsl from '../wgsl/downsample.wgsl?raw';
 import inkWgsl from './wgsl/ink.wgsl?raw';
-import downsampleWgsl from './wgsl/downsample.wgsl?raw';
 import structureTensorWgsl from './wgsl/structure-tensor.wgsl?raw';
 import gaussianBlurWgsl from './wgsl/gaussian-blur.wgsl?raw';
 import kuwaharaWgsl from './wgsl/anisotropic-kuwahara.wgsl?raw';
@@ -91,7 +92,7 @@ const uni = (binding: number): GPUBindGroupLayoutEntry => ({
 const withColor = (source: string): string => `${colorWgsl}\n${source}`;
 const withColorAndInk = (source: string): string => `${colorWgsl}\n${inkWgsl}\n${source}`;
 
-export class ComicStylePipeline {
+export class ComicStylePipeline implements StylePipeline {
   readonly #device: GPUDevice;
   readonly #sampler: GPUSampler;
   readonly #uniforms: UniformRing;
@@ -116,11 +117,11 @@ export class ComicStylePipeline {
   };
 
   #stages: StageTextures | undefined;
-  /** Pools whose last frame has been submitted but may not have finished. */
-  readonly #retired = new Set<ResourcePool>();
+  readonly #retired: DeferredRelease;
 
   constructor(device: GPUDevice) {
     this.#device = device;
+    this.#retired = new DeferredRelease(device);
     this.#sampler = device.createSampler({
       magFilter: 'linear',
       minFilter: 'linear',
@@ -197,30 +198,6 @@ export class ComicStylePipeline {
     };
   }
 
-  /**
-   * Release a stage pool once the GPU has finished with it.
-   *
-   * Changing the Detail slider changes these buffer sizes, and the frame that
-   * last used them has been submitted but not necessarily executed — freeing
-   * them immediately is a use-after-free.
-   *
-   * Keyed on queue completion rather than on a later frame, because there may
-   * not be a later frame: the style chain only re-runs when a style control
-   * changes, so after an export the editor can sit idle indefinitely. Ageing
-   * these out in `render()` parked several hundred megabytes of unreachable GPU
-   * memory for the rest of the session.
-   *
-   * `dispose()` takes ownership by clearing the set, so a completion callback
-   * arriving after teardown finds nothing to free and does nothing.
-   */
-  #retire(pool: ResourcePool): void {
-    this.#retired.add(pool);
-    void this.#device.queue.onSubmittedWorkDone().then(() => {
-      if (!this.#retired.delete(pool)) return;
-      pool.dispose();
-    });
-  }
-
   #bindGroup(layout: GPUBindGroupLayout, resources: readonly GPUBindingResource[]): GPUBindGroup {
     return this.#device.createBindGroup({
       layout,
@@ -283,7 +260,9 @@ export class ComicStylePipeline {
       return existing;
     }
 
-    if (existing) this.#retire(existing.pool);
+    // Changing the Detail slider changes these buffer sizes, and the frame that
+    // last used them has been submitted but not necessarily executed.
+    if (existing) this.#retired.after(() => existing.pool.dispose());
 
     const pool = new ResourcePool();
     const usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT;
@@ -313,17 +292,15 @@ export class ComicStylePipeline {
     return stages;
   }
 
-  /**
-   * Run the chain. `sourceView` must be an sRGB view, so every stage downstream
-   * works in linear light.
-   */
   render(
     encoder: GPUCommandEncoder,
     sourceView: GPUTextureView,
     source: Dimensions,
     output: Dimensions,
-    params: ComicParams,
-  ): GPUTexture {
+    controls: StyleControls,
+    quality: StyleQuality,
+  ): StyledLayer {
+    const params = resolveComicParams(controls, shortEdge(output), quality);
     const stages = this.#ensureStages(source, output, params);
     const { flatten, ink } = stages;
     const flatA = stages.flat[0];
@@ -454,15 +431,20 @@ export class ComicStylePipeline {
     );
 
     this.#uniforms.flush(this.#device.queue);
-    return stages.styled;
+    return { texture: stages.styled, mix: params.styleMix };
   }
 
   dispose(): void {
-    const retired = [...this.#retired];
-    this.#retired.clear();
-    for (const pool of retired) pool.dispose();
+    this.#retired.dispose();
     this.#stages?.pool.dispose();
     this.#stages = undefined;
     this.#uniforms.destroy();
   }
 }
+
+export const COMIC_STYLE: StyleDefinition = {
+  id: 'comic',
+  name: 'Comic',
+  controls: COMIC_CONTROLS,
+  create: (device) => new ComicStylePipeline(device),
+};

@@ -9,7 +9,8 @@ import { Viewport } from './Viewport.tsx';
 import { decodeImageFile, describeImageLoadError } from '../platform/image-file.ts';
 import { uploadImageToTexture } from '../platform/texture-upload.ts';
 import { exportFilename, exportImage } from '../platform/image-export.ts';
-import { DEFAULT_COMIC_CONTROLS, type ComicControls } from '../core/style/comic-params.ts';
+import { defaultControls, type StyleControls, type StyleDefinition } from '../core/style/style.ts';
+import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
 import type { Tool } from './tool.ts';
 import type { PerceptionStatus, SelectIntent } from '../core/perception/perception-store.ts';
 
@@ -51,7 +52,14 @@ export function App(): JSX.Element {
   const [tool, setTool] = useState<Tool>('paint');
   const [perception, setPerception] = useState<PerceptionStatus>({ kind: 'idle' });
   const [brushRadius, setBrushRadius] = useState(64);
-  const [controls, setControls] = useState<ComicControls>(DEFAULT_COMIC_CONTROLS);
+  const [style, setStyle] = useState<StyleDefinition>(DEFAULT_STYLE);
+  // Kept per style rather than reset on every switch: comparing two styles
+  // means going back and forth, and losing a considered Strength each time
+  // would make the comparison the thing that costs, not the choice.
+  const [controlsByStyle, setControlsByStyle] = useState<Readonly<Record<string, StyleControls>>>(() =>
+    Object.fromEntries(STYLES.map((candidate) => [candidate.id, defaultControls(candidate)])),
+  );
+  const controls = controlsByStyle[style.id] ?? defaultControls(style);
   const [stylePanelOpen, setStylePanelOpen] = useState(false);
   const [busy, setBusy] = useState<string | undefined>(undefined);
   const [pending, setPending] = useState<File | undefined>(undefined);
@@ -132,8 +140,9 @@ export function App(): JSX.Element {
   }, [runtime, loaded, tool]);
 
   useEffect(() => {
+    runtime?.engine.setStyle(style);
     runtime?.engine.setControls(controls);
-  }, [runtime, controls]);
+  }, [runtime, style, controls]);
 
   const onExport = useCallback(async (): Promise<void> => {
     if (!runtime || !loaded) return;
@@ -147,6 +156,7 @@ export function App(): JSX.Element {
         refiner: runtime.engine.maskRefiner,
         file: loaded.file,
         commands: runtime.engine.document.appliedCommands,
+        style,
         controls,
         format: 'png',
       });
@@ -169,7 +179,7 @@ export function App(): JSX.Element {
       runtime.engine.invalidateStyle();
       setBusy(undefined);
     }
-  }, [runtime, loaded, controls]);
+  }, [runtime, loaded, style, controls]);
 
   // --- keyboard ---
   useEffect(() => {
@@ -344,8 +354,13 @@ export function App(): JSX.Element {
           </Viewport>
           {stylePanelOpen ? (
             <StylePanel
+              styles={STYLES}
+              style={style}
               controls={controls}
-              onChange={setControls}
+              onStyleChange={setStyle}
+              onChange={(next) => {
+                setControlsByStyle((byStyle) => ({ ...byStyle, [style.id]: next }));
+              }}
               onInteractionChange={(dragging) => {
                 // Drop the flatten stage's resolution while a slider is moving,
                 // then settle back to full quality on release.

@@ -9,7 +9,8 @@ import {
   SOURCE_FORMAT,
   SOURCE_VIEW_FORMAT,
 } from '../src/core/gpu/formats.ts';
-import { DEFAULT_COMIC_CONTROLS } from '../src/core/style/comic-params.ts';
+import { COMIC_STYLE } from '../src/core/style/comic/comic-style-pipeline.ts';
+import { defaultControls } from '../src/core/style/style.ts';
 import type { SelectionCommand } from '../src/core/document/selection-command.ts';
 
 /**
@@ -93,7 +94,8 @@ async function exportAt(size: number): Promise<Uint8Array> {
     // The stroke is expressed as a fraction of this image, so the same
     // selection is described at either resolution.
     commands: [centreStroke(size)],
-    controls: DEFAULT_COMIC_CONTROLS,
+    style: COMIC_STYLE,
+    controls: defaultControls(COMIC_STYLE),
     target,
   });
 

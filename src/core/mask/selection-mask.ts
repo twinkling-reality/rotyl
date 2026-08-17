@@ -4,7 +4,7 @@ import { FullscreenPass } from '../gpu/fullscreen-pass.ts';
 import type { BrushStroke, SelectionCommand } from '../document/selection-command.ts';
 import type { Dimensions } from '../render/resolution.ts';
 import type { MaskRefiner } from './mask-refiner.ts';
-import colorWgsl from '../style/wgsl/color.wgsl?raw';
+import colorWgsl from '../color/color.wgsl?raw';
 import brushStampWgsl from './wgsl/brush-stamp.wgsl?raw';
 import maskOpWgsl from './wgsl/mask-op.wgsl?raw';
 

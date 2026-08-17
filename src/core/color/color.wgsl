@@ -13,11 +13,15 @@ fn luminance(c: vec3f) -> f32 {
 // The sRGB encode, in software.
 //
 // Normally the hardware does this when the composite writes through an sRGB
-// view, and doing it by hand would be a second, redundant encode. There is one
-// consumer that is not a display: a segmentation model, which was trained on
-// ordinary encoded image files and expects values in that space. Feeding it
-// linear light instead is not a subtle error — every shadow arrives several
-// stops too dark.
+// view, and doing it by hand would be a second, redundant encode. Two consumers
+// are not displays and do need it explicitly: a segmentation model, which was
+// trained on ordinary encoded image files, and the print style's separation,
+// where ink density is a perceptual quantity rather than a radiometric one.
+// Feeding either linear light is not a subtle error — every shadow arrives
+// several stops too dark.
+//
+// In both cases the encode happens AFTER any averaging. Averaging encoded
+// values darkens every edge it touches.
 fn linearToSrgb(c: vec3f) -> vec3f {
   let low = c * 12.92;
   let high = 1.055 * pow(max(c, vec3f(0.0)), vec3f(1.0 / 2.4)) - 0.055;

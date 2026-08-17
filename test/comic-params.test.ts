@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_COMIC_CONTROLS,
-  QUALITY_SCALE,
-  resolveComicParams,
-  type StyleQuality,
-} from '../src/core/style/comic-params.ts';
+import { DEFAULT_COMIC_CONTROLS, resolveComicParams } from '../src/core/style/comic/comic-params.ts';
+import { QUALITY_SCALE, type StyleQuality } from '../src/core/style/style.ts';
 import { bufferSizeForShortEdge } from '../src/core/render/resolution.ts';
 
 const QUALITIES: StyleQuality[] = ['draft', 'full', 'export'];

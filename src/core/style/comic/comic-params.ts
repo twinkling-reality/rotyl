@@ -1,3 +1,14 @@
+import {
+  control,
+  fadeToNothing,
+  lerp,
+  QUALITY_SCALE,
+  stageResolution,
+  type StyleControlSpec,
+  type StyleControls,
+  type StyleQuality,
+} from '../style.ts';
+
 /**
  * The comic style's two user controls, and every internal constant they drive.
  *
@@ -33,26 +44,17 @@
  * Fractions are calibrated against a 512 px reference (hence the /512 terms).
  */
 
-export interface ComicControls {
-  /** Scale of abstraction. 0 = broad flat shapes, 1 = fine detail preserved. */
-  readonly detail: number;
+export const DEFAULT_COMIC_CONTROLS = {
   /** Amount of stylisation. 0 = untouched, 1 = fully graphic. */
-  readonly strength: number;
-}
-
-export const DEFAULT_COMIC_CONTROLS: ComicControls = { detail: 0.5, strength: 0.7 };
-
-/** Quality tiers scale resolution and radius together, so the look is unchanged. */
-export const QUALITY_SCALE = {
-  /** While a slider is being dragged. */
-  draft: 0.6,
-  /** Settled, and what the user judges the result by. */
-  full: 1,
-  /** Export: no longer competing with input latency. */
-  export: 1.4,
+  strength: 0.7,
+  /** Scale of abstraction. 0 = broad flat shapes, 1 = fine detail preserved. */
+  detail: 0.5,
 } as const;
 
-export type StyleQuality = keyof typeof QUALITY_SCALE;
+export const COMIC_CONTROLS: readonly StyleControlSpec[] = [
+  { key: 'strength', label: 'Strength', initial: DEFAULT_COMIC_CONTROLS.strength },
+  { key: 'detail', label: 'Detail', initial: DEFAULT_COMIC_CONTROLS.detail },
+];
 
 /**
  * Target radii at quality 1.0, in pixels of each stage's own buffer.
@@ -95,42 +97,13 @@ export interface ComicParams {
   readonly styleMix: number;
 }
 
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.min(hi, Math.max(lo, v));
-}
-
-/** Below this strength the effect fades out entirely, so 0 is a true no-op. */
-const NO_OP_FADE = 0.15;
-
-/** Stage resolutions snap to this grid so slider drags do not reallocate every frame. */
-const RESOLUTION_STEP = 64;
-
-/**
- * Snap a requested resolution to the grid, never exceeding `ceiling`.
- *
- * Clamping before snapping is not enough: rounding a clamped value can push it
- * back above the ceiling (480 snaps to 512), and the pipeline then allocates
- * the smaller buffer the source can actually supply while the radius is still
- * derived from the larger request. The apparent scale drifts, and since the
- * quality tier changes the request, preview and export drift by different
- * amounts — silently breaking the one invariant this module exists to hold.
- */
-function quantise(value: number, ceiling: number): number {
-  const snapped = Math.round(value / RESOLUTION_STEP) * RESOLUTION_STEP;
-  return Math.max(RESOLUTION_STEP, Math.min(ceiling, snapped));
-}
-
 export function resolveComicParams(
-  controls: ComicControls,
+  controls: StyleControls,
   outputShortEdge: number,
   quality: StyleQuality,
 ): ComicParams {
-  const detail = clamp(controls.detail, 0, 1);
-  const strength = clamp(controls.strength, 0, 1);
+  const detail = control(controls, 'detail', DEFAULT_COMIC_CONTROLS.detail);
+  const strength = control(controls, 'strength', DEFAULT_COMIC_CONTROLS.strength);
   const q = QUALITY_SCALE[quality];
 
   // Apparent radii, as fractions of the image's short edge.
@@ -147,8 +120,8 @@ export function resolveComicParams(
   // every intermediate texture per frame. Quantisation is free: the radius is
   // recovered from the granted resolution, so the apparent scale is exactly
   // preserved and only sample density steps.
-  const flattenShortEdge = quantise((FLATTEN_RADIUS * q) / flattenFraction, outputShortEdge);
-  const inkShortEdge = quantise(
+  const flattenShortEdge = stageResolution((FLATTEN_RADIUS * q) / flattenFraction, outputShortEdge);
+  const inkShortEdge = stageResolution(
     (EDGE_SIGMA * q) / edgeFraction,
     Math.min(outputShortEdge, Math.round(INK_RESOLUTION_CAP * q)),
   );
@@ -190,6 +163,6 @@ export function resolveComicParams(
     quantSharpness: 8 * bins,
     saturation: lerp(1, 1.45, strength),
 
-    styleMix: strength < NO_OP_FADE ? strength / NO_OP_FADE : 1,
+    styleMix: fadeToNothing(strength),
   };
 }

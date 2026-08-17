@@ -502,10 +502,37 @@ button {
   margin-bottom: var(--s-4);
 }
 
-.style-panel__title {
+/*
+ * The style picker. A segmented control would box in two words and read as a
+ * form; these are labels that light up, which is what a choice between two
+ * looks should feel like. The active one is marked by colour and a hairline,
+ * never by weight.
+ */
+.style-choice {
+  display: flex;
+  gap: var(--s-3);
+}
+
+.style-choice__option {
+  padding: 0 0 var(--s-1);
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  /* Not --text-tertiary: at 3.47:1 it is below the 4.5:1 AA minimum, and this
+     is 12px text. */
+  color: var(--text-secondary);
+  font: inherit;
   font-size: var(--fs-sm);
-  font-weight: var(--fw-regular);
-  margin: 0;
+  cursor: pointer;
+}
+
+.style-choice__option:hover {
+  color: var(--text-primary);
+}
+
+.style-choice__option--active {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
 }
 
 .style-panel__hint {

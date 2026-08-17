@@ -78,7 +78,7 @@ export interface RefineParams {
  * Clamping happens before the radius is recovered, so when a bound binds it is
  * the radius that gives way rather than the fraction drifting — which is what
  * keeps preview and export identical. The same argument, and the same trap,
- * as `quantise` in comic-params.
+ * as `stageResolution` in the style layer.
  */
 export function resolveRefineParams(settings: RefineSettings, outputShortEdge: number): RefineParams {
   const fraction = Math.max(1e-4, settings.windowFraction);

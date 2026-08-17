@@ -4,7 +4,14 @@ import { SelectionDocument } from '../document/selection-document.ts';
 import { hasAnyCoverage, type BrushStroke, type StrokePoint } from '../document/selection-command.ts';
 import { SelectionMask, type MaskReplayContext } from '../mask/selection-mask.ts';
 import { MaskRefiner } from '../mask/mask-refiner.ts';
-import { DEFAULT_COMIC_CONTROLS, type ComicControls, type StyleQuality } from '../style/comic-params.ts';
+import {
+  defaultControls,
+  sameControls,
+  type StyleControls,
+  type StyleDefinition,
+  type StyleQuality,
+} from '../style/style.ts';
+import { DEFAULT_STYLE } from '../style/styles.ts';
 import { CompositeRenderer } from './composite-renderer.ts';
 import { DisplayRenderer, OVERLAY_VISIBLE, type OverlayState } from './display-renderer.ts';
 import { outputDimensions, type Dimensions } from './resolution.ts';
@@ -56,7 +63,8 @@ export class RotylEngine {
   readonly #refiner: MaskRefiner;
 
   #media: Media | undefined;
-  #controls: ComicControls = DEFAULT_COMIC_CONTROLS;
+  #style: StyleDefinition = DEFAULT_STYLE;
+  #controls: StyleControls = defaultControls(DEFAULT_STYLE);
   #quality: StyleQuality = 'full';
   #view: ViewTransform = { zoom: 1, center: { x: 0, y: 0 } };
   #overlay: OverlayState = OVERLAY_VISIBLE;
@@ -102,7 +110,11 @@ export class RotylEngine {
     return this.#view;
   }
 
-  get controls(): ComicControls {
+  get style(): StyleDefinition {
+    return this.#style;
+  }
+
+  get controls(): StyleControls {
     return this.#controls;
   }
 
@@ -182,8 +194,14 @@ export class RotylEngine {
     this.#displayDirty = true;
   }
 
-  setControls(controls: ComicControls): void {
-    if (controls.detail === this.#controls.detail && controls.strength === this.#controls.strength) return;
+  setStyle(style: StyleDefinition): void {
+    if (style.id === this.#style.id) return;
+    this.#style = style;
+    this.#styleDirty = true;
+  }
+
+  setControls(controls: StyleControls): void {
+    if (sameControls(controls, this.#controls)) return;
     this.#controls = controls;
     this.#styleDirty = true;
   }
@@ -296,17 +314,15 @@ export class RotylEngine {
     media.mask.beginFrame();
     this.#refiner.beginFrame();
 
-    const request = {
-      sourceTexture: media.sourceTexture,
-      sourceSize: media.sourceSize,
-      outputSize: media.outputSize,
-      maskTexture: media.mask.texture,
-      controls: this.#controls,
-      quality: this.#quality,
-    };
-
     if (this.#styleDirty) {
-      this.#composite.renderStyle(encoder, request);
+      this.#composite.renderStyle(encoder, {
+        sourceTexture: media.sourceTexture,
+        sourceSize: media.sourceSize,
+        outputSize: media.outputSize,
+        style: this.#style,
+        controls: this.#controls,
+        quality: this.#quality,
+      });
       this.#styleDirty = false;
       this.#compositeDirty = true;
     }
@@ -314,11 +330,10 @@ export class RotylEngine {
     this.#updateMask(encoder, media);
 
     if (this.#compositeDirty) {
-      // The mask texture identity can change: a whole-mask operation such as
-      // invert ping-pongs between two targets.
       this.#composite.composite(
         encoder,
-        { ...request, maskTexture: media.mask.texture },
+        media.sourceTexture,
+        media.mask.texture,
         media.composite.createView({ format: OUTPUT_VIEW_FORMAT }),
       );
       this.#compositeDirty = false;

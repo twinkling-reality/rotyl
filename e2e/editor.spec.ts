@@ -110,6 +110,34 @@ test('reveals the style controls only when asked', async ({ page }) => {
   await expect(panel).toBeHidden();
 });
 
+test('switches styles and brings each one its own controls', async ({ page }) => {
+  // The seam, from the outside: the panel has no per-style code, so a style
+  // arriving with three controls where the last had two is the observable
+  // difference between a real boundary and a hard-coded pair of sliders.
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.getByRole('button', { name: 'Style' }).click();
+
+  const comic = page.getByRole('button', { name: 'Comic' });
+  const print = page.getByRole('button', { name: 'Print' });
+  await expect(comic).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Detail')).toBeVisible();
+
+  await print.click();
+  await expect(print).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Coarseness')).toBeVisible();
+  await expect(page.getByLabel('Colour')).toBeVisible();
+  await expect(page.getByLabel('Detail')).toBeHidden();
+
+  // A style's settings survive a look at the other one.
+  const coarseness = page.getByLabel('Coarseness');
+  await coarseness.fill('0.8');
+  await comic.click();
+  await expect(page.getByLabel('Detail')).toBeVisible();
+  await print.click();
+  await expect(coarseness).toHaveValue('0.8');
+});
+
 test('keeps the toolbar over the image when the style panel opens', async ({ page }) => {
   // The toolbar is positioned against the viewport, not the editor. Against the
   // editor it centred on the docked panel too and drifted off the image.

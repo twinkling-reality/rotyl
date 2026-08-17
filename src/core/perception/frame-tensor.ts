@@ -1,7 +1,7 @@
 import { FullscreenPass } from '../gpu/fullscreen-pass.ts';
 import { ResourcePool } from '../gpu/resource-pool.ts';
 import type { Dimensions } from '../render/resolution.ts';
-import colorWgsl from '../style/wgsl/color.wgsl?raw';
+import colorWgsl from '../color/color.wgsl?raw';
 import frameTensorWgsl from './wgsl/frame-tensor.wgsl?raw';
 
 /**

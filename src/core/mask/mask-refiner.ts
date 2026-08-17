@@ -1,10 +1,10 @@
 import { FullscreenPass, UniformRing } from '../gpu/fullscreen-pass.ts';
-import { ResourcePool } from '../gpu/resource-pool.ts';
+import { DeferredRelease, ResourcePool } from '../gpu/resource-pool.ts';
 import { MASK_FORMAT } from '../gpu/formats.ts';
 import { bufferSizeForShortEdge, shortEdge, type Dimensions } from '../render/resolution.ts';
 import { resolveRefineParams, type RefineParams, type RefineSettings } from './refine-params.ts';
 
-import colorWgsl from '../style/wgsl/color.wgsl?raw';
+import colorWgsl from '../color/color.wgsl?raw';
 import guidedGuideWgsl from './wgsl/guided-guide.wgsl?raw';
 import guidedMomentsWgsl from './wgsl/guided-moments.wgsl?raw';
 import boxBlurWgsl from './wgsl/box-blur.wgsl?raw';
@@ -168,10 +168,11 @@ export class MaskRefiner {
   /** Replaced this frame; still referenced by commands not yet submitted. */
   #superseded: (ResourcePool | UniformRing)[] = [];
   /** Awaiting a fence that is known to cover the frame that used them. */
-  readonly #retired = new Set<ResourcePool | UniformRing>();
+  readonly #retired: DeferredRelease;
 
   constructor(device: GPUDevice) {
     this.#device = device;
+    this.#retired = new DeferredRelease(device);
   }
 
   #ensurePipelines(): Pipelines {
@@ -259,16 +260,12 @@ export class MaskRefiner {
    */
   beginFrame(): void {
     this.#uniformCursor = 0;
-    for (const resource of this.#superseded) this.#retire(resource);
+    for (const resource of this.#superseded) {
+      this.#retired.after(() => {
+        release(resource);
+      });
+    }
     this.#superseded.length = 0;
-  }
-
-  #retire(resource: ResourcePool | UniformRing): void {
-    this.#retired.add(resource);
-    void this.#device.queue.onSubmittedWorkDone().then(() => {
-      if (!this.#retired.delete(resource)) return;
-      release(resource);
-    });
   }
 
   /**
@@ -433,9 +430,8 @@ export class MaskRefiner {
   }
 
   dispose(): void {
-    const retired = [...this.#retired];
-    this.#retired.clear();
-    for (const resource of [...retired, ...this.#superseded]) release(resource);
+    this.#retired.dispose();
+    for (const resource of this.#superseded) release(resource);
     this.#superseded.length = 0;
     this.#stages?.pool.dispose();
     this.#stages = undefined;

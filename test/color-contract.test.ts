@@ -9,7 +9,7 @@ import {
 } from '../src/core/gpu/formats.ts';
 import { linearToSrgb, srgbToLinear } from '../src/core/color/srgb.ts';
 import { linearToOklab, oklabToLinear } from '../src/core/color/oklab.ts';
-import colorWgsl from '../src/core/style/wgsl/color.wgsl?raw';
+import colorWgsl from '../src/core/color/color.wgsl?raw';
 
 /**
  * The colour contract, proved on the real GPU.

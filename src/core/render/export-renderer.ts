@@ -4,7 +4,7 @@ import type { MaskRefiner } from '../mask/mask-refiner.ts';
 import { outputDimensions, type Dimensions } from './resolution.ts';
 import { OUTPUT_VIEW_FORMAT, SOURCE_VIEW_FORMAT } from '../gpu/formats.ts';
 import type { SelectionCommand } from '../document/selection-command.ts';
-import type { ComicControls } from '../style/comic-params.ts';
+import type { StyleControls, StyleDefinition } from '../style/style.ts';
 
 export interface ExportRequest {
   readonly device: GPUDevice;
@@ -24,7 +24,8 @@ export interface ExportRequest {
   readonly sourceTexture: GPUTexture;
   readonly sourceSize: Dimensions;
   readonly commands: readonly SelectionCommand[];
-  readonly controls: ComicControls;
+  readonly style: StyleDefinition;
+  readonly controls: StyleControls;
   /** Where the result is written; must accept an OUTPUT_VIEW_FORMAT view. */
   readonly target: GPUTexture;
 }
@@ -53,7 +54,7 @@ export function exportDimensions(source: Dimensions, maxTextureDimension: number
  * use-after-free that presents as an intermittent hard crash.
  */
 export async function renderExport(request: ExportRequest): Promise<void> {
-  const { device, renderer, refiner, sourceTexture, sourceSize, commands, controls, target } = request;
+  const { device, renderer, refiner, sourceTexture, sourceSize, commands, style, controls, target } = request;
 
   const outputSize = { width: target.width, height: target.height };
   const mask = new SelectionMask(
@@ -77,18 +78,18 @@ export async function renderExport(request: ExportRequest): Promise<void> {
       guideSize: sourceSize,
     });
 
-    const compositeRequest = {
+    renderer.renderStyle(encoder, {
       sourceTexture,
       sourceSize,
       outputSize,
-      maskTexture: mask.texture,
+      style,
       controls,
-      quality: 'export' as const,
-    };
-    renderer.renderStyle(encoder, compositeRequest);
+      quality: 'export',
+    });
     renderer.composite(
       encoder,
-      { ...compositeRequest, maskTexture: mask.texture },
+      sourceTexture,
+      mask.texture,
       target.createView({ format: OUTPUT_VIEW_FORMAT }),
     );
     device.queue.submit([encoder.finish()]);

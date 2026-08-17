@@ -1,19 +1,24 @@
 import { FullscreenPass } from '../gpu/fullscreen-pass.ts';
+import { DeferredRelease } from '../gpu/resource-pool.ts';
 import { OUTPUT_VIEW_FORMAT, SOURCE_VIEW_FORMAT } from '../gpu/formats.ts';
-import { ComicStylePipeline } from '../style/comic-style-pipeline.ts';
-import { resolveComicParams, type ComicControls, type StyleQuality } from '../style/comic-params.ts';
+import type {
+  StyleControls,
+  StyleDefinition,
+  StylePipeline,
+  StyleQuality,
+  StyledLayer,
+} from '../style/style.ts';
 import type { Dimensions } from './resolution.ts';
-import { shortEdge } from './resolution.ts';
-import colorWgsl from '../style/wgsl/color.wgsl?raw';
+import colorWgsl from '../color/color.wgsl?raw';
 import compositeWgsl from './wgsl/composite.wgsl?raw';
 
-export interface CompositeRequest {
+export interface StyleRequest {
   /** rgba8unorm, created with SOURCE_VIEW_FORMAT in viewFormats. */
   readonly sourceTexture: GPUTexture;
   readonly sourceSize: Dimensions;
   readonly outputSize: Dimensions;
-  readonly maskTexture: GPUTexture;
-  readonly controls: ComicControls;
+  readonly style: StyleDefinition;
+  readonly controls: StyleControls;
   readonly quality: StyleQuality;
 }
 
@@ -25,20 +30,25 @@ export interface CompositeRequest {
  * makes "export matches preview" structural rather than a property to test for
  * and hope holds. Export differs only in output resolution and quality tier,
  * and both of those are defined to leave composition unchanged.
+ *
+ * NOTHING HERE KNOWS WHICH STYLE IS RUNNING. A style hands back a texture and a
+ * mix; the composite reads the mask and blends. That is the whole seam, and it
+ * is why a second style needed no change to this file.
  */
 export class CompositeRenderer {
   readonly #device: GPUDevice;
-  readonly #style: ComicStylePipeline;
   readonly #pass: FullscreenPass;
   readonly #layout: GPUBindGroupLayout;
   readonly #sampler: GPUSampler;
   readonly #uniforms: GPUBuffer;
+  readonly #retired: DeferredRelease;
 
-  #styledCache: GPUTexture | undefined;
+  #active: { readonly id: string; readonly pipeline: StylePipeline } | undefined;
+  #layer: StyledLayer | undefined;
 
   constructor(device: GPUDevice) {
     this.#device = device;
-    this.#style = new ComicStylePipeline(device);
+    this.#retired = new DeferredRelease(device);
     this.#sampler = device.createSampler({
       magFilter: 'linear',
       minFilter: 'linear',
@@ -74,18 +84,47 @@ export class CompositeRenderer {
   }
 
   /**
-   * Re-run the style chain. Expensive; the result is cached until the source or
-   * the style controls change — notably NOT when the selection changes, which
-   * is why brushing stays responsive.
+   * The pipeline for a style, built on first use and kept until the style
+   * changes.
+   *
+   * Only one is held. A style's stage buffers include a styled layer at output
+   * resolution, which is 192 MB for a 24 megapixel photograph, so keeping every
+   * style ever selected resident to save a few milliseconds of pipeline
+   * creation is the wrong trade by two orders of magnitude.
+   *
+   * The outgoing pipeline is released on the queue rather than immediately: the
+   * frame that last used it has been submitted, and a submitted frame's
+   * resources are read at submit rather than at record. The frame being
+   * recorded when a switch happens does not reference it — that is what makes
+   * fencing here, rather than one frame later, correct.
    */
-  renderStyle(encoder: GPUCommandEncoder, request: CompositeRequest): void {
-    const params = resolveComicParams(request.controls, shortEdge(request.outputSize), request.quality);
-    this.#styledCache = this.#style.render(
+  #pipelineFor(style: StyleDefinition): StylePipeline {
+    const active = this.#active;
+    if (active && active.id === style.id) return active.pipeline;
+
+    if (active) {
+      this.#layer = undefined;
+      this.#retired.after(() => active.pipeline.dispose());
+    }
+
+    const pipeline = style.create(this.#device);
+    this.#active = { id: style.id, pipeline };
+    return pipeline;
+  }
+
+  /**
+   * Re-run the style chain. Expensive; the result is cached until the source,
+   * the style or its controls change — notably NOT when the selection changes,
+   * which is why brushing stays responsive.
+   */
+  renderStyle(encoder: GPUCommandEncoder, request: StyleRequest): void {
+    this.#layer = this.#pipelineFor(request.style).render(
       encoder,
       request.sourceTexture.createView({ format: SOURCE_VIEW_FORMAT }),
       request.sourceSize,
       request.outputSize,
-      params,
+      request.controls,
+      request.quality,
     );
   }
 
@@ -93,20 +132,31 @@ export class CompositeRenderer {
    * Blend the cached styled layer into the source through the mask.
    *
    * One pass over the output. This is what re-runs on every brush movement.
+   *
+   * The mask texture is passed rather than remembered because its identity can
+   * change between frames: a whole-mask operation such as invert ping-pongs
+   * between two targets.
    */
-  composite(encoder: GPUCommandEncoder, request: CompositeRequest, targetView: GPUTextureView): void {
-    const styled = this.#styledCache;
-    if (!styled) throw new Error('CompositeRenderer: renderStyle() must run before composite()');
+  composite(
+    encoder: GPUCommandEncoder,
+    sourceTexture: GPUTexture,
+    maskTexture: GPUTexture,
+    targetView: GPUTextureView,
+  ): void {
+    const layer = this.#layer;
+    if (!layer) throw new Error('CompositeRenderer: renderStyle() must run before composite()');
 
-    const params = resolveComicParams(request.controls, shortEdge(request.outputSize), request.quality);
-    this.#device.queue.writeBuffer(this.#uniforms, 0, new Float32Array([params.styleMix, 0, 0, 0]));
+    // Read from the cached layer rather than resolved again from the controls,
+    // so the crossfade can never describe a styled texture other than the one
+    // being blended.
+    this.#device.queue.writeBuffer(this.#uniforms, 0, new Float32Array([layer.mix, 0, 0, 0]));
 
     const bindGroup = this.#device.createBindGroup({
       layout: this.#layout,
       entries: [
-        { binding: 0, resource: request.sourceTexture.createView({ format: SOURCE_VIEW_FORMAT }) },
-        { binding: 1, resource: styled.createView() },
-        { binding: 2, resource: request.maskTexture.createView() },
+        { binding: 0, resource: sourceTexture.createView({ format: SOURCE_VIEW_FORMAT }) },
+        { binding: 1, resource: layer.texture.createView() },
+        { binding: 2, resource: maskTexture.createView() },
         { binding: 3, resource: this.#sampler },
         { binding: 4, resource: { buffer: this.#uniforms } },
       ],
@@ -116,8 +166,10 @@ export class CompositeRenderer {
   }
 
   dispose(): void {
-    this.#style.dispose();
+    this.#retired.dispose();
+    this.#active?.pipeline.dispose();
+    this.#active = undefined;
+    this.#layer = undefined;
     this.#uniforms.destroy();
-    this.#styledCache = undefined;
   }
 }
