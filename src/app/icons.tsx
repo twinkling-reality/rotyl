@@ -1,5 +1,5 @@
 /**
- * The ten icons the interface uses.
+ * The twelve icons the interface uses.
  *
  * Path data from Lucide (ISC licence, © Lucide Contributors), copied rather
  * than depended on: this is about a kilobyte of geometry, and a package plus a
@@ -135,6 +135,23 @@ export function RedoIcon(props: IconProps): JSX.Element {
     <Icon {...props}>
       <path d="m15 14 5-5-5-5" />
       <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13" />
+    </Icon>
+  );
+}
+
+export function PlayIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <polygon points="6 3 20 12 6 21 6 3" />
+    </Icon>
+  );
+}
+
+export function PauseIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <rect x="14" y="4" width="4" height="16" rx="1" />
+      <rect x="6" y="4" width="4" height="16" rx="1" />
     </Icon>
   );
 }

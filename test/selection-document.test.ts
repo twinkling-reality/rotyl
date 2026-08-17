@@ -111,12 +111,24 @@ describe('coverage detection', () => {
 describe('a log spanning frames', () => {
   const at = (frame: number): SelectionCommand => ({ kind: 'paint', stroke, frame });
 
-  it('folds only the commands made on the frame asked for', () => {
+  it('holds an edit from its frame onward', () => {
     const commands = [at(0), at(5), at(5), at(9)];
-    expect(commandsForFrame(commands, 5).length).toBe(2);
-    expect(commandsForFrame(commands, 9).length).toBe(1);
-    // A frame nobody has edited has nothing selected, and says so.
-    expect(commandsForFrame(commands, 7).length).toBe(0);
+    expect(commandsForFrame(commands, 0).length).toBe(1);
+    expect(commandsForFrame(commands, 5).length).toBe(3);
+    // A frame between two edits carries whatever the last one said.
+    expect(commandsForFrame(commands, 7).length).toBe(3);
+    expect(commandsForFrame(commands, 9).length).toBe(4);
+    // Nothing is in effect before the first edit.
+    expect(commandsForFrame([at(4)], 2).length).toBe(0);
+  });
+
+  it('folds in frame order, whatever order the edits were made in', () => {
+    // Painted at 100, then scrubbed back to clear 20. The clear means "from
+    // frame 20", so at frame 100 it happens BEFORE the paint and not after it.
+    const commands: SelectionCommand[] = [at(100), { kind: 'clear', frame: 20 }];
+    expect(commandsForFrame(commands, 100).map((command) => command.frame)).toEqual([20, 100]);
+    expect(hasAnyCoverage(commandsForFrame(commands, 100))).toBe(true);
+    expect(hasAnyCoverage(commandsForFrame(commands, 50))).toBe(false);
   });
 
   it('reports which frames carry an edit, in order and without repeats', () => {

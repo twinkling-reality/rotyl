@@ -102,20 +102,25 @@ describe('editing at a frame', () => {
     return engine;
   };
 
-  it('applies only the commands made on the frame being shown', () => {
+  it('carries an edit forward from the frame it was made on', () => {
     const document = new SelectionDocument();
     const engine = engineOn(document);
     engine.loadMedia(SIZE, 'clear');
 
-    document.apply({ ...STROKE, frame: 0 });
-    document.apply({ ...STROKE, frame: 7 });
+    document.apply({ ...STROKE, frame: 4 });
     document.apply({ ...STROKE, frame: 7 });
 
+    // Before the first edit: nothing.
+    expect(engine.frameCommands.length).toBe(0);
+    engine.setFrame(4);
+    expect(engine.frameCommands.length).toBe(1);
+    // Between the two: still the first one.
+    engine.setFrame(6);
     expect(engine.frameCommands.length).toBe(1);
     engine.setFrame(7);
     expect(engine.frameCommands.length).toBe(2);
-    engine.setFrame(3);
-    expect(engine.frameCommands.length).toBe(0);
+    engine.setFrame(900);
+    expect(engine.frameCommands.length).toBe(2);
   });
 
   it('stamps a committed stroke with the frame it was drawn on', () => {

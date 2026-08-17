@@ -87,29 +87,36 @@ export function hasAnyCoverage(commands: readonly SelectionCommand[]): boolean {
 /**
  * The commands that decide what is selected on one frame.
  *
- * EXACT MATCH, NOT "AT OR BEFORE", and that is the whole of the video model.
- * The alternative reading is the obvious one and it is wrong: a stroke's
- * coordinates say where something was when it was drawn, so replaying frame 3's
- * stroke onto frame 200 puts it wherever the object has since moved away from,
- * and the error grows with the distance. A command describes a moment, and
- * asking for a different moment is asking a question it cannot answer.
+ * AN EDIT HOLDS FROM ITS FRAME ONWARD until something later changes it, which
+ * is what every keyframe system does and what a selection is for: a region of
+ * the picture that a style applies to, stated once and true from then on.
  *
- * So the log is SPARSE: a frame nobody has edited has nothing selected, and
- * says so. The hole that leaves is exactly the hole tracking fills — a keyframe
- * prompt at frame 3 and a tracker that can say where that object is at frame
- * 200 will produce frame 200's command, rather than the log pretending it
- * already had one. That is why this returns a list to fold rather than reaching
- * into the log directly: a tracker's output joins the fold on the same terms as
- * anything a person did, and the log never has to hold a mask per frame.
+ * The alternative was to make a command apply to its own frame alone, and it is
+ * right about something real — a stroke's coordinates say where something was
+ * when it was drawn, so a selection held across a moving subject drifts off it.
+ * But nothing can currently produce the missing frames, so exact match does not
+ * trade drift for accuracy; it trades a selection that drifts for no selection
+ * at all. Holding forward is wrong slowly and only when the subject moves.
+ * Exact match is wrong immediately and always.
+ *
+ * That is a statement about today rather than about the design. When tracking
+ * lands it contributes commands on the frames it has followed the object to,
+ * and those fold on top of the held value at each of them — the same mechanism,
+ * with the gap filled in properly rather than held.
+ *
+ * SORTED BY FRAME, stably, not left in the order they were applied. Someone who
+ * edits frame 100 and then scrubs back to clear frame 20 means the clear to
+ * happen first; in log order it would happen last and wipe frame 100's work
+ * while frame 100 was on screen.
  */
 export function commandsForFrame(
   commands: readonly SelectionCommand[],
   frame: number,
 ): readonly SelectionCommand[] {
-  return commands.filter((command) => command.frame === frame);
+  return commands.filter((command) => command.frame <= frame).toSorted((a, b) => a.frame - b.frame);
 }
 
-/** Which frames carry an edit, ascending. What a timeline marks. */
+/** Which frames an edit was made on, ascending. What a timeline marks. */
 export function editedFrames(commands: readonly SelectionCommand[]): readonly number[] {
   return [...new Set(commands.map((command) => command.frame))].toSorted((a, b) => a - b);
 }

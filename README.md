@@ -188,30 +188,40 @@ boundary against the full-resolution image rather than magnifying a preview's.
 
 ## Video, so far
 
-Open an MP4 or a MOV and the timeline appears. Scrub it and every frame goes
-through the same renderer a photograph does: the same style chain, the same
-composite, the same selection. Export saves the frame on screen at full
-resolution, named for it. Tracking does not exist yet.
+Open an MP4 or a MOV, select a region, and play it. Every frame goes through the
+same renderer a photograph does — the same style chain, the same composite, the
+same selection — at thirty frames a second on the draft tier. Export saves the
+frame on screen at full resolution, named for it. Tracking does not exist yet.
 
-**A selection belongs to the frame it was made on, and to no other.** The
-tempting alternative is to hold the last selection forward until something
-replaces it, and it is wrong for the reason everything else here is stated in
-image pixels: a stroke says where something was when it was drawn, so carrying
-frame 3's stroke to frame 200 puts it wherever the object has since moved away
-from. So the log is sparse — a frame nobody has edited has nothing selected —
-and the hole that leaves is exactly the one tracking fills, by producing frame
-200's command from frame 3's prompt rather than by the log pretending it already
-had one.
+**A selection holds from the frame it was made on until something later changes
+it**, which is what every keyframe system does and what a selection is for: a
+region of the picture that a style applies to, stated once and true from then
+on. Scrub or play past it and the style is still there.
 
-Two things follow, and both are the difference between honest and usable. The
-timeline marks the frames that carry an edit, because a selection that vanishes
-when you scrub and leaves no trace is a selection nobody can find again. And
-undo moves the playhead to whatever it undid: the log is one list with one
-cursor, so undo means the last thing you did, which may be somewhere you are not
-looking — an edit disappearing in front of you is undo, and an edit disappearing
-off screen is a bug report. Following the cursor also disarms the sharp edge,
-since the next stroke discards the redo tail and now does it on the frame the
-user is actually on.
+The other reading is that a command applies to its own frame alone, and it is
+right about something real: a stroke's coordinates say where something _was_
+when it was drawn, so a selection held across a moving subject drifts off it.
+This was built that way first and it was the wrong call. Nothing can currently
+produce the missing frames, so exact match does not trade drift for accuracy —
+it trades a selection that drifts for no selection at all. Holding forward is
+wrong slowly, and only when the subject moves. Exact match is wrong immediately
+and always. When tracking lands it will contribute commands on the frames it has
+followed the object to, and those fold on top of the held value at each of them:
+the same mechanism, with the gap filled in properly rather than held.
+
+Two smaller things, both the difference between honest and usable. The timeline
+marks the frames where an edit begins, because a selection whose origin cannot
+be found again cannot be corrected. And undo moves the playhead to whatever it
+undid: the log is one list with one cursor, so undo means the last thing you
+did, which may be somewhere you are not looking — an edit disappearing in front
+of you is undo, and an edit disappearing off screen is a bug report. Following
+the cursor also disarms the sharp edge, since the next stroke discards the redo
+tail and now does it on the frame the user is actually on.
+
+The fold is sorted by frame rather than left in the order the edits were made.
+Someone who paints at frame 100 and then scrubs back to clear frame 20 means the
+clear to happen first; in log order it would happen last and wipe frame 100's
+work while frame 100 was on screen.
 
 A still image is a one-frame document. `frame` is required on every command
 rather than optional, so there is no second shape to reason about and no branch
@@ -326,9 +336,10 @@ of geometry did not justify a dependency.
 
 ## Known limits
 
-- Video can be opened, scrubbed, selected on, and exported one frame at a time.
-  Tracking does not exist, so a selection has to be made on each frame it should
-  apply to. What is known about building it is measured — `tools/video-bench` puts memory attention at
+- Video can be opened, played, scrubbed, selected on, and exported one frame at
+  a time. Tracking does not exist, so a selection held across a moving subject
+  drifts off it and has to be corrected by selecting again further along. What
+  is known about building it is measured — `tools/video-bench` puts memory attention at
   59 ms a frame on WebGPU and 38 at half precision, which with the encoder and
   the decoder makes a tracked frame around 90 ms, so tracking runs behind the
   playhead rather than in the render loop. The graphs it needs are produced by
@@ -336,9 +347,11 @@ of geometry did not justify a dependency.
   frames, mask-for-mask identical to the PyTorch tracker.
 - Exporting a video writes one frame as a still. There is no encoder and no
   muxer, so "export the clip" is untouched work.
-- Clear and Invert act on the frame being shown, not on the clip. That falls
-  out of every command naming its frame, and there is no way to say "all
-  frames" yet.
+- Clear and Invert act from the frame being shown onward, like every other
+  command. There is no way to say "this frame only" or "the whole clip", and
+  both would be reasonable things to want.
+- Playback has no audio and no loop, and drops frames rather than running slow
+  when the style chain cannot keep up.
 - WebM and Matroska are refused, by signature, with a message that says so.
   They are a second demuxer at 15 KB and mostly carry codecs whose decode has
   not been measured here.

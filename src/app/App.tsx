@@ -85,6 +85,9 @@ export function App(): JSX.Element {
   const [mediaGeneration, setMediaGeneration] = useState<number | undefined>(undefined);
   const [frame, setFrame] = useState(0);
   const [scrubbing, setScrubbing] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  /** Read by the playback loop, which must not be restarted to see a change. */
+  const playingRef = useRef(false);
 
   /**
    * The decoder, and the texture it uploads into.
@@ -284,20 +287,31 @@ export function App(): JSX.Element {
     // Not while a rebuild is in flight: there is no frame to read yet, and
     // asking for one is reported as a failure rather than as a wait.
     if (!runtime || !loaded || restoring) return;
-    // Not mid-scrub: each frame would start an encode the next one discards.
-    if (scrubbing) return;
+    // Not while the frame is still moving: each one would start an encode the
+    // next one discards.
+    if (scrubbing || playing) return;
     if (isPrompt(tool)) void runtime.perception.prepare();
     else runtime.perception.endPrompt();
-  }, [runtime, loaded, tool, restoring, scrubbing, frame]);
+  }, [runtime, loaded, tool, restoring, scrubbing, playing, frame]);
 
   useEffect(() => {
     runtime?.engine.setStyle(style);
     runtime?.engine.setControls(controls);
   }, [runtime, style, controls]);
 
+  const pause = useCallback((): void => {
+    playingRef.current = false;
+    setPlaying(false);
+    if (!runtime) return;
+    runtime.engine.setQuality('full');
+    // The frame it stopped on is a frame someone is now looking at.
+    runtime.perception.setFrame(runtime.engine.sceneFrame);
+  }, [runtime]);
+
   const onScrub = useCallback(
     (next: number, settled: boolean): void => {
       if (!runtime) return;
+      if (playingRef.current) pause();
       setFrame(next);
       setScrubbing(!settled);
       // Both, in this order. The engine decides which commands apply, and the
@@ -310,8 +324,63 @@ export function App(): JSX.Element {
       runtime.engine.setQuality(settled ? 'full' : 'draft');
       void showFrame(runtime, next, settled);
     },
-    [runtime, showFrame],
+    [runtime, showFrame, pause],
   );
+
+  /**
+   * Playback.
+   *
+   * The target frame comes from the wall clock rather than from a counter, so a
+   * frame the machine could not keep up with is skipped rather than played
+   * late: dropping one is invisible, and drifting behind by a frame per frame
+   * is a clip that runs slow and never catches up.
+   *
+   * The draft tier throughout. Every frame is new pixels, so the style chain
+   * re-runs on every one of them, and at full quality that is 105 ms against a
+   * 33 ms budget.
+   */
+  const play = useCallback((): void => {
+    if (!runtime || !loaded?.video) return;
+    const { frameCount, frameRate } = loaded.video;
+    const rate = frameRate > 0 ? frameRate : 30;
+    const startFrame = runtime.engine.frame >= frameCount - 1 ? 0 : runtime.engine.frame;
+    const startedAt = performance.now();
+    let shown = -1;
+
+    playingRef.current = true;
+    setPlaying(true);
+    runtime.engine.setQuality('draft');
+
+    const step = async (): Promise<void> => {
+      if (!playingRef.current) return;
+      const elapsed = (performance.now() - startedAt) / 1000;
+      const target = Math.min(frameCount - 1, startFrame + Math.floor(elapsed * rate));
+
+      if (target !== shown) {
+        shown = target;
+        setFrame(target);
+        runtime.engine.setFrame(target);
+        await showFrame(runtime, target, false);
+      }
+
+      if (!playingRef.current) return;
+      if (target >= frameCount - 1) {
+        playingRef.current = false;
+        setPlaying(false);
+        runtime.engine.setQuality('full');
+        return;
+      }
+      // Half a frame, so the clock is sampled often enough to land on each one.
+      globalThis.setTimeout(() => void step(), 1000 / rate / 2);
+    };
+    void step();
+  }, [runtime, loaded, showFrame]);
+
+  // Anything that replaces what is on screen ends playback: a scrub, a new
+  // file, an export, a lost device.
+  useEffect(() => {
+    if (!loaded?.video) pause();
+  }, [loaded, pause]);
 
   /**
    * Undo and redo, following the cursor to wherever it went.
@@ -423,6 +492,15 @@ export function App(): JSX.Element {
       }
 
       switch (event.key) {
+        case ' ':
+          // Only for a clip. On a photograph the key is free, and binding it to
+          // nothing that can happen would be a shortcut that looks broken.
+          if (loaded.video) {
+            event.preventDefault();
+            if (playingRef.current) pause();
+            else play();
+          }
+          break;
         case 'o':
           setTool('object');
           break;
@@ -472,7 +550,7 @@ export function App(): JSX.Element {
       globalThis.removeEventListener('keyup', onKeyUp);
       globalThis.removeEventListener('blur', restoreOverlay);
     };
-  }, [runtime, loaded, stepHistory]);
+  }, [runtime, loaded, stepHistory, play, pause]);
 
   // A file dropped anywhere other than the drop zone would otherwise be opened
   // by the browser itself, navigating away and discarding the session.
@@ -597,6 +675,11 @@ export function App(): JSX.Element {
                 frameRate={loaded.video.frameRate}
                 frame={frame}
                 edited={edited}
+                playing={playing}
+                onPlayToggle={() => {
+                  if (playingRef.current) pause();
+                  else play();
+                }}
                 onScrub={onScrub}
               />
             ) : null}

@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { PauseIcon, PlayIcon } from './icons.tsx';
 
 export interface TimelineProps {
   readonly frameCount: number;
@@ -6,6 +7,8 @@ export interface TimelineProps {
   readonly frameRate: number;
   /** Frames carrying an edit, ascending. */
   readonly edited: readonly number[];
+  readonly playing: boolean;
+  readonly onPlayToggle: () => void;
   /** `settled` is false while the pointer is still down. */
   readonly onScrub: (frame: number, settled: boolean) => void;
 }
@@ -35,12 +38,29 @@ function timecode(frame: number, frameRate: number): string {
  * will be attached to. Seconds are shown, since nobody thinks in frame 1043,
  * but the number that moves is integral.
  */
-export function Timeline({ frameCount, frame, frameRate, edited, onScrub }: TimelineProps): JSX.Element {
+export function Timeline({
+  frameCount,
+  frame,
+  frameRate,
+  edited,
+  playing,
+  onPlayToggle,
+  onScrub,
+}: TimelineProps): JSX.Element {
   const last = Math.max(0, frameCount - 1);
   const fill = last > 0 ? (frame / last) * 100 : 0;
 
   return (
     <div class="timeline">
+      <button
+        type="button"
+        class="timeline__play"
+        onClick={onPlayToggle}
+        aria-label={playing ? 'Pause' : 'Play'}
+        aria-pressed={playing}
+      >
+        {playing ? <PauseIcon /> : <PlayIcon />}
+      </button>
       <span class="timeline__time mono">{timecode(frame, frameRate)}</span>
       <div class="timeline__scrubber">
         {/*

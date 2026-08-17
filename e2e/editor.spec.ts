@@ -347,7 +347,7 @@ test('refuses a video it cannot decode, by name', async ({ page }) => {
   await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
 });
 
-test('keeps a selection on the frame it was made on', async ({ page }) => {
+test('carries a selection forward through the clip', async ({ page }) => {
   await page.locator('input[type=file]').setInputFiles(clip);
   const canvas = page.locator('canvas');
   await expect(canvas).toBeVisible();
@@ -370,40 +370,56 @@ test('keeps a selection on the frame it was made on', async ({ page }) => {
   await park();
   const clean40 = await canvas.screenshot();
 
+  await timeline.fill('10');
+  await expect(page.getByText('11 / 60')).toBeVisible();
+  await park();
+  const clean10 = await canvas.screenshot();
+
   await timeline.fill('20');
   await expect(page.getByText('21 / 60')).toBeVisible();
-  await park();
-  const clean20 = await canvas.screenshot();
-
   await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.4);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.55, { steps: 10 });
   await page.mouse.up();
   await expect(undo).toBeEnabled();
-  await park();
-  const selected20 = await canvas.screenshot();
-  expect(Buffer.compare(clean20, selected20)).not.toBe(0);
 
-  // The one thing that makes a per-frame selection findable again.
+  // The one thing that makes the frame it started on findable again.
   await expect(page.locator('.timeline__mark')).toHaveCount(1);
 
-  // A stroke says where something was on frame 20. Frame 40 gets it back
-  // exactly as it was, because the stroke was never a statement about it.
+  // Forward: the selection is in effect on a frame it was not drawn on, which
+  // is the whole point of selecting a region of a clip.
   await timeline.fill('40');
   await expect(page.getByText('41 / 60')).toBeVisible();
   await park();
   await expect(async () => {
-    expect(Buffer.compare(await canvas.screenshot(), clean40)).toBe(0);
+    expect(Buffer.compare(await canvas.screenshot(), clean40)).not.toBe(0);
   }).toPass();
-  // Gone from the screen, still in the log.
-  await expect(undo).toBeEnabled();
 
-  await timeline.fill('20');
-  await expect(page.getByText('21 / 60')).toBeVisible();
+  // Backward: nothing is in effect before the edit that started it.
+  await timeline.fill('10');
+  await expect(page.getByText('11 / 60')).toBeVisible();
   await park();
   await expect(async () => {
-    expect(Buffer.compare(await canvas.screenshot(), selected20)).toBe(0);
+    expect(Buffer.compare(await canvas.screenshot(), clean10)).toBe(0);
   }).toPass();
+});
+
+test('plays, and stops where it was asked to', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(clip);
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.getByText('1 / 60')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Play' }).click();
+  // Advancing on its own is the whole claim.
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+  await expect(page.locator('.timeline__count')).not.toHaveText('1 / 60');
+
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+  const stopped = await page.locator('.timeline__count').textContent();
+  // Paused means paused: a loop still running would move past this.
+  await page.waitForTimeout(400);
+  expect(await page.locator('.timeline__count').textContent()).toBe(stopped);
 });
 
 test('exports the frame on screen, named for it', async ({ page }) => {

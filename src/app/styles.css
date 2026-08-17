@@ -766,6 +766,28 @@ button {
   background: var(--bg);
 }
 
+/* Borrows the top bar's icon button: same size, same restraint. */
+.timeline__play {
+  display: grid;
+  place-items: center;
+  width: var(--h-control);
+  height: var(--h-control);
+  margin-left: calc(var(--s-2) * -1);
+  border: none;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--dur) var(--ease-out),
+    background var(--dur) var(--ease-out);
+}
+
+.timeline__play:hover {
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
 .timeline__scrubber {
   position: relative;
   flex: 1;
