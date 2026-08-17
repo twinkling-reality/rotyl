@@ -269,9 +269,15 @@ Video, on an ordinary 1080p30 clip:
 | render one new frame, draft tier | 16 ms         | 16 ms        |
 
 The last row is the whole renderer — style chain, composite and display — re-run
-because the source pixels changed, which is what every scrubbed frame is. It is
-also where the next work is: with nothing selected the styled layer is
-multiplied by a zero mask and thrown away, so most of those 16 ms buys nothing.
+because the source pixels changed, which is what every scrubbed frame is. The
+draft tier is what makes that affordable, and it is the same tier a style slider
+drops to while it is moving.
+
+Skipping the chain while nothing is selected looks like an easy eight-fold win
+and is not one. It only helps before a selection exists, because afterwards
+every scrubbed frame needs the styled layer again — and it moves the cost to the
+first brush stroke on each frame, where a 105 ms stall is far worse than the
+same work spread across a scrub.
 
 Bundle: 141 KB of JavaScript (47 KB gzipped), plus 31 KB of subset fonts. Three
 runtime dependencies, and two of them are code-split: 36 KB gzipped of inference
