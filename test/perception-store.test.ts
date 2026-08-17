@@ -27,11 +27,21 @@ interface Recorded {
   readonly disposed: number[];
 }
 
-function proposal(confidence: number, fill: number): MaskProposal {
-  return {
-    mask: { width: 4, height: 4, coverage: new Uint8Array(16).fill(fill) },
-    confidence,
-  };
+/**
+ * A proposal covering `cells` of sixteen.
+ *
+ * Nested rather than arbitrary, so the three answers differ in size the way a
+ * real engine's do — a part inside an object inside a group — and so the store
+ * can be checked to have committed a particular one of them.
+ */
+function proposal(confidence: number, cells: number): MaskProposal {
+  const coverage = new Uint8Array(16);
+  coverage.fill(255, 0, cells);
+  return { mask: { width: 4, height: 4, coverage }, confidence };
+}
+
+function cellsOf(mask: { coverage: Uint8Array } | undefined): number {
+  return mask ? mask.coverage.reduce((count, value) => count + (value >= 128 ? 1 : 0), 0) : 0;
 }
 
 interface FakeOptions {
@@ -58,10 +68,15 @@ function fakeEngine(options: FakeOptions = {}): { engine: SegmentationEngine; re
     },
     async decode(_embedding, prompt) {
       const delay = options.decodeDelays?.[recorded.prompts.length];
-      recorded.prompts.push({ points: [...prompt.points] });
+      recorded.prompts.push({
+        points: [...prompt.points],
+        ...(prompt.box ? { box: prompt.box } : {}),
+      });
       if (delay !== undefined) await new Promise((resolve) => setTimeout(resolve, delay));
       // Deliberately not in confidence order: the store must not assume one.
-      return [proposal(0.9, 255), proposal(0.4, 128), proposal(0.1, 64)];
+      // Eight cells is the engine's own pick, and it is neither the smallest
+      // nor the largest, so "best" and "middle" cannot be confused.
+      return [proposal(0.4, 2), proposal(0.9, 8), proposal(0.1, 14)];
     },
     dispose() {
       /* nothing to release in a fake */
@@ -124,14 +139,115 @@ describe('a click on an object', () => {
     expect(document.appliedCommands.length).toBe(0);
   });
 
-  it('commits the best answer the engine gave and keeps the rest', async () => {
+  it('commits the answer the engine rated highest and keeps the rest', async () => {
     const { store, document } = setup();
     await store.select({ x: 100, y: 120 }, 'object');
 
-    expect(store.proposals.length).toBe(3);
-    expect(store.proposals[0]?.confidence).toBe(0.9);
+    // Offered smallest first, which is the axis a person chooses along;
+    // confidence decides only which one is drawn.
+    expect(store.candidates.map((candidate) => candidate.area)).toEqual([2 / 16, 8 / 16, 14 / 16]);
+    expect(store.chosen).toBe(1);
     // The alternatives are what the system knows about and is not drawing.
-    expect(appliedMasks(document)[0]?.mask.coverage[0]).toBe(255);
+    expect(cellsOf(appliedMasks(document)[0]?.mask)).toBe(8);
+  });
+
+  it('points at itself, so the choice can be offered where the click was', () => {
+    const { store } = setup();
+    expect(store.promptAnchor).toBeUndefined();
+  });
+});
+
+describe('choosing a different reading of the same click', () => {
+  it('replaces the committed command rather than stacking another', async () => {
+    const { store, document } = setup();
+    await store.select({ x: 100, y: 120 }, 'object');
+    store.choose(2);
+
+    expect(store.chosen).toBe(2);
+    expect(appliedMasks(document).length).toBe(1);
+    expect(cellsOf(appliedMasks(document)[0]?.mask)).toBe(14);
+
+    // Changing your mind about which object you meant is one edit.
+    document.undo();
+    expect(document.appliedCommands.length).toBe(0);
+  });
+
+  it('is remembered while the prompt is being refined', async () => {
+    const { store, document } = setup();
+    await store.select({ x: 100, y: 120 }, 'object');
+    store.choose(0);
+    await store.select({ x: 140, y: 130 }, 'include');
+
+    // Someone who reached past the model's pick meant it; a following "also
+    // this" must not quietly hand back the reading they rejected.
+    expect(store.chosen).toBe(0);
+    expect(cellsOf(appliedMasks(document)[0]?.mask)).toBe(2);
+  });
+
+  it('is forgotten when a new object is asked about', async () => {
+    const { store } = setup();
+    await store.select({ x: 100, y: 120 }, 'object');
+    store.choose(0);
+    await store.select({ x: 300, y: 300 }, 'object');
+
+    expect(store.chosen).toBe(1);
+  });
+
+  it('ignores a rank there is no candidate for', async () => {
+    const { store, document } = setup();
+    await store.select({ x: 100, y: 120 }, 'object');
+    store.choose(99);
+
+    expect(store.chosen).toBe(2);
+    expect(appliedMasks(document).length).toBe(1);
+  });
+});
+
+describe('a box', () => {
+  const BOX = { x0: 40, y0: 50, x1: 200, y1: 260 };
+
+  it('reaches the engine as a region, with no point invented for it', async () => {
+    const { store, document, recorded } = setup();
+    await store.selectBox(BOX);
+
+    expect(recorded.prompts[0]?.box).toEqual(BOX);
+    expect(recorded.prompts[0]?.points.length).toBe(0);
+    expect(appliedMasks(document).length).toBe(1);
+  });
+
+  it('is refined by points rather than replaced by them', async () => {
+    const { store, document, recorded } = setup();
+    await store.selectBox(BOX);
+    await store.select({ x: 100, y: 120 }, 'include');
+
+    expect(recorded.prompts[1]?.box).toEqual(BOX);
+    expect(recorded.prompts[1]?.points.length).toBe(1);
+    expect(appliedMasks(document).length).toBe(1);
+  });
+
+  it('takes a negative point as a correction, not as a new object', async () => {
+    // A box that caught the shadow as well as the object is corrected by
+    // pointing at the shadow, which is only meaningful if the box survives.
+    const { store, recorded } = setup();
+    await store.selectBox(BOX);
+    await store.select({ x: 100, y: 120 }, 'exclude');
+
+    expect(recorded.prompts[1]?.box).toEqual(BOX);
+    expect(recorded.prompts[1]?.points[0]?.include).toBe(false);
+  });
+
+  it('is discarded by a click that asks about something else', async () => {
+    const { store, recorded } = setup();
+    await store.selectBox(BOX);
+    await store.select({ x: 600, y: 600 }, 'object');
+
+    expect(recorded.prompts[1]?.box).toBeUndefined();
+  });
+
+  it('points at its own bottom edge, so a control sits below it', async () => {
+    const { store } = setup();
+    await store.selectBox(BOX);
+    expect(store.promptAnchor).toEqual({ x: 120, y: 260 });
   });
 });
 

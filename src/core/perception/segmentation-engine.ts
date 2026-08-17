@@ -39,8 +39,25 @@ export interface PromptPoint {
   readonly include: boolean;
 }
 
+/**
+ * A region the object is inside.
+ *
+ * Corners in either order; an engine normalises them. A box says something a
+ * click cannot — where the thing ENDS — which is why it is the better prompt
+ * for an object with no unambiguous middle, and why it composes with points
+ * rather than replacing them.
+ */
+export interface PromptBox {
+  /** Image pixels, like every other coordinate that crosses this boundary. */
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+}
+
 export interface SegmentPrompt {
   readonly points: readonly PromptPoint[];
+  readonly box?: PromptBox;
 }
 
 export interface MaskProposal {

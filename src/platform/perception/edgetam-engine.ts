@@ -227,27 +227,46 @@ export async function loadEdgeTamEngine(options: EdgeTamOptions): Promise<Segmen
       const state = embeddingState.get(scene);
       if (!state) throw new Error('EdgeTAM: that embedding was not produced here, or has been released');
       const { tensors: embeddings, frameSize } = state;
-      const points = prompt.points;
-      if (points.length === 0) return [];
+      const { points, box } = prompt;
+      if (points.length === 0 && !box) return [];
 
       // The model resizes to a square without preserving aspect, so prompts are
       // scaled per axis to match. Preserving aspect here instead would put every
       // click somewhere the model does not think it is.
+      const scaleX = INPUT_SIZE / Math.max(1, frameSize.width);
+      const scaleY = INPUT_SIZE / Math.max(1, frameSize.height);
+
       const coordinates = new Float32Array(points.length * 2);
       const labels = new BigInt64Array(points.length);
       points.forEach((point, index) => {
-        coordinates[index * 2] = (point.x * INPUT_SIZE) / Math.max(1, frameSize.width);
-        coordinates[index * 2 + 1] = (point.y * INPUT_SIZE) / Math.max(1, frameSize.height);
+        coordinates[index * 2] = point.x * scaleX;
+        coordinates[index * 2 + 1] = point.y * scaleY;
         labels[index] = point.include ? 1n : 0n;
       });
 
+      // Both prompt inputs are required by the graph whether or not they carry
+      // anything, and an empty tensor is how the export expects "none of these"
+      // — for points as well as for boxes, which is what makes a box-only
+      // prompt expressible at all.
       const outputs = await decoder.run({
         ...embeddings,
         input_points: new ort.Tensor('float32', coordinates, [1, 1, points.length, 2]),
         input_labels: new ort.Tensor('int64', labels, [1, 1, points.length]),
-        // Required by the graph even when unused; an empty tensor is how the
-        // export expects "no box".
-        input_boxes: new ort.Tensor('float32', new Float32Array(0), [1, 0, 4]),
+        input_boxes: box
+          ? new ort.Tensor(
+              'float32',
+              // Normalised to top-left, bottom-right: a box dragged upward or
+              // leftward is the same box, and the decoder is not asked to know
+              // that.
+              new Float32Array([
+                Math.min(box.x0, box.x1) * scaleX,
+                Math.min(box.y0, box.y1) * scaleY,
+                Math.max(box.x0, box.x1) * scaleX,
+                Math.max(box.y0, box.y1) * scaleY,
+              ]),
+              [1, 1, 4],
+            )
+          : new ort.Tensor('float32', new Float32Array(0), [1, 0, 4]),
       });
 
       const masks = floatsOf(outputs.pred_masks, 'pred_masks');

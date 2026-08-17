@@ -1,11 +1,14 @@
 import type { SelectionDocument } from '../document/selection-document.ts';
 import { DEFAULT_REFINE_SETTINGS } from '../mask/refine-params.ts';
+import { NO_CANDIDATES, orderCandidates, type MaskCandidate } from './mask-candidates.ts';
 import type {
   MaskProposal,
+  PromptBox,
   PromptPoint,
   SceneEmbedding,
   SceneFrame,
   SegmentationEngine,
+  SegmentPrompt,
 } from './segmentation-engine.ts';
 
 /**
@@ -73,7 +76,19 @@ export class PerceptionStore {
   #understanding: { readonly frame: SceneFrame; readonly promise: Promise<SceneEmbedding> } | undefined;
 
   #points: PromptPoint[] = [];
-  #proposals: readonly MaskProposal[] = [];
+  #box: PromptBox | undefined;
+  #candidates = NO_CANDIDATES;
+  #chosen: number | undefined;
+  /**
+   * The granularity the user asked for, as a rank rather than as a mask.
+   *
+   * Held across the refinements of one prompt: someone who reached past the
+   * model's own pick to the larger reading of their click means it, and a
+   * following "also this" should not quietly hand back the smaller one. It is a
+   * rank because nothing else survives a re-decode — the heads are not stable,
+   * and the masks are all different.
+   */
+  #preferredRank: number | undefined;
   #status: PerceptionStatus = { kind: 'idle' };
 
   /**
@@ -100,18 +115,39 @@ export class PerceptionStore {
   }
 
   /**
-   * Every candidate the engine offered for the current prompt, best first.
+   * Every reading of the current prompt the engine offered, smallest first.
    *
-   * Only the first is drawn. The rest are the objects the system knows about
-   * and is not drawing — usually the same click read as a part, a whole, and a
+   * One of them is drawn. The rest are the objects the system knows about and
+   * is not drawing — usually the same click read as a part, a whole, and a
    * group.
    */
-  get proposals(): readonly MaskProposal[] {
-    return this.#proposals;
+  get candidates(): readonly MaskCandidate[] {
+    return this.#candidates.ordered;
+  }
+
+  /** Which candidate the selection currently reflects. */
+  get chosen(): number | undefined {
+    return this.#chosen;
   }
 
   get promptPoints(): readonly PromptPoint[] {
     return this.#points;
+  }
+
+  /**
+   * Where the current prompt is, in image pixels, for anything that has to
+   * point at it.
+   *
+   * The bottom of a box rather than its middle, so a control placed here sits
+   * below the region rather than on top of the thing being judged.
+   */
+  get promptAnchor(): { readonly x: number; readonly y: number } | undefined {
+    const box = this.#box;
+    if (box) {
+      return { x: (box.x0 + box.x1) / 2, y: Math.max(box.y0, box.y1) };
+    }
+    const last = this.#points.at(-1);
+    return last ? { x: last.x, y: last.y } : undefined;
   }
 
   subscribe(listener: () => void): () => void {
@@ -125,9 +161,7 @@ export class PerceptionStore {
   setFrame(frame: SceneFrame | undefined): void {
     this.#frame = frame;
     this.#releaseEmbedding();
-    this.#points = [];
-    this.#proposals = [];
-    this.#committedRevision = undefined;
+    this.#beginPrompt();
     this.#sequence++;
     this.#setStatus(this.#engine ? { kind: 'ready' } : { kind: 'idle' });
   }
@@ -157,41 +191,55 @@ export class PerceptionStore {
   async select(point: { readonly x: number; readonly y: number }, intent: SelectIntent): Promise<void> {
     // "Not that" with nothing to subtract it from is meaningless, so a stray
     // exclude with no prompt in progress starts a new object instead of
-    // silently doing nothing.
-    const fresh = intent === 'object' || this.#points.length === 0;
+    // silently doing nothing. A box counts as a prompt in progress: a negative
+    // point is exactly how a box that caught too much is corrected.
+    const fresh = intent === 'object' || (this.#points.length === 0 && !this.#box);
     const points = fresh ? [] : [...this.#points];
     points.push({ x: point.x, y: point.y, include: fresh || intent !== 'exclude' });
+    if (fresh) this.#beginPrompt();
     this.#points = points;
-    if (fresh) this.#committedRevision = undefined;
 
-    const sequence = ++this.#sequence;
+    await this.#ask();
+  }
+
+  /**
+   * Answer a region, and commit the answer to the document.
+   *
+   * A box replaces whatever prompt was in progress rather than refining it: it
+   * says where an object ends, which is a statement about a different object
+   * than the one the last click was about. Points added afterwards refine it.
+   */
+  async selectBox(box: PromptBox): Promise<void> {
+    this.#beginPrompt();
+    this.#box = box;
+    await this.#ask();
+  }
+
+  /**
+   * Draw a different reading of the same prompt.
+   *
+   * Replaces the committed command rather than adding one, exactly as refining
+   * a prompt does — changing your mind about which object you meant is one
+   * edit, not a stack of them.
+   */
+  choose(rank: number): void {
+    const ordered = this.#candidates.ordered;
+    if (ordered.length === 0) return;
+
+    const clamped = Math.min(Math.max(0, Math.trunc(rank)), ordered.length - 1);
+    const candidate = ordered[clamped];
+    if (!candidate || clamped === this.#chosen) return;
+
+    this.#chosen = clamped;
+    this.#preferredRank = clamped;
+    this.#commit(candidate.proposal);
     this.#notify();
-
-    try {
-      const engine = await this.#ensureEngine();
-      const embedding = await this.#ensureEmbedding(engine);
-      if (sequence !== this.#sequence) return;
-
-      this.#setStatus({ kind: 'thinking' });
-      const proposals = await engine.decode(embedding, { points });
-      if (sequence !== this.#sequence) return;
-
-      this.#proposals = proposals;
-      this.#setStatus({ kind: 'ready' });
-
-      const best = proposals[0];
-      if (best) this.#commit(best);
-    } catch (cause) {
-      if (sequence === this.#sequence) this.#fail(cause);
-    }
   }
 
   /** End the current prompt, so the next click starts a new object. */
   endPrompt(): void {
-    if (this.#points.length === 0) return;
-    this.#points = [];
-    this.#proposals = [];
-    this.#committedRevision = undefined;
+    if (this.#points.length === 0 && !this.#box) return;
+    this.#beginPrompt();
     this.#notify();
   }
 
@@ -208,6 +256,50 @@ export class PerceptionStore {
     // A load in flight has nowhere to arrive; `#ensureEngine` releases it.
     this.#loading = undefined;
     this.#listeners.clear();
+  }
+
+  /** Forget what the current prompt was and what it produced. */
+  #beginPrompt(): void {
+    this.#points = [];
+    this.#box = undefined;
+    this.#candidates = NO_CANDIDATES;
+    this.#chosen = undefined;
+    this.#committedRevision = undefined;
+    this.#preferredRank = undefined;
+  }
+
+  /** Put the current prompt to the engine, and draw the answer. */
+  async #ask(): Promise<void> {
+    const sequence = ++this.#sequence;
+    this.#notify();
+
+    const box = this.#box;
+    const prompt: SegmentPrompt = box ? { points: this.#points, box } : { points: this.#points };
+
+    try {
+      const engine = await this.#ensureEngine();
+      const embedding = await this.#ensureEmbedding(engine);
+      if (sequence !== this.#sequence) return;
+
+      this.#setStatus({ kind: 'thinking' });
+      const proposals = await engine.decode(embedding, prompt);
+      if (sequence !== this.#sequence) return;
+
+      const candidates = orderCandidates(proposals);
+      const rank =
+        candidates.ordered.length === 0
+          ? undefined
+          : Math.min(this.#preferredRank ?? candidates.best, candidates.ordered.length - 1);
+
+      this.#candidates = candidates;
+      this.#chosen = rank;
+      this.#setStatus({ kind: 'ready' });
+
+      const chosen = rank === undefined ? undefined : candidates.ordered[rank];
+      if (chosen) this.#commit(chosen.proposal);
+    } catch (cause) {
+      if (sequence === this.#sequence) this.#fail(cause);
+    }
   }
 
   #commit(proposal: MaskProposal): void {
