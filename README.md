@@ -2,7 +2,8 @@
 
 Select part of an image and transform only that part. Everything else stays byte-identical.
 
-Runs entirely on your machine. Nothing is uploaded.
+Runs on your machine. Your image is never uploaded — the only thing that crosses
+the network is the object model, once, coming to you.
 
 ## Running it
 
@@ -22,7 +23,7 @@ pnpm e2e      # Playwright, real Chrome
 
 ```
 src/core/      the engine — no DOM, no framework
-src/platform/  browser adapters: decode, texture upload, encode
+src/platform/  browser adapters: decode, texture upload, encode, inference
 src/app/       Preact UI
 ```
 
@@ -88,8 +89,48 @@ coordinates and radii are in source pixels, so a brush edge exported at 6000 px
 is the shape that was drawn rather than a magnified approximation.
 
 `applyMask` is the one route by which a mask produced outside the brush can
-reach the renderer. It exists, is exercised by tests, and is where a
-segmentation engine would eventually connect — deliberately, and undoably.
+reach the renderer, and it is how object selection connects — deliberately, and
+undoably.
+
+## Selecting an object
+
+Click one with the Object tool and the whole thing is selected. Shift-click adds
+another region to the same object; Alt-click carves one away. Dragging pans, so
+there is no modifier to learn for the common case.
+
+A segmentation model (EdgeTAM) runs on your machine, in the browser. The first
+use downloads it, about 16 MB compressed for the runtime and 20 MB for the
+weights, and caches both; after that it is offline. Your image is never sent
+anywhere — the only thing that crosses the network is the model coming to you.
+
+Two things about the shape of this are load-bearing.
+
+**What the system understands is not what it draws.** Reading the frame is
+expensive and happens once; answering "which object is under this point" is
+cheap and happens per click. Each click returns three candidates — usually the
+same click read as a part, a whole and a group — and `PerceptionStore` keeps all
+of them while the renderer is told about exactly one, through an ordinary
+undoable command. Nothing in the perception layer can touch a mask texture.
+
+**A 256 px mask is not a boundary.** The model answers at 256 px square whatever
+the photograph is, so on a 4000 px image its edge is wrong by a dozen pixels
+before anything else happens, and magnifying it cannot help: a nearest tap
+staircases and a bilinear tap gives a sixteen-pixel ramp following the mask's
+own grid. So the boundary is _reconstructed_ from the image with a guided filter
+(He, Sun and Tang) whose guide is the photograph in Oklab — three channels, not
+luminance, because two regions of equal lightness and different hue are exactly
+the case a scalar guide cannot see. Measured on a synthetic edge, in image
+pixels:
+
+| engine error | 1 texel | 2    | 3    | 4    | 6    |
+| ------------ | ------- | ---- | ---- | ---- | ---- |
+| magnified    | 3.5     | 7.5  | 11.5 | 15.5 | 23.5 |
+| refined      | −0.5    | −0.4 | 4.6  | 11.0 | 21.8 |
+
+The window spans about six engine texels, which is what sets where that gives
+out. The filter runs during replay rather than once, so the command log holds
+the model's own 256 px answer, 64 KB, and export reconstructs the
+boundary against the full-resolution image rather than magnifying a preview's.
 
 ## Measured
 
@@ -106,8 +147,20 @@ The style chain only re-runs when a style control changes, never while brushing
 slider drag the chain drops to a draft tier: 8.9 ms at default detail on a 12 MP
 image, 27 ms at maximum detail.
 
-Bundle: 84 KB of JavaScript (29 KB gzipped), plus 31 KB of subset fonts. One
-runtime dependency.
+Object selection, once the model is loaded:
+
+|                                | 1 MP  | 24 MP |
+| ------------------------------ | ----- | ----- |
+| reading the frame (once)       | 19 ms | 43 ms |
+| a click (model plus composite) | 12 ms | 13 ms |
+
+A click is flat because the model always works at 1024 px square; only building
+that input scales with the photograph. Refinement adds 2 ms per engine mask to a
+mask rebuild at 24 MP, and a rebuild happens once per edit, not per frame.
+
+Bundle: 118 KB of JavaScript (40 KB gzipped), plus 31 KB of subset fonts. Two
+runtime dependencies, and the second is code-split: nothing of the inference
+runtime is fetched unless the Object tool is used.
 
 ## Type and fonts
 
@@ -129,7 +182,17 @@ of geometry did not justify a dependency.
 
 - Images only. The renderer takes a source texture rather than an image, which
   is the seam video would arrive through, but no video pipeline exists.
-- Brush selection only. No segmentation model ships; `applyMask` is the seam.
+- Object selection needs the network once, to fetch the model, and around 36 MB
+  of it. The image never leaves the machine; the model has to arrive on it.
+- The three candidates each click produces are kept but not offered. Only the
+  one the model rates highest is drawn.
+- Object selection runs on the inference runtime's own WebGPU device, not
+  Rotyl's: it declines to accept an external one. The consequence is that the
+  model's input crosses back through system memory, 12 MB per image. Its
+  17 MB of embeddings do not, which is the number that would have mattered.
+- The mask decoder is silently wrong on that runtime's older JSEP backend —
+  no error, an all-zero confidence, and a mask of the wrong object — so the
+  build is pinned. See `edgetam-engine.ts`.
 - Preview is capped at 4096 px on the long edge to bound memory. Export always
   renders at full resolution, so for larger images the preview is a downscale of
   the export rather than identical to it.
@@ -141,5 +204,11 @@ of geometry did not justify a dependency.
 - Export flattens transparency, matching the preview canvas, which is opaque.
 - HEIC is rejected by signature with a specific message, in every browser.
 - The unit suite runs shaders through Dawn's Node bindings, which do not survive
-  running the full style chain more than once per process. The GPU tests are
-  scoped accordingly; browsers have no such limit.
+  running the full style chain more than once per process, and abort
+  intermittently when GPU work is spread across separate cases in one file. The
+  GPU tests are scoped accordingly — each such file renders once and asserts
+  many times — and browsers have no such limit. Roughly one run in eight still
+  aborts under load, with and without those tests.
+- The end-to-end suite covers the object tool's interaction but not the model:
+  36 MB over the network is the wrong thing to put in a loop that has to be
+  reliable. The model path is verified by hand in a browser.
