@@ -94,6 +94,47 @@ test('switches between asking about an object and painting one', async ({ page }
   await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
 });
 
+test('drags a region with the box tool, and still pans with shift held', async ({ page }) => {
+  // The model is not exercised here either. What only a browser can answer is
+  // the part before it: that a drag is read as a region rather than as a pan,
+  // and that the pan it displaced is still reachable.
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  await page.getByRole('button', { name: 'Box' }).click();
+  await expect(page.getByRole('button', { name: 'Box' })).toHaveAttribute('aria-pressed', 'true');
+
+  const bounds = await canvas.boundingBox();
+  expect(bounds).not.toBeNull();
+  if (!bounds) return;
+  const at = (u: number, v: number): [number, number] => [
+    bounds.x + bounds.width * u,
+    bounds.y + bounds.height * v,
+  ];
+
+  const marquee = page.locator('.marquee');
+  await expect(marquee).toHaveCSS('opacity', '0');
+
+  await page.mouse.move(...at(0.35, 0.3));
+  await page.mouse.down();
+  await page.mouse.move(...at(0.65, 0.7), { steps: 8 });
+  await expect(marquee).toHaveCSS('opacity', '1');
+  const drawn = await marquee.boundingBox();
+  expect(drawn?.width).toBeGreaterThan(bounds.width * 0.2);
+  await page.mouse.up();
+  await expect(marquee).toHaveCSS('opacity', '0');
+
+  // Shift is the way back to panning wherever a drag already means something.
+  await page.keyboard.down('Shift');
+  await page.mouse.move(...at(0.4, 0.4));
+  await page.mouse.down();
+  await page.mouse.move(...at(0.6, 0.5), { steps: 6 });
+  await expect(marquee).toHaveCSS('opacity', '0');
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+});
+
 test('reveals the style controls only when asked', async ({ page }) => {
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();

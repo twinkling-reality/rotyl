@@ -379,6 +379,10 @@ button {
   cursor: none;
 }
 
+.viewport__canvas--boxing {
+  cursor: crosshair;
+}
+
 .brush-cursor {
   position: absolute;
   left: 0;
@@ -397,6 +401,88 @@ button {
     0 0 0 1px oklch(100% 0 0 / 0.9),
     inset 0 0 0 1px oklch(100% 0 0 / 0.9);
   /* Never transitioned: the cursor must track the pointer with zero lag. */
+}
+
+/*
+ * The region being dragged with the box tool.
+ *
+ * Same white/dark/white sandwich as the brush ring, and for the same reason: it
+ * has to stay visible over a photograph, where a single-colour hairline
+ * disappears against roughly half of them.
+ */
+.marquee {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: var(--z-cursor);
+  will-change: transform;
+  border: 1px dashed oklch(17% 0 0 / 0.9);
+  box-shadow: 0 0 0 1px oklch(100% 0 0 / 0.75);
+  background: oklch(100% 0 0 / 0.06);
+}
+
+/*
+ * The candidate picker, glued to the prompt rather than to the screen.
+ *
+ * A zero-sized box positioned at the anchor in image space; the pill inside is
+ * placed relative to it, and flips above when there is no room below.
+ */
+.prompt-anchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  z-index: var(--z-toolbar);
+  will-change: transform;
+  transition: opacity var(--dur) var(--ease-out);
+}
+
+.candidates {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  box-shadow: var(--shadow-toolbar);
+  transform: translate(-50%, var(--s-3));
+}
+
+.prompt-anchor[data-side='above'] .candidates {
+  transform: translate(-50%, calc(-100% - var(--s-3)));
+}
+
+.candidate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-sm);
+  /* The image behind shows through the mask's transparent half, which is what
+     makes the silhouette readable rather than a grey blob. */
+  background: var(--surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--line-subtle);
+  transition: box-shadow var(--dur) var(--ease-out);
+}
+
+.candidate:hover {
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.candidate--active {
+  box-shadow: inset 0 0 0 1.5px var(--text-primary);
+}
+
+.candidate__thumb {
+  display: block;
 }
 
 .toolbar {

@@ -11,8 +11,9 @@ import { uploadImageToTexture } from '../platform/texture-upload.ts';
 import { exportFilename, exportImage } from '../platform/image-export.ts';
 import { defaultControls, type StyleControls, type StyleDefinition } from '../core/style/style.ts';
 import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
-import type { Tool } from './tool.ts';
+import { isPrompt, type Tool } from './tool.ts';
 import type { PerceptionStatus, SelectIntent } from '../core/perception/perception-store.ts';
+import type { MaskCandidate } from '../core/perception/mask-candidates.ts';
 
 interface LoadedFile {
   readonly file: File;
@@ -51,6 +52,11 @@ export function App(): JSX.Element {
   const [error, setError] = useState<string | undefined>(undefined);
   const [tool, setTool] = useState<Tool>('paint');
   const [perception, setPerception] = useState<PerceptionStatus>({ kind: 'idle' });
+  // Mirrored from the store rather than owned here: the store decides what the
+  // prompt currently means, and this only draws it.
+  const [candidates, setCandidates] = useState<readonly MaskCandidate[]>([]);
+  const [chosenCandidate, setChosenCandidate] = useState<number | undefined>(undefined);
+  const [promptAnchor, setPromptAnchor] = useState<{ x: number; y: number } | undefined>(undefined);
   const [brushRadius, setBrushRadius] = useState(64);
   const [style, setStyle] = useState<StyleDefinition>(DEFAULT_STYLE);
   // Kept per style rather than reset on every switch: comparing two styles
@@ -126,16 +132,23 @@ export function App(): JSX.Element {
   useEffect(() => {
     if (!runtime) return undefined;
     return runtime.perception.subscribe(() => {
-      setPerception(runtime.perception.status);
+      const perceptionStore = runtime.perception;
+      setPerception(perceptionStore.status);
+      setCandidates(perceptionStore.candidates);
+      setChosenCandidate(perceptionStore.chosen);
+      const anchor = perceptionStore.promptAnchor;
+      setPromptAnchor(anchor ? { x: anchor.x, y: anchor.y } : undefined);
     });
   }, [runtime]);
 
   // Selecting the tool, not using it, is what starts the download and the
   // frame encode — so both overlap with the user deciding where to click
-  // rather than following it.
+  // rather than following it. Both prompt tools ask the same model, so
+  // switching between them carries the prompt rather than ending it: draw a
+  // box, then shift-click to correct what it caught.
   useEffect(() => {
     if (!runtime || !loaded) return;
-    if (tool === 'object') void runtime.perception.prepare();
+    if (isPrompt(tool)) void runtime.perception.prepare();
     else runtime.perception.endPrompt();
   }, [runtime, loaded, tool]);
 
@@ -203,9 +216,25 @@ export function App(): JSX.Element {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (isTypingTarget(event.target)) return;
 
+      // Reaching past the model's own pick to a larger or smaller reading of
+      // the same click. Only bound while there is something to reach for, so
+      // the keys are free the rest of the time.
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        const perceptionStore = runtime.perception;
+        const rank = perceptionStore.chosen;
+        if (perceptionStore.candidates.length > 1 && rank !== undefined) {
+          event.preventDefault();
+          perceptionStore.choose(event.key === 'ArrowUp' ? rank + 1 : rank - 1);
+        }
+        return;
+      }
+
       switch (event.key) {
         case 'o':
           setTool('object');
+          break;
+        case 'r':
+          setTool('box');
           break;
         case 'b':
           setTool('paint');
@@ -321,6 +350,12 @@ export function App(): JSX.Element {
             overlayVisible={overlayVisible}
             paused={busy !== undefined}
             fitRequest={fitRequest}
+            candidates={candidates}
+            chosenCandidate={chosenCandidate}
+            promptAnchor={promptAnchor}
+            onChooseCandidate={(rank) => {
+              runtime.perception.choose(rank);
+            }}
             onSelectionChanged={() => {
               // A brush stroke ends whatever object was being refined: the next
               // object click should ask a fresh question rather than adding a
@@ -330,6 +365,9 @@ export function App(): JSX.Element {
             }}
             onObjectPicked={(point, intent: SelectIntent) => {
               void runtime.perception.select(point, intent);
+            }}
+            onBoxPicked={(box) => {
+              void runtime.perception.selectBox(box);
             }}
           >
             {/*

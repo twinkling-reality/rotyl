@@ -1,6 +1,14 @@
 import type { JSX } from 'preact';
 import type { Tool } from './tool.ts';
-import { BrushIcon, ContrastIcon, EraserIcon, PointerClickIcon, SlidersIcon, TrashIcon } from './icons.tsx';
+import {
+  BoxSelectIcon,
+  BrushIcon,
+  ContrastIcon,
+  EraserIcon,
+  PointerClickIcon,
+  SlidersIcon,
+  TrashIcon,
+} from './icons.tsx';
 
 export interface ToolbarProps {
   readonly tool: Tool;
@@ -59,6 +67,15 @@ export function Toolbar({
         className={tool === 'object' ? 'tool--active' : ''}
         onClick={() => {
           onToolChange('object');
+        }}
+      />
+      <ToolButton
+        label="Box"
+        icon={<BoxSelectIcon />}
+        pressed={tool === 'box'}
+        className={tool === 'box' ? 'tool--active' : ''}
+        onClick={() => {
+          onToolChange('box');
         }}
       />
       <ToolButton

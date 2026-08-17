@@ -1,5 +1,5 @@
 /**
- * The nine icons the interface uses.
+ * The ten icons the interface uses.
  *
  * Path data from Lucide (ISC licence, © Lucide Contributors), copied rather
  * than depended on: this is about a kilobyte of geometry, and a package plus a
@@ -49,6 +49,29 @@ export function PointerClickIcon(props: IconProps): JSX.Element {
       <path d="m6 12-1.9 2" />
       <path d="M7.2 2.2 8 5.1" />
       <path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z" />
+    </Icon>
+  );
+}
+
+/**
+ * `square-dashed`. A marquee is what the gesture draws, so the icon is the
+ * marquee rather than a metaphor for one.
+ */
+export function BoxSelectIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <path d="M5 3a2 2 0 0 0-2 2" />
+      <path d="M19 3a2 2 0 0 1 2 2" />
+      <path d="M21 19a2 2 0 0 1-2 2" />
+      <path d="M5 21a2 2 0 0 1-2-2" />
+      <path d="M9 3h1" />
+      <path d="M9 21h1" />
+      <path d="M14 3h1" />
+      <path d="M14 21h1" />
+      <path d="M3 9v1" />
+      <path d="M21 9v1" />
+      <path d="M3 14v1" />
+      <path d="M21 14v1" />
     </Icon>
   );
 }
