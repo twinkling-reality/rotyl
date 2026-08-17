@@ -31,7 +31,7 @@ test('opens an image, selects part of it, and exports', async ({ page }) => {
 
   const canvas = page.locator('canvas');
   await expect(canvas).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Select' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Brush' })).toBeVisible();
   await expect(page.getByText('sample.png')).toBeVisible();
 
   // Undo is unavailable until something has been selected.
@@ -57,6 +57,41 @@ test('opens an image, selects part of it, and exports', async ({ page }) => {
 
   const path = await saved.path();
   expect(path).toBeTruthy();
+});
+
+test('switches between asking about an object and painting one', async ({ page }) => {
+  // The model itself is not exercised here. Twenty megabytes over the network
+  // is the wrong thing to put in a loop that has to be reliable, and what only
+  // a browser can answer about this tool is the part before the model: that a
+  // press is read as a question rather than as a stroke.
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  await page.getByRole('button', { name: 'Object' }).click();
+  await expect(page.getByRole('button', { name: 'Object' })).toHaveAttribute('aria-pressed', 'true');
+  // The brush ring shows a footprint, and the object tool has none.
+  await expect(canvas).not.toHaveClass(/viewport__canvas--brushing/);
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  // A drag is a pan, not a stroke, so it leaves nothing on the undo stack.
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.4);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.5, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeDisabled();
+
+  // The brush is still a brush.
+  await page.getByRole('button', { name: 'Brush' }).click();
+  await expect(canvas).toHaveClass(/viewport__canvas--brushing/);
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.4);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
 });
 
 test('reveals the style controls only when asked', async ({ page }) => {

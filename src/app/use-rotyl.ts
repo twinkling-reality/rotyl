@@ -51,14 +51,14 @@ export function useRotyl(): RuntimeState {
         return;
       }
 
-      const { device, maxTextureDimension } = result.value;
+      const { device, maxTextureDimension, supportsF16 } = result.value;
       const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
       const engine = new RotylEngine(device, maxTextureDimension, canvasFormat, VIEWPORT_BACKGROUND);
-      // The engine's own device, deliberately: the encoder's output is
-      // seventeen megabytes that the decoder consumes directly, and two devices
-      // would mean routing all of it through system memory to get between them.
+      // Given Rotyl's device so the model's input tensor can be built where the
+      // image already lives. The runtime declines to share a device and brings
+      // up its own; see edgetam-engine for what that costs and what it does not.
       const perception = new PerceptionStore(engine.document, (onProgress) =>
-        loadEdgeTamEngine(device, onProgress),
+        loadEdgeTamEngine({ device, supportsF16, onProgress }),
       );
 
       const runtime: RotylRuntime = { engine, perception, device, maxTextureDimension, canvasFormat };

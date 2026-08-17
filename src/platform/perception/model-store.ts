@@ -37,21 +37,55 @@ export interface ModelFile {
   readonly bytes: number;
 }
 
-export const EDGETAM_FILES = {
-  encoder: {
-    graph: 'vision_encoder_fp16.onnx',
-    weights: 'vision_encoder_fp16.onnx_data',
-    bytes: 167_617 + 9_739_536,
+export interface ModelVariant {
+  readonly encoder: ModelFile;
+  readonly decoder: ModelFile;
+}
+
+/**
+ * Two builds of the same weights, chosen by what the device can compile.
+ *
+ * Half precision is half the download and the one to prefer, but its kernels
+ * need the `shader-f16` feature and refuse to build without it — a failure that
+ * arrives as a session-creation error deep inside the runtime, long after the
+ * twenty megabytes have been fetched. Picking the variant from the device's
+ * feature set turns that into a decision made before anything is downloaded.
+ */
+export const EDGETAM_VARIANTS = {
+  half: {
+    encoder: {
+      graph: 'vision_encoder_fp16.onnx',
+      weights: 'vision_encoder_fp16.onnx_data',
+      bytes: 167_617 + 9_739_536,
+    },
+    decoder: {
+      graph: 'prompt_encoder_mask_decoder_fp16.onnx',
+      weights: 'prompt_encoder_mask_decoder_fp16.onnx_data',
+      bytes: 229_799 + 10_454_016,
+    },
   },
-  decoder: {
-    graph: 'prompt_encoder_mask_decoder_fp16.onnx',
-    weights: 'prompt_encoder_mask_decoder_fp16.onnx_data',
-    bytes: 229_799 + 10_454_016,
+  full: {
+    encoder: {
+      graph: 'vision_encoder.onnx',
+      weights: 'vision_encoder.onnx_data',
+      bytes: 192_225 + 19_532_576,
+    },
+    decoder: {
+      graph: 'prompt_encoder_mask_decoder.onnx',
+      weights: 'prompt_encoder_mask_decoder.onnx_data',
+      bytes: 213_114 + 20_958_208,
+    },
   },
-} as const satisfies Record<string, ModelFile>;
+} as const satisfies Record<string, ModelVariant>;
+
+export function edgetamVariant(supportsF16: boolean): ModelVariant {
+  return supportsF16 ? EDGETAM_VARIANTS.half : EDGETAM_VARIANTS.full;
+}
 
 /** Total download for a cold start, for the message shown while it happens. */
-export const EDGETAM_TOTAL_BYTES = EDGETAM_FILES.encoder.bytes + EDGETAM_FILES.decoder.bytes;
+export function variantBytes(variant: ModelVariant): number {
+  return variant.encoder.bytes + variant.decoder.bytes;
+}
 
 export interface ModelBytes {
   readonly graph: Uint8Array<ArrayBuffer>;

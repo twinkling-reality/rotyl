@@ -6,7 +6,7 @@ import type {
   SegmentPrompt,
 } from '../../core/perception/segmentation-engine.ts';
 import { FrameTensorEncoder } from '../../core/perception/frame-tensor.ts';
-import { EDGETAM_FILES, EDGETAM_TOTAL_BYTES, fetchModel } from './model-store.ts';
+import { edgetamVariant, fetchModel, variantBytes, type ModelVariant } from './model-store.ts';
 
 // The wasm is imported for its URL only. ONNX Runtime resolves it relative to
 // its own script otherwise, which is wrong under any bundler that hashes file
@@ -19,18 +19,37 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
 /**
  * EdgeTAM, as a Rotyl segmentation engine.
  *
- * NOTHING STAYS ON THE CPU THAT DOES NOT HAVE TO. The frame is already a GPU
- * texture, so the model's input tensor is built on the GPU and handed over as a
- * buffer; the three embeddings the encoder produces are seventeen megabytes and
- * are never read back, because the decoder wants them and the decoder is on the
- * same device. What does come back is the mask itself, 256 px square, which has
- * to reach the CPU regardless — the command log holds it, and the command log
- * is what makes the selection undoable and replayable at export resolution.
+ * WHAT CROSSES BETWEEN CPU AND GPU, AND WHAT DOES NOT. The seventeen megabytes
+ * of embeddings the encoder produces never leave the GPU: they are asked for as
+ * buffers and handed straight to the decoder, which is why a click costs about
+ * fifteen milliseconds rather than the round trip. The 256 px mask does come
+ * back, because it has to — the command log holds it, and the command log is
+ * what makes the selection undoable and replayable at export resolution.
+ *
+ * The input tensor also crosses, and that one is a concession. ONNX Runtime
+ * creates its own WebGPU device whatever it is handed: the `device` execution
+ * provider option and `env.webgpu.device` were both tried, and the first fails
+ * session creation outright with "failed to wait for the operation" while the
+ * second is ignored. So the tensor is built on our GPU, where the resize and
+ * the colour conversion are nearly free, and read back as twelve megabytes —
+ * once per image, not per click. The alternative is resizing a twenty-four
+ * megapixel photograph in JavaScript, which is far worse.
+ *
+ * MEASURED, on an M3 Pro against a 1200x800 image: encode 19-23 ms, decode
+ * 13-15 ms. Both are an order of magnitude better than the published figures
+ * for this model, and the reason is entirely the second paragraph.
+ *
+ * WHICH RUNTIME BUILD IS NOT ARBITRARY. `onnxruntime-web/webgpu` is the native
+ * WebGPU runtime; the default export is the older JSEP one. On JSEP the vision
+ * encoder is correct and the mask decoder silently returns an all-zero
+ * confidence and a mask of the wrong object — at both precisions, so it is the
+ * graph and not the weights. There is no error, which is exactly why this is
+ * pinned rather than left to whichever export looks tidier.
  *
  * The runtime and the weights are both loaded on demand. Together they are
- * about twenty-six megabytes, which would be an absurd thing to put in front of
- * someone who only wants to paint a selection, so the import is dynamic and the
- * bundler emits it as a separate chunk.
+ * about sixteen megabytes compressed, which is an absurd thing to put in front
+ * of someone who only wants to paint a selection, so the import is dynamic and
+ * the bundler emits it as a separate chunk.
  */
 
 /** What the weights were trained to receive; see frame-tensor.wgsl. */
@@ -71,39 +90,39 @@ interface EmbeddingState {
 const embeddingState = new WeakMap<SceneEmbedding, EmbeddingState>();
 
 /**
- * Two sessions, sharing Rotyl's own GPU device.
+ * Two sessions on the runtime's own device.
  *
- * Letting the runtime create its own device would mean the embeddings could not
- * be passed between our textures and its buffers without a round trip through
- * system memory, which is the entire cost this design exists to avoid.
+ * They share it with each other, which is what matters: the embeddings pass
+ * from one to the other as GPU buffers and are never read back.
  */
 async function createSessions(
   ort: Ort,
-  device: GPUDevice,
+  variant: ModelVariant,
   onProgress: (received: number) => void,
 ): Promise<{ encoder: Session; decoder: Session }> {
   let encoderBytes = 0;
-  const encoderModel = await fetchModel(EDGETAM_FILES.encoder, (received) => {
+  const encoderModel = await fetchModel(variant.encoder, (received) => {
     encoderBytes = received;
     onProgress(received);
   });
-  const decoderModel = await fetchModel(EDGETAM_FILES.decoder, (received) => {
+  const decoderModel = await fetchModel(variant.decoder, (received) => {
     onProgress(encoderBytes + received);
   });
 
-  const common = { executionProviders: [{ name: 'webgpu' as const, device }] };
+  const common = { executionProviders: ['webgpu' as const] };
 
   const encoder = await ort.InferenceSession.create(encoderModel.graph, {
     ...common,
-    externalData: [{ data: encoderModel.weights, path: EDGETAM_FILES.encoder.weights }],
-    // The one setting that makes the split worthwhile: the embeddings stay
-    // where they were produced instead of being copied out and back in.
+    externalData: [{ data: encoderModel.weights, path: variant.encoder.weights }],
+    // The one setting that makes the encode/decode split worth having: the
+    // embeddings stay where they were produced instead of being copied out and
+    // back in for every click.
     preferredOutputLocation: 'gpu-buffer',
   });
 
   const decoder = await ort.InferenceSession.create(decoderModel.graph, {
     ...common,
-    externalData: [{ data: decoderModel.weights, path: EDGETAM_FILES.decoder.weights }],
+    externalData: [{ data: decoderModel.weights, path: variant.decoder.weights }],
   });
 
   return { encoder, decoder };
@@ -116,27 +135,57 @@ function floatsOf(tensor: OrtTensor | undefined, name: string): Float32Array {
   return data;
 }
 
-/** Logits to 8-bit coverage. */
+/**
+ * Where the mask's coverage ramp is placed, in logits.
+ *
+ * Zero is the model's own decision boundary, and putting the ramp's midpoint
+ * there is the obvious choice and a visibly bad one: a logit of +0.3 means
+ * "marginally more likely than not", and rendering it as half coverage paints a
+ * haze of stylisation over every region the model is merely unsure about. A
+ * prompt spanning two objects produced exactly that, as a translucent wash over
+ * a third object nobody had asked for.
+ *
+ * So the ramp runs from the decision boundary to clearly-decided instead. A
+ * real boundary crosses the whole range within a texel, because the model is
+ * confident on both sides of one; an ambiguous region never leaves it.
+ */
+const DECIDED_LOGIT = 2;
+
+/**
+ * Logits to 8-bit coverage.
+ *
+ * Soft rather than thresholded, because the refinement bridge fits a local
+ * linear model to this field and a binarised mask gives it nothing to fit.
+ */
 function coverageFrom(logits: Float32Array, offset: number): Uint8Array {
   const coverage = new Uint8Array(MASK_SIZE * MASK_SIZE);
   for (let i = 0; i < coverage.length; i++) {
-    // The refinement bridge wants a soft field, not a threshold: the ramp
-    // either side of the boundary is what the guided filter fits its local
-    // model to, and a binarised mask gives it nothing to work with.
-    coverage[i] = Math.round(255 / (1 + Math.exp(-(logits[offset + i] ?? 0))));
+    const t = Math.min(1, Math.max(0, (logits[offset + i] ?? 0) / DECIDED_LOGIT));
+    coverage[i] = Math.round(255 * t * t * (3 - 2 * t));
   }
   return coverage;
 }
 
-export async function loadEdgeTamEngine(
-  device: GPUDevice,
-  onProgress: (progress: number) => void,
-): Promise<SegmentationEngine> {
+export interface EdgeTamOptions {
+  /** Rotyl's device, which builds the input tensor. The runtime uses its own. */
+  readonly device: GPUDevice;
+  /** Decides which build of the weights is worth downloading. */
+  readonly supportsF16: boolean;
+  readonly onProgress: (progress: number) => void;
+}
+
+export async function loadEdgeTamEngine(options: EdgeTamOptions): Promise<SegmentationEngine> {
+  const { device, supportsF16, onProgress } = options;
   const ort = await import('onnxruntime-web/webgpu');
   ort.env.wasm.wasmPaths = { wasm: ortWasmUrl };
 
-  const { encoder, decoder } = await createSessions(ort, device, (received) => {
-    onProgress(Math.min(1, received / EDGETAM_TOTAL_BYTES));
+  // Decided before anything is downloaded, from the hardware rather than from
+  // the runtime: this build exposes no device until a session exists, and by
+  // then twenty megabytes have already been fetched.
+  const variant = edgetamVariant(supportsF16);
+  const total = variantBytes(variant);
+  const { encoder, decoder } = await createSessions(ort, variant, (received) => {
+    onProgress(Math.min(1, received / total));
   });
 
   const tensors = new FrameTensorEncoder(device, {
@@ -151,10 +200,7 @@ export async function loadEdgeTamEngine(
       tensors.encode(commands, frame.view, frame.size);
       device.queue.submit([commands.finish()]);
 
-      const pixelValues = ort.Tensor.fromGpuBuffer(tensors.buffer, {
-        dataType: 'float32',
-        dims: [...tensors.dimensions],
-      });
+      const pixelValues = new ort.Tensor('float32', await tensors.read(), [...tensors.dimensions]);
       const outputs = await encoder.run({ pixel_values: pixelValues });
 
       const held: Record<string, OrtTensor> = {};

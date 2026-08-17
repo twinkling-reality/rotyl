@@ -12,6 +12,17 @@ export interface RenderDevice {
   readonly device: GPUDevice;
   /** Largest texture edge this device will allocate; caps OUTPUT resolution. */
   readonly maxTextureDimension: number;
+  /**
+   * Whether this hardware can compile half-precision shaders.
+   *
+   * Read from the adapter and deliberately not requested on the device: nothing
+   * in the renderer uses half precision, and asking for a feature in order to
+   * answer a question about it is how unused capability accumulates. It is
+   * reported because the segmentation runtime brings up its own device from the
+   * same hardware, and which build of the model is worth downloading — half the
+   * size, and unable to compile without this — follows from it.
+   */
+  readonly supportsF16: boolean;
 }
 
 export type DeviceResult =
@@ -32,11 +43,12 @@ export async function acquireRenderDevice(gpu: GPU | undefined): Promise<DeviceR
   if (!adapter) return { ok: false, reason: 'no-adapter' };
 
   const maxTextureDimension = adapter.limits.maxTextureDimension2D;
+  const supportsF16 = adapter.features.has('shader-f16');
   try {
     const device = await adapter.requestDevice({
       requiredLimits: { maxTextureDimension2D: maxTextureDimension },
     });
-    return { ok: true, value: { device, maxTextureDimension } };
+    return { ok: true, value: { device, maxTextureDimension, supportsF16 } };
   } catch {
     return { ok: false, reason: 'no-device' };
   }

@@ -69,12 +69,16 @@ export class FrameTensorEncoder {
     this.#planeTextures = planes;
     this.#planes = planes.map((texture) => texture.createView());
 
-    // STORAGE because an inference runtime binds it as one; the two copy usages
-    // because this side fills it and a caller may want to read it back.
+    // Mappable, because the tensor has to be read out. A runtime sharing this
+    // device could have bound it directly; the one used here creates its own
+    // device whatever it is handed, so a buffer of ours is not a buffer it can
+    // see. Crossing back to the CPU costs twelve megabytes and saves a
+    // full-resolution resize of the photograph in JavaScript, which is why this
+    // pass still earns its place.
     this.#tensor = this.#pool.buffer(device, {
       label: 'frame-tensor',
       size: 3 * layout.size * layout.size * BYTES_PER_FLOAT,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
     });
 
     this.#uniforms = this.#pool.buffer(device, {
@@ -106,9 +110,19 @@ export class FrameTensorEncoder {
     });
   }
 
-  /** The buffer `encode` fills. Its contents are valid once the frame is submitted. */
-  get buffer(): GPUBuffer {
-    return this.#tensor;
+  /**
+   * The encoded tensor, as the runtime wants it.
+   *
+   * Mapping waits for the submitted work by definition, so there is no separate
+   * fence to get wrong. Copying out of the mapped range is not optional: the
+   * range is detached on unmap, and a runtime holding it would be reading freed
+   * memory.
+   */
+  async read(): Promise<Float32Array> {
+    await this.#tensor.mapAsync(GPUMapMode.READ);
+    const values = new Float32Array(this.#tensor.getMappedRange().slice(0));
+    this.#tensor.unmap();
+    return values;
   }
 
   /**

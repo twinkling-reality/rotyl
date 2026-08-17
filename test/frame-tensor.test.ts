@@ -75,13 +75,8 @@ let anisotropic: Tensor;
 beforeAll(async () => {
   const { device } = await testDevice();
   const encoder = new FrameTensorEncoder(device, { size: SIZE, mean: MEAN, std: STD });
-  const readback = device.createBuffer({
-    size: 3 * SIZE * SIZE * 4,
-    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-  });
   disposeWithTestDevice(() => {
     encoder.dispose();
-    readback.destroy();
   });
 
   const run = async (width: number, height: number, pixels: Uint8Array): Promise<Tensor> => {
@@ -95,12 +90,9 @@ beforeAll(async () => {
 
     const commands = device.createCommandEncoder();
     encoder.encode(commands, source.createView({ format: SOURCE_VIEW_FORMAT }), { width, height });
-    commands.copyBufferToBuffer(encoder.buffer, 0, readback, 0, readback.size);
     device.queue.submit([commands.finish()]);
 
-    await readback.mapAsync(GPUMapMode.READ);
-    const values = new Float32Array(readback.getMappedRange().slice(0));
-    readback.unmap();
+    const values = await encoder.read();
     source.destroy();
 
     return {
