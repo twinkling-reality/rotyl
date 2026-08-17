@@ -123,19 +123,39 @@ Click one with the Object tool and the whole thing is selected. Shift-click adds
 another region to the same object; Alt-click carves one away. Dragging pans, so
 there is no modifier to learn for the common case.
 
+Or draw around it with the Box tool. A box says something a click cannot — where
+the thing _ends_ — which makes it the better prompt for anything without an
+unambiguous middle. It composes with clicks rather than replacing them: draw a
+box, switch back to the Object tool, and Alt-click whatever it caught by
+mistake. Drag is the box, so Shift-drag pans there, as it does in the brushes.
+
 A segmentation model (EdgeTAM) runs on your machine, in the browser. The first
 use downloads it, about 16 MB compressed for the runtime and 20 MB for the
 weights, and caches both; after that it is offline. Your image is never sent
 anywhere — the only thing that crosses the network is the model coming to you.
 
-Two things about the shape of this are load-bearing.
+Three things about the shape of this are load-bearing.
 
 **What the system understands is not what it draws.** Reading the frame is
 expensive and happens once; answering "which object is under this point" is
-cheap and happens per click. Each click returns three candidates — usually the
+cheap and happens per click. Each prompt returns three candidates — usually the
 same click read as a part, a whole and a group — and `PerceptionStore` keeps all
 of them while the renderer is told about exactly one, through an ordinary
 undoable command. Nothing in the perception layer can touch a mask texture.
+
+**The click was ambiguous, so the answer is a choice.** A point on a sleeve is a
+cuff, a shirt and a person, and the model says so. The alternatives appear under
+the prompt as their own silhouettes — the arrow keys reach them too — and taking
+one _replaces_ the command rather than stacking another, so changing your mind
+about which object you meant costs one undo rather than two.
+
+They are offered smallest first, which is the axis a person chooses along;
+confidence decides only which is drawn first, because nobody can see it. Two
+readings that agree to within a tenth are one reading, and are shown as one:
+three buttons that do the same thing imply a choice that is not there. And the
+thumbnails share a single crop rather than each framing itself, since three
+silhouettes at three magnifications would destroy the one comparison being
+offered.
 
 **A 256 px mask is not a boundary.** The model answers at 256 px square whatever
 the photograph is, so on a 4000 px image its edge is wrong by a dozen pixels
@@ -188,7 +208,7 @@ A click is flat because the model always works at 1024 px square; only building
 that input scales with the photograph. Refinement adds 2 ms per engine mask to a
 mask rebuild at 24 MP, and a rebuild happens once per edit, not per frame.
 
-Bundle: 130 KB of JavaScript (44 KB gzipped), plus 31 KB of subset fonts. Two
+Bundle: 137 KB of JavaScript (47 KB gzipped), plus 31 KB of subset fonts. Two
 runtime dependencies, and the second is code-split: nothing of the inference
 runtime is fetched unless the Object tool is used.
 
@@ -217,8 +237,9 @@ of geometry did not justify a dependency.
   100% zoom on a very large photograph the dots are correspondingly large.
 - Object selection needs the network once, to fetch the model, and around 36 MB
   of it. The image never leaves the machine; the model has to arrive on it.
-- The three candidates each click produces are kept but not offered. Only the
-  one the model rates highest is drawn.
+- Object selection only ever adds. Alt-click is a negative point — a statement
+  about the object, answered by the model — not a subtraction from the mask, so
+  removing a region that is already selected is still the eraser's job.
 - Object selection runs on the inference runtime's own WebGPU device, not
   Rotyl's: it declines to accept an external one. The consequence is that the
   model's input crosses back through system memory, 12 MB per image. Its
