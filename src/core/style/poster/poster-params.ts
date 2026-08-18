@@ -99,9 +99,8 @@ export interface PosterParams {
   /** Half-width of an outline, as a fraction of the image's short edge. */
   readonly lineFraction: number;
   readonly lineWeight: number;
-  /** How far apart two flat colours must be, in Oklab, before a line is drawn. */
+  /** How far apart two areas must be, in Oklab, for a line at full weight. */
   readonly lineThreshold: number;
-  readonly lineSoftness: number;
 
   readonly styleMix: number;
 }
@@ -159,13 +158,17 @@ export function resolvePosterParams(
     lineFraction: LINE_FRACTION,
     lineWeight: line,
     // THE THRESHOLD IS THE WHOLE POINT OF THE LINE. It is the distance in Oklab
-    // at which two flat areas count as different things, so raising the control
-    // does not only darken the lines - it draws more of them, reaching further
-    // into boundaries the flatten found faint.
-    lineThreshold: lerp(0.2, 0.045, line),
-    // HALF the width of that threshold's transition: the decision is resolved
-    // around the threshold rather than displaced past it. The shader floors it.
-    lineSoftness: 0.02,
+    // at which two areas count as different things, so raising the control does
+    // not only darken the lines - it draws more of them, reaching further into
+    // boundaries the flatten found faint.
+    //
+    // It is where a stroke reaches FULL weight rather than where one appears,
+    // and the shader ramps up to it from a quarter of it. The range moved with
+    // that change, because the old numbers were the middle of a step and these
+    // are the top of a ramp: 0.15 at the default is where the reference scene's
+    // outlines come back at the weight they had, measured against the render
+    // before it rather than judged by eye.
+    lineThreshold: lerp(0.26, 0.06, line),
 
     styleMix: fadeToNothing(strength),
   };

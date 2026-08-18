@@ -48,7 +48,7 @@ const SLOT = {
 const SLOT_COUNT = SLOT.poster + 1;
 
 const PALETTE_STOPS = 5;
-/** texel, then twelve scalars, then the palette on its own 16-byte boundary. */
+/** texel, then nine scalars, then the palette on its own 16-byte boundary. */
 const POSTER_FLOATS = 16 + PALETTE_STOPS * 4;
 
 interface StageTextures {
@@ -239,10 +239,8 @@ export class PosterStylePipeline implements StylePipeline {
       params.paletteAmount,
       params.lineWeight,
       params.lineThreshold,
-      params.lineSoftness,
-      params.paletteChroma,
     );
-    put(12, params.paletteMeanLightness, params.paletteLightnessSpread);
+    put(12, params.paletteMeanLightness, params.paletteLightnessSpread, params.paletteChroma);
     put(16, ...params.paletteStops);
 
     this.#uniforms.write(SLOT.poster, values);
