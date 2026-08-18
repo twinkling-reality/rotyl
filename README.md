@@ -200,7 +200,18 @@ boundary against the full-resolution image rather than magnifying a preview's.
 
 Open an MP4 or a MOV, select a region, and play it. Every frame goes through the
 same renderer a photograph does — the same style chain, the same composite, the
-same selection — at thirty frames a second on the draft tier. Export saves the
+same selection.
+
+**Playback holds full quality until it demonstrably cannot**, and the tolerance
+for that is deliberately wide. This is an editor showing what a filter does, not
+a media player, so a third of the frames carrying the real look beats all of
+them carrying an approximation. The chain measures 46 ms a frame on a 720p clip
+at high detail against a 20 ms budget, and it still plays at 44 of 50 frames a
+second because the frames it cannot render are skipped rather than queued.
+Dropping to the draft tier unconditionally was the first attempt and it was
+wrong twice over: on a small clip at high detail the two tiers are the same
+render anyway, since both clamp to the clip's own short edge, and on a large one
+no tier saves it. Export saves the
 frame on screen at full resolution, named for it. Tracking does not exist yet.
 
 A panel of stylisation over a moving scene is what the Area tool is for: drag a

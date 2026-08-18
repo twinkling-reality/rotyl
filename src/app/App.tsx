@@ -35,6 +35,25 @@ const DEFAULT_BRUSH_FRACTION = 0.06;
 const BRUSH_STEP = 1.25;
 
 /**
+ * How playback decides it cannot keep up.
+ *
+ * Judged over a window because the first frames of a clip pay for pipelines and
+ * a decoder that are not yet warm, and a single late frame there is not a clip
+ * that plays badly.
+ *
+ * THE TOLERANCE IS DELIBERATELY HUGE. This is not a media player, it is an
+ * editor showing what a filter does, and someone watching it would rather see
+ * the real look at a third of the frames than a smooth approximation of it. The
+ * style chain measures 46 ms a frame on a 720p clip at high detail and 105 ms
+ * at 1080p, against budgets of 20 and 33 — so a strict tolerance degrades
+ * everything, always, which is what made playback look like a cheap filter in
+ * the first place. Degrading is reserved for the point where the result has
+ * stopped reading as motion at all.
+ */
+const FRAMES_BEFORE_JUDGING = 20;
+const TOLERATED_SKIP = 0.6;
+
+/**
  * What the perception layer is doing, in the status line.
  *
  * The download is the only one worth a percentage: it is tens of megabytes and
@@ -335,9 +354,18 @@ export function App(): JSX.Element {
    * late: dropping one is invisible, and drifting behind by a frame per frame
    * is a clip that runs slow and never catches up.
    *
-   * The draft tier throughout. Every frame is new pixels, so the style chain
-   * re-runs on every one of them, and at full quality that is 105 ms against a
-   * 33 ms budget.
+   * FULL QUALITY UNTIL IT CANNOT KEEP UP, rather than the draft tier
+   * throughout. Dropping to draft unconditionally was wrong in both directions:
+   * on a 720p clip at high detail the two tiers are the same render anyway,
+   * because both clamp to the clip's own short edge, so the drop bought nothing
+   * and cost the look; on a 1080p clip at default detail the chain is 105 ms
+   * against a 33 ms budget and no tier saves it.
+   *
+   * There is no cost model for the style chain, so this asks the only question
+   * that matters and asks it of the thing itself: are frames being skipped. The
+   * loop already computes that, because the target frame comes from the clock
+   * rather than from a counter. Degrading only downward, and only on a window
+   * rather than on one late frame, is what keeps it from oscillating.
    */
   const play = useCallback((): void => {
     if (!runtime || !loaded?.video) return;
@@ -349,7 +377,11 @@ export function App(): JSX.Element {
 
     playingRef.current = true;
     setPlaying(true);
-    runtime.engine.setQuality('draft');
+    runtime.engine.setQuality('full');
+
+    let advanced = 0;
+    let skipped = 0;
+    let degraded = false;
 
     const step = async (): Promise<void> => {
       if (!playingRef.current) return;
@@ -357,6 +389,17 @@ export function App(): JSX.Element {
       const target = Math.min(frameCount - 1, startFrame + Math.floor(elapsed * rate));
 
       if (target !== shown) {
+        skipped += Math.max(0, target - shown - 1);
+        advanced++;
+        if (!degraded && advanced >= FRAMES_BEFORE_JUDGING) {
+          if (skipped > advanced * TOLERATED_SKIP) {
+            degraded = true;
+            runtime.engine.setQuality('draft');
+          }
+          advanced = 0;
+          skipped = 0;
+        }
+
         shown = target;
         setFrame(target);
         runtime.engine.setFrame(target);

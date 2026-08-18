@@ -153,6 +153,11 @@ export class RotylEngine {
     return this.#view;
   }
 
+  /** Which tier the style chain last ran at. Read by the dev console. */
+  get quality(): StyleQuality {
+    return this.#quality;
+  }
+
   get frame(): number {
     return this.#frame;
   }
