@@ -80,6 +80,8 @@ export interface Entry {
   readonly harness: string;
   /** When the figures last changed, from the repository rather than from memory. */
   readonly date?: string | undefined;
+  /** The machine they were taken on, read out of the results themselves. */
+  readonly taken?: string | undefined;
   readonly lede: readonly string[];
   /** Shown under the lede: what this entry is about, rather than decoration. */
   readonly hero?: Figure;
@@ -101,6 +103,9 @@ const anchor = (heading: string): string =>
 const STYLE = `
 :root {
   --bg: oklch(99% 0 0);
+  /* A hover tint has to be seen to be an affordance. The editor's own surface
+     token is 1.6 points off the page and reads as nothing at this size. */
+  --hover: oklch(96.6% 0 0);
   --line-subtle: oklch(93.5% 0 0);
   --line: oklch(89.8% 0 0);
   --line-strong: oklch(82% 0 0);
@@ -173,21 +178,32 @@ p a:hover, li a:hover { text-decoration: underline; }
 h1 { margin: 0; font-family: var(--serif); font-size: 34px; font-weight: 400; line-height: 42px; letter-spacing: -0.01em; }
 .standfirst { margin: 12px 0 0; color: var(--text-secondary); font-size: 15px; line-height: 24px; max-width: 60ch; }
 
-/* The index: a date, a title, a source. Nothing else earns a column. */
-.list { margin-top: 64px; }
+/* The index: a date and a title. Nothing else earns a column — which file
+   produced a measurement is the entry's business, not the list's. */
+.list { margin-top: 56px; }
 .row {
   display: grid;
   grid-template-columns: 130px 1fr;
   gap: 24px;
-  padding: 26px 0;
+  /* Padded and pulled back out, so the hover tint has room to breathe without
+     the text moving. */
+  padding: 26px 20px;
+  margin: 0 -20px;
   border-top: 1px solid var(--line-subtle);
+  border-radius: 6px;
+  color: inherit;
+  transition: background var(--dur, 140ms) ease;
 }
-.row:last-child { border-bottom: 1px solid var(--line-subtle); }
+.list .row:last-child { border-bottom: 1px solid var(--line-subtle); }
+/* THE WHOLE ROW IS THE TARGET. A title-only hit area on a row this tall means
+   most of what looks like a link is not one, which reads as a broken page
+   rather than as restraint. */
+.row:hover { background: var(--hover); }
+.row:hover .what { color: var(--accent); }
+.row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .row .when { color: var(--text-tertiary); font-size: 13px; font-variant-numeric: tabular-nums; }
 .row .what { font-family: var(--serif); font-size: 21px; line-height: 30px; }
-.row a:hover .what { color: var(--accent); }
 .row .about { margin: 4px 0 0; color: var(--text-secondary); max-width: 62ch; }
-.row .src { margin: 8px 0 0; color: var(--text-tertiary); font-family: var(--mono); font-size: 11.5px; }
 
 /* An entry: a column of prose, and a table of contents beside it.
    The hidden default comes FIRST: declared after the media query it wins on
@@ -215,7 +231,18 @@ h1 { margin: 0; font-family: var(--serif); font-size: 34px; font-weight: 400; li
 h2 { margin: 56px 0 0; font-family: var(--serif); font-size: 24px; font-weight: 400; line-height: 32px; letter-spacing: -0.008em; }
 .body p { margin: 16px 0 0; font-family: var(--serif); font-size: 17px; line-height: 28px; }
 .body .caveat { font-family: var(--sans); font-size: 13px; line-height: 21px; color: var(--text-secondary); }
-.body .cmd { font-family: var(--sans); font-size: 12px; color: var(--text-tertiary); }
+.body .cmd {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+/* Labelled, because an unexplained shell command in the middle of prose reads
+   as debris rather than as an invitation. */
+.cmd__label { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; }
 code { font-family: var(--mono); font-size: 0.86em; }
 
 figure { margin: 32px 0 0; }
@@ -275,6 +302,8 @@ footer {
   font-size: 12px;
   line-height: 20px;
 }
+footer p { margin: 0 0 10px; max-width: 68ch; }
+footer p:last-child { margin-bottom: 0; }
 `;
 
 function shell(title: string, top: string, main: string): string {
@@ -356,7 +385,9 @@ function renderSection(section: Section, meta: readonly FigureMeta[]): string {
     section.figure ? renderFigure(section.figure, meta) : '',
     section.table ? renderTable(section.table) : '',
     section.caveat ? `<p class="caveat">${escape(section.caveat)}</p>` : '',
-    section.command ? `<p class="cmd"><code>${escape(section.command)}</code></p>` : '',
+    section.command
+      ? `<p class="cmd"><span class="cmd__label">Re-take this</span><code>${escape(section.command)}</code></p>`
+      : '',
   ].join('');
 }
 
@@ -392,15 +423,21 @@ export function renderEntry(entry: Entry, meta: readonly FigureMeta[] = []): str
 <aside class="toc"><nav><div class="label">On this page</div><ol>${toc}</ol></nav></aside>
 <main class="body">
 <h1>${escape(entry.title)}</h1>
-<p class="meta">${entry.date ? `${escape(entry.date)} · ` : ''}<code>${escape(entry.harness)}</code></p>
+<p class="meta">${escape(entry.date ?? '')}</p>
 <div class="lede">${entry.lede.map((paragraph) => `<p>${escape(paragraph)}</p>`).join('')}</div>
 ${entry.hero ? renderFigure(entry.hero, meta) : ''}
 ${entry.sections.map((section) => renderSection(section, meta)).join('')}
 ${entry.trials ? renderTrials(entry.trials) : ''}
-<footer>Every GPU figure is fenced with <code>queue.onSubmittedWorkDone()</code> on
-the device that did the work. The tables on this page are generated from the
-harness's own results at build time rather than typed, so they cannot disagree
-with the run that produced them.</footer>
+<footer>
+<p>Measured by <code>${escape(entry.harness)}</code>${entry.taken ? `, on ${escape(entry.taken)}` : ''}.
+Every GPU figure is fenced on the device that did the work, and the tables here
+are read out of that harness's own results when this page is built rather than
+typed into it — so a number on this page cannot disagree with the run that
+produced it.</p>
+<p>The commands beside each table re-take that measurement. Run them in real
+Chrome, on a machine doing nothing else; the arguments behind the numbers are in
+the README next to the code they justify.</p>
+</footer>
 </main></div></div>`;
 
   return shell(`${entry.title} — Rotyl`, breadcrumb(entry.title), main);
@@ -410,24 +447,20 @@ export function renderIndex(entries: readonly Entry[]): string {
   const rows = entries
     .map(
       (entry) =>
-        `<div class="row"><div class="when">${escape(entry.date ?? '')}</div>` +
-        `<div><a href="/research/${entry.slug}.html"><div class="what">${escape(entry.title)}</div></a>` +
-        `<p class="about">${escape(entry.standfirst)}</p>` +
-        `<p class="src">${escape(entry.harness)}</p></div></div>`,
+        `<a class="row" href="/research/${entry.slug}.html">` +
+        `<div class="when">${escape(entry.date ?? '')}</div>` +
+        `<div><div class="what">${escape(entry.title)}</div>` +
+        `<p class="about">${escape(entry.standfirst)}</p></div></a>`,
     )
     .join('');
 
+  // One line, about what a reader will find rather than about how the page is
+  // built. How it is built is a property of the entries, and each of them says
+  // so where it matters.
   const main = `<div class="wrap">
 <h1>Research</h1>
-<p class="standfirst">What was measured, what it cost to find out, and what was
-tried and dropped along the way. Every figure is read out of the benchmark
-harnesses' own results when this page is built, so nothing here can drift from
-the run that produced it.</p>
+<p class="standfirst">What was measured, and what it cost to find out.</p>
 <div class="list">${rows}</div>
-<footer>Re-take them with <code>node tools/style-bench/run.mjs all</code> and
-<code>node tools/video-bench/run.mjs all</code>, in real Chrome, on a quiet
-machine. The arguments behind the numbers are in the READMEs, next to the code
-they justify.</footer>
 </div>`;
 
   return shell('Research — Rotyl', breadcrumb(), main);
