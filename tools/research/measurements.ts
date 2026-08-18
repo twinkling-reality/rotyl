@@ -607,6 +607,41 @@ function pointers(tracking: unknown): Section {
   };
 }
 
+function download(video: unknown, shrink: unknown): Section {
+  const mb = (variant: string): string =>
+    `${num(video, ['half-precision', 'memory_attention', variant, 'model_mb']).toFixed(1)} MB`;
+  const ms = (variant: string): string =>
+    `${num(video, ['half-precision', 'memory_attention', variant, 'run_ms', 'median']).toFixed(1)} ms`;
+  const duplicated = num(shrink, ['memory_attention', 'duplicated_bytes']) / 1e6;
+  const copies = num(shrink, ['memory_attention', 'removed']);
+  const hoisted = num(shrink, ['memory_attention', 'hoisted_constants']);
+  return {
+    heading: 'The download is not halved, it is quartered',
+    prose: [
+      'The expensive graph exports at 69.6 MB and holds 11.8 MB of weights. Everything else is rotary tables, which the tracer captures once per layer and once per attention block because the module that produces them takes no inputs and can therefore be traced away. Turning constant folding off does not help: they are not folded, they are traced.',
+      `Where they sit is the reason the obvious pass finds nothing. They are not initializers. They are ${hoisted.toFixed(
+        0,
+      )} Constant NODES, each carrying its own copy in an attribute, so a sweep over the graph's initializers reports no duplication at all. Hoisting them into initializers first, then sharing the ones whose bytes match, removes ${copies.toFixed(
+        0,
+      )} copies and ${duplicated.toFixed(1)} MB.`,
+      'It costs nothing on either axis, which had to be checked rather than assumed: a tensor read from six places could plausibly be allocated differently by a WebGPU backend. The outputs are identical to the bit and the median run time moves by less than the run-to-run spread.',
+      'So tracking’s marginal download is the shared half-precision attention graph at 12 MB plus the encoder at 6.7, which stays at full precision for the reason above. Nineteen megabytes on top of the twenty already fetched for object selection, against seventy-six.',
+    ],
+    table: {
+      columns: ['memory attention', 'size', 'a frame', 'against fp32'],
+      rows: [
+        ['as exported', mb('fp32'), ms('fp32'), ''],
+        ['half precision', mb('fp16'), ms('fp16'), '0.074 on values up to 2.53'],
+        ['tables shared', mb('shared'), ms('shared'), 'identical'],
+        ['both', mb('shared fp16'), ms('shared fp16'), '0.074, as fp16'],
+      ],
+    },
+    caveat:
+      'The memory encoder has no duplication worth removing, 6.7 MB before and after, and half precision is not a safe conversion for it: its worst output element moves by half the signal and that output conditions every later frame. So it ships whole, and it is the smaller of the two anyway.',
+    command: 'python tools/edgetam-export/shrink.py --verify --fp16',
+  };
+}
+
 // --- writing a clip ---------------------------------------------------------
 
 function pipeline(video: unknown): Section {
@@ -745,13 +780,25 @@ function containerBytes(bundle: unknown): Section {
 
 // --- entries ----------------------------------------------------------------
 
-export function entries(
-  style: unknown,
-  real: unknown,
-  video: unknown,
-  tracking: unknown,
-  bundle: unknown,
-): readonly Entry[] {
+/**
+ * Every results file the pages read, as one value rather than as an argument
+ * each.
+ *
+ * Four harnesses now write six files between them, and a positional list of
+ * them is a shape where adding a measurement edits three call sites and where
+ * two `unknown`s can be swapped without the compiler noticing.
+ */
+export interface Results {
+  readonly style: unknown;
+  readonly real: unknown;
+  readonly video: unknown;
+  readonly tracking: unknown;
+  readonly shrink: unknown;
+  readonly bundle: unknown;
+}
+
+export function entries(results: Results): readonly Entry[] {
+  const { style, real, video, tracking, shrink, bundle } = results;
   return [
     {
       slug: 'the-look',
@@ -832,7 +879,13 @@ export function entries(
       lede: [
         'Tracking does not exist yet. These are the numbers that say what it would cost and what shape it would have to take, taken before writing it rather than after.',
       ],
-      sections: [trackedFrame(video), readback(video), tracksWhat(tracking), pointers(tracking)],
+      sections: [
+        trackedFrame(video),
+        tracksWhat(tracking),
+        pointers(tracking),
+        download(video, shrink),
+        readback(video),
+      ],
     },
     {
       slug: 'the-editor',

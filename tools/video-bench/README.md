@@ -146,9 +146,14 @@ until someone has checked it against real feature maps rather than random ones.
 
 The download halves too, 69.6 MB to 34.9 MB. Session creation is about 400 ms
 for the first session on a page and 40 to 55 ms for every one after it, at
-either precision, so the size buys the download rather than the startup. The
-rotary tables the export README describes are still duplicated inside that;
-deduplicating them is a separate and larger win.
+either precision, so the size buys the download rather than the startup.
+
+**And deduplicating the rotary tables is the larger win, as predicted.** The
+same graph with the tracer's duplicated tables shared is 24.0 MB, and 12.0 MB
+with half precision as well. It runs in 58.0 ms against 57.7 for the graph it
+came from and produces identical outputs, so a tensor read from six places
+costs this backend nothing. `tools/edgetam-export/shrink.py` does it and says
+why the obvious version of it finds nothing to share.
 
 ### What a tracked frame costs
 

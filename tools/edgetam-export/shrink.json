@@ -1,0 +1,26 @@
+{
+  "memory_attention": {
+    "hoisted_constants": 166,
+    "initializers": 220,
+    "distinct": 78,
+    "removed": 142,
+    "duplicated_bytes": 45614912,
+    "bytes": 69613532,
+    "shared_bytes": 23974669,
+    "fp16_bytes": 34894655,
+    "shared_fp16_bytes": 12049526,
+    "worst_abs_diff": 0.0
+  },
+  "memory_encoder": {
+    "hoisted_constants": 289,
+    "initializers": 377,
+    "distinct": 128,
+    "removed": 249,
+    "duplicated_bytes": 2712,
+    "bytes": 6691119,
+    "shared_bytes": 6653196,
+    "fp16_bytes": 3489540,
+    "shared_fp16_bytes": 3432195,
+    "worst_abs_diff": 0.0
+  }
+}

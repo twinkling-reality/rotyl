@@ -90,24 +90,31 @@ Fixing the size also turns the two integers the reference passes alongside the
 memory into constants. They control rotary slicing and cannot be tensors, so a
 variable-length bank would have needed a graph per size regardless.
 
-## Size, which is not what the file says
+## Size, which is not what the file says, and is now fixed
 
 `memory_attention.onnx` is 69.6 MB and holds 11.8 MB of weights. The rest is
-baked rotary tables, four distinct tables totalling 12.1 MB, repeated across
-layers and attention blocks by the tracer. Disabling constant folding does not
-help: the rotary module takes no inputs, so tracing captures them whatever the
-folding setting.
+baked rotary tables, four distinct tables repeated across layers and attention
+blocks by the tracer. Disabling constant folding does not help: the rotary
+module takes no inputs, so tracing captures them whatever the folding setting.
 
-|                                             | size    |
-| ------------------------------------------- | ------- |
-| as exported, fp32                           | 69.6 MB |
-| duplicate tables shared                     | ~24 MB  |
-| fp16                                        | ~12 MB  |
-| tables computed at load rather than shipped | ~6 MB   |
+An earlier version of this file estimated that sharing them would give about
+24 MB and left it as work for whoever shipped it. `shrink.py` does it, and the
+estimate was right: **69.6 MB to 24.0 MB, and 12.0 MB with half precision on
+top**, with outputs identical to the bit and no change in run time on WebGPU.
 
-So video's marginal download is single-digit megabytes on top of the 20 MB
-already fetched for object selection, not seventy. Deduplicating the
-initializers, or making the tables graph inputs, is work for whoever ships it.
+**The obvious pass finds nothing, and that is the whole difficulty.** The tables
+are not initializers. The tracer emits them as `Constant` NODES, each carrying
+its own copy of the tensor in an attribute, so a sweep over `graph.initializer`
+reports no duplication at all: this graph has 54 initializers holding 11.8 MB
+and 166 Constant nodes holding 57.7 MB, of which 45.6 MB is copies. Hoist the
+constants into initializers first, which changes nothing about what the graph
+computes, and then the sharing is four lines.
+
+So tracking's marginal download is 12 MB for attention plus 6.7 for the encoder,
+which stays at full precision because half is not a safe conversion for it. Call
+it nineteen on top of the twenty already fetched for object selection, against
+seventy-six. The sizes and the WebGPU timings are on `/research/tracking.html`,
+out of `shrink.json` and `tools/video-bench/results.json`.
 
 ## What the fixtures are for
 

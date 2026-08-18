@@ -83,9 +83,16 @@ async function compare(
   const inputs = feeds(ort, spec);
 
   const truth: Record<string, Float32Array> = {};
+  // FOUR VARIANTS OF ONE GRAPH, as a list rather than as four code paths, which
+  // is what made adding the last two a line. `_shared` is the same graph with
+  // the tracer's duplicated rotary tables hoisted out of Constant nodes and
+  // shared; it must agree to the bit, and the interesting question about it is
+  // whether a tensor read from six places costs anything on this backend.
   for (const [suffix, label] of [
     ['', 'fp32'],
     ['_fp16', 'fp16'],
+    ['_shared', 'shared'],
+    ['_shared_fp16', 'shared fp16'],
   ] as const) {
     const url = `${base}/${name}${suffix}.onnx`;
     const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
@@ -109,6 +116,9 @@ async function compare(
         truth[key] = values;
         continue;
       }
+      // Every variant is compared against the fp32 graph rather than against
+      // the one before it, so "shared" is a claim about the export and not
+      // about the conversion that happens to precede it in this list.
       const reference = truth[key];
       if (!reference) continue;
       let worst = 0;
@@ -132,7 +142,7 @@ async function compare(
       model_mb: Math.round(bytes.byteLength / 1e5) / 10,
       session_create_ms: createMs,
       run_ms: timing,
-      ...(label === 'fp16' ? { agreement_vs_fp32: agreement } : {}),
+      ...(label === 'fp32' ? {} : { agreement_vs_fp32: agreement }),
     };
   }
   return out;
