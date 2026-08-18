@@ -1,3 +1,5 @@
 clips
 out
 real
+# The flicker maps are the artefact; its results file holds only the adapter.
+results-real-flicker.json
