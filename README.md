@@ -389,6 +389,17 @@ One entry is one finding, because the question a reader has is "what did we
 learn" rather than "which harness produced this". Dates come from the commit
 that last touched the results, so "is this current" has an answer.
 
+The entry about the look carries pictures, and the others do not. An argument
+about whether output is worth looking at that shows none of it is asking to be
+taken on trust; a page of decode timings with a hero image on top is a marketing
+habit. The figures are rendered by the same harness, from the same scene,
+through the same compositor as the numbers beside them, and their captions name
+the tiles from the figure's own metadata — so a caption cannot describe a
+picture that changed underneath it. They are the one generated artefact here
+that is committed, because they need a GPU and a browser to produce and the
+build cannot make them; what the build does instead is refuse to reference one
+that is missing.
+
 It is GENERATED, at build time, out of the harnesses' own `results.json` — which
 is the point of it rather than a detail of it. Every table in every README here
 is transcribed by hand, and transcription is how "the print chain has never been

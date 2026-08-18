@@ -10,4 +10,6 @@ tools/edgetam-export/fixture
 tools/video-bench/clips
 tools/style-bench/clips
 tools/style-bench/out
+# Committed, but written by the harness rather than by a person.
+tools/style-bench/figures
 tools/video-bench/results.json

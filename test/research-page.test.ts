@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { renderResearchSite } from '../tools/research/index.ts';
+import { existsSync } from 'node:fs';
+import { renderResearchSite, researchFigures } from '../tools/research/index.ts';
 import { renderEntry } from '../tools/research/page.ts';
 import { TRIALS } from '../tools/research/trials.ts';
 
@@ -35,6 +36,35 @@ describe('the research pages', () => {
     expect((html.match(/<table/g) ?? []).length).toBeGreaterThanOrEqual(14);
     expect(html).not.toContain('undefined');
     expect(html).not.toContain('NaN');
+  });
+
+  it('references only figures that were actually rendered', () => {
+    // The figures need a GPU and a browser to produce, so unlike the tables the
+    // build cannot make them — it can only refuse to link one that is missing.
+    const emitted = researchFigures();
+    expect(emitted.length).toBeGreaterThan(0);
+    for (const figure of emitted)
+      expect(
+        existsSync(`./${figure.path.replace('research/figures', 'tools/style-bench/figures')}`),
+        figure.path,
+      ).toBe(true);
+
+    for (const [, src] of html.matchAll(/<img src="([^"]+)"/g)) {
+      expect(
+        emitted.map((figure) => `/${figure.path}`),
+        src,
+      ).toContain(src);
+    }
+  });
+
+  it('names every tile of a figure in its caption', () => {
+    // A label baked into an image is unreadable at half width and invisible to
+    // a screen reader, so the picture carries none and the caption carries all.
+    const look = pages.find((page) => page.path === 'research/the-look.html')?.html ?? '';
+    expect(look).toContain('<figure>');
+    for (const tile of ['the photograph', 'comic', 'poster', 'print']) {
+      expect(look, tile).toContain(tile);
+    }
   });
 
   it('is light, like the editor', () => {

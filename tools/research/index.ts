@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { entries, hardware } from './measurements.ts';
-import { renderEntry, renderIndex, type Entry } from './page.ts';
+import { renderEntry, renderIndex, type Entry, type FigureMeta } from './page.ts';
 import { TRIALS } from './trials.ts';
 
 /**
@@ -46,6 +46,57 @@ export interface Emitted {
   readonly html: string;
 }
 
+export interface EmittedAsset {
+  readonly path: string;
+  readonly bytes: Buffer;
+}
+
+/** Where the harness leaves the pictures it rendered, and what it says they are. */
+const FIGURES = 'tools/style-bench/figures';
+
+/**
+ * The figures, which are committed rather than generated at build.
+ *
+ * They need a GPU and a browser to produce, so the build cannot make them the
+ * way it makes the tables. What it can do is refuse to reference one that is
+ * not there: renderFigure throws on an unknown name, so a page can never link a
+ * picture that was never rendered.
+ */
+export function researchFigures(root = '.'): readonly EmittedAsset[] {
+  const meta = figureMeta(root);
+  return meta.map((figure) => ({
+    path: `research/figures/${figure.name}.webp`,
+    bytes: readFileSync(`${root}/${FIGURES}/${figure.name}.webp`),
+  }));
+}
+
+function figureMeta(root: string): readonly FigureMeta[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(`${root}/${FIGURES}/index.json`, 'utf8'));
+  } catch {
+    return [];
+  }
+  // Checked rather than asserted: this file is written by a separate tool, and
+  // the failure it can produce is a caption describing a picture that is not
+  // there — which reads as a fact.
+  if (!Array.isArray(parsed)) throw new Error('research: the figure index is not a list');
+  return parsed.map((entry: unknown) => {
+    if (typeof entry !== 'object' || entry === null) throw new Error('research: a figure is not an object');
+    const figure = entry as Partial<FigureMeta>;
+    if (typeof figure.name !== 'string' || !Array.isArray(figure.tiles)) {
+      throw new Error('research: a figure has no name or no tiles');
+    }
+    return {
+      name: figure.name,
+      width: Number(figure.width),
+      height: Number(figure.height),
+      columns: Number(figure.columns),
+      tiles: figure.tiles.map(String),
+    };
+  });
+}
+
 export function renderResearchSite(root = '.'): readonly Emitted[] {
   const read = (path: string): unknown => JSON.parse(readFileSync(`${root}/${path}`, 'utf8'));
   const style = read('tools/style-bench/results.json');
@@ -76,8 +127,12 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
     },
   ];
 
+  const meta = figureMeta(root);
   return [
     { path: 'research.html', html: renderIndex(dated) },
-    ...dated.map((entry) => ({ path: `research/${entry.slug}.html`, html: renderEntry(entry) })),
+    ...dated.map((entry) => ({
+      path: `research/${entry.slug}.html`,
+      html: renderEntry(entry, meta),
+    })),
   ];
 }

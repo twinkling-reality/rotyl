@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { defineConfig, type Plugin } from 'vite';
-import { renderResearchSite } from './tools/research/index.ts';
+import { renderResearchSite, researchFigures } from './tools/research/index.ts';
 
 /**
  * Strip WGSL comments, and keep every newline.
@@ -70,14 +70,23 @@ function researchPage(): Plugin {
         const page = renderResearchSite().find(
           (candidate) => candidate.path === requested || candidate.path === `${requested}.html`,
         );
-        if (!page) return next();
-        response.setHeader('Content-Type', 'text/html; charset=utf-8');
-        response.end(page.html);
+        if (page) {
+          response.setHeader('Content-Type', 'text/html; charset=utf-8');
+          response.end(page.html);
+          return;
+        }
+        const figure = researchFigures().find((candidate) => candidate.path === requested);
+        if (!figure) return next();
+        response.setHeader('Content-Type', 'image/webp');
+        response.end(figure.bytes);
       });
     },
     generateBundle() {
       for (const page of renderResearchSite()) {
         this.emitFile({ type: 'asset', fileName: page.path, source: page.html });
+      }
+      for (const figure of researchFigures()) {
+        this.emitFile({ type: 'asset', fileName: figure.path, source: figure.bytes });
       }
     },
   };

@@ -14,6 +14,7 @@
 import { defaultControls, type StyleControls, type StyleDefinition } from '../../src/core/style/style.ts';
 import { POSTER_STYLE } from '../../src/core/style/poster/poster-style-pipeline.ts';
 import { loadScene, StyleStage } from './harness.ts';
+import { halve, tile, toBase64 } from './sheet.ts';
 
 const TILE = { width: 1280, height: 720 };
 
@@ -32,31 +33,6 @@ interface Axis {
   readonly values: readonly number[];
 }
 
-/** Box-downsample by two, in the encoded values, which is what a contact sheet is. */
-function halve(rgba: Uint8Array, width: number, height: number): Uint8Array {
-  const w = width >> 1;
-  const h = height >> 1;
-  const out = new Uint8Array(w * h * 3);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      for (let c = 0; c < 3; c++) {
-        const at = (dx: number, dy: number): number => rgba[((y * 2 + dy) * width + x * 2 + dx) * 4 + c] ?? 0;
-        out[(y * w + x) * 3 + c] = (at(0, 0) + at(1, 0) + at(0, 1) + at(1, 1)) >> 2;
-      }
-    }
-  }
-  return out;
-}
-
-function toBase64(bytes: Uint8Array): string {
-  let binary = '';
-  const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  }
-  return btoa(binary);
-}
-
 async function sheet(
   device: GPUDevice,
   style: StyleDefinition,
@@ -70,15 +46,11 @@ async function sheet(
   stage.uploadImage(bitmap);
   bitmap.close();
 
-  const tileWidth = TILE.width >> 1;
-  const tileHeight = TILE.height >> 1;
-  const width = tileWidth * columns.values.length;
-  const height = tileHeight * rows.values.length;
-  const canvas = new Uint8Array(width * height * 3);
+  const tiles: Uint8Array[] = [];
   const labels: string[] = [];
 
-  for (const [row, rowValue] of rows.values.entries()) {
-    for (const [column, columnValue] of columns.values.entries()) {
+  for (const rowValue of rows.values) {
+    for (const columnValue of columns.values) {
       const controls: StyleControls = {
         ...defaultControls(style),
         ...fixed,
@@ -86,19 +58,21 @@ async function sheet(
         [columns.key]: columnValue,
       };
       await stage.render(style, controls, 'full', true);
-      const tile = halve(await stage.readOutput(), TILE.width, TILE.height);
-
-      for (let y = 0; y < tileHeight; y++) {
-        const from = y * tileWidth * 3;
-        const to = ((row * tileHeight + y) * width + column * tileWidth) * 3;
-        canvas.set(tile.subarray(from, from + tileWidth * 3), to);
-      }
+      tiles.push(halve(await stage.readOutput(), TILE.width, TILE.height));
       labels.push(`${rows.key} ${String(rowValue)}, ${columns.key} ${String(columnValue)}`);
     }
   }
 
   stage.dispose();
-  return { name, width, height, columns: columns.values.length, labels, rgb: toBase64(canvas) };
+  const laid = tile(tiles, TILE.width >> 1, TILE.height >> 1, columns.values.length);
+  return {
+    name,
+    width: laid.width,
+    height: laid.height,
+    columns: columns.values.length,
+    labels,
+    rgb: toBase64(laid.rgb),
+  };
 }
 
 export async function sweep(device: GPUDevice): Promise<readonly Sheet[]> {

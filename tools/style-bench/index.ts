@@ -11,8 +11,9 @@ import { chain } from './chain.ts';
 import { clips, perturbation } from './stability.ts';
 import { stills } from './stills.ts';
 import { sweep } from './sweep.ts';
+import { figures } from './figures.ts';
 
-export const MEASUREMENTS = ['chain', 'perturbation', 'clips', 'stills', 'sweep'] as const;
+export const MEASUREMENTS = ['chain', 'perturbation', 'clips', 'stills', 'sweep', 'figures'] as const;
 
 export type Measurement = (typeof MEASUREMENTS)[number];
 
@@ -47,6 +48,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('clips', () => clips(dev));
   await step('stills', () => stills(dev));
   await step('sweep', () => sweep(dev));
+  await step('figures', () => figures(dev));
 
   if (failures.length > 0) out['gpu-errors'] = failures;
   dev.destroy();

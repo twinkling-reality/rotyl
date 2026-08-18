@@ -12,10 +12,11 @@
 // make-clips.sh.
 
 import { chromium } from '@playwright/test';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { encodePng } from './png.mjs';
 
-const ALL = ['chain', 'perturbation', 'clips', 'stills', 'sweep'];
+const ALL = ['chain', 'perturbation', 'clips', 'stills', 'sweep', 'figures'];
 
 const args = process.argv.slice(2);
 const which = args.length === 1 && args[0] === 'all' ? ALL : args;
@@ -41,6 +42,39 @@ const result = await page.evaluate(async (names) => {
   const bench = await import('/tools/style-bench/index.ts');
   return bench.run(names);
 }, which);
+
+// The figures the research pages carry are the one set that is COMMITTED: they
+// are the evidence for an argument about a look, they are a few tens of
+// kilobytes each, and one command regenerates them. WebP because a halftone is
+// the worst case a lossy codec can be handed and even so it is a third of the
+// PNG; cwebp ships with libwebp and is optional here, since a PNG left in place
+// is a larger file rather than a missing one.
+const figures = result.figures;
+delete result.figures;
+if (Array.isArray(figures)) {
+  mkdirSync('tools/style-bench/figures', { recursive: true });
+  // What each tile is, written beside the pictures, so the caption on the
+  // research page is composed from the figure rather than remembered about it.
+  writeFileSync(
+    'tools/style-bench/figures/index.json',
+    `${JSON.stringify(
+      figures.map(({ name, width, height, columns, tiles }) => ({ name, width, height, columns, tiles })),
+      null,
+      2,
+    )}\n`,
+  );
+  for (const figure of figures) {
+    const png = `tools/style-bench/figures/${figure.name}.png`;
+    writeFileSync(png, encodePng(Buffer.from(figure.rgb, 'base64'), figure.width, figure.height));
+    try {
+      execFileSync('cwebp', ['-quiet', '-q', '84', png, '-o', png.replace(/\.png$/, '.webp')]);
+      rmSync(png);
+      console.log(`  ${png.replace(/\.png$/, '.webp')}  [${figure.tiles.join(' | ')}]`);
+    } catch {
+      console.log(`  ${png}  (cwebp not found, left as PNG)  [${figure.tiles.join(' | ')}]`);
+    }
+  }
+}
 
 // Pictures out, so the look can be judged rather than only scored.
 for (const key of ['stills', 'sweep']) {

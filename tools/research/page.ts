@@ -27,11 +27,34 @@ export interface Table {
   readonly rows: readonly (readonly string[])[];
 }
 
+/**
+ * A picture the harness produced, named rather than described.
+ *
+ * The tile labels and the layout come from the figure's own metadata, written
+ * beside it when it was rendered, so a caption cannot describe a picture that
+ * changed underneath it. All an entry supplies is why the picture is there.
+ */
+export interface Figure {
+  /** A file in tools/style-bench/figures, without extension. */
+  readonly name: string;
+  /** What it is for. The tile listing is composed from the figure itself. */
+  readonly caption: string;
+}
+
+export interface FigureMeta {
+  readonly name: string;
+  readonly width: number;
+  readonly height: number;
+  readonly columns: number;
+  readonly tiles: readonly string[];
+}
+
 export interface Section {
   readonly heading: string;
   /** One or more paragraphs. What the number MEANS; the table says what it is. */
   readonly prose: readonly string[];
   readonly table?: Table;
+  readonly figure?: Figure;
   readonly caveat?: string;
   /** How to take it again. Absent when nothing automated takes it. */
   readonly command?: string;
@@ -58,6 +81,8 @@ export interface Entry {
   /** When the figures last changed, from the repository rather than from memory. */
   readonly date?: string | undefined;
   readonly lede: readonly string[];
+  /** Shown under the lede: what this entry is about, rather than decoration. */
+  readonly hero?: Figure;
   readonly sections: readonly Section[];
   /** Rendered after the sections, on the one entry that is a ledger. */
   readonly trials?: readonly Trial[];
@@ -183,6 +208,22 @@ h2 { margin: 56px 0 0; font-family: var(--serif); font-size: 24px; font-weight: 
 .body .cmd { font-family: var(--sans); font-size: 12px; color: var(--text-tertiary); }
 code { font-family: var(--mono); font-size: 0.86em; }
 
+figure { margin: 32px 0 0; }
+figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line-subtle);
+  border-radius: 3px;
+}
+figcaption {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 19px;
+}
+
 .scroll { overflow-x: auto; margin-top: 24px; }
 table { width: 100%; border-collapse: collapse; font-family: var(--sans); font-size: 12.5px; line-height: 18px; }
 th, td { padding: 8px 14px 8px 0; text-align: left; vertical-align: baseline; white-space: nowrap; }
@@ -284,17 +325,41 @@ function renderTrials(trials: readonly Trial[]): string {
 </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-function renderSection(section: Section): string {
+function renderSection(section: Section, meta: readonly FigureMeta[]): string {
   return [
     `<h2 id="${anchor(section.heading)}">${escape(section.heading)}</h2>`,
     ...section.prose.map((paragraph) => `<p>${escape(paragraph)}</p>`),
+    section.figure ? renderFigure(section.figure, meta) : '',
     section.table ? renderTable(section.table) : '',
     section.caveat ? `<p class="caveat">${escape(section.caveat)}</p>` : '',
     section.command ? `<p class="cmd"><code>${escape(section.command)}</code></p>` : '',
   ].join('');
 }
 
-export function renderEntry(entry: Entry): string {
+/**
+ * A figure, with the tiles named in the order they were laid out.
+ *
+ * Named in the caption rather than drawn into the pixels: a label baked into an
+ * image is unreadable at half width, unselectable, invisible to a screen reader
+ * and impossible to correct without re-rendering.
+ */
+function renderFigure(figure: Figure, meta: readonly FigureMeta[]): string {
+  const found = meta.find((candidate) => candidate.name === figure.name);
+  if (!found) throw new Error(`research: no figure called ${figure.name} was generated`);
+
+  const order = found.columns >= found.tiles.length ? 'Left to right' : 'Clockwise from top left';
+  const listed =
+    found.tiles.length > 1
+      ? ` ${order}: ${found.tiles.slice(0, -1).join(', ')} and ${found.tiles.at(-1) ?? ''}.`
+      : '';
+
+  return `<figure>
+<img src="/research/figures/${escape(found.name)}.webp" width="${String(found.width)}" height="${String(found.height)}" alt="${escape(figure.caption)}" loading="lazy">
+<figcaption>${escape(figure.caption)}${escape(listed)}</figcaption>
+</figure>`;
+}
+
+export function renderEntry(entry: Entry, meta: readonly FigureMeta[] = []): string {
   const toc = entry.sections
     .map((section) => `<li><a href="#${anchor(section.heading)}">${escape(section.heading)}</a></li>`)
     .join('');
@@ -305,7 +370,8 @@ export function renderEntry(entry: Entry): string {
 <h1>${escape(entry.title)}</h1>
 <p class="meta">${entry.date ? `${escape(entry.date)} · ` : ''}<code>${escape(entry.harness)}</code></p>
 <div class="lede">${entry.lede.map((paragraph) => `<p>${escape(paragraph)}</p>`).join('')}</div>
-${entry.sections.map(renderSection).join('')}
+${entry.hero ? renderFigure(entry.hero, meta) : ''}
+${entry.sections.map((section) => renderSection(section, meta)).join('')}
 ${entry.trials ? renderTrials(entry.trials) : ''}
 <footer>Every GPU figure is fenced with <code>queue.onSubmittedWorkDone()</code> on
 the device that did the work. The tables on this page are generated from the

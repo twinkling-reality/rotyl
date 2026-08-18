@@ -194,6 +194,10 @@ function paletteFit(): Section {
         ['Noir palette', '', '', '', '0.54', '0.288'],
       ],
     },
+    figure: {
+      name: 'palettes',
+      caption: 'The same frame, flattened the same way, under no palette and two of the five.',
+    },
     caveat:
       'A fixed sampling grid is what makes measuring this per frame safe on video: the sample points do not move between frames and each tap is a local average of an already smoothed buffer, so the statistics follow the scene rather than the grain. The stability table above includes the fitted palettes, which is the check on that claim rather than the argument for it.',
   };
@@ -378,6 +382,11 @@ export function entries(style: unknown, video: unknown): readonly Entry[] {
         'Everything that decides whether a selection is correct was already built and measured. What was not settled was whether what comes out is worth looking at — and, on video, whether it stays worth looking at while it moves.',
         'Three things were unknown, each capable of forcing a different architecture. One of the three was answered backwards.',
       ],
+      hero: {
+        name: 'styles',
+        caption:
+          'One frame through each style at full quality: 140 ms, 1.3 ms and 0.5 ms at 720p respectively.',
+      },
       sections: [
         styleCost(style),
         detailCost(style),

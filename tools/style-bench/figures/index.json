@@ -1,0 +1,25 @@
+[
+  {
+    "name": "styles",
+    "width": 1282,
+    "height": 722,
+    "columns": 2,
+    "tiles": [
+      "the photograph",
+      "comic",
+      "poster",
+      "print"
+    ]
+  },
+  {
+    "name": "palettes",
+    "width": 1924,
+    "height": 360,
+    "columns": 3,
+    "tiles": [
+      "the picture’s own colour",
+      "Mural",
+      "Riso"
+    ]
+  }
+]
