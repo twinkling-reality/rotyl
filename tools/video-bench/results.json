@@ -7,6 +7,125 @@
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
     "hardwareConcurrency": 12
   },
+  "log": {
+    "compression": {
+      "roughness 0": {
+        "raw_bytes": 65536,
+        "run_length_bytes": 3502,
+        "runs": 1751,
+        "ratio": 18.7
+      },
+      "roughness 0.5": {
+        "raw_bytes": 65536,
+        "run_length_bytes": 3964,
+        "runs": 1982,
+        "ratio": 16.5
+      },
+      "roughness 1": {
+        "raw_bytes": 65536,
+        "run_length_bytes": 4782,
+        "runs": 2391,
+        "ratio": 13.7
+      }
+    },
+    "fold": {
+      "30 frames": {
+        "at_the_end": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "at_the_middle": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "folded": 16,
+        "mask_megabytes": 2
+      },
+      "300 frames": {
+        "at_the_end": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "at_the_middle": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "folded": 151,
+        "mask_megabytes": 19.7
+      },
+      "3000 frames": {
+        "at_the_end": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "at_the_middle": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "folded": 1501,
+        "mask_megabytes": 196.6
+      },
+      "18000 frames": {
+        "at_the_end": {
+          "n": 15,
+          "median": 0.2,
+          "min": 0.1,
+          "max": 0.5
+        },
+        "at_the_middle": {
+          "n": 15,
+          "median": 0.2,
+          "min": 0,
+          "max": 0.2
+        },
+        "folded": 9001,
+        "mask_megabytes": 1179.6
+      }
+    },
+    "one_in_thirty": {
+      "3000 frames": {
+        "commands": 100,
+        "at_the_end": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "folded": 100,
+        "mask_megabytes": 6.6
+      },
+      "18000 frames": {
+        "commands": 600,
+        "at_the_end": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "folded": 600,
+        "mask_megabytes": 39.3
+      }
+    },
+    "allocating_300_masks_ms": {
+      "n": 5,
+      "median": 2.4,
+      "min": 1.7,
+      "max": 8.6
+    }
+  },
+  "log:wall-seconds": 0,
   "readback": {
     "what": "1024x1024x3 float32 = 12.58 MB, the EdgeTAM input tensor",
     "fence": "queue.onSubmittedWorkDone() before every read; mapAsync awaited",
@@ -15,95 +134,95 @@
         "n": 20,
         "median": 0.8,
         "min": 0.6,
-        "max": 2.7
+        "max": 1.3
       },
       "map_and_copy_out": {
         "n": 20,
         "median": 1.2,
-        "min": 1.1,
-        "max": 1.5
+        "min": 1,
+        "max": 1.9
       },
       "total": {
         "n": 20,
-        "median": 2.1,
-        "min": 1.9,
-        "max": 3.9
+        "median": 2,
+        "min": 1.8,
+        "max": 2.6
       }
     },
     "real_encoder_4032x3024": {
       "pass_and_copy_fenced": {
         "n": 20,
         "median": 1.2,
-        "min": 0.8,
-        "max": 1.6
+        "min": 1,
+        "max": 1.3
       },
       "map_and_copy_out": {
         "n": 20,
-        "median": 1.2,
-        "min": 1.1,
-        "max": 1.5
+        "median": 1.1,
+        "min": 1,
+        "max": 1.3
       },
       "total": {
         "n": 20,
-        "median": 2.4,
-        "min": 2,
-        "max": 2.8
+        "median": 2.3,
+        "min": 2.2,
+        "max": 2.4
       }
     },
     "parts": {
       "copy_to_buffer_fenced": {
         "n": 20,
         "median": 0.3,
-        "min": 0.1,
+        "min": 0.2,
         "max": 0.4
       },
       "map_only": {
         "n": 20,
         "median": 0.6,
         "min": 0.5,
-        "max": 0.8
+        "max": 0.7
       },
       "map_and_copy": {
         "n": 20,
-        "median": 1.7,
-        "min": 1.5,
-        "max": 1.9
+        "median": 1.5,
+        "min": 1.4,
+        "max": 1.7
       },
       "host_memcpy": {
         "n": 20,
-        "median": 0.9,
-        "min": 0.8,
-        "max": 2.2
+        "median": 0.8,
+        "min": 0.7,
+        "max": 2.5
       }
     },
     "sustained": [
       {
         "depth": 1,
         "frames": 60,
-        "ms_per_frame": 1.688,
-        "fps": 592,
-        "mb_per_s": 7453
+        "ms_per_frame": 1.568,
+        "fps": 638,
+        "mb_per_s": 8023
       },
       {
         "depth": 2,
         "frames": 60,
-        "ms_per_frame": 1.18,
-        "fps": 847,
-        "mb_per_s": 10663
+        "ms_per_frame": 1.117,
+        "fps": 896,
+        "mb_per_s": 11268
       },
       {
         "depth": 3,
         "frames": 60,
-        "ms_per_frame": 1.197,
-        "fps": 836,
-        "mb_per_s": 10515
+        "ms_per_frame": 1.09,
+        "fps": 917,
+        "mb_per_s": 11544
       },
       {
         "depth": 4,
         "frames": 60,
-        "ms_per_frame": 1.145,
-        "fps": 873,
-        "mb_per_s": 10989
+        "ms_per_frame": 1.073,
+        "fps": 932,
+        "mb_per_s": 11723
       }
     ]
   },
@@ -112,7 +231,7 @@
     "version": "1.27.0",
     "device_before_session": null,
     "assigning_our_device": true,
-    "session_create_ms": 416,
+    "session_create_ms": 387,
     "device_after_session": {
       "isGPUDevice": true,
       "label": "",
@@ -137,8 +256,8 @@
           "elements": 32768
         }
       },
-      "run_ms_cpu_input": 19.1,
-      "run_ms_gpu_input": 17.8
+      "run_ms_cpu_input": 19.6,
+      "run_ms_gpu_input": 17.9
     },
     "ort_device_accepts_videoframe": {
       "ok": true
@@ -149,93 +268,93 @@
     "what": "the two graphs tracking needs, run on the runtime Rotyl already ships",
     "ort_version": "1.27.0",
     "memory_attention": {
-      "fetch_ms": 95,
+      "fetch_ms": 63,
       "model_mb": 69.6,
       "webgpu": {
-        "session_create_ms": 80,
+        "session_create_ms": 78,
         "run_ms_cpu_outputs": {
           "n": 15,
-          "median": 59.8,
-          "min": 59.3,
-          "max": 61.2
+          "median": 59.4,
+          "min": 58.9,
+          "max": 61
         },
         "session_create_ms_gpu_outputs": 43,
         "run_ms_gpu_outputs": {
           "n": 15,
           "median": 58.2,
-          "min": 57.6,
-          "max": 62.4
+          "min": 58,
+          "max": 58.8
         }
       },
       "wasm": {
-        "session_create_ms": 42,
+        "session_create_ms": 41,
         "run_ms_cpu_outputs": {
           "n": 15,
-          "median": 1904.7,
+          "median": 2024.4,
           "min": 1901.2,
-          "max": 1947.2
+          "max": 2065.3
         },
         "session_create_ms_gpu_outputs": 0,
         "run_ms_gpu_outputs": "skipped"
       }
     },
     "memory_encoder": {
-      "fetch_ms": 13,
+      "fetch_ms": 14,
       "model_mb": 6.7,
       "webgpu": {
-        "session_create_ms": 52,
+        "session_create_ms": 54,
         "run_ms_cpu_outputs": {
           "n": 15,
-          "median": 18.5,
-          "min": 18.4,
-          "max": 18.7
+          "median": 19.3,
+          "min": 18.9,
+          "max": 19.8
         },
-        "session_create_ms_gpu_outputs": 47,
+        "session_create_ms_gpu_outputs": 49,
         "run_ms_gpu_outputs": {
           "n": 15,
-          "median": 18.4,
-          "min": 18.1,
-          "max": 18.5
+          "median": 18.9,
+          "min": 18.6,
+          "max": 19.3
         }
       },
       "wasm": {
-        "session_create_ms": 43,
+        "session_create_ms": 46,
         "run_ms_cpu_outputs": {
           "n": 15,
-          "median": 347.4,
-          "min": 346.5,
-          "max": 364.6
+          "median": 363.7,
+          "min": 349.8,
+          "max": 368
         },
         "session_create_ms_gpu_outputs": 0,
         "run_ms_gpu_outputs": "skipped"
       }
     }
   },
-  "attention:wall-seconds": 41.7,
+  "attention:wall-seconds": 43.4,
   "bank-rampup": {
     "valid_64": {
       "n": 10,
-      "median": 57.4,
-      "min": 57.1,
-      "max": 57.6
+      "median": 58.5,
+      "min": 58,
+      "max": 59.4
     },
     "valid_576": {
       "n": 10,
-      "median": 57.4,
-      "min": 57.2,
-      "max": 57.8
+      "median": 58.7,
+      "min": 58.1,
+      "max": 58.9
     },
     "valid_1600": {
       "n": 10,
-      "median": 57.5,
-      "min": 57.2,
-      "max": 57.7
+      "median": 58.1,
+      "min": 57.6,
+      "max": 58.9
     },
     "valid_3648": {
       "n": 10,
-      "median": 57.5,
-      "min": 57.1,
-      "max": 58.7
+      "median": 57.8,
+      "min": 57.3,
+      "max": 58.2
     }
   },
   "bank-rampup:wall-seconds": 3,
@@ -244,22 +363,22 @@
     "memory_attention": {
       "fp32": {
         "model_mb": 69.6,
-        "session_create_ms": 41,
+        "session_create_ms": 40,
         "run_ms": {
           "n": 15,
           "median": 57.7,
           "min": 57.4,
-          "max": 59.5
+          "max": 59.2
         }
       },
       "fp16": {
         "model_mb": 34.9,
-        "session_create_ms": 35,
+        "session_create_ms": 38,
         "run_ms": {
           "n": 15,
-          "median": 37.7,
-          "min": 37.4,
-          "max": 38
+          "median": 39.5,
+          "min": 38.9,
+          "max": 42.8
         },
         "agreement_vs_fp32": {
           "conditioned_features": {
@@ -271,12 +390,12 @@
       },
       "shared": {
         "model_mb": 24,
-        "session_create_ms": 32,
+        "session_create_ms": 35,
         "run_ms": {
           "n": 15,
-          "median": 58,
-          "min": 57.7,
-          "max": 58.6
+          "median": 63.2,
+          "min": 62.5,
+          "max": 69.4
         },
         "agreement_vs_fp32": {
           "conditioned_features": {
@@ -288,12 +407,12 @@
       },
       "shared fp16": {
         "model_mb": 12,
-        "session_create_ms": 32,
+        "session_create_ms": 35,
         "run_ms": {
           "n": 15,
-          "median": 37.5,
-          "min": 37.3,
-          "max": 38.2
+          "median": 39.5,
+          "min": 39.4,
+          "max": 40.1
         },
         "agreement_vs_fp32": {
           "conditioned_features": {
@@ -307,22 +426,22 @@
     "memory_encoder": {
       "fp32": {
         "model_mb": 6.7,
-        "session_create_ms": 45,
+        "session_create_ms": 54,
         "run_ms": {
           "n": 15,
-          "median": 18.4,
-          "min": 18.3,
-          "max": 18.5
+          "median": 19.9,
+          "min": 19.5,
+          "max": 20.1
         }
       },
       "fp16": {
         "model_mb": 3.5,
-        "session_create_ms": 54,
+        "session_create_ms": 59,
         "run_ms": {
           "n": 15,
-          "median": 14.6,
-          "min": 14.3,
-          "max": 15.1
+          "median": 15.5,
+          "min": 15.4,
+          "max": 16.1
         },
         "agreement_vs_fp32": {
           "memory_features": {
@@ -339,12 +458,12 @@
       },
       "shared": {
         "model_mb": 6.7,
-        "session_create_ms": 41,
+        "session_create_ms": 46,
         "run_ms": {
           "n": 15,
-          "median": 18.3,
-          "min": 18.2,
-          "max": 18.6
+          "median": 19.8,
+          "min": 19.6,
+          "max": 19.9
         },
         "agreement_vs_fp32": {
           "memory_features": {
@@ -361,12 +480,12 @@
       },
       "shared fp16": {
         "model_mb": 3.4,
-        "session_create_ms": 47,
+        "session_create_ms": 50,
         "run_ms": {
           "n": 15,
-          "median": 14.6,
-          "min": 14.5,
-          "max": 14.9
+          "median": 15.5,
+          "min": 15.2,
+          "max": 17.6
         },
         "agreement_vs_fp32": {
           "memory_features": {
@@ -383,92 +502,92 @@
       }
     }
   },
-  "half-precision:wall-seconds": 6,
+  "half-precision:wall-seconds": 6.6,
   "decode": {
     "1080p30-gop30": {
       "demux": {
         "packets": 300,
         "key_packets": 10,
         "bytes": 11382912,
-        "open_and_read_config_ms": 10.7,
+        "open_and_read_config_ms": 19.3,
         "walk_all_packets_ms": {
           "n": 3,
-          "median": 1.7,
-          "min": 1.6,
-          "max": 2
+          "median": 1.8,
+          "min": 1.8,
+          "max": 2.3
         },
-        "mb_per_s": 6696,
-        "packets_per_s": 176471
+        "mb_per_s": 6324,
+        "packets_per_s": 166667
       },
       "new_decoder_to_first_frame": {
-        "first": 10.2,
+        "first": 10.5,
         "later": {
           "n": 5,
-          "median": 9.8,
-          "min": 9.8,
-          "max": 10.2
+          "median": 11.1,
+          "min": 10.9,
+          "max": 11.3
         }
       },
       "decode_only": {
         "frames": 300,
-        "ms": 138.2,
-        "fps": 2171,
-        "first_frame_ms": 10.1
+        "ms": 140.6,
+        "fps": 2134,
+        "first_frame_ms": 10.7
       },
       "decode_and_upload": {
         "frames": 300,
-        "ms": 139.8,
-        "fps": 2146,
-        "first_frame_ms": 9.8
+        "ms": 146.2,
+        "fps": 2052,
+        "first_frame_ms": 10.7
       },
       "seek": {
         "per_seek": [
           {
             "target": 0.4,
-            "ms": 23.4,
+            "ms": 24.8,
             "decoded": 10
           },
           {
             "target": 3.7,
-            "ms": 12.2,
+            "ms": 15,
             "decoded": 22
           },
           {
             "target": 1.2,
-            "ms": 8.3,
+            "ms": 9.2,
             "decoded": 6
           },
           {
             "target": 8.9,
-            "ms": 14.2,
+            "ms": 15.4,
             "decoded": 26
           },
           {
             "target": 5.5,
-            "ms": 9.9,
+            "ms": 11.2,
             "decoded": 14
           },
           {
             "target": 9.7,
-            "ms": 12.9,
+            "ms": 14.2,
             "decoded": 22
           },
           {
             "target": 2.1,
-            "ms": 6.2,
+            "ms": 7.7,
             "decoded": 4
           },
           {
             "target": 6.3,
-            "ms": 8.6,
+            "ms": 10.1,
             "decoded": 10
           }
         ],
         "ms": {
           "n": 8,
-          "median": 12.2,
-          "min": 6.2,
-          "max": 23.4
+          "median": 14.2,
+          "min": 7.7,
+          "max": 24.8
         },
         "frames_decoded": {
           "n": 8,
@@ -492,8 +611,8 @@
         "copyExternalImageToTexture_videoframe": {
           "n": 30,
           "median": 0.9,
-          "min": 0.7,
-          "max": 0.9
+          "min": 0.8,
+          "max": 1.1
         },
         "importExternalTexture_and_pass": {
           "n": 30,
@@ -503,9 +622,9 @@
         },
         "createImageBitmap_then_copy": {
           "n": 10,
-          "median": 1.5,
-          "min": 1.2,
-          "max": 1.6
+          "median": 2,
+          "min": 1.8,
+          "max": 2.2
         }
       }
     },
@@ -514,85 +633,85 @@
         "packets": 300,
         "key_packets": 1,
         "bytes": 11000965,
-        "open_and_read_config_ms": 10.2,
+        "open_and_read_config_ms": 13.4,
         "walk_all_packets_ms": {
           "n": 3,
-          "median": 1.6,
-          "min": 1.5,
-          "max": 1.7
+          "median": 1.5,
+          "min": 1.4,
+          "max": 1.5
         },
-        "mb_per_s": 6876,
-        "packets_per_s": 187500
+        "mb_per_s": 7334,
+        "packets_per_s": 200000
       },
       "new_decoder_to_first_frame": {
-        "first": 9.8,
+        "first": 10.6,
         "later": {
           "n": 5,
-          "median": 10.4,
-          "min": 9.7,
-          "max": 10.6
+          "median": 11.1,
+          "min": 10.9,
+          "max": 11.4
         }
       },
       "decode_only": {
         "frames": 300,
-        "ms": 136.1,
-        "fps": 2204,
-        "first_frame_ms": 10.2
+        "ms": 136.6,
+        "fps": 2196,
+        "first_frame_ms": 10.5
       },
       "decode_and_upload": {
         "frames": 300,
-        "ms": 134.7,
-        "fps": 2227,
-        "first_frame_ms": 9.7
+        "ms": 137.7,
+        "fps": 2179,
+        "first_frame_ms": 11
       },
       "seek": {
         "per_seek": [
           {
             "target": 0.4,
-            "ms": 23.1,
+            "ms": 23.9,
             "decoded": 10
           },
           {
             "target": 3.7,
-            "ms": 69.4,
+            "ms": 70.7,
             "decoded": 112
           },
           {
             "target": 1.2,
-            "ms": 39.1,
+            "ms": 41.8,
             "decoded": 34
           },
           {
             "target": 8.9,
-            "ms": 125.6,
+            "ms": 129.7,
             "decoded": 268
           },
           {
             "target": 5.5,
-            "ms": 86.1,
+            "ms": 89,
             "decoded": 164
           },
           {
             "target": 9.7,
-            "ms": 134.5,
+            "ms": 138.4,
             "decoded": 292
           },
           {
             "target": 2.1,
-            "ms": 50.1,
+            "ms": 51.8,
             "decoded": 64
           },
           {
             "target": 6.3,
-            "ms": 96.4,
+            "ms": 99.4,
             "decoded": 188
           }
         ],
         "ms": {
           "n": 8,
-          "median": 86.1,
-          "min": 23.1,
-          "max": 134.5
+          "median": 89,
+          "min": 23.9,
+          "max": 138.4
         },
         "frames_decoded": {
           "n": 8,
@@ -615,9 +734,9 @@
         },
         "copyExternalImageToTexture_videoframe": {
           "n": 30,
-          "median": 0.8,
-          "min": 0.7,
-          "max": 1
+          "median": 0.6,
+          "min": 0.4,
+          "max": 0.8
         },
         "importExternalTexture_and_pass": {
           "n": 30,
@@ -634,7 +753,7 @@
       }
     }
   },
-  "decode:wall-seconds": 2,
+  "decode:wall-seconds": 2.5,
   "colour": {
     "what": "known sRGB patches, encoded to h264 and brought back",
     "patches": 16,
@@ -1447,13 +1566,13 @@
     "tier": "export",
     "720p, encoder alone": {
       "quality": {
-        "ms_per_frame": 2.652,
-        "frames_per_s": 377.042,
+        "ms_per_frame": 2.82,
+        "frames_per_s": 354.61,
         "per_frame": {
           "n": 90,
-          "median": 2.4,
+          "median": 2.6,
           "min": 0,
-          "max": 18
+          "max": 18.2
         },
         "frames": 90,
         "encoded": 90,
@@ -1461,13 +1580,13 @@
         "codec": "avc1.640034"
       },
       "realtime": {
-        "ms_per_frame": 42.493,
-        "frames_per_s": 23.533,
+        "ms_per_frame": 47.792,
+        "frames_per_s": 20.924,
         "per_frame": {
           "n": 90,
           "median": 3,
           "min": 0,
-          "max": 3285.2
+          "max": 3821.7
         },
         "frames": 90,
         "encoded": 90,
@@ -1477,87 +1596,87 @@
     },
     "720p, ladder (poster)": {
       "decode": {
-        "ms_per_frame": 1.204,
-        "frames_per_s": 830.258,
+        "ms_per_frame": 1.417,
+        "frames_per_s": 705.882,
         "per_frame": {
           "n": 90,
-          "median": 0.8,
+          "median": 1,
           "min": 0.7,
-          "max": 14.4
-        },
-        "frames": 90
-      },
-      "composite": {
-        "ms_per_frame": 2.676,
-        "frames_per_s": 373.754,
-        "per_frame": {
-          "n": 90,
-          "median": 2.2,
-          "min": 1.8,
-          "max": 20.6
-        },
-        "frames": 90
-      },
-      "capture, canvas": {
-        "ms_per_frame": 2.323,
-        "frames_per_s": 430.416,
-        "per_frame": {
-          "n": 90,
-          "median": 2,
-          "min": 1.8,
-          "max": 13.1
-        },
-        "frames": 90
-      },
-      "capture, readback": {
-        "ms_per_frame": 2.658,
-        "frames_per_s": 376.254,
-        "per_frame": {
-          "n": 90,
-          "median": 2.3,
-          "min": 2.1,
           "max": 13.3
         },
         "frames": 90
       },
-      "encode": {
-        "ms_per_frame": 2.656,
-        "frames_per_s": 376.569,
+      "composite": {
+        "ms_per_frame": 3.26,
+        "frames_per_s": 306.748,
         "per_frame": {
           "n": 90,
-          "median": 2.1,
-          "min": 1.9,
-          "max": 17.6
+          "median": 2.7,
+          "min": 2,
+          "max": 22
+        },
+        "frames": 90
+      },
+      "capture, canvas": {
+        "ms_per_frame": 2.881,
+        "frames_per_s": 347.088,
+        "per_frame": {
+          "n": 90,
+          "median": 2.6,
+          "min": 2.2,
+          "max": 10.7
+        },
+        "frames": 90
+      },
+      "capture, readback": {
+        "ms_per_frame": 3.233,
+        "frames_per_s": 309.278,
+        "per_frame": {
+          "n": 90,
+          "median": 2.8,
+          "min": 2.4,
+          "max": 14.7
+        },
+        "frames": 90
+      },
+      "encode": {
+        "ms_per_frame": 3.109,
+        "frames_per_s": 321.658,
+        "per_frame": {
+          "n": 90,
+          "median": 2.5,
+          "min": 2.1,
+          "max": 21.2
         },
         "frames": 90,
         "encoded": 90
       },
       "mux": {
-        "ms_per_frame": 2.78,
-        "frames_per_s": 359.712,
+        "ms_per_frame": 2.981,
+        "frames_per_s": 335.445,
         "per_frame": {
           "n": 90,
-          "median": 2.4,
-          "min": 2.1,
-          "max": 17.9
+          "median": 2.6,
+          "min": 2.3,
+          "max": 18.5
         },
         "frames": 90,
         "encoded": 90,
         "bytes": 4598650,
-        "finalize_ms": 2.9
+        "finalize_ms": 2.2
       },
       "mediabunny": {
-        "ms_per_frame": 2.791,
-        "frames_per_s": 358.28,
+        "ms_per_frame": 3.01,
+        "frames_per_s": 332.226,
         "per_frame": {
           "n": 90,
-          "median": 2.3,
-          "min": 2,
-          "max": 21.4
+          "median": 2.6,
+          "min": 2.1,
+          "max": 20.5
         },
         "frames": 90,
         "bytes": 4598650,
-        "finalize_ms": 40.4,
+        "finalize_ms": 33.9,
         "encoder_config": {
           "codec": "avc1.64001f",
           "width": 1280,
@@ -1575,13 +1694,13 @@
     },
     "720p, end to end": {
       "poster": {
-        "ms_per_frame": 2.627,
-        "frames_per_s": 380.711,
+        "ms_per_frame": 2.804,
+        "frames_per_s": 356.577,
         "per_frame": {
           "n": 90,
-          "median": 2.2,
-          "min": 1.8,
-          "max": 20.2
+          "median": 2.4,
+          "min": 2,
+          "max": 18.8
         },
         "frames": 90,
         "encoded": 90,
@@ -1589,43 +1708,43 @@
         "finalize_ms": 1.2
       },
       "print": {
-        "ms_per_frame": 2.753,
-        "frames_per_s": 363.196,
+        "ms_per_frame": 2.649,
+        "frames_per_s": 377.517,
         "per_frame": {
           "n": 90,
           "median": 2.5,
-          "min": 0.9,
-          "max": 23.6
+          "min": 1,
+          "max": 17
         },
         "frames": 90,
         "encoded": 90,
         "bytes": 4864122,
-        "finalize_ms": 1.8
+        "finalize_ms": 1.1
       },
       "comic": {
-        "ms_per_frame": 112.776,
-        "frames_per_s": 8.867,
+        "ms_per_frame": 126.81,
+        "frames_per_s": 7.886,
         "per_frame": {
           "n": 90,
-          "median": 112.6,
-          "min": 108.8,
-          "max": 146.8
+          "median": 126.4,
+          "min": 119.5,
+          "max": 164
         },
         "frames": 90,
         "encoded": 90,
         "bytes": 4584178,
-        "finalize_ms": 1.1
+        "finalize_ms": 1
       }
     },
     "1080p, encoder alone": {
       "quality": {
-        "ms_per_frame": 4.731,
-        "frames_per_s": 211.367,
+        "ms_per_frame": 4.696,
+        "frames_per_s": 212.967,
         "per_frame": {
           "n": 90,
-          "median": 4.9,
+          "median": 4.8,
           "min": 0,
-          "max": 15.6
+          "max": 16.1
         },
         "frames": 90,
         "encoded": 90,
@@ -1633,13 +1752,13 @@
         "codec": "avc1.640034"
       },
       "realtime": {
-        "ms_per_frame": 6.249,
-        "frames_per_s": 160.028,
+        "ms_per_frame": 5.788,
+        "frames_per_s": 172.778,
         "per_frame": {
           "n": 90,
-          "median": 6.6,
+          "median": 5.7,
           "min": 0,
-          "max": 26.5
+          "max": 26.8
         },
         "frames": 90,
         "encoded": 90,
@@ -1649,69 +1768,69 @@
     },
     "1080p, ladder (poster)": {
       "decode": {
-        "ms_per_frame": 1.737,
-        "frames_per_s": 575.816,
+        "ms_per_frame": 1.793,
+        "frames_per_s": 557.621,
         "per_frame": {
           "n": 90,
           "median": 1.1,
-          "min": 0.9,
-          "max": 16.7
+          "min": 0.7,
+          "max": 15.9
         },
         "frames": 90
       },
       "composite": {
-        "ms_per_frame": 3.313,
-        "frames_per_s": 301.811,
+        "ms_per_frame": 3.372,
+        "frames_per_s": 296.54,
         "per_frame": {
           "n": 90,
-          "median": 2.6,
-          "min": 2.4,
-          "max": 24.7
+          "median": 2.7,
+          "min": 2.3,
+          "max": 24.5
         },
         "frames": 90
       },
       "capture, canvas": {
-        "ms_per_frame": 3.231,
-        "frames_per_s": 309.491,
+        "ms_per_frame": 3.273,
+        "frames_per_s": 305.499,
         "per_frame": {
           "n": 90,
           "median": 2.7,
-          "min": 2.5,
-          "max": 17.4
+          "min": 2.4,
+          "max": 15.1
         },
         "frames": 90
       },
       "capture, readback": {
-        "ms_per_frame": 4.393,
-        "frames_per_s": 227.618,
+        "ms_per_frame": 4.099,
+        "frames_per_s": 243.969,
         "per_frame": {
           "n": 90,
-          "median": 3.9,
+          "median": 3.6,
           "min": 3.1,
-          "max": 19.8
+          "max": 18.2
         },
         "frames": 90
       },
       "encode": {
-        "ms_per_frame": 4.859,
-        "frames_per_s": 205.808,
+        "ms_per_frame": 4.803,
+        "frames_per_s": 208.189,
         "per_frame": {
           "n": 90,
           "median": 4.7,
           "min": 2.8,
-          "max": 24.8
+          "max": 19.8
         },
         "frames": 90,
         "encoded": 90
       },
       "mux": {
-        "ms_per_frame": 4.892,
-        "frames_per_s": 204.406,
+        "ms_per_frame": 4.842,
+        "frames_per_s": 206.517,
         "per_frame": {
           "n": 90,
           "median": 4.7,
-          "min": 2.6,
-          "max": 30.6
+          "min": 2.7,
+          "max": 27.2
         },
         "frames": 90,
         "encoded": 90,
@@ -1719,17 +1838,17 @@
         "finalize_ms": 2.1
       },
       "mediabunny": {
-        "ms_per_frame": 5.212,
-        "frames_per_s": 191.857,
+        "ms_per_frame": 5.16,
+        "frames_per_s": 193.798,
         "per_frame": {
           "n": 90,
           "median": 4.8,
-          "min": 3,
-          "max": 39.8
+          "min": 2.8,
+          "max": 37.2
         },
         "frames": 90,
         "bytes": 4564442,
-        "finalize_ms": 64.5,
+        "finalize_ms": 65,
         "encoder_config": {
           "codec": "avc1.640028",
           "width": 1920,
@@ -1747,61 +1866,61 @@
     },
     "1080p, end to end": {
       "poster": {
-        "ms_per_frame": 5.029,
-        "frames_per_s": 198.851,
+        "ms_per_frame": 5.019,
+        "frames_per_s": 199.247,
         "per_frame": {
           "n": 90,
-          "median": 4.8,
-          "min": 2.6,
-          "max": 35.3
+          "median": 4.7,
+          "min": 2.7,
+          "max": 35.8
         },
         "frames": 90,
         "encoded": 90,
         "bytes": 4564442,
-        "finalize_ms": 2.6
+        "finalize_ms": 1.8
       },
       "print": {
-        "ms_per_frame": 5.194,
-        "frames_per_s": 192.513,
+        "ms_per_frame": 5.109,
+        "frames_per_s": 195.737,
         "per_frame": {
           "n": 90,
           "median": 4.8,
-          "min": 1.9,
-          "max": 36
+          "min": 1.5,
+          "max": 32.7
         },
         "frames": 90,
         "encoded": 90,
         "bytes": 5094751,
-        "finalize_ms": 3.1
+        "finalize_ms": 2.7
       },
       "comic": {
-        "ms_per_frame": 341.677,
-        "frames_per_s": 2.927,
+        "ms_per_frame": 350.588,
+        "frames_per_s": 2.852,
         "per_frame": {
           "n": 90,
-          "median": 350.4,
-          "min": 302.8,
-          "max": 391.4
+          "median": 351.1,
+          "min": 336,
+          "max": 383
         },
         "frames": 90,
         "encoded": 90,
         "bytes": 4587133,
-        "finalize_ms": 2.7
+        "finalize_ms": 1.3
       }
     },
     "rate control (1080p, poster)": {
       "high, quantizer": {
-        "ms_per_frame": 5.398,
-        "frames_per_s": 185.261,
+        "ms_per_frame": 5.309,
+        "frames_per_s": 188.363,
         "per_frame": {
           "n": 90,
-          "median": 5.2,
-          "min": 2.6,
-          "max": 24.8
+          "median": 5.3,
+          "min": 2.8,
+          "max": 15.3
         },
         "frames": 90,
         "bytes": 11179168,
-        "finalize_ms": 73.3,
+        "finalize_ms": 72.5,
         "encoder_config": {
           "codec": "avc1.640028",
           "width": 1920,
@@ -1817,17 +1936,17 @@
         "megabits_per_s": 29.811
       },
       "high, bitrate": {
-        "ms_per_frame": 5.274,
-        "frames_per_s": 189.593,
+        "ms_per_frame": 5.178,
+        "frames_per_s": 193.133,
         "per_frame": {
           "n": 90,
           "median": 4.7,
-          "min": 3.1,
-          "max": 44.3
+          "min": 2.8,
+          "max": 39.1
         },
         "frames": 90,
         "bytes": 2340830,
-        "finalize_ms": 64.3,
+        "finalize_ms": 63.1,
         "encoder_config": {
           "codec": "avc1.640028",
           "width": 1920,
@@ -1844,17 +1963,17 @@
         "megabits_per_s": 6.242
       },
       "very-high, bitrate": {
-        "ms_per_frame": 5.273,
-        "frames_per_s": 189.633,
+        "ms_per_frame": 5.07,
+        "frames_per_s": 197.239,
         "per_frame": {
           "n": 90,
           "median": 4.8,
-          "min": 3,
-          "max": 46.1
+          "min": 3.1,
+          "max": 32.5
         },
         "frames": 90,
         "bytes": 4387600,
-        "finalize_ms": 64,
+        "finalize_ms": 63.9,
         "encoder_config": {
           "codec": "avc1.640028",
           "width": 1920,
@@ -1871,17 +1990,17 @@
         "megabits_per_s": 11.7
       },
       "12 Mbit/s": {
-        "ms_per_frame": 5.301,
-        "frames_per_s": 188.64,
+        "ms_per_frame": 5.086,
+        "frames_per_s": 196.635,
         "per_frame": {
           "n": 90,
-          "median": 4.8,
-          "min": 3.1,
-          "max": 48.6
+          "median": 4.7,
+          "min": 3.2,
+          "max": 35.1
         },
         "frames": 90,
         "bytes": 4564442,
-        "finalize_ms": 66.4,
+        "finalize_ms": 64.1,
         "encoder_config": {
           "codec": "avc1.640028",
           "width": 1920,
@@ -1989,7 +2108,7 @@
       ]
     }
   },
-  "encode:wall-seconds": 54.8,
+  "encode:wall-seconds": 57.3,
   "encode-colour": {
     "what": "known sRGB patches through the composite, out through the encoder, and back",
     "patches": 16,
@@ -2201,14 +2320,14 @@
       }
     }
   },
-  "encode-colour:wall-seconds": 0.2,
+  "encode-colour:wall-seconds": 0.1,
   "shared-device": {
     "what": "whether onnxruntime-web 1.27 will run on a device it did not create",
     "adapter_features": [
       "depth32float-stencil8",
       "rg11b10ufloat-renderable",
-      "bgra8unorm-storage",
       "texture-formats-tier1",
+      "bgra8unorm-storage",
       "texture-compression-bc",
       "dual-source-blending",
       "core-features-and-limits",
@@ -2220,8 +2339,8 @@
       "texture-compression-etc2",
       "depth-clip-control",
       "texture-compression-bc-sliced-3d",
-      "timestamp-query",
       "clip-distances",
+      "timestamp-query",
       "texture-formats-tier2",
       "shader-f16",
       "primitive-index",

@@ -33,7 +33,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, 'fixtures');
 
 /**
- * A figure out of the style harness's own results, by path.
+ * A figure out of a harness's own results, by path.
  *
  * Walked rather than asserted, for the reason the research pages walk theirs:
  * a wrong shape should say which step of the path was missing, and a literal
@@ -41,8 +41,8 @@ const fixtures = join(here, 'fixtures');
  * re-taken. That teaches whoever re-took it to edit the assertion, and an
  * assertion nobody believes is worse than no assertion.
  */
-async function medianAt(path: readonly string[]): Promise<number> {
-  let node: unknown = JSON.parse(await readFile(join(here, '../tools/style-bench/results.json'), 'utf8'));
+async function medianAt(results: string, path: readonly string[]): Promise<number> {
+  let node: unknown = JSON.parse(await readFile(join(here, '..', results), 'utf8'));
   const walked: string[] = [];
   for (const key of path) {
     if (node === null || typeof node !== 'object')
@@ -203,7 +203,13 @@ test('offers the research page from the empty state, and generates it from the r
   // it to edit the assertion, and an assertion nobody believes is worse than
   // none. What is being checked is that the cell holds the figure the harness
   // last wrote, whatever that figure is.
-  const comic = await medianAt(['chain', '720p', 'comic, default', 'full', 'median']);
+  const comic = await medianAt('tools/style-bench/results.json', [
+    'chain',
+    '720p',
+    'comic, default',
+    'full',
+    'median',
+  ]);
   await expect(page.getByRole('cell', { name: `${comic.toFixed(0)} ms` }).first()).toBeVisible();
 
   // The same three measurements against a photograph, which is a page of its
@@ -214,7 +220,14 @@ test('offers the research page from the empty state, and generates it from the r
 
   // A figure out of the other harness's results, so both are known to be read.
   await page.goto('/research/video.html');
-  await expect(page.getByRole('cell', { name: '0.6 ms' }).first()).toBeVisible();
+  const upload = await medianAt('tools/video-bench/results.json', [
+    'decode',
+    '1080p30-gop30',
+    'upload',
+    'copyExternalImageToTexture_videoframe',
+    'median',
+  ]);
+  await expect(page.getByRole('cell', { name: `${upload.toFixed(1)} ms` }).first()).toBeVisible();
 
   // And out of the results file that has its own command, which the page reads
   // as well: a bundle size needs a build and no browser, so it is not part of

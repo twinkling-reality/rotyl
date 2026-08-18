@@ -25,6 +25,7 @@ const ALL = [
   'encode',
   'encode-colour',
   'shared-device',
+  'log',
 ];
 
 const args = process.argv.slice(2);

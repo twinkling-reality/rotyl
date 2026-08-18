@@ -16,6 +16,7 @@ import { halfPrecision } from './half-precision.ts';
 import { video, type Clip } from './decode.ts';
 import { colour, encodeColour } from './colour.ts';
 import { encode } from './encode.ts';
+import { log } from './log.ts';
 
 const CLIP_SET: Clip[] = [
   { name: '1080p30-gop30', url: `${CLIPS}/1080p30-gop30.mp4` },
@@ -33,6 +34,9 @@ export const MEASUREMENTS = [
   'colour',
   'encode',
   'encode-colour',
+  // No GPU and no clip: a measurement about the command log, which is core
+  // code and runs anywhere.
+  'log',
 ] as const;
 
 export type Measurement = (typeof MEASUREMENTS)[number];
@@ -54,6 +58,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
     out[`${name}:wall-seconds`] = Math.round((performance.now() - t0) / 100) / 10;
   };
 
+  await step('log', () => log());
   await step('readback', () => readback(dev));
   await step('ort-device', () => ortDevice(dev, `${ONNX}/memory_encoder.onnx`));
   await step('attention', () => attention(ONNX));

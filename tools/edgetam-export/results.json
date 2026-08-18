@@ -194,16 +194,8 @@
     "worst_iou": 0.9789,
     "worst_iou_partial": 0.1183,
     "swapped": [],
-    "hidden_frames": [
-      8,
-      9,
-      10
-    ],
-    "hidden_area": [
-      0,
-      0,
-      0
-    ],
+    "hidden_frames": [8, 9, 10],
+    "hidden_area": [0, 0, 0],
     "hidden_on_distractor": [],
     "worst_vs_pytorch": 1.0,
     "pytorch_worst_iou": 0.9789,
@@ -345,16 +337,8 @@
     "worst_iou": 0.9821,
     "worst_iou_partial": 0.0,
     "swapped": [],
-    "hidden_frames": [
-      8,
-      9,
-      10
-    ],
-    "hidden_area": [
-      0,
-      0,
-      0
-    ],
+    "hidden_frames": [8, 9, 10],
+    "hidden_area": [0, 0, 0],
     "hidden_on_distractor": [],
     "worst_vs_pytorch": 0.0,
     "pytorch_worst_iou": 0.9789,

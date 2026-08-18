@@ -18,7 +18,7 @@ node tools/video-bench/run.mjs all         # real Chrome, headed
 
 `run.mjs` takes any subset: `readback`, `ort-device`, `attention`,
 `bank-rampup`, `half-precision`, `decode`, `colour`, `encode`, `encode-colour`,
-`shared-device`. The bundle sizes are separate and need no browser:
+`shared-device`, `log`. The bundle sizes are separate and need no browser:
 `node tools/video-bench/bundle-size.mjs`. The clips are gitignored,
 `results.json` is not, and the graphs come from `tools/edgetam-export`.
 `export.py` for the pair, then `half_precision.py`.
@@ -33,7 +33,7 @@ appears nowhere: it throttles when the pane is hidden, which silently turns a
 3 ms number into a 16 ms one. Medians of 15 to 30 runs after warm-up, on an
 Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 
-**Seven findings, each with the command that re-takes it:**
+**Eight findings, each with the command that re-takes it:**
 
 1. [The 12 MB readback does not bind](#1-the-12-mb-readback-does-not-bind-and-it-is-avoidable-anyway)
 2. [Memory attention is 60 ms](#2-memory-attention-is-60-ms-and-38-at-half-precision)
@@ -42,6 +42,7 @@ Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 5. [The export pipeline is 5 ms a frame](#5-the-whole-export-pipeline-is-5-ms-a-frame-and-almost-all-of-it-is-the-encoder)
 6. [Writing a container costs as much as the application](#6-writing-a-container-costs-as-much-as-the-whole-application)
 7. [The encoder is not what moves colour](#7-the-encoder-is-not-what-moves-colour)
+8. [A tracked clip does not fit in the command log](#8-a-tracked-clip-does-not-fit-in-the-command-log-and-the-fold-is-not-why)
 
 ---
 
@@ -491,6 +492,36 @@ is one more thing that already sits in it.
 
 ---
 
+## 8. A tracked clip does not fit in the command log, and the fold is not why
+
+Tracking contributes one `applyMask` command per frame it has followed the
+object to. That needs no new command type, which is the point of the log, and it
+was worth asking what it costs before building on it.
+
+**The fold is not the problem.** `commandsForFrame` filters and sorts the whole
+log on every frame, which is free at ten commands and could plausibly have been
+a per-frame cost at ten thousand. Measured: 0.3 ms for eighteen thousand
+commands, against a 33 ms frame. That objection is dead.
+
+**The bytes are.** A mask at the engine's own 256 px square is 64 KB, so ten
+seconds is 20 MB and ten minutes is 1.2 GB. That is the wall a clip export
+already meets, arriving sooner.
+
+**Coverage is nearly binary and compresses like it.** A run-length encoding by
+row takes a mask from 64 KB to about 4 KB, and the ragged end of the sweep is
+barely worse than the smooth end, because the cost is the perimeter and not the
+area. Ten minutes becomes about eighty megabytes.
+
+So the log stays the source of truth and the mask changes shape, which is a
+change to one interface rather than to the document model. The cheap alternative,
+one command a second with the hold-forward rule covering the gap, is 39 MB with
+no compression and is the wrong trade: the gap it leaves held is exactly the
+drift tracking exists to remove.
+
+The numbers are on `/research/tracking.html`.
+
+---
+
 ## What follows
 
 1. **Decode is free and seeking is not.** Scrubbing is a decoder kept alive and
@@ -510,3 +541,6 @@ is one more thing that already sits in it.
    and a de-padding loop, and buys nothing.
 7. **The container writer is bigger than the application.** It gets its own
    dynamic import, and a second container inside it costs twelve bytes.
+8. **A tracked mask has to be compressed, and the log does not have to change.**
+   Folding eighteen thousand commands costs 0.3 ms; holding eighteen thousand
+   masks costs 1.2 GB, and a run-length encoding of one is a sixteenth of it.

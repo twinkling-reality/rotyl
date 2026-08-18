@@ -595,7 +595,11 @@ function pointers(tracking: unknown): Section {
     table: {
       columns: ['', 'with pointers', 'without'],
       rows: [
-        ['frames late returning from an occlusion', delay('with pointers').toFixed(0), delay('no pointers').toFixed(0)],
+        [
+          'frames late returning from an occlusion',
+          delay('with pointers').toFixed(0),
+          delay('no pointers').toFixed(0),
+        ],
         ['worst IoU, occlusion', worst('occlusion', 'with pointers'), worst('occlusion', 'no pointers')],
         ['worst IoU, crossing', worst('crossing', 'with pointers'), worst('crossing', 'no pointers')],
         ['worst IoU, motion blur', worst('blur', 'with pointers'), worst('blur', 'no pointers')],
@@ -610,7 +614,7 @@ function pointers(tracking: unknown): Section {
 function download(video: unknown, shrink: unknown): Section {
   const mb = (variant: string): string =>
     `${num(video, ['half-precision', 'memory_attention', variant, 'model_mb']).toFixed(1)} MB`;
-  const ms = (variant: string): string =>
+  const perFrame = (variant: string): string =>
     `${num(video, ['half-precision', 'memory_attention', variant, 'run_ms', 'median']).toFixed(1)} ms`;
   const duplicated = num(shrink, ['memory_attention', 'duplicated_bytes']) / 1e6;
   const copies = num(shrink, ['memory_attention', 'removed']);
@@ -630,15 +634,57 @@ function download(video: unknown, shrink: unknown): Section {
     table: {
       columns: ['memory attention', 'size', 'a frame', 'against fp32'],
       rows: [
-        ['as exported', mb('fp32'), ms('fp32'), ''],
-        ['half precision', mb('fp16'), ms('fp16'), '0.074 on values up to 2.53'],
-        ['tables shared', mb('shared'), ms('shared'), 'identical'],
-        ['both', mb('shared fp16'), ms('shared fp16'), '0.074, as fp16'],
+        ['as exported', mb('fp32'), perFrame('fp32'), ''],
+        ['half precision', mb('fp16'), perFrame('fp16'), '0.074 on values up to 2.53'],
+        ['tables shared', mb('shared'), perFrame('shared'), 'identical'],
+        ['both', mb('shared fp16'), perFrame('shared fp16'), '0.074, as fp16'],
       ],
     },
     caveat:
       'The memory encoder has no duplication worth removing, 6.7 MB before and after, and half precision is not a safe conversion for it: its worst output element moves by half the signal and that output conditions every later frame. So it ships whole, and it is the smaller of the two anyway.',
     command: 'python tools/edgetam-export/shrink.py --verify --fp16',
+  };
+}
+
+function commandLog(video: unknown): Section {
+  const fold = (frames: string): string =>
+    `${num(video, ['log', 'fold', `${frames} frames`, 'at_the_end', 'median']).toFixed(1)} ms`;
+  const megabytes = (frames: string): string =>
+    `${num(video, ['log', 'fold', `${frames} frames`, 'mask_megabytes']).toFixed(0)} MB`;
+  const rle = (roughness: string): string =>
+    `${(num(video, ['log', 'compression', `roughness ${roughness}`, 'run_length_bytes']) / 1024).toFixed(1)} KB`;
+  const ratio = (roughness: string): string =>
+    `${num(video, ['log', 'compression', `roughness ${roughness}`, 'ratio']).toFixed(0)} times`;
+  const sparse = (frames: string): string =>
+    `${num(video, ['log', 'one_in_thirty', `${frames} frames`, 'mask_megabytes']).toFixed(0)} MB`;
+  return {
+    heading: 'A tracked clip belongs in the command log, and the mask does not fit in it',
+    prose: [
+      'Tracking contributes one applyMask command per frame it has followed the object to, which is the mechanism the document already has and needs no new command type. Whether that scales is a different question from whether it fits, and the log is what makes undo and device-loss recovery cheap enough to be free.',
+      `The objection that looked most likely turns out not to be one. Folding a frame's commands filters and sorts the whole log, which is nothing at ten commands and could have been a per-frame cost at ten thousand. It is not: ${fold(
+        '18000',
+      )} for a ten-minute clip with a mask on every frame, against a 33 ms frame.`,
+      `What does not fit is the bytes. A mask at the engine's own 256 px square is 64 KB, so ten seconds is ${megabytes(
+        '300',
+      )} and ten minutes is ${megabytes('18000')}. That is the same wall a clip export already meets and it arrives sooner.`,
+      `Coverage is nearly binary, so it compresses like it: a run-length encoding by row is ${rle(
+        '0.5',
+      )}, ${ratio(
+        '0.5',
+      )} smaller, and the ragged end of the sweep is barely worse because the cost is the perimeter rather than the area. That is a change to how a CoverageMask is stored and not to what the log is, so the answer is that the log is the right place and the mask is the wrong shape.`,
+    ],
+    table: {
+      columns: ['a mask on every frame', 'masks held', 'folding one frame'],
+      rows: [
+        ['10 seconds', megabytes('300'), fold('300')],
+        ['100 seconds', megabytes('3000'), fold('3000')],
+        ['10 minutes', megabytes('18000'), fold('18000')],
+      ],
+    },
+    caveat: `The cheap alternative is one command a second rather than one a frame, letting the hold-forward rule cover the gap, which is ${sparse(
+      '18000',
+    )} for ten minutes and no compression at all. It is the wrong trade and worth stating as one: the gap it leaves holding is exactly the drift tracking exists to remove, so it buys memory back from the feature rather than from its representation.`,
+    command: 'node tools/video-bench/run.mjs log',
   };
 }
 
@@ -884,6 +930,7 @@ export function entries(results: Results): readonly Entry[] {
         tracksWhat(tracking),
         pointers(tracking),
         download(video, shrink),
+        commandLog(video),
         readback(video),
       ],
     },
