@@ -31,8 +31,8 @@ different pixels and entirely different timings.
 **Every GPU number below is fenced with `queue.onSubmittedWorkDone()`**, medians
 of 11 runs after 3 warm-up runs, on an Apple M3 Pro (Mac15,7, 18 GB) under
 Chrome 151, adapter `apple / metal-3`. What is timed is the STYLE CHAIN ALONE.
-the composite is one pass that re-runs on every brush movement and is timed in
-the root README instead.
+the composite is one pass that re-runs on every brush movement and is timed on
+the research site's editor page instead.
 
 **Run it on a quiet machine, and check that it was one.** Taken while the Dawn
 unit suite was running, the same chain measured 211 ms where it measures 140,
@@ -70,8 +70,8 @@ consecutive frames is grain and the encoder's own noise.
 
 ## 1. Print is not "probably cheaper". It is 200 times cheaper
 
-The root README timed the comic chain and said plainly that the print chain
-never had been, three passes against nineteen, only one at output resolution,
+An earlier version of this project timed the comic chain and said plainly that
+the print chain never had been, three passes against nineteen, only one at output resolution,
 so it _should_ be cheaper, but that was an argument rather than a measurement.
 
 Median milliseconds, full quality tier, default controls:
@@ -102,8 +102,8 @@ resolution, the cel step, the ink threshold, the composite, is single digits.
 reads as more deliberately designed than the comic chain does, because what
 makes it look chosen is the four inks and the paper, not the amount of work.
 
-The detail control is where the surprising figures live, and they were already
-in the root README: higher detail is CHEAPER when a clamp binds, because the
+The detail control is where the surprising figures live: higher detail is
+CHEAPER when a clamp binds, because the
 Kuwahara radius falls, and the quality tiers COLLAPSE when a stage clamps to the
 output's short edge. Both reproduce here.
 

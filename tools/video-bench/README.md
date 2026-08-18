@@ -160,7 +160,7 @@ because the end to end does not exist yet:
 | ~20 ms¹        | 60 ms            | ~13 ms¹      | 19 ms          | **112 ms** |
 | ~20 ms         | 38 ms (fp16)     | ~13 ms       | 19 ms          | **90 ms**  |
 
-¹ from the root README's object-selection table; the encoder always works at
+¹ from the research site's object-selection figures; the encoder always works at
 1024² so it is nearly flat in frame size.
 
 **That is 9 to 11 tracked frames per second against 30 for playback.** Tracking

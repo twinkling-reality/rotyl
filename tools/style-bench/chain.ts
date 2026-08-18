@@ -1,7 +1,7 @@
 // MEASUREMENT 1: what each style costs, in a browser, fenced.
 //
-// The root README timed the comic chain and said plainly that the print chain
-// had never been timed the same way - three passes against nineteen, only one
+// An earlier version of this project timed the comic chain and said plainly
+// that the print chain had never been timed the same way - three passes against nineteen, only one
 // at output resolution, so it *should* be cheaper, but that is an argument
 // rather than a measurement. This is the measurement.
 //
