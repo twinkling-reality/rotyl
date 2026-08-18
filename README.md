@@ -67,16 +67,41 @@ be computed from zeroed neighbours and draw a halo.
 ### A style is a texture and a mix
 
 Nothing outside `src/core/style` knows what a style does. One declares its
-controls as named values in 0..1 and turns the source into a styled texture at
-output resolution; the compositor blends it through the mask and knows nothing
-else. The UI builds its sliders from the declaration, so a style is a directory
-and a line in `styles.ts` — the engine, the export path, the composite and the
-panel are untouched.
+controls as named values and turns the source into a styled texture at output
+resolution; the compositor blends it through the mask and knows nothing else.
+The UI builds its controls from the declaration, so a style is a directory and a
+line in `styles.ts` — the engine, the export path, the composite and the panel
+are untouched.
+
+A control is a slider or a choice, and a choice is still a number: its value is
+an index into the options it declares. That is why adding one moved nothing
+between here and the export path — the app stores it, compares it and hands it
+back exactly as it does a slider, and all the declaration buys is that the panel
+draws buttons instead of a track for a decision with no meaningful midpoint.
 
 **Comic** flattens with an anisotropic Kuwahara filter, finds contours with a
 flow-based difference of Gaussians along the structure tensor, then quantises to
 cel bands and multiplies the ink over them. Nineteen passes over three
 differently-sized buffers.
+
+It also carries a **palette**, and that is the control that decides whether the
+result looks designed or merely processed. The reason a filter looks like a
+filter is that it keeps the photograph's colour: stylise hazy traffic and the
+flattening, the quantisation and the ink all do their job, and the answer is
+grey, because the input was grey. An illustration of the same street is not
+grey — not because it was drawn better, but because somebody chose the colours,
+and no amount of edge detection supplies the choosing.
+
+So a palette maps LIGHTNESS to colour rather than nudging the colours already
+there. Dark parts of the picture take the dark end of a five-stop ramp, light
+parts the light end. Form survives completely, since it is carried by the
+lightness being used as the index, and hue is replaced wholesale — which is the
+point, because smog has no hue worth keeping. The ramp is interpolated in Oklab,
+so the midpoint of two stops is the colour a person would call the midpoint;
+the same blend in linear RGB takes a deep teal to a cream through a muddy green.
+It is applied after the cel step and indexed by the quantised lightness, so the
+palette lands in the flat bands rather than reintroducing a gradient across
+them.
 
 **Print** separates the image into four ink densities and screens each one at
 its own angle, over warm paper, slightly misregistered. Three passes, only the
