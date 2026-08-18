@@ -1,4 +1,5 @@
 import { COMIC_STYLE } from './comic/comic-style-pipeline.ts';
+import { POSTER_STYLE } from './poster/poster-style-pipeline.ts';
 import { PRINT_STYLE } from './print/print-style-pipeline.ts';
 import type { StyleDefinition } from './style.ts';
 
@@ -15,7 +16,7 @@ import type { StyleDefinition } from './style.ts';
  * trade a network round trip for nothing measurable. The model is the thing
  * worth code-splitting, and is.
  */
-export const STYLES: readonly StyleDefinition[] = [COMIC_STYLE, PRINT_STYLE];
+export const STYLES: readonly StyleDefinition[] = [COMIC_STYLE, POSTER_STYLE, PRINT_STYLE];
 
 export const DEFAULT_STYLE: StyleDefinition = COMIC_STYLE;
 

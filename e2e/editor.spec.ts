@@ -163,8 +163,18 @@ test('switches styles and brings each one its own controls', async ({ page }) =>
   await page.getByRole('button', { name: 'Style' }).click();
 
   const comic = page.getByRole('button', { name: 'Comic' });
+  const poster = page.getByRole('button', { name: 'Poster' });
   const print = page.getByRole('button', { name: 'Print' });
   await expect(comic).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Detail')).toBeVisible();
+  await expect(page.getByLabel('Line')).toBeHidden();
+
+  // A style with five controls where the last had four, and one control name
+  // shared with it: the panel has no per-style code, so this is the observable
+  // difference between a real seam and a hard-coded set of sliders.
+  await poster.click();
+  await expect(poster).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Line')).toBeVisible();
   await expect(page.getByLabel('Detail')).toBeVisible();
 
   await print.click();
