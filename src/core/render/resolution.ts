@@ -56,7 +56,7 @@ export function shortEdge({ width, height }: Dimensions): number {
  * Fit a working buffer to `shortEdge` while preserving the source aspect ratio.
  *
  * Every stage that derives its own resolution from a requested apparent scale
- * ends here — the style chain's flatten and ink buffers, and the mask
+ * ends here. The style chain's flatten and ink buffers, and the mask
  * refinement's statistics buffer. Never enlarges: a stage asking for more
  * resolution than the source has would be inventing detail.
  */

@@ -188,7 +188,7 @@ export class StyleStage {
  * across channels would divide exactly the signal being looked for by three.
  *
  * `mean` is what a difference metric usually reports and is the least useful
- * number here — boiling is a small proportion of pixels moving a long way, not
+ * number here. Boiling is a small proportion of pixels moving a long way, not
  * every pixel moving a little. `p99` and `flicker` are the ones to read.
  */
 export interface Difference {

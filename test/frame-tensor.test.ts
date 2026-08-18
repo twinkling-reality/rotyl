@@ -113,7 +113,7 @@ beforeAll(async () => {
 describe('the model input tensor', () => {
   it('is planar, one channel after another', () => {
     // A transposed or interleaved layout would put green where red belongs, and
-    // the model would still return a mask — just not of the thing clicked on.
+    // the model would still return a mask. Just not of the thing clicked on.
     for (const [x, y] of [
       [0, 0],
       [17, 41],
@@ -134,8 +134,8 @@ describe('the model input tensor', () => {
   });
 
   it('averages in linear light before encoding', () => {
-    // Half black and half white averages to linear 0.5, which encodes to 0.735
-    // — not to 0.5. Averaging encoded values instead is the classic resize bug,
+    // Half black and half white averages to linear 0.5, which encodes to 0.735,
+    // not to 0.5. Averaging encoded values instead is the classic resize bug,
     // and it darkens every edge in the image the model is reasoning about.
     const correct = (linearToSrgb(0.5) - MEAN[0]) / STD[0];
     const ifAveragedEncoded = (0.5 - MEAN[0]) / STD[0];

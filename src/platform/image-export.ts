@@ -14,7 +14,7 @@ export type ExportFormat = 'png' | 'jpeg';
  * Where the full-resolution pixels come from.
  *
  * Export does not re-read the preview texture, which may have been capped for
- * memory — it goes back to the original. What "the original" is differs between
+ * memory. It goes back to the original. What "the original" is differs between
  * a photograph and a frame of a video, and this is the whole of that
  * difference: everything after it is one path.
  */
@@ -71,8 +71,8 @@ const JPEG_QUALITY = 0.92;
  * Render and encode the finished image at full resolution.
  *
  * The source is decoded again from the original file rather than reusing the
- * preview texture, which may have been capped for memory. Everything else — the
- * style chain, the parameters, the composite — is the same code the preview
+ * preview texture, which may have been capped for memory. Everything else, the
+ * style chain, the parameters, the composite, is the same code the preview
  * ran, so this cannot drift from what the user was looking at.
  *
  * An OffscreenCanvas is used as the render target purely because
@@ -112,8 +112,8 @@ export async function exportImage(options: ExportOptions): Promise<ExportResult>
       alphaMode: 'opaque',
     });
 
-    // Validation errors in WebGPU are asynchronous — createTexture returns an
-    // object and reports the failure later — so a failed allocation would
+    // Validation errors in WebGPU are asynchronous, createTexture returns an
+    // object and reports the failure later, so a failed allocation would
     // otherwise be discovered as a silently blank download.
     device.pushErrorScope('out-of-memory');
     device.pushErrorScope('validation');

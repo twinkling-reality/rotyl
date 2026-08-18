@@ -4,8 +4,8 @@
 //
 //   COLOUR SPACE. The model was trained on ordinary image files, so it expects
 //   sRGB-encoded values. The source is sampled through an sRGB view, which
-//   means every value reaching this shader is linear — correct for averaging,
-//   and wrong for the model — so it is re-encoded after the average and before
+//   means every value reaching this shader is linear, correct for averaging,
+//   and wrong for the model, so it is re-encoded after the average and before
 //   the normalisation. Averaging in the encoded space instead would darken
 //   every downsampled edge, which is the classic image-resize bug.
 //

@@ -1,6 +1,6 @@
 // The picture the style measurements are taken against, drawn from nothing.
 //
-// A photograph cannot be checked in — licensing aside, a benchmark whose input
+// A photograph cannot be checked in. Licensing aside, a benchmark whose input
 // nobody else has is a benchmark nobody else can repeat. So the scene is
 // synthesised, and synthesised to have the statistics the style chain is
 // sensitive to rather than to look like art:

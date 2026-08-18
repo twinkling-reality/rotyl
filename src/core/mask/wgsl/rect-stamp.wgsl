@@ -5,8 +5,8 @@
 // shares the brush's uniform, its vertex layout and its two pipelines rather
 // than bringing its own.
 //
-// A rectangle is not what the Box tool draws. That one is a QUESTION — the
-// region a segmentation model should look for an object inside — and it answers
+// A rectangle is not what the Box tool draws. That one is a QUESTION, the
+// region a segmentation model should look for an object inside, and it answers
 // with the object, not with the region. This is the region itself, which is the
 // shape a panel of stylisation over a scene actually wants.
 //

@@ -5,7 +5,7 @@ import type { BrushMode } from '../core/render/rotyl-engine.ts';
  *
  * The brush modes come from the engine, which is where they belong: they name
  * the two things a stroke can do to coverage. `object` and `box` are not
- * strokes — they are questions, one asked with a point and one with a region —
+ * strokes, they are questions, one asked with a point and one with a region,
  * which is why they are UI concepts and appear here rather than beside them.
  *
  * Two tools rather than one gesture with a modifier because a drag already

@@ -17,7 +17,7 @@ fn luminance(c: vec3f) -> f32 {
 // are not displays and do need it explicitly: a segmentation model, which was
 // trained on ordinary encoded image files, and the print style's separation,
 // where ink density is a perceptual quantity rather than a radiometric one.
-// Feeding either linear light is not a subtle error — every shadow arrives
+// Feeding either linear light is not a subtle error. Every shadow arrives
 // several stops too dark.
 //
 // In both cases the encode happens AFTER any averaging. Averaging encoded

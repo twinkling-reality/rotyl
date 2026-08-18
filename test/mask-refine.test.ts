@@ -19,7 +19,7 @@ import { linearToOklab } from '../src/core/color/oklab.ts';
  * THE GEOMETRY IS DELIBERATE. What decides whether the filter has any room to
  * work is the ratio between its window and one engine texel, and because the
  * window is a fraction of the image while the engine mask is a fixed 256 px,
- * that ratio is a constant — about six — however large the photograph is. A
+ * that ratio is a constant, about six, however large the photograph is. A
  * test using a smaller engine mask would quietly change that constant and
  * measure a filter the product never runs.
  *
@@ -45,7 +45,7 @@ const TRUE_EDGE = 512;
  *   refined        -0.5     -0.4    4.6   11.0   21.8   31.0
  *
  * So the filter erases the error outright up to about two engine texels,
- * recovers most of a three-texel error, and gives up past four — which is what
+ * recovers most of a three-texel error, and gives up past four, which is what
  * the window predicts, since it spans about six engine texels and the fit is
  * dominated by the coarse boundary once the error approaches that. Two texels
  * is where a segmentation model's boundary actually sits, and it is also the

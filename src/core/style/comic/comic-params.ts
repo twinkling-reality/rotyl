@@ -16,8 +16,8 @@ import {
  *
  * SCALE IS EXPRESSED AS A FRACTION OF THE IMAGE, NEVER IN PIXELS.
  *
- * Both expensive stages — the anisotropic Kuwahara flatten and the flow-based
- * DoG ink — have a characteristic radius. Written the obvious way, that radius
+ * Both expensive stages, the anisotropic Kuwahara flatten and the flow-based
+ * DoG ink, have a characteristic radius. Written the obvious way, that radius
  * is a pixel count that must grow with resolution to keep the look constant,
  * and cost then grows with the *fourth* power of resolution: pixel count times
  * radius squared. A 1536 px flatten costs roughly five times a 1024 px one.
@@ -39,7 +39,7 @@ import {
  *     resolution, so lines come out crisp at full size from a cheap detection.
  *
  * PREVIEW MATCHES EXPORT because every quantity below is a function of the two
- * slider values alone — never of the output resolution. Raising the quality
+ * slider values alone. Never of the output resolution. Raising the quality
  * tier scales a stage's resolution and its radius by the same factor, which
  * leaves the fraction, and therefore the composition, identical.
  *
@@ -134,7 +134,7 @@ export function resolveComicParams(
 
   // Derive each buffer's resolution to hold its radius near the target, then
   // recover the radius from the resolution actually granted. When a clamp
-  // binds, the radius shrinks rather than the fraction drifting — which is
+  // binds, the radius shrinks rather than the fraction drifting, which is
   // what keeps composition identical across quality tiers and output sizes.
   //
   // Resolutions are quantised so that dragging a slider crosses a handful of
@@ -181,7 +181,7 @@ export function resolveComicParams(
 
     bins,
     // The soft-step transition width in L is about 2/sharpness, so it must sit
-    // well above the 2*bins that would merely span one band — otherwise
+    // well above the 2*bins that would merely span one band. Otherwise
     // quantisation smooths itself back into a no-op.
     quantSharpness: 8 * bins,
     saturation: lerp(1, 1.45, strength),

@@ -3,7 +3,7 @@ import type { Dimensions } from '../render/resolution.ts';
 /**
  * What a style is, as far as the rest of Rotyl is concerned.
  *
- * Everything upstream of this file — the engine, the export path, the UI —
+ * Everything upstream of this file, the engine, the export path, the UI,
  * knows only that a style turns a source texture into a styled texture at
  * output resolution, and that it is driven by some named scalars. Nothing
  * upstream knows what a cel band or a halftone dot is, which is what makes
@@ -68,7 +68,7 @@ export function control(controls: StyleControls, key: string, fallback: number):
  * Read a choice as an index, rounded and clamped to the options that exist.
  *
  * Separate from `control` because that one clamps to [0, 1], which is right for
- * every scalar and silently wrong for an index — a palette chosen fourth would
+ * every scalar and silently wrong for an index. A palette chosen fourth would
  * come back as the first.
  */
 export function choice(controls: StyleControls, key: string, count: number, fallback: number): number {
@@ -81,7 +81,7 @@ export function choice(controls: StyleControls, key: string, count: number, fall
  * Quality tiers scale a stage's SAMPLE DENSITY, never its apparent scale.
  *
  * Raising the tier buys a stage more resolution and, where the stage has a
- * kernel, a proportionally larger radius — so every length stays the same
+ * kernel, a proportionally larger radius, so every length stays the same
  * fraction of the image and a draft composes exactly like an export.
  */
 export const QUALITY_SCALE = {
@@ -110,7 +110,7 @@ const RESOLUTION_STEP = 64;
  * the smaller buffer the source can actually supply while the kernel is still
  * derived from the larger request. The apparent scale drifts, and since the
  * quality tier changes the request, preview and export drift by different
- * amounts — silently breaking the one invariant this layer exists to hold.
+ * amounts. Silently breaking the one invariant this layer exists to hold.
  *
  * Quantisation itself is free, because every style recovers its lengths from
  * the resolution actually granted rather than from the one it asked for. Only
@@ -129,7 +129,7 @@ const NO_OP_FADE = 0.15;
  *
  * Shared because it is a promise the product makes rather than a look: at zero
  * strength every style must return the photograph, not a faint residue of
- * itself. A style whose parameters happen to approach identity is not enough —
+ * itself. A style whose parameters happen to approach identity is not enough.
  * quantisation and thresholding do not fade gracefully.
  */
 export function fadeToNothing(strength: number): number {

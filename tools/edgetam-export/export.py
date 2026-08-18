@@ -37,7 +37,7 @@ def patch_cross_attention_for_masking() -> None:
 
     The module passes `attention_mask=None` because the reference never needs
     one: it concatenates exactly as many memory entries as it has. A fixed-size
-    bank does need one, and this is the smallest way to add it — the mask is
+    bank does need one, and this is the smallest way to add it. The mask is
     read from an attribute the wrapper sets, so it is an ordinary traced tensor
     and every other line of the module is untouched.
     """

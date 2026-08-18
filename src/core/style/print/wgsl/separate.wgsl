@@ -1,6 +1,6 @@
 // Colour separation: one photograph in, four ink densities out.
 //
-// Runs at tone resolution, which is a few samples per screen cell — everything
+// Runs at tone resolution, which is a few samples per screen cell. Everything
 // expensive about this style happens here, on a buffer measured in hundreds of
 // pixels, and the pass that follows only decides where to put dots.
 //
@@ -10,7 +10,7 @@
 // exactly that reason. But ink density is a perceptual quantity: a mid grey is
 // sRGB 0.5 and linear 0.21, so separating from linear values would lay down 79%
 // ink where a press lays 50% and every photograph would print as a silhouette.
-// So: average in linear, encode, then separate — the same order the frame
+// So: average in linear, encode, then separate, the same order the frame
 // tensor uses to feed the segmentation model, and for the same reason.
 
 struct Uniforms {
@@ -39,7 +39,7 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
   let key = min(cmy.r, min(cmy.g, cmy.b));
 
   // The single-ink end of the Colour control is not "the same separation with
-  // the chroma turned down" — it is a different plate. Luma against the encoded
+  // the chroma turned down". It is a different plate. Luma against the encoded
   // triple, which is the tone a monochrome press reproduces.
   let luma = dot(encoded, REC709);
 

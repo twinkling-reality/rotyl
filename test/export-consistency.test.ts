@@ -14,14 +14,14 @@ import { defaultControls } from '../src/core/style/style.ts';
 import type { SelectionCommand } from '../src/core/document/selection-command.ts';
 
 /**
- * Export is not a second rendering path — it is the preview's path at a
+ * Export is not a second rendering path. It is the preview's path at a
  * different resolution.
  *
  * The property checked here is the one that can only be checked by rendering:
  * an exported image reproduces unselected pixels byte for byte.
  *
- * The companion property — that composition does not depend on the resolution
- * rendered at — is verified in `comic-params.test.ts` instead, and that is the
+ * The companion property, that composition does not depend on the resolution
+ * rendered at, is verified in `comic-params.test.ts` instead, and that is the
  * better place for it: it is a property of the parameter mapping, where it can
  * be checked exactly across every output size and quality tier rather than
  * inferred from a tolerance between two renders. Doing it here would also mean

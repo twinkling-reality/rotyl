@@ -9,7 +9,7 @@ export default defineConfig({
     // Real Chrome, not the bundled Chromium.
     //
     // Bundled Chromium headless has no GPU adapter at all, and enabling WebGPU
-    // there falls back to SwiftShader — a CPU rasteriser that reports success
+    // there falls back to SwiftShader. A CPU rasteriser that reports success
     // while producing different pixels. A GPU test that silently validates
     // against the wrong renderer is worse than no GPU test.
     channel: 'chrome',

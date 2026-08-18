@@ -14,7 +14,7 @@ import {
  *
  * Nothing in the compositor, the engine, the export path or the panel changed
  * to add this style, so this file is its neighbours' file with one import
- * different — which is the only real test of whether the style seam is a seam.
+ * different, which is the only real test of whether the style seam is a seam.
  *
  * Rendered at 1024 because this style has a characteristic scale, and the
  * fixture's ripples do not: the flatten radius is a few percent of the short
@@ -37,7 +37,7 @@ function step(pixels: Uint8Array, at: number): number {
  *
  * ONE PASS, NO ALLOCATION. An `Array.every` over three channels per pixel is
  * a million short-lived closures across a fixture this size, and the garbage
- * that produces while a Dawn device is alive aborts the worker outright — the
+ * that produces while a Dawn device is alive aborts the worker outright. The
  * same hazard the suite already documents for calling expect() per pixel,
  * arriving through a different door.
  */

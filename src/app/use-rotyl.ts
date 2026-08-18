@@ -67,14 +67,14 @@ declare global {
  *
  * The engine deliberately outlives every render: it holds textures measured in
  * hundreds of megabytes, and recreating it per commit would be catastrophic. It
- * is a ref rather than state for the same reason — nothing about it should
+ * is a ref rather than state for the same reason. Nothing about it should
  * participate in reconciliation.
  *
  * THE DOCUMENT IS CREATED HERE, ONCE, and handed to each engine in turn. That
  * is the whole of what makes recovery cheap: a lost device costs the pixels,
  * which can be decoded again, and never the work, which is a list of commands
- * in ordinary memory. What this hook cannot do is put the image back — it does
- * not own the file — so it reports a new `generation` and the host re-uploads.
+ * in ordinary memory. What this hook cannot do is put the image back, it does
+ * not own the file, so it reports a new `generation` and the host re-uploads.
  */
 export function useRotyl(): RuntimeState {
   const [state, setState] = useState<RuntimeState>({ status: 'starting' });

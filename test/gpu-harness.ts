@@ -2,7 +2,7 @@ import { create, globals } from 'webgpu';
 import { acquireRenderDevice, type RenderDevice } from '../src/core/gpu/render-device.ts';
 
 /**
- * Real WGSL execution in Node, via Dawn — the same engine Chrome uses.
+ * Real WGSL execution in Node, via Dawn, the same engine Chrome uses.
  *
  * This is what makes each stage of the style chain independently testable:
  * shaders run for real, on real hardware, with no browser and no mocking of the
@@ -10,7 +10,7 @@ import { acquireRenderDevice, type RenderDevice } from '../src/core/gpu/render-d
  * construction, which `tsconfig.core.json` enforces.
  *
  * TEARDOWN IS DELIBERATE AND ORDERED. Dawn aborts the process if it is still
- * working when the runner tears a worker down — after every assertion has
+ * working when the runner tears a worker down. After every assertion has
  * already passed, so it surfaces as an unexplained crash rather than a test
  * failure. `disposeTestGpu` therefore drains the queue first, then releases
  * objects built from the device, then the device itself, in that order.
@@ -42,7 +42,7 @@ export function disposeWithTestDevice(dispose: () => void): void {
   cleanups.push(dispose);
 }
 
-/** Drain, release, and destroy — in that order. */
+/** Drain, release, and destroy, in that order. */
 export async function disposeTestGpu(): Promise<void> {
   const pending = cached;
   cached = undefined;
@@ -60,7 +60,7 @@ export async function disposeTestGpu(): Promise<void> {
 /**
  * Read a texture back as tightly-packed RGBA bytes.
  *
- * `bytesPerRow` must be a multiple of 256, and the final row is *not* padded —
+ * `bytesPerRow` must be a multiple of 256, and the final row is *not* padded,
  * so the buffer needs `bytesPerRow * (height - 1) + unpaddedRow`, not
  * `bytesPerRow * height`. Sizing it the intuitive way fails validation.
  */

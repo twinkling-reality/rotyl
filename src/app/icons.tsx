@@ -5,7 +5,7 @@
  * than depended on: this is about a kilobyte of geometry, and a package plus a
  * bundler plugin plus a version to track is a poor trade for that.
  *
- * `sliders-horizontal` for the style control rather than a wand or sparkles —
+ * `sliders-horizontal` for the style control rather than a wand or sparkles.
  * it opens parameter controls, and nothing here is magic. `mouse-pointer-click`
  * for object selection for the same reason: it is a click that selects a thing,
  * not a spell.

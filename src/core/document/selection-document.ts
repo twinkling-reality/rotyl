@@ -59,7 +59,7 @@ export class SelectionDocument {
    *
    * It also disarms the sharp edge in `apply`. The redo tail is discarded on
    * the next edit, so undoing another frame's work and then drawing would
-   * destroy it — but a caller that follows the cursor is now on that frame, and
+   * destroy it, but a caller that follows the cursor is now on that frame, and
    * the sequence is the ordinary single-frame one it has always been.
    *
    * A per-frame cursor was the alternative and it is worse: "undo" would stop

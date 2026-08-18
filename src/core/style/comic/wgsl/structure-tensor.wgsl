@@ -2,8 +2,8 @@
 //
 // Scharr rather than Sobel because its weights (0.183 / 0.634) are optimised
 // for rotational symmetry: a Sobel-derived orientation field visibly favours
-// the diagonals, and every downstream stage — the Kuwahara ellipse and the ink
-// flow field — is an orientation consumer.
+// the diagonals, and every downstream stage, the Kuwahara ellipse and the ink
+// flow field, is an orientation consumer.
 //
 // The three products (E, F, G) are written unnormalised. Normalising before
 // the smoothing pass would throw away edge magnitude, which is precisely the

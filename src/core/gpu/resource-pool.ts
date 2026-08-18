@@ -4,8 +4,8 @@
  * Textures and buffers are the only WebGPU objects with a `destroy()`, and they
  * are also the only ones large enough to matter: a single full-resolution
  * source texture for a 48 MP photograph is 192 MB. Waiting for the garbage
- * collector to notice that is not a memory strategy, and the symptom — memory
- * climbing across repeated image loads until the tab dies — is the exact
+ * collector to notice that is not a memory strategy, and the symptom, memory
+ * climbing across repeated image loads until the tab dies, is the exact
  * failure this class exists to make impossible.
  *
  * Everything allocated through a pool is destroyed when the pool is, in
@@ -53,8 +53,8 @@ export class ResourcePool {
  * A resource referenced by a recorded command is read at SUBMIT, not at record,
  * so anything a submitted-but-unfinished frame still touches must outlive the
  * decision to replace it. Every stage buffer in the application is replaced
- * this way — a style control changes a derived resolution, an export swaps in
- * full-resolution buffers — and freeing them immediately is a use-after-free
+ * this way, a style control changes a derived resolution, an export swaps in
+ * full-resolution buffers, and freeing them immediately is a use-after-free
  * that presents as an intermittent hard crash rather than as an error.
  *
  * Keyed on queue completion rather than on a later frame, because there may not

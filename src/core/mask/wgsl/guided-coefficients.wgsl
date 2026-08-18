@@ -6,7 +6,7 @@
 // stage exists:
 //
 //   Inside an object, where the mask is locally constant, the fit degenerates
-//   to a = 0, b = p — the mask passes through untouched.
+//   to a = 0, b = p. The mask passes through untouched.
 //
 //   Across a boundary, a is large along whichever colour direction separates
 //   the two sides, so the matte transitions exactly where the image does. That

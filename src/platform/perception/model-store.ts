@@ -3,7 +3,7 @@
  *
  * Rotyl's promise is that the image never leaves the machine, and it does not:
  * this fetches a model *to* the machine, once, and everything after that is
- * local. The distinction is worth being precise about rather than glossing —
+ * local. The distinction is worth being precise about rather than glossing.
  * "runs locally" and "needs no network ever" are different claims, and only the
  * first is true.
  *
@@ -12,7 +12,7 @@
  * the kind of output where a silent model swap is acceptable.
  *
  * Cached in the Cache Storage API rather than in memory or IndexedDB: it is the
- * one browser store designed for exactly this — immutable, addressable by URL,
+ * one browser store designed for exactly this. Immutable, addressable by URL,
  * evictable under pressure, and shared across tabs, so a second window pays
  * nothing.
  */
@@ -28,8 +28,8 @@ export interface ModelFile {
   /**
    * The weights, as an ONNX external-data sidecar.
    *
-   * ONNX Runtime Web will not fetch these itself — it has no idea where the
-   * model came from — so they are fetched here and handed over as bytes under
+   * ONNX Runtime Web will not fetch these itself, it has no idea where the
+   * model came from, so they are fetched here and handed over as bytes under
    * the exact filename the graph records.
    */
   readonly weights: string;
@@ -46,7 +46,7 @@ export interface ModelVariant {
  * Two builds of the same weights, chosen by what the device can compile.
  *
  * Half precision is half the download and the one to prefer, but its kernels
- * need the `shader-f16` feature and refuse to build without it — a failure that
+ * need the `shader-f16` feature and refuse to build without it. A failure that
  * arrives as a session-creation error deep inside the runtime, long after the
  * twenty megabytes have been fetched. Picking the variant from the device's
  * feature set turns that into a decision made before anything is downloaded.

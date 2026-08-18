@@ -161,7 +161,7 @@ export class PrintStylePipeline implements StylePipeline {
    * The screen pass's uniform block, laid out to match its WGSL struct.
    *
    * Registration offsets arrive as fractions of the SHORT edge and are
-   * converted to uv here, where the image's dimensions are known — so a
+   * converted to uv here, where the image's dimensions are known, so a
    * misregistration is the same physical distance on both axes rather than
    * being stretched by the aspect ratio.
    */

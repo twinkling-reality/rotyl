@@ -152,7 +152,7 @@ describe('sRGB transfer functions', () => {
  *
  * Oklab is where the cel bands are quantised, so a transcription error in
  * either copy of the matrices would show up as a hue shift along every band
- * boundary — subtle enough to look like an artistic choice rather than a bug.
+ * boundary. Subtle enough to look like an artistic choice rather than a bug.
  * Running both and comparing is the only way to catch that.
  */
 const OKLAB_ROUND_TRIP = /* wgsl */ `

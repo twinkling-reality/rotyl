@@ -19,8 +19,8 @@ export interface RenderDevice {
    * in the renderer uses half precision, and asking for a feature in order to
    * answer a question about it is how unused capability accumulates. It is
    * reported because the segmentation runtime brings up its own device from the
-   * same hardware, and which build of the model is worth downloading — half the
-   * size, and unable to compile without this — follows from it.
+   * same hardware, and which build of the model is worth downloading, half the
+   * size, and unable to compile without this, follows from it.
    */
   readonly supportsF16: boolean;
 }

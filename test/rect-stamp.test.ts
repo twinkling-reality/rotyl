@@ -14,7 +14,7 @@ import type { SelectionCommand } from '../src/core/document/selection-command.ts
  *
  * ITS OWN FILE, AND ONE MASK FOR ALL OF IT. The rectangle pipelines are built
  * on first use, and building then discarding them once per case churns Dawn
- * hard enough to abort the worker after every assertion has already passed —
+ * hard enough to abort the worker after every assertion has already passed.
  * measured at four runs in six against a baseline of none. So the whole file
  * shares one device and one SelectionMask, replays into it three times, and
  * asserts many times against what came back.

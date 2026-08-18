@@ -95,7 +95,7 @@ export class CompositeRenderer {
    * The outgoing pipeline is released on the queue rather than immediately: the
    * frame that last used it has been submitted, and a submitted frame's
    * resources are read at submit rather than at record. The frame being
-   * recorded when a switch happens does not reference it — that is what makes
+   * recorded when a switch happens does not reference it. That is what makes
    * fencing here, rather than one frame later, correct.
    */
   #pipelineFor(style: StyleDefinition): StylePipeline {
@@ -114,7 +114,7 @@ export class CompositeRenderer {
 
   /**
    * Re-run the style chain. Expensive; the result is cached until the source,
-   * the style or its controls change — notably NOT when the selection changes,
+   * the style or its controls change. Notably NOT when the selection changes,
    * which is why brushing stays responsive.
    */
   renderStyle(encoder: GPUCommandEncoder, request: StyleRequest): void {

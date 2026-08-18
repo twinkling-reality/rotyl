@@ -6,7 +6,7 @@ const QUALITIES: StyleQuality[] = ['draft', 'full', 'export'];
 
 /**
  * The same invariants the comic style is held to, expressed in this style's own
- * terms — which is what makes them invariants of the style layer rather than of
+ * terms, which is what makes them invariants of the style layer rather than of
  * one implementation.
  *
  * The quantity that must not depend on resolution is different here. The comic

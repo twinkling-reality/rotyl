@@ -13,7 +13,7 @@ import { looksLikeVideo, type VideoLoadError } from './video-file.ts';
  *
  * That single fact is the whole design. A scrub that moves forward must never
  * re-seek, so this holds one decoder open and feeds it, and re-seeks only when
- * the target is behind the playhead or when a keyframe lies between the two —
+ * the target is behind the playhead or when a keyframe lies between the two.
  * the second case being exactly when starting again is cheaper than continuing.
  *
  * TWO WEBCODECS RULES THAT BITE SILENTLY, both handled here so that no caller
@@ -167,7 +167,7 @@ export class FrameProvider {
    * Returns false when the request was superseded by a later one, which is the
    * normal case while scrubbing and not an error: a pointer that has moved on
    * has already asked for somewhere else. The frame is closed as this returns,
-   * so `use` must do its work synchronously — uploading it to a texture is a
+   * so `use` must do its work synchronously. Uploading it to a texture is a
    * queue operation and qualifies.
    */
   async readFrame(index: number, use: UseFrame): Promise<boolean> {

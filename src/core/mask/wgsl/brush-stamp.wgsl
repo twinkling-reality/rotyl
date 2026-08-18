@@ -7,8 +7,8 @@
 // place the pointer slowed down or doubled back.
 //
 // The shader writes ANTIALIASED COVERAGE, not a binary hit. Because the mask is
-// never binary, there is no separate feathering stage anywhere in the pipeline
-// — and blurring a binary mask to feather it later would be actively wrong: it
+// never binary, there is no separate feathering stage anywhere in the pipeline,
+// and blurring a binary mask to feather it later would be actively wrong: it
 // is mean-curvature flow, and it erases thin strokes while preserving their
 // area.
 //
@@ -18,7 +18,7 @@
 // for the lifetime of a document.
 //
 // Radius, hardness and polarity travel with each instance instead. They vary
-// per stroke, and several strokes are stamped into one frame during a replay —
+// per stroke, and several strokes are stamped into one frame during a replay.
 // `queue.writeBuffer` is ordered against submission rather than against the
 // encoder, so a uniform rewritten between two recorded draws would silently
 // give BOTH draws the second value. Carrying them in the vertex stream removes

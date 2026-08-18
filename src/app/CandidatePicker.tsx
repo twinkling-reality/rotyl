@@ -6,7 +6,7 @@ import type { MaskCandidate } from '../core/perception/mask-candidates.ts';
 /**
  * The other objects the click could have meant.
  *
- * A point on a sleeve is a cuff, a shirt and a person, and the model says so —
+ * A point on a sleeve is a cuff, a shirt and a person, and the model says so.
  * it returns all three and rates one highest. Everything up to here has kept
  * those alternatives; this is where they become visible, and it is most of what
  * separates click-to-select that feels like it read your mind from one that
@@ -111,7 +111,7 @@ function sharedCrop(masks: readonly CoverageMask[]): Crop {
  * Box-average a crop of the engine's mask down to thumbnail size.
  *
  * Averaging rather than sampling because the interesting candidates are often
- * thin — an arm, a railing — and a nearest tap drops them entirely at this
+ * thin, an arm, a railing, and a nearest tap drops them entirely at this
  * scale, turning a real alternative into an apparently empty button.
  */
 function drawMask(canvas: HTMLCanvasElement, mask: CoverageMask, crop: Crop): void {

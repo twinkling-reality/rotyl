@@ -21,7 +21,7 @@ import {
  * SCALE IS A FRACTION OF THE IMAGE, as everywhere else in the style layer, and
  * here that is the whole design rather than an optimisation. The screen pitch
  * is a fraction of the short edge, so a photograph exported at 6000 px carries
- * the same number of dots across it as the 1200 px preview the user judged —
+ * the same number of dots across it as the 1200 px preview the user judged.
  * the dots are larger in pixels and identical in composition. Deriving the
  * pitch in pixels instead would silently turn the preview into a different
  * image from the export, which is the failure mode this discipline exists to
@@ -110,7 +110,7 @@ export interface PrintParams {
   readonly toneShortEdge: number;
   /** Distance between screen cells, as a fraction of the image's short edge. */
   readonly pitchFraction: number;
-  /** Cyan, magenta, yellow, black — the order the separation writes them in. */
+  /** Cyan, magenta, yellow, black. The order the separation writes them in. */
   readonly inks: readonly PrintInk[];
   readonly paper: readonly [number, number, number];
 

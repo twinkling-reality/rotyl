@@ -28,7 +28,7 @@ export function TopBar({
 
       {/*
         Status renders whether or not a file is loaded. Nesting it inside the
-        file branch made "Opening" unreachable — it is set before `loaded` is,
+        file branch made "Opening" unreachable. It is set before `loaded` is,
         so the one moment the user needs feedback showed nothing at all.
       */}
       {file || status ? (
@@ -77,7 +77,7 @@ export function TopBar({
         /*
           Only before a file is open, where this corner is empty anyway. Once
           there is something to edit it becomes undo, redo and Export, and a
-          link to a measurements page has no business competing with those —
+          link to a measurements page has no business competing with those.
           nobody reads a benchmark while they are working.
         */
         <a class="top-bar__research" href="/research.html">

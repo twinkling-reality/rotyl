@@ -7,7 +7,7 @@ const QUALITIES: StyleQuality[] = ['draft', 'full', 'export'];
 
 /**
  * The same invariants the other two styles are held to, in this style's own
- * terms — which is what makes them invariants of the style layer rather than of
+ * terms, which is what makes them invariants of the style layer rather than of
  * one implementation.
  *
  * Two lengths have to be a fixed fraction of the image here: the bilateral's

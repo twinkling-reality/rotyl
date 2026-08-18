@@ -4,7 +4,7 @@
 // The first pass answers "is there a step across this point"; this one walks
 // the streamline through the point and averages that answer over its
 // neighbours along the edge. Isolated responses from noise average away, while
-// responses that agree along a contour reinforce — which is the difference
+// responses that agree along a contour reinforce, which is the difference
 // between a speckle field and a drawn line.
 
 const MAX_STEPS: i32 = 40;
@@ -27,8 +27,8 @@ fn tangentAt(uv: vec2f) -> vec2f {
 // Walk one direction along the streamline, accumulating weighted response.
 //
 // The sign flip is the single most common way to get this wrong. The tangent
-// field is a direction without an orientation — sampling it can return either
-// of two opposite vectors — so without forcing agreement with the previous
+// field is a direction without an orientation, sampling it can return either
+// of two opposite vectors, so without forcing agreement with the previous
 // step the walk reverses on itself, re-treads the pixels it came from, and the
 // accumulation collapses to a blur of the starting point.
 fn walk(startUv: vec2f, startTangent: vec2f, sign: f32, steps: i32, denom: f32) -> vec2f {

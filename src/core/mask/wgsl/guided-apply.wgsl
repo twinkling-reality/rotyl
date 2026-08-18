@@ -31,7 +31,7 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
   let model = textureSampleLevel(coefficientTex, linearSampler, uv, 0.0);
   // A single bilinear tap. This pass runs at output resolution, which is the
   // source's own resolution except for images past the preview cap, so there is
-  // nothing here to alias except in that one case — and paying for a box
+  // nothing here to alias except in that one case, and paying for a box
   // downsample of a 24 megapixel image to avoid it would cost more than the
   // artefact does.
   let guide = linearToOklab(textureSampleLevel(sourceTex, linearSampler, uv, 0.0).rgb);

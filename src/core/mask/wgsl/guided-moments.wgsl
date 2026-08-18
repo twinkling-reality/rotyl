@@ -1,7 +1,7 @@
 // The products the guided filter takes local means of.
 //
-// Thirteen quantities are needed — three guide channels, the mask, the six
-// unique entries of the guide's covariance, and three guide-mask products — so
+// Thirteen quantities are needed, three guide channels, the mask, the six
+// unique entries of the guide's covariance, and three guide-mask products, so
 // they are written across four four-channel targets. The first target is the
 // guide buffer itself, which already holds (L, a, b, p); this pass fills the
 // other three, selected by `plane`, from a single tap each.

@@ -1,6 +1,6 @@
 // Shared vertex stage for every fullscreen pass.
 //
-// Three vertices covering the viewport, generated from the vertex index — no
+// Three vertices covering the viewport, generated from the vertex index. No
 // vertex buffer, no index buffer. The V coordinate is flipped because WebGPU's
 // clip space has +Y up while textures are addressed top-down, so without the
 // flip every pass would render the image upside down.

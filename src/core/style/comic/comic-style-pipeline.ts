@@ -32,7 +32,7 @@ import celInkWgsl from './wgsl/cel-ink.wgsl?raw';
  * reverse.
  *
  * Nothing in this chain reads the selection mask. Every stage runs over the
- * whole image — which is what "understand globally, render locally" means in
+ * whole image, which is what "understand globally, render locally" means in
  * practice, and is also required for correctness: kernels that reach across a
  * mask boundary would otherwise sample zeroed neighbours and draw a halo just
  * inside every selection edge.

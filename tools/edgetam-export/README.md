@@ -44,7 +44,7 @@ bank. Exports unchanged, but see the size note below.
 `pred_masks` and `object_score_logits`. The memory bank also wants
 `object_pointer`, the token carrying an object's identity between frames, and it
 is not exposed. `verify.py --no-pointers` measures what going without costs: on
-the fixture, nothing — worst IoU 0.982 against 0.949 with them. That is a weak
+the fixture, nothing. Worst IoU 0.982 against 0.949 with them. That is a weak
 result and should not be leaned on, because pointers exist for
 re-identification after occlusion and over long sequences and the fixture has
 neither. It establishes only that a first implementation is not blocked on
@@ -60,7 +60,7 @@ The reference concatenates only as many entries as it has, so its memory grows
 over the first frames of a clip. That would mean a different graph shape per
 frame and, on a WebGPU backend, a pipeline recompile with each one. So the bank
 is padded to full size and the unused keys are masked out of the
-cross-attention instead — softmax with a masked key is softmax without it, which
+cross-attention instead. Softmax with a masked key is softmax without it, which
 `verify.py` checks across the whole ramp-up rather than asserting.
 
 Fixing the size also turns the two integers the reference passes alongside the
@@ -70,7 +70,7 @@ variable-length bank would have needed a graph per size regardless.
 ## Size, which is not what the file says
 
 `memory_attention.onnx` is 69.6 MB and holds 11.8 MB of weights. The rest is
-baked rotary tables — four distinct tables totalling 12.1 MB, repeated across
+baked rotary tables, four distinct tables totalling 12.1 MB, repeated across
 layers and attention blocks by the tracer. Disabling constant folding does not
 help: the rotary module takes no inputs, so tracing captures them whatever the
 folding setting.
@@ -113,6 +113,6 @@ silent if missed.
 
 Timing, on the CPU execution provider and therefore not a prediction for
 WebGPU: 102 ms to encode a memory, 226 ms to attend against the bank. Memory
-attention is the expensive half, and the fixed bank is why — it is 4096 queries
+attention is the expensive half, and the fixed bank is why. It is 4096 queries
 against 3648 keys on every frame, where the reference attends against fewer
 early in a clip. Worth measuring on WebGPU before designing around it.

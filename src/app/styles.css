@@ -1,7 +1,7 @@
 /*
  * Rotyl's design system.
  *
- * Hierarchy comes from size, spacing and position — never from weight. Nothing
+ * Hierarchy comes from size, spacing and position. Never from weight. Nothing
  * in the interface is heavier than 500, and the wordmark is the same 15px as
  * the dropzone's own line of text. The image is the only thing on screen with
  * any visual weight, which is the point of the product.
@@ -40,7 +40,7 @@
 
   /*
    * Chroma 0.11, not the 0.20 of a typical product blue. Same familiar hue,
-   * desaturated far enough that it reads as ink rather than as branding — and
+   * desaturated far enough that it reads as ink rather than as branding, and
    * it appears in exactly three places: focus rings, the drag-over dropzone,
    * and a focused slider. Never on a tool, never on Export.
    */
@@ -149,7 +149,7 @@ button {
   height: 16px;
   fill: none;
   stroke: currentColor;
-  /* 1.5 renders as exactly 1 CSS pixel at 16px — Lucide's default of 2 gives
+  /* 1.5 renders as exactly 1 CSS pixel at 16px. Lucide's default of 2 gives
      1.33px, visibly heavier than Geist's stems and blurry at dpr 2. */
   stroke-width: 1.5;
   stroke-linecap: round;
@@ -334,7 +334,7 @@ button {
   border-color: var(--line-strong);
 }
 
-/* Border width stays 1px in every state — thickening it would shift the layout. */
+/* Border width stays 1px in every state. Thickening it would shift the layout. */
 .dropzone--over {
   border-color: var(--accent);
   background: var(--accent-weak);
@@ -376,7 +376,7 @@ button {
   flex: 1;
   min-width: 0;
   /* So the toolbar can respond to the space it actually has, which changes
-     when the style panel docks — a window-width media query cannot see that. */
+     when the style panel docks. A window-width media query cannot see that. */
   container-type: inline-size;
   /* One step darker than the page, so the image reads as an object on a
      surface rather than as the surface itself. */
@@ -410,7 +410,7 @@ button {
   will-change: transform;
   /*
    * White / dark / white sandwich. It carries its own contrast, so it stays
-   * legible on any imagery — unlike a difference blend, which is mathematically
+   * legible on any imagery. Unlike a difference blend, which is mathematically
    * invisible against mid-grey, a very common photographic value.
    */
   border: 1.25px solid oklch(17% 0 0 / 0.92);
@@ -565,7 +565,7 @@ button {
   color: var(--bg);
 }
 
-/* A disclosure toggle, not a tool — so it must not compete for that one black. */
+/* A disclosure toggle, not a tool, so it must not compete for that one black. */
 .tool--open {
   background: var(--surface);
   color: var(--text-primary);

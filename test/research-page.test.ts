@@ -6,7 +6,7 @@ import { TRIALS } from '../tools/research/trials.ts';
 
 /**
  * The page is generated from the harnesses' results at build time, so this is
- * the test that the generation still works — and, more usefully, that every
+ * the test that the generation still works, and, more usefully, that every
  * figure on it still has a measurement behind it.
  *
  * The extractors throw on a missing path rather than returning undefined, which
@@ -40,7 +40,7 @@ describe('the research pages', () => {
 
   it('references only figures that were actually rendered', () => {
     // The figures need a GPU and a browser to produce, so unlike the tables the
-    // build cannot make them — it can only refuse to link one that is missing.
+    // build cannot make them. It can only refuse to link one that is missing.
     const emitted = researchFigures();
     expect(emitted.length).toBeGreaterThan(0);
     for (const figure of emitted)

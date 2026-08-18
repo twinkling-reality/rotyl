@@ -10,7 +10,7 @@ const TAU = 6.2831853;
 
 // The spot function below reaches exactly 0 and exactly 1, at isolated points.
 // Thresholding a density of 1 against it therefore leaves those points at half
-// coverage, and a density of 0 tips them to half coverage the other way — so a
+// coverage, and a density of 0 tips them to half coverage the other way, so a
 // solid black sparkles with paper and clean paper freckles with ink. Pushing
 // the threshold this far past both ends closes the last dot and opens the
 // first, at a cost of two percent of the tonal range that nothing can resolve.
@@ -56,7 +56,7 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
   // Below two pixels per cell the screen is past Nyquist and drawing it would
   // alias into coarse beating rather than dissolve. Past that point the plate
   // falls back to the area its dots would have covered, which is the screen's
-  // own transfer curve — so the fallback is continuous with the dots rather
+  // own transfer curve, so the fallback is continuous with the dots rather
   // than a different picture.
   let resolved = clamp(2.0 - 4.0 * perPixel, 0.0, 1.0);
 

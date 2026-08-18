@@ -7,7 +7,7 @@ import type { StyleDefinition } from './style.ts';
  * Every style Rotyl offers, in the order the picker shows them.
  *
  * The only file that names them all. Adding one is a directory, a params
- * module, a WGSL chain and a line here — the engine, the export path, the
+ * module, a WGSL chain and a line here. The engine, the export path, the
  * compositor and the UI are untouched, which is the claim `style.ts` makes and
  * this list is the proof of.
  *

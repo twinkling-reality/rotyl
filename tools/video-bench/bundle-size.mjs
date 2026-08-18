@@ -3,8 +3,8 @@
 //
 //   node tools/video-bench/bundle-size.mjs
 //
-// Measures the demux-only path — open a file, read the decoder config, walk
-// packets — with one container format, then two, then three. The second is what
+// Measures the demux-only path, open a file, read the decoder config, walk
+// packets, with one container format, then two, then three. The second is what
 // the app ships; the third is what WebM would cost.
 
 import { gzipSync } from 'node:zlib';

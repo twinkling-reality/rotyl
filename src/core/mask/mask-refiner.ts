@@ -22,7 +22,7 @@ import guidedApplyWgsl from './wgsl/guided-apply.wgsl?raw';
  * directions: a nearest tap staircases along every boundary, and a bilinear tap
  * trades the staircase for a sixteen-pixel ramp that follows the mask's texel
  * grid rather than the object. Neither has any way to know where the edge
- * really is. This does — the photograph is the guide, so the matte transitions
+ * really is. This does. The photograph is the guide, so the matte transitions
  * where the photograph transitions.
  *
  * WHY IT RUNS DURING REPLAY, NOT ONCE AT THE CLICK. Refining once and storing
@@ -151,7 +151,7 @@ export class MaskRefiner {
    * Built on the first refinement, not in the constructor.
    *
    * Six pipelines is a real compilation cost, and most sessions never segment
-   * anything — the brush needs none of this. Paying it at startup for a feature
+   * anything. The brush needs none of this. Paying it at startup for a feature
    * that may go unused is the wrong trade in the browser, and in the Node test
    * suite it was worse than that: pipelines compile on a background thread, the
    * queue fence at teardown does not cover them, and a file that constructed a
@@ -253,7 +253,7 @@ export class MaskRefiner {
    * Start recording a frame.
    *
    * Resets the uniform cursor, and only now hands the previous frame's
-   * superseded resources to a fence — by this point that frame has been
+   * superseded resources to a fence. By this point that frame has been
    * submitted, so `onSubmittedWorkDone` genuinely covers it. Freeing them at
    * the moment they were replaced would have raced the submission that still
    * referenced them.
@@ -273,7 +273,7 @@ export class MaskRefiner {
    *
    * Every variance here is a difference between two means of similar
    * magnitude, and at half precision that subtraction leaves roughly 1e-4 of
-   * noise — the same order as the regularisation constant, so flat regions
+   * noise, the same order as the regularisation constant, so flat regions
    * would fit a random linear model and the matte would crawl. The fitted model
    * afterwards is fine at half precision, and has to be: it is the one buffer
    * that gets magnified, and magnification needs a filterable format.

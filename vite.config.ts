@@ -8,7 +8,7 @@ import { renderResearchSite, researchFigures } from './tools/research/index.ts';
  * Shaders reach the bundle as strings, so every line of explanation in them is
  * shipped to every user: 78 KB of WGSL across the style chain, of which two
  * thirds is comment. Removing it saves about 15 KB gzipped, which is a quarter
- * of the application bundle — the same order as the entire UI framework this
+ * of the application bundle, the same order as the entire UI framework this
  * project chose Preact over React to avoid.
  *
  * NEWLINES SURVIVE, and that is the whole design of this function. A WGSL

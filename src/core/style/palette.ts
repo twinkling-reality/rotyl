@@ -7,15 +7,15 @@ import { srgbToLinear } from '../color/srgb.ts';
  * THE REASON A FILTER LOOKS LIKE A FILTER IS THAT IT KEEPS THE PHOTOGRAPH'S
  * COLOUR. Stylise hazy traffic and the flattening, the quantisation and the ink
  * all do their job, and the result is grey, because the input was grey. An
- * illustration of the same street is not grey — not because it was drawn better
+ * illustration of the same street is not grey, not because it was drawn better
  * but because someone CHOSE the colours, and the choosing is the part no amount
  * of edge detection supplies.
  *
  * So a palette here maps LIGHTNESS to colour, rather than nudging the colours
  * that are already there. Dark parts of the picture take the dark end of the
  * ramp, light parts the light end, and everything between interpolates. Form
- * survives completely — it is carried by lightness, which is exactly what is
- * being used as the index — while hue is replaced wholesale. A photograph's own
+ * survives completely, it is carried by lightness, which is exactly what is
+ * being used as the index, while hue is replaced wholesale. A photograph's own
  * hue contributes nothing, which is the point: smog has no hue worth keeping.
  *
  * Interpolated in Oklab, not in RGB, so the midpoint between two stops is the

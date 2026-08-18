@@ -10,7 +10,7 @@ export interface DropZoneProps {
 /**
  * The empty state.
  *
- * One rectangle and two lines of text. No icon, no hero, no feature list — the
+ * One rectangle and two lines of text. No icon, no hero, no feature list. The
  * rectangle is the affordance, and the product is what happens after it.
  */
 export function DropZone({ onFile, notice }: DropZoneProps): JSX.Element {
@@ -34,7 +34,7 @@ export function DropZone({ onFile, notice }: DropZoneProps): JSX.Element {
         }}
         onDragLeave={(event) => {
           // dragleave fires when the pointer crosses onto a child element too,
-          // and it bubbles — so an unconditional reset makes the highlight
+          // and it bubbles, so an unconditional reset makes the highlight
           // flicker as the cursor passes over the zone's own text.
           const next = event.relatedTarget;
           if (next instanceof Node && event.currentTarget.contains(next)) return;

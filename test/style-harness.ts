@@ -15,8 +15,8 @@ import { defaultControls, type StyleDefinition } from '../src/core/style/style.t
  * must pass.
  *
  * "Apply a style to the selected region and leave everything else unchanged" is
- * only meaningful if "unchanged" means bit-for-bit identical. Anything less — a
- * drift of one code value across the untouched majority of a photograph — would
+ * only meaningful if "unchanged" means bit-for-bit identical. Anything less, a
+ * drift of one code value across the untouched majority of a photograph, would
  * be an invisible lie that surfaces the moment someone compares two files.
  *
  * Shared rather than written per style because it is the compositor's contract,

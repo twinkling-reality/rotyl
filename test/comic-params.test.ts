@@ -9,7 +9,7 @@ const QUALITIES: StyleQuality[] = ['draft', 'full', 'export'];
 /**
  * These are the invariants that make "export matches preview" true. They are
  * properties of the parameter mapping alone, so they can be checked without a
- * GPU — which is the point of keeping the mapping in its own pure module.
+ * GPU, which is the point of keeping the mapping in its own pure module.
  */
 describe('resolution independence', () => {
   it('keeps the flatten radius a fixed fraction of its buffer at every output size', () => {
@@ -53,7 +53,7 @@ describe('resolution independence', () => {
     // The radius grows with the buffer, which is what keeps the fraction fixed
     // and per-pixel cost near constant instead of growing with the square of
     // the resolution. The ratio only approximates the quality ratio because
-    // buffer sizes snap to a 64px grid — the fraction, checked above, is exact.
+    // buffer sizes snap to a 64px grid. The fraction, checked above, is exact.
     const expected = QUALITY_SCALE.full / QUALITY_SCALE.draft;
     const actual = full.radius / draft.radius;
     expect(actual).toBeGreaterThan(expected * 0.7);
@@ -77,7 +77,7 @@ describe('resolution independence', () => {
 
   it('holds the apparent scale identical between the preview and the export tier', () => {
     // The property the product depends on, swept over sizes that are not
-    // multiples of the quantisation grid — which is exactly where it broke.
+    // multiples of the quantisation grid, which is exactly where it broke.
     for (let shortEdge = 200; shortEdge <= 2400; shortEdge += 37) {
       for (const detail of [0, 0.25, 0.5, 0.75, 1]) {
         const controls = { detail, strength: 0.7 };

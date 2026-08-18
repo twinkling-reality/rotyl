@@ -45,7 +45,7 @@ const BRUSH_STEP = 1.25;
  * editor showing what a filter does, and someone watching it would rather see
  * the real look at a third of the frames than a smooth approximation of it. The
  * style chain measures 46 ms a frame on a 720p clip at high detail and 105 ms
- * at 1080p, against budgets of 20 and 33 — so a strict tolerance degrades
+ * at 1080p, against budgets of 20 and 33, so a strict tolerance degrades
  * everything, always, which is what made playback look like a cheap filter in
  * the first place. Degrading is reserved for the point where the result has
  * stopped reading as motion at all.
@@ -114,7 +114,7 @@ export function App(): JSX.Element {
    * Refs rather than state for the reason the engine is: neither participates
    * in reconciliation, and the texture is written to thirty times a second. The
    * provider owns no GPU resources, so it survives a lost device while the
-   * texture does not — hence the generation stamped alongside it.
+   * texture does not. Hence the generation stamped alongside it.
    */
   const providerRef = useRef<FrameProvider | undefined>(undefined);
   const sourceRef = useRef<{ texture: GPUTexture; generation: number } | undefined>(undefined);
@@ -214,7 +214,7 @@ export function App(): JSX.Element {
       const format = await looksLikeVideo(file);
       if (format !== 'unknown') {
         // The demuxer, and everything it pulls in, arrives only for someone who
-        // has actually opened a video — the same treatment the inference
+        // has actually opened a video, the same treatment the inference
         // runtime gets, and for the same reason: 38 KB gzipped is an absurd
         // thing to put in front of someone who wants to paint on a photograph.
         const { FrameProvider } = await import('../platform/video/frame-provider.ts');
@@ -298,7 +298,7 @@ export function App(): JSX.Element {
   }, [runtime]);
 
   // Selecting the tool, not using it, is what starts the download and the
-  // frame encode — so both overlap with the user deciding where to click
+  // frame encode, so both overlap with the user deciding where to click
   // rather than following it. Both prompt tools ask the same model, so
   // switching between them carries the prompt rather than ending it: draw a
   // box, then shift-click to correct what it caught.
@@ -428,8 +428,8 @@ export function App(): JSX.Element {
   /**
    * Undo and redo, following the cursor to wherever it went.
    *
-   * The log is one list with one cursor, and undo means the last thing you did
-   * — which may be on a frame you are not looking at. Moving the view there is
+   * The log is one list with one cursor, and undo means the last thing you did,
+   * which may be on a frame you are not looking at. Moving the view there is
    * what keeps that honest: an edit vanishing in front of you is undo, and an
    * edit vanishing somewhere off screen is a bug report.
    */
@@ -639,8 +639,8 @@ export function App(): JSX.Element {
 
   const selection = runtime?.engine.document;
   const status = activity ?? describePerception(perception);
-  // Object selection can fail on its own — a download that will not complete,
-  // a runtime the browser will not start — and it has no other surface.
+  // Object selection can fail on its own, a download that will not complete,
+  // a runtime the browser will not start, and it has no other surface.
   const notice = error ?? (perception.kind === 'failed' ? perception.message : undefined);
   // historyRevision is read so that undo and redo re-evaluate when the log moves.
   void historyRevision;

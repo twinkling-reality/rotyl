@@ -107,7 +107,7 @@ function Choice({ label, options, value, onChange }: ChoiceProps): JSX.Element {
  *
  * The sliders are BUILT FROM THE STYLE, not written here. A style declares its
  * controls and this renders them, so a style with three of them needs no UI
- * code of its own — which is the same seam the renderer has, arriving at the
+ * code of its own, which is the same seam the renderer has, arriving at the
  * one layer where it would otherwise be tempting to special-case.
  */
 export function StylePanel({

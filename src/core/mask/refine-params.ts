@@ -1,7 +1,7 @@
 /**
  * Parameters for turning a segmentation engine's coarse mask into coverage.
  *
- * SCALE IS EXPRESSED AS A FRACTION OF THE IMAGE, NEVER IN PIXELS — the same
+ * SCALE IS EXPRESSED AS A FRACTION OF THE IMAGE, NEVER IN PIXELS, the same
  * rule the style chain follows, and for the same reason. A refinement whose
  * window were a pixel count would cover a different amount of the photograph in
  * the preview than in the export, and the two would disagree along every
@@ -76,7 +76,7 @@ export interface RefineParams {
  * Derive the working resolution from the requested window fraction.
  *
  * Clamping happens before the radius is recovered, so when a bound binds it is
- * the radius that gives way rather than the fraction drifting — which is what
+ * the radius that gives way rather than the fraction drifting, which is what
  * keeps preview and export identical. The same argument, and the same trap,
  * as `stageResolution` in the style layer.
  */

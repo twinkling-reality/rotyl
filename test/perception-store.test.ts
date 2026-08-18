@@ -14,7 +14,7 @@ import type {
  * What the system understands, against what it draws.
  *
  * The engine here is a fake, and deliberately so: none of these properties are
- * about segmentation quality. They are about the seam — that a click becomes
+ * about segmentation quality. They are about the seam. That a click becomes
  * exactly one undoable command, that refining a prompt replaces its own command
  * and nobody else's, that an expensive encode is paid once, and that a result
  * the user has already moved past never lands. Every one of those is a bug that
@@ -31,7 +31,7 @@ interface Recorded {
  * A proposal covering `cells` of sixteen.
  *
  * Nested rather than arbitrary, so the three answers differ in size the way a
- * real engine's do — a part inside an object inside a group — and so the store
+ * real engine's do, a part inside an object inside a group, and so the store
  * can be checked to have committed a particular one of them.
  */
 function proposal(confidence: number, cells: number): MaskProposal {
@@ -269,7 +269,7 @@ describe('refining a prompt', () => {
     await store.select({ x: 100, y: 120 }, 'object');
     await store.select({ x: 300, y: 300 }, 'exclude');
 
-    // "Not that" is a statement about the object, answered by the engine —
+    // "Not that" is a statement about the object, answered by the engine,
     // not a subtraction applied to the mask behind its back.
     expect(recorded.prompts[1]?.points[1]?.include).toBe(false);
   });

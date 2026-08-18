@@ -3,7 +3,7 @@
 //
 // This pass exists only on screen. It runs after the composite, reads the
 // composite's already-encoded output as raw sRGB bytes, and writes to the
-// canvas without re-encoding — so the overlay constants below are tuned in the
+// canvas without re-encoding, so the overlay constants below are tuned in the
 // same space they are applied in, and none of this can reach an exported file.
 //
 // Separating it also means panning and zooming re-run one cheap pass rather
@@ -77,7 +77,7 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
 
   // Two-tone hairline: a white casing with a darker core on top. Carrying its
   // own contrast is what lets one treatment stay visible over black, white,
-  // mid-grey and noise alike — any single-colour contour disappears against
+  // mid-grey and noise alike. Any single-colour contour disappears against
   // image content of that colour.
   if (u.contourOpacity > 0.0) {
     rgb = mix(rgb, vec3f(1.0), contour(imageUv, texelStep, u.casingRadius) * 0.85 * u.contourOpacity);

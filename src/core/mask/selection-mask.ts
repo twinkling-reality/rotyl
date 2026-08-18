@@ -38,7 +38,7 @@ type OperationName = keyof typeof OPERATION;
  * no edit ever costs a full-resolution snapshot.
  *
  * A stroke in progress is stamped incrementally on top of what is already
- * there — correct precisely because `max` blending is idempotent, so
+ * there. Correct precisely because `max` blending is idempotent, so
  * re-stamping a segment already present changes nothing.
  *
  * WRITES WITHIN A FRAME NEVER OVERLAP. Every stamp appends to a fresh region of
@@ -52,7 +52,7 @@ export class SelectionMask {
   readonly width: number;
   readonly height: number;
   /**
-   * Dimensions of the space stroke coordinates are expressed in — always SOURCE
+   * Dimensions of the space stroke coordinates are expressed in. Always SOURCE
    * pixels, which differ from the texture size when a large image is previewed
    * below its native resolution.
    *
@@ -74,7 +74,7 @@ export class SelectionMask {
    * Built on the first rectangle, not in the constructor.
    *
    * Most documents never hold one, and a SelectionMask is constructed per
-   * image, per export and per test case — so two pipelines nobody asked for is
+   * image, per export and per test case, so two pipelines nobody asked for is
    * exactly the churn the Dawn Node bindings are least stable under. The mask
    * refiner compiles its own the same way and for the same reason.
    */
@@ -88,7 +88,7 @@ export class SelectionMask {
   /**
    * Resources a recorded command still references.
    *
-   * Recording a command does not consume its inputs — they are read when the
+   * Recording a command does not consume its inputs. They are read when the
    * command buffer is submitted. Destroying anything here before the frame is
    * submitted fails validation with "destroyed texture used in a submit", so
    * they are held until the next frame begins.

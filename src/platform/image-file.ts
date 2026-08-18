@@ -97,7 +97,7 @@ export function describeImageLoadError(error: ImageLoadError): string {
   if (error.kind === 'unsupported-format') {
     // HEIC is worth its own sentence: it is what an iPhone produces by default,
     // so this is the most common rejection there is. The advice deliberately
-    // does not name a browser — Safari decodes HEIC and would reach this branch
+    // does not name a browser. Safari decodes HEIC and would reach this branch
     // too, since the format is rejected by signature before any decoder is
     // consulted, and telling a Safari user to switch to Safari is nonsense.
     return error.format === 'heic'

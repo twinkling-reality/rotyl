@@ -12,14 +12,14 @@ import type {
 } from './segmentation-engine.ts';
 
 /**
- * What Rotyl understands about the current frame — which is not the same thing
+ * What Rotyl understands about the current frame, which is not the same thing
  * as what it draws.
  *
  * THAT DISTINCTION IS THE POINT OF THIS CLASS. The engine analyses the whole
  * scene and returns several candidate objects per click, at several scales; the
  * render mask holds exactly one thing, the selection the user has made. Keeping
  * them apart means the system can hold candidates it is not drawing, remember
- * the prompt that produced the current one, and offer alternatives later —
+ * the prompt that produced the current one, and offer alternatives later.
  * none of which is possible if a click writes straight into the mask.
  *
  * The only thing that crosses over is a command, applied to the document like
@@ -69,7 +69,7 @@ export class PerceptionStore {
    * An encode already in flight, and the frame it is reading.
    *
    * Without this, two clicks landing before the first encode returns each start
-   * their own — hundreds of milliseconds and tens of megabytes of duplicated
+   * their own. Hundreds of milliseconds and tens of megabytes of duplicated
    * work, with whichever finishes second silently orphaning the other's
    * embedding.
    */
@@ -85,7 +85,7 @@ export class PerceptionStore {
    * Held across the refinements of one prompt: someone who reached past the
    * model's own pick to the larger reading of their click means it, and a
    * following "also this" should not quietly hand back the smaller one. It is a
-   * rank because nothing else survives a re-decode — the heads are not stable,
+   * rank because nothing else survives a re-decode. The heads are not stable,
    * and the masks are all different.
    */
   #preferredRank: number | undefined;
@@ -94,8 +94,8 @@ export class PerceptionStore {
   /**
    * The document revision our own command produced, while it is still the head.
    *
-   * Refining a prompt replaces that command, and replacing it means undoing it
-   * — but only if it is still the most recent edit. If a brush stroke has
+   * Refining a prompt replaces that command, and replacing it means undoing it,
+   * but only if it is still the most recent edit. If a brush stroke has
    * landed in between, the refinement becomes a new command instead, because
    * undoing here would silently discard the stroke.
    */
@@ -118,7 +118,7 @@ export class PerceptionStore {
    * Every reading of the current prompt the engine offered, smallest first.
    *
    * One of them is drawn. The rest are the objects the system knows about and
-   * is not drawing — usually the same click read as a part, a whole, and a
+   * is not drawing, usually the same click read as a part, a whole, and a
    * group.
    */
   get candidates(): readonly MaskCandidate[] {
@@ -219,7 +219,7 @@ export class PerceptionStore {
    * Draw a different reading of the same prompt.
    *
    * Replaces the committed command rather than adding one, exactly as refining
-   * a prompt does — changing your mind about which object you meant is one
+   * a prompt does. Changing your mind about which object you meant is one
    * edit, not a stack of them.
    */
   choose(rank: number): void {

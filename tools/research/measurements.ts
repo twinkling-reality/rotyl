@@ -3,8 +3,8 @@
  *
  * `at` throws rather than returning undefined, and that is the whole mechanism:
  * if a benchmark stops reporting something, or renames it, the page fails to
- * generate and the build fails with it. The alternative — a blank cell, or a
- * number left over from a shape that no longer exists — is indistinguishable
+ * generate and the build fails with it. The alternative, a blank cell, or a
+ * number left over from a shape that no longer exists, is indistinguishable
  * from a measurement to whoever reads it.
  *
  * ONE ENTRY IS ONE FINDING. The organising question is not "which harness
@@ -21,7 +21,7 @@ import type { Entry, Section } from './page.ts';
  *
  * The path is an array rather than a dotted string, which looks fussier and is
  * not: the harnesses key their results by the human labels a measurement was
- * taken under, and those contain dots and commas — "sigma 0.5",
+ * taken under, and those contain dots and commas. "sigma 0.5",
  * "static-720p, fixed camera". A dotted path would split them into steps that
  * do not exist, which is a wrong answer dressed as a missing one.
  */
@@ -65,8 +65,9 @@ function styleCost(style: unknown): Section {
   return {
     heading: 'What a style chain costs',
     prose: [
-      'The root README timed the comic chain and said plainly that the print chain never had been: three passes against nineteen, only one at output resolution, so it should be cheaper — but that was an argument rather than a measurement. It is 200 times cheaper.',
-      'Two of the three run in under two milliseconds at 720p. That is the finding a third style came out of: a style does not have to be expensive to be flat, and one that fits inside a frame is something a clip can be played through rather than something a clip is rendered with.',
+      'Two of the three styles run in under two milliseconds at 720p. The third takes 140, and spends essentially all of it in a single stage.',
+      'The print chain had never been timed before this. It was argued to be cheaper, on the grounds that it is three passes against nineteen with only one at output resolution. It is 200 times cheaper.',
+      'A style does not have to be expensive to be flat. That is what the third style came out of: one that fits inside a frame is something a clip can be played through, rather than something a clip is rendered with.',
     ],
     table: {
       columns: ['style, default controls', ...SIZES],
@@ -76,7 +77,7 @@ function styleCost(style: unknown): Section {
       ]),
     },
     caveat:
-      'Full quality tier, style chain only: the composite is a separate pass that re-runs on every brush movement. The 24 MP column is the one place the ordering stops being 20:1 — both cheap styles do all of their deciding in one pass at output resolution, so past about 12 megapixels they are paying for pixels rather than for thinking.',
+      'Full quality tier, style chain only: the composite is a separate pass that re-runs on every brush movement. The 24 MP column is the one place the ordering stops being 20:1. Both cheap styles do all of their deciding in one pass at output resolution, so past about 12 megapixels they are paying for pixels rather than for thinking.',
     command: 'node tools/style-bench/run.mjs chain',
   };
 }
@@ -86,7 +87,8 @@ function detailCost(style: unknown): Section {
   return {
     heading: 'Higher detail is cheaper, and the quality tiers collapse',
     prose: [
-      'Both follow from deriving a stage’s resolution from the apparent scale it wants rather than the reverse. When a buffer clamps to the output’s short edge the kernel shrinks instead of the fraction drifting, so more detail buys resolution and costs less, and a draft frame becomes the same render as an export.',
+      'Turning detail up makes the comic chain four times faster at 720p, and a draft frame there is the same render as an export. Both of those sound like bugs and are consequences of one decision.',
+      'Each stage declares the apparent scale it wants and derives its own resolution to hold it. When that resolution clamps to the output’s short edge, the kernel shrinks rather than the fraction drifting. Cost falls, and the tiers converge.',
     ],
     table: {
       columns: ['comic, full tier', ...SIZES],
@@ -118,8 +120,9 @@ function stability(style: unknown): Section {
   return {
     heading: 'Nothing boils, and not for the reason anyone expected',
     prose: [
-      'Every stage of every style runs per frame with no knowledge of the last one. The worry was that the winner-take-all stages — an anisotropic Kuwahara picking its most homogeneous sector, a flow-based difference of Gaussians thresholding a response — would flip on a pixel one code different between two frames, and that stylised footage would boil however good a single frame was.',
-      'Measured on a fixed camera, no style amplifies its input and every one attenuates it. The comic chain, the one that looked most at risk, is the steadiest: it does not choose between two nearly equal sectors on one pixel’s noise, it chooses on the variance of two hundred samples, and it removes more grain than its decisions reintroduce.',
+      'No style amplifies its input. Every one attenuates it, and the chain that looked most at risk is the steadiest of the three.',
+      'The worry was reasonable. Every stage runs per frame with no knowledge of the last one, and two of them are winner-take-all decisions on a noisy field: a Kuwahara picking its most homogeneous sector, a difference of Gaussians thresholding a response. A pixel one code different between two frames could flip either.',
+      'It does not, because neither decides on one pixel. The Kuwahara chooses on the variance of two hundred samples, and the chain removes more grain than its decisions reintroduce.',
     ],
     table: {
       columns: ['per-pixel change between frames', 'mean', 'p99', 'over 8 codes'],
@@ -142,7 +145,8 @@ function perturbation(style: unknown): Section {
   return {
     heading: 'The same result with the codec taken out of it',
     prose: [
-      'One frame rendered twice, the second with grain of a known size added, so what is measured is the style’s own amplification and nothing else’s. Half a code is about the smallest perturbation an 8-bit pipeline can express — the "one code different between two frames" case exactly. Two codes is roughly a decent sensor at base ISO.',
+      'The finding survives without a codec in the way. One frame is rendered twice, the second with grain of a known size added, so what is measured is the style and nothing else.',
+      'Half a code is about the smallest perturbation an 8-bit pipeline can express, which is the "one code different between two frames" case exactly. Two codes is roughly a decent sensor at base ISO.',
     ],
     table: {
       columns: ['99th percentile change', 'grain σ 0.5', 'grain σ 2'],
@@ -161,9 +165,9 @@ function transitionFloor(): Section {
   return {
     heading: 'Every hard decision needs a floor under its transition',
     prose: [
-      'What does boil is a hard threshold against a fixed field — which is what a halftone dot is, and what a quantiser is if it is left hard. The poster style’s first version quantised hard and antialiased only against the local derivative. It measured five to ten times worse than the comic chain on a still camera.',
-      'The cause is exact. Softening a step across one pixel is right for an edge and useless for a gradient: where the field is nearly flat the derivative is nearly zero, so a band boundary is a step of a whole level driven by a hundredth of one, and a frame of grain moves it. Putting a floor under the transition width — in the units of the thing being decided, never in pixels — caps the gain from input to output at about four.',
-      'Chroma turned out to be the larger half. Colour steps are as discontinuous as lightness ones and there are more of them, because chroma is small everywhere in a hazy picture and its steps are correspondingly close together.',
+      'What does boil is a hard threshold against a fixed field. A halftone dot is one. So is a quantiser, if it is left hard: the poster style’s first version measured five to ten times worse than the comic chain on a still camera.',
+      'The cause is exact. Softening a step across one pixel is right for an edge and useless for a gradient, because where the field is nearly flat the local derivative is nearly zero. A band boundary then becomes a step of a whole level driven by a hundredth of one, and a frame of grain moves it.',
+      'The fix is a floor under the transition width, expressed in the units of the thing being decided rather than in pixels. It caps the gain from input to output at about four. Chroma was the larger half: colour steps are as discontinuous as lightness ones and there are more of them, because chroma is small everywhere in a hazy picture.',
     ],
     table: {
       columns: ['poster, static camera', 'p99', 'over 8 codes'],
@@ -174,7 +178,7 @@ function transitionFloor(): Section {
       ],
     },
     caveat:
-      'Taken during development by re-running the clip measurement against each version. The last row is what the results file reports today; the first two are gone from the code and cannot be regenerated without reverting it. The fix costs nothing measurable and nothing visible — the transition only widens where the picture has no edge to sharpen.',
+      'Taken during development by re-running the clip measurement against each version. The last row is what the results file reports today; the first two are gone from the code and cannot be regenerated without reverting it. The fix costs nothing measurable and nothing visible. The transition only widens where the picture has no edge to sharpen.',
   };
 }
 
@@ -182,8 +186,9 @@ function paletteFit(): Section {
   return {
     heading: 'A palette has to be fitted to the picture',
     prose: [
-      'A palette is a claim about where a photograph’s lightness lives, and photographs disagree. The reference scene — hazy traffic, which is the case a palette exists for — has a lightness spread of 0.136 against 0.23 to 0.29 for every palette in the codebase.',
-      'Applied literally, a five-stop ramp is therefore read through two and a half of its stops and the whole frame comes out in one colour. That looks like a palette chosen badly and is really a palette barely used. One pass measures the picture’s own mean and spread, one affine map moves it onto the palette’s, and the change to a hazy frame is larger than any other single thing measured here.',
+      'A hazy photograph uses two and a half of a palette’s five stops, and comes out in one colour. That looks like a palette chosen badly. It is a palette barely used.',
+      'A palette is a claim about where a photograph’s lightness lives, and photographs disagree. The reference scene has a spread of 0.136 against 0.23 to 0.29 for every palette in the codebase.',
+      'The fix is one pass measuring the picture’s own mean and spread, and one affine map moving it onto the palette’s. On a hazy frame it changes more than anything else measured here.',
     ],
     table: {
       columns: ['lightness', 'p1', 'p50', 'p99', 'mean', 'spread'],
@@ -218,8 +223,9 @@ function decode(video: unknown): Section {
   return {
     heading: 'Decode is free; seeking is not',
     prose: [
-      'There is no such thing as decoding frame N. There is decoding from the keyframe at or before N and discarding what comes between, so the cost of a scrub is set by keyframe spacing and by nothing else. Two clips, identical content, differing only in that.',
-      'The consequence is a design constraint rather than a number to optimise: a scrub that moves forward must never re-seek. One decoder is held open and fed forward, and it starts again only for a backward or a distant jump.',
+      'The next frame costs 0.46 ms. A seek costs 12 ms, or 88 on the same content encoded with one keyframe instead of thirty.',
+      'There is no such thing as decoding frame N. There is decoding from the keyframe at or before N and discarding what comes between, so the cost of a scrub is set by keyframe spacing and by nothing else.',
+      'That is a design constraint rather than a number to optimise. A scrub that moves forward must never re-seek: one decoder is held open and fed forward, and it starts again only for a backward or a distant jump.',
     ],
     table: {
       columns: ['1080p30 H.264', '1 s keyframes', 'one keyframe'],
@@ -267,8 +273,9 @@ function colour(video: unknown): Section {
   return {
     heading: 'A decoded frame needs no colour path of its own',
     prose: [
-      'Sixteen flat patches with known sRGB bytes, encoded to H.264 and brought back. Both ways of being wrong here are silent.',
-      'What an external texture samples is sRGB-encoded, exactly like the bytes of a decoded image — so a video frame belongs in the same source texture a photograph does, sampled through the same sRGB view, and nothing downstream needed a special case. Writing it through an sRGB view instead encodes it twice, and the second row is what that costs.',
+      'A video frame belongs in the same source texture a photograph does, sampled through the same sRGB view. Nothing downstream needed a special case, and the colour contract survived video with no shader changes at all.',
+      'Both ways of being wrong here are silent, so it was measured rather than assumed: sixteen flat patches with known sRGB bytes, encoded to H.264 and brought back. What an external texture samples turns out to be sRGB-encoded, exactly like the bytes of a decoded image.',
+      'Writing it through an sRGB view instead encodes it twice. The second row is what that costs, and it is the kind of mistake that is obvious in a measurement and invisible in a review.',
     ],
     table: {
       columns: ['worst error, written through', '4:4:4 lossless', '4:2:0'],
@@ -311,8 +318,9 @@ function trackedFrame(video: unknown): Section {
   return {
     heading: 'Nine to eleven tracked frames a second, against thirty for playback',
     prose: [
-      'The two graphs a tracker needs are not in the published model release, so they were exported and then run on the inference runtime this project already ships. Memory attention is the expensive half, and the fixed-size memory bank is why: it is 4096 queries against 3648 keys on every frame, where the reference attends against fewer early in a clip.',
-      'Tracking therefore cannot be a render-loop activity, and no amount of tidying makes it one. It runs behind the playhead, and the interface has to be honest that a mask arrives after the frame does.',
+      'A tracked frame costs about 90 ms against the 33 a playing clip has. Tracking cannot be a render-loop activity, and no amount of tidying makes it one.',
+      'It runs behind the playhead instead, and the interface has to be honest that a mask arrives after the frame does. That is a product decision taken from a number, before any of it was built.',
+      'Memory attention is the expensive half, and the fixed-size memory bank is why: 4096 queries against 3648 keys on every frame, where the reference attends against fewer early in a clip.',
     ],
     table: {
       columns: ['graph', 'fp32', 'fp16', 'wasm'],
@@ -351,8 +359,9 @@ function readback(video: unknown): Section {
   return {
     heading: 'The 12 MB readback, which does not bind and is avoidable anyway',
     prose: [
-      'The inference runtime declines an external GPUDevice, so the model’s input tensor is built on Rotyl’s GPU and read back. The worry was 360 MB/s across the bus at 30 frames a second.',
-      'On unified memory there is no bus to cross: most of the cost is a memcpy, and an ordinary ArrayBuffer copy of the same size measures about the same. Two and a half milliseconds of a 33 ms frame is 7%.',
+      'Two and a half milliseconds of a 33 ms frame is 7%. The readback that looked like the binding constraint is not one.',
+      'The inference runtime declines an external GPUDevice, so the model’s input tensor is built on Rotyl’s GPU and read back: 12.58 MB per frame, and a worry about 360 MB/s across the bus at 30 frames a second.',
+      'On unified memory there is no bus to cross. Most of the cost is a memcpy, and an ordinary ArrayBuffer copy of the same size measures about the same.',
     ],
     table: {
       columns: ['12.58 MB tensor, per frame', '1920×1080', '4032×3024'],
@@ -379,7 +388,7 @@ export function entries(style: unknown, video: unknown): readonly Entry[] {
         'Three style chains timed against one picture, and the temporal measurement that contradicted what everyone assumed about per-frame stylisation.',
       harness: 'tools/style-bench',
       lede: [
-        'Everything that decides whether a selection is correct was already built and measured. What was not settled was whether what comes out is worth looking at — and, on video, whether it stays worth looking at while it moves.',
+        'Everything that decides whether a selection is correct was already built and measured. What was not settled was whether what comes out is worth looking at, and, on video, whether it stays worth looking at while it moves.',
         'Three things were unknown, each capable of forcing a different architecture. One of the three was answered backwards.',
       ],
       hero: {
@@ -411,7 +420,7 @@ export function entries(style: unknown, video: unknown): readonly Entry[] {
       slug: 'tracking',
       title: 'What tracking would cost, before building it',
       standfirst:
-        'The two graphs a tracker needs, exported and run on the runtime that already ships — and the readback that looked like a bottleneck and is not.',
+        'The two graphs a tracker needs, exported and run on the runtime that already ships, and the readback that looked like a bottleneck and is not.',
       harness: 'tools/video-bench, tools/edgetam-export',
       lede: [
         'Tracking does not exist yet. These are the numbers that say what it would cost and what shape it would have to take, taken before writing it rather than after.',
@@ -444,7 +453,7 @@ export function entries(style: unknown, video: unknown): readonly Entry[] {
         {
           heading: 'Object selection, once the model is loaded',
           prose: [
-            'Reading the frame is expensive and happens once; answering "which object is under this point" is cheap and happens per click. A click is flat in image size because the model always works at 1024 px square — only building that input scales with the photograph.',
+            'Reading the frame is expensive and happens once; answering "which object is under this point" is cheap and happens per click. A click is flat in image size because the model always works at 1024 px square. Only building that input scales with the photograph.',
           ],
           table: {
             columns: ['', '1 MP', '24 MP'],
@@ -457,7 +466,7 @@ export function entries(style: unknown, video: unknown): readonly Entry[] {
         {
           heading: 'What ships',
           prose: [
-            'Three runtime dependencies, two of them code-split so a session that never opens a video or an object never fetches them. Shaders reach the bundle as strings and this codebase comments them as heavily as its TypeScript, so a build-time transform removes the comments and keeps every newline — which is why adding a third style made the bundle smaller rather than larger.',
+            'Three runtime dependencies, two of them code-split so a session that never opens a video or an object never fetches them. Shaders reach the bundle as strings and this codebase comments them as heavily as its TypeScript, so a build-time transform removes the comments and keeps every newline, which is why adding a third style made the bundle smaller rather than larger.',
           ],
           table: {
             columns: ['gzipped', 'size'],

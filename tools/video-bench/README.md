@@ -19,7 +19,7 @@ node tools/video-bench/run.mjs all         # real Chrome, headed
 `run.mjs` takes any subset: `readback`, `ort-device`, `attention`,
 `bank-rampup`, `half-precision`, `decode`, `colour`, `shared-device`. The clips
 are gitignored, `results.json` is not, and the graphs come from
-`tools/edgetam-export` — `export.py` for the pair, then `half_precision.py`.
+`tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
 
 Real Chrome and headed, for the reason `playwright.config.ts` gives: bundled
 Chromium falls back to SwiftShader, which reports success while producing
@@ -49,7 +49,7 @@ The whole thing, using the real `FrameTensorEncoder`:
 
 Taken apart, on the copies alone: `copyTextureToBuffer` fenced 0.4 ms, mapping
 without copying 0.6 ms, mapping and copying 1.9 ms. An ordinary 12.58 MB
-`ArrayBuffer.slice` on the same machine is 1.1 ms — so **most of the readback is
+`ArrayBuffer.slice` on the same machine is 1.1 ms, so **most of the readback is
 a memcpy, and the transfer itself is nearly free.** That is unified memory: there
 is no bus to cross. It also means the copy is the part worth removing, and it
 can be, because `getMappedRange` gives a view the runtime can read directly for
@@ -72,7 +72,7 @@ this hardware or on any bus that moves more than a gigabyte a second.
 Asked again, against 1.27.0, rather than inherited as a belief:
 
 - `ort.env.webgpu.device` is `null` before a session exists. Assigning our
-  device to it succeeds — the setter reads back the same object — and session
+  device to it succeeds, the setter reads back the same object, and session
   creation then replaces it. `device === ours` is `false` afterwards. Ignored,
   exactly as the comment in `edgetam-engine.ts` says.
 - The `{ name: 'webgpu', device }` execution-provider option fails session
@@ -87,15 +87,15 @@ But the runtime's own device is reachable once a session exists, and:
 - it accepts a decoded `VideoFrame` through `copyExternalImageToTexture`;
 - it accepts an input tensor that is one of its own `GPUBuffer`s, via
   `Tensor.fromGpuBuffer`, and the result is **bit-identical** to feeding the same
-  data as a CPU array — max absolute difference 0.0 across both outputs of
+  data as a CPU array. Max absolute difference 0.0 across both outputs of
   `memory_encoder`, 32,768 elements each. Not close. Equal.
 - doing so saves 0.8 ms on that graph's 8 MB of input (19.3 ms → 18.5 ms).
 
 **A `VideoFrame` belongs to no device.** So for video the tensor never has to
 cross at all: import the frame on the runtime's device, run the frame-tensor
-pass there, hand the buffer straight in. The image path cannot do this — its
+pass there, hand the buffer straight in. The image path cannot do this, its
 source texture belongs to Rotyl's device and textures are not shareable between
-devices — and by the numbers above it does not need to.
+devices, and by the numbers above it does not need to.
 
 ---
 
@@ -113,7 +113,7 @@ wasm is 33× and 19× slower. Tracking is a WebGPU-only feature, and if the
 runtime ever falls back the honest answer is to say so rather than run it.
 
 **The fixed bank costs nothing, as designed.** Masking most of it out makes no
-difference — 58.9 ms with 64 of 3648 keys live, 58.8 ms with all of them. The
+difference. 58.9 ms with 64 of 3648 keys live, 58.8 ms with all of them. The
 decision to pad the bank and mask rather than grow it was taken to keep one
 graph shape and one pipeline; it turns out not to have bought that with compute
 either.
@@ -174,8 +174,8 @@ in keyframe interval:
 | **seek, median / worst**           | **12.4 / 23.4** | **88.4 / 136.8** |
 | frames decoded per seek, med/worst | 14 / 26         | 164 / 292        |
 
-Demux is 6.3 GB/s and rounds to zero. Decode is 0.46 ms a frame — 2174 fps, 72×
-real time — and uploading each frame as it arrives adds 3 ms across all 300.
+Demux is 6.3 GB/s and rounds to zero. Decode is 0.46 ms a frame, 2174 fps, 72×
+real time, and uploading each frame as it arrives adds 3 ms across all 300.
 
 **Everything interesting is in the last two rows.** There is no such thing as
 decoding frame N; there is decoding from the keyframe at or before N and
@@ -186,8 +186,8 @@ with one keyframe takes 88 ms typical and 137 ms worst, which is not a scrub.
 The consequence is a design constraint, not a number to optimise: **a scrub that
 moves forward must never re-seek.** Keeping one decoder alive and feeding it the
 next packet costs 0.46 ms whatever the GOP is. Re-seeking is only for a backward
-jump or a far-forward one, and standing up a fresh decoder to do it costs 9.8 ms
-— the sixth one as much as the first, so that is a real per-seek figure rather
+jump or a far-forward one, and standing up a fresh decoder to do it costs 9.8 ms,
+the sixth one as much as the first, so that is a real per-seek figure rather
 than a warm-up artefact.
 
 Getting one 1080p frame onto the GPU, fenced:
@@ -200,7 +200,7 @@ Getting one 1080p frame onto the GPU, fenced:
 ### The demuxer
 
 mediabunny 1.55.1, MPL-2.0. Built through Rotyl's own Vite, importing only
-`Input`, `MP4`, `BlobSource` and `EncodedPacketSink` — `node
+`Input`, `MP4`, `BlobSource` and `EncodedPacketSink`. `node
 tools/video-bench/bundle-size.mjs`:
 
 | formats         | raw    | gzip    |
@@ -214,14 +214,14 @@ is the same demuxer with a different brand list. Matroska costs 15.4 KB, because
 it is not.
 
 The current application bundle is 46.3 KB gzipped, so this is not
-going in it — it gets the same treatment as the inference runtime, a dynamic
+going in it. It gets the same treatment as the inference runtime, a dynamic
 import and its own chunk, and a session that never opens a video never fetches
 it.
 
 It earns that over hand-rolling for a reason worth writing down. A standard
 ffmpeg H.264-with-B-frames MP4 carries an edit list whose `media_time` removes
 the initial composition delay. Ignore it and every timestamp in the file is two
-frames late — no crash, no warning, a constant offset that only shows up when a
+frames late. No crash, no warning, a constant offset that only shows up when a
 mask no longer lines up with the frame it was drawn on. The packet sink also
 gives `getKeyPacket(t)` and `getNextPacket(p)` directly, which is exactly the
 shape a seek wants, and hands back a `VideoDecoderConfig` with the `avcC` in it.
@@ -242,8 +242,8 @@ silent.
 
 **What an external texture samples is sRGB-encoded, exactly like the bytes of a
 decoded image.** So a video frame belongs in the existing `rgba8unorm` source
-texture written through a plain view, and everything downstream — which samples
-through the sRGB view and gets the hardware EOTF for free — is untouched. The
+texture written through a plain view, and everything downstream, which samples
+through the sRGB view and gets the hardware EOTF for free, is untouched. The
 invariant survives with no shader changes and no special case. Writing through
 the sRGB view instead encodes twice, and the 73 in that table is what that costs.
 
@@ -255,7 +255,7 @@ probes at worst 1, so the +11 in the midtones is introduced in the browser: 128
 comes back as 139, which is the BT.709→sRGB transfer conversion to within a
 code. Chrome applies it on the NV12 path and not on the I444 one. Since all real
 footage is 4:2:0 the colour-managed path is the one that matters and it is the
-correct one — but the discrepancy is Chrome's and nothing here can compensate
+correct one, but the discrepancy is Chrome's and nothing here can compensate
 for it.
 
 **What this did not establish:** limited versus full range. Both 4:2:0 probes

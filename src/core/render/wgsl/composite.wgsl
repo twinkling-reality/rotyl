@@ -8,7 +8,7 @@
 // Two properties this pass is responsible for:
 //
 //   Unselected pixels are untouched. mix(base, styled, 0) returns base bit-for
-//   -bit, so a mask value of zero reproduces the source byte exactly — not
+//   -bit, so a mask value of zero reproduces the source byte exactly, not
 //   approximately. This holds for any finite `styled`, which is why the
 //   stylisation pass guarantees finiteness rather than assuming it.
 //
@@ -16,7 +16,7 @@
 //   none of them saw the mask. Masking earlier would be cheaper, but the
 //   flatten and ink kernels sample well outside their own pixel, so a pixel
 //   just inside the selection would be computed from a neighbourhood that had
-//   been zeroed — which draws a visible halo along the selection edge.
+//   been zeroed, which draws a visible halo along the selection edge.
 
 struct Uniforms {
   // Style crossfade, folded into the mask: scaling coverage is exactly

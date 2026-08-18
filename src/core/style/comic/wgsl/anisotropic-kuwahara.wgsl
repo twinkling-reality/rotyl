@@ -6,12 +6,12 @@
 // and foliage as fur and foliage, only smoother. This instead replaces each
 // pixel with the mean of whichever oriented sector around it is most
 // homogeneous, which flattens regions into painterly patches while sharpening
-// the boundaries between them — exactly the structure an inked drawing has.
+// the boundaries between them, exactly the structure an inked drawing has.
 //
 // The neighbourhood is an ellipse aligned to the local structure: elongated
 // along edges, narrow across them, so it never averages across a contour.
 //
-// Two iterations at a small radius beat one at twice the radius — better shape
+// Two iterations at a small radius beat one at twice the radius. Better shape
 // coherence, and roughly half the samples, since cost grows with radius².
 
 const MAX_BOUND: i32 = 24;
@@ -143,8 +143,8 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
   // to `sharpness`, so the most homogeneous sector dominates.
   //
   // Variance is taken from luminance alone rather than per channel. That is
-  // partly register pressure — three fewer live accumulators per sector across
-  // the whole sample loop — and partly that chroma noise should not decide
+  // partly register pressure, three fewer live accumulators per sector across
+  // the whole sample loop, and partly that chroma noise should not decide
   // which sector wins.
   var colourTotal = vec3f(0.0);
   var alphaTotal = 0.0;
@@ -158,7 +158,7 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
     let variance = abs(lumaSqAccum[k] / weight - meanLuma * meanLuma);
     // The floor is load-bearing: without it a perfectly homogeneous sector
     // divides by zero. With sharpness at 10 this term reaches ~1e17, which is
-    // fine in f32 and would overflow in f16 — hence the f32 accumulators.
+    // fine in f32 and would overflow in f16. Hence the f32 accumulators.
     let alpha = 1.0 / pow(max(0.02, sqrt(variance)), u.sharpness);
 
     colourTotal += alpha * mean;

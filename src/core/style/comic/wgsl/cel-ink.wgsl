@@ -2,7 +2,7 @@
 //
 // Both inputs are magnified here, and that is deliberate rather than a
 // compromise. Quantising a soft ramp produces a hard band boundary, and
-// thresholding a soft difference-of-Gaussians response produces a hard line —
+// thresholding a soft difference-of-Gaussians response produces a hard line,
 // so the two cheap low-resolution stages are re-sharpened into crisp output at
 // full size by the very operations that define the look.
 
@@ -48,7 +48,7 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
   lab.z *= u.saturation;
 
   // Gradient map, AFTER quantisation and using the quantised lightness as its
-  // index — so the palette lands in the same flat bands the cel step just made
+  // index, so the palette lands in the same flat bands the cel step just made
   // rather than reintroducing a ramp across them. Mixed in Oklab, including
   // lightness: the palette's own ramp is then free to carry more or less
   // contrast than the photograph did, which is most of what makes a picture
@@ -76,7 +76,7 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
 
   // Guarantee a finite result. The composite downstream relies on
   // mix(base, styled, 0) returning base exactly, which holds for any finite
-  // styled value and fails for NaN — one NaN here would break the product's
+  // styled value and fails for NaN, one NaN here would break the product's
   // central promise on every pixel of an unselected region.
   return vec4f(select(vec3f(0.0), colour, colour == colour), 1.0);
 }

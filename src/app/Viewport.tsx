@@ -38,7 +38,7 @@ export interface ViewportProps {
   /** A region dragged with the box tool, in image pixels. */
   readonly onBoxPicked: (box: PromptBox) => void;
   readonly onRectDragged: (rect: SelectionRect, mode: BrushMode) => void;
-  /** Overlaid on the canvas — the toolbar, so it centres on the image. */
+  /** Overlaid on the canvas. The toolbar, so it centres on the image. */
   readonly children?: JSX.Element | JSX.Element[];
 }
 
@@ -55,7 +55,7 @@ const PICKER_HEADROOM = 96;
  * so entirely outside the component lifecycle: pointer samples go straight into
  * the engine and a requestAnimationFrame loop draws. Nothing about a brush
  * stroke passes through component state, because a 120 Hz pointer would then be
- * asking the UI framework to reconcile at 120 Hz — and, more importantly,
+ * asking the UI framework to reconcile at 120 Hz, and, more importantly,
  * because a scheduler the renderer does not control would sit in the middle of
  * the one latency path the product is judged on.
  */
@@ -238,8 +238,8 @@ export function Viewport({
     const moveCursor = (event: PointerEvent): void => {
       const cursor = cursorRef.current;
       if (!cursor) return;
-      // The ring shows a brush footprint. The object tool has none — it asks
-      // about whatever is under one point — so it uses the ordinary cursor.
+      // The ring shows a brush footprint. The object tool has none, it asks
+      // about whatever is under one point, so it uses the ordinary cursor.
       if (!isBrush(settings.current.tool)) {
         setCursorVisible(false);
         return;
@@ -416,7 +416,7 @@ export function Viewport({
       settings.current.onSelectionChanged();
     };
 
-    // A cancelled pointer is the system taking the gesture away — a palm
+    // A cancelled pointer is the system taking the gesture away. A palm
     // rejection, a scroll takeover. Committing it would record a stroke the
     // user did not finish, so it is discarded.
     const onPointerCancel = (event: PointerEvent): void => {
@@ -462,8 +462,8 @@ export function Viewport({
     };
   }, [runtime]);
 
-  // Refit on request. Panning has no bounds by design — dragging past the edge
-  // is useful when working near a corner — so there has to be a way back.
+  // Refit on request. Panning has no bounds by design, dragging past the edge
+  // is useful when working near a corner, so there has to be a way back.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || fitRequest === 0) return;

@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
  * part of it, see only that part change, and save a full-resolution file.
  *
  * The unit suite covers correctness pixel by pixel; this covers the things only
- * a real browser can answer — that WebGPU comes up, that a file picker and a
+ * a real browser can answer. That WebGPU comes up, that a file picker and a
  * pointer drive the engine, and that the download produces bytes.
  */
 

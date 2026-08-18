@@ -23,7 +23,7 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
  * of embeddings the encoder produces never leave the GPU: they are asked for as
  * buffers and handed straight to the decoder, which is why a click costs about
  * fifteen milliseconds rather than the round trip. The 256 px mask does come
- * back, because it has to — the command log holds it, and the command log is
+ * back, because it has to. The command log holds it, and the command log is
  * what makes the selection undoable and replayable at export resolution.
  *
  * The input tensor also crosses, and that one is a concession. ONNX Runtime
@@ -31,7 +31,7 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
  * provider option and `env.webgpu.device` were both tried, and the first fails
  * session creation outright with "failed to wait for the operation" while the
  * second is ignored. So the tensor is built on our GPU, where the resize and
- * the colour conversion are nearly free, and read back as twelve megabytes —
+ * the colour conversion are nearly free, and read back as twelve megabytes,
  * once per image, not per click. The alternative is resizing a twenty-four
  * megapixel photograph in JavaScript, which is far worse.
  *
@@ -42,7 +42,7 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
  * WHICH RUNTIME BUILD IS NOT ARBITRARY. `onnxruntime-web/webgpu` is the native
  * WebGPU runtime; the default export is the older JSEP one. On JSEP the vision
  * encoder is correct and the mask decoder silently returns an all-zero
- * confidence and a mask of the wrong object — at both precisions, so it is the
+ * confidence and a mask of the wrong object, at both precisions, so it is the
  * graph and not the weights. There is no error, which is exactly why this is
  * pinned rather than left to whichever export looks tidier.
  *
@@ -181,7 +181,7 @@ export async function loadEdgeTamEngine(options: EdgeTamOptions): Promise<Segmen
 
   // Decided from the adapter rather than from the runtime, and before anything
   // is downloaded. The native build does expose its device once the module is
-  // imported, so asking it would be possible — but the answer would then depend
+  // imported, so asking it would be possible, but the answer would then depend
   // on the runtime having started, which is an ordering dependency this
   // decision does not need and which the JSEP build cannot satisfy at all.
   // Shader-f16 is a property of the hardware; ask the hardware.
@@ -245,8 +245,8 @@ export async function loadEdgeTamEngine(options: EdgeTamOptions): Promise<Segmen
       });
 
       // Both prompt inputs are required by the graph whether or not they carry
-      // anything, and an empty tensor is how the export expects "none of these"
-      // — for points as well as for boxes, which is what makes a box-only
+      // anything, and an empty tensor is how the export expects "none of these",
+      // for points as well as for boxes, which is what makes a box-only
       // prompt expressible at all.
       const outputs = await decoder.run({
         ...embeddings,

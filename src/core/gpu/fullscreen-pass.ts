@@ -25,7 +25,7 @@ export interface FullscreenPassOptions {
    * Several is rare and deliberate: it exists for the one pass that has to
    * produce separate single-channel planes, where the alternative is running
    * the same expensive sampling three times. Watch
-   * `maxColorAttachmentBytesPerSample`, which is 32 by default — four
+   * `maxColorAttachmentBytesPerSample`, which is 32 by default, four
    * rgba32float targets do not fit, and the pipeline fails to create.
    */
   readonly targetFormat: GPUTextureFormat | readonly GPUTextureFormat[];
@@ -110,7 +110,7 @@ const FLOATS_PER_SLOT = SLOT_BYTES / 4;
 /**
  * One uniform buffer, one write per frame, a 256-byte slot per pass.
  *
- * The alternative — a buffer per pass, or a write per pass — turns a
+ * The alternative, a buffer per pass, or a write per pass, turns a
  * nineteen-stage chain into nineteen queue operations per frame for data that
  * totals under five kilobytes.
  */

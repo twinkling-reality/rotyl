@@ -1,7 +1,7 @@
 /**
  * The colour contract, in one place.
  *
- * Rule: decode on read, encode on write, linear in between — and let the
+ * Rule: decode on read, encode on write, linear in between, and let the
  * hardware do both ends. The source texture is created as `rgba8unorm` and
  * sampled through an `rgba8unorm-srgb` view; the composite writes through an
  * `rgba8unorm-srgb` view. That round trip is bit-exact (a source byte of 188
@@ -22,8 +22,8 @@ export const SOURCE_FORMAT = 'rgba8unorm' satisfies GPUTextureFormat;
 export const SOURCE_VIEW_FORMAT = 'rgba8unorm-srgb' satisfies GPUTextureFormat;
 
 /**
- * Working colour buffers. Linear light needs more than 8 bits — banding in the
- * flattened layer is visible at 8 — and rgba16float is filterable, blendable
+ * Working colour buffers. Linear light needs more than 8 bits, banding in the
+ * flattened layer is visible at 8, and rgba16float is filterable, blendable
  * and renderable in core WebGPU with no optional feature.
  */
 export const WORKING_FORMAT = 'rgba16float' satisfies GPUTextureFormat;

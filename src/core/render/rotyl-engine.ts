@@ -187,7 +187,7 @@ export class RotylEngine {
    * should upload pixels into.
    *
    * Any previously loaded image is destroyed here rather than left to the
-   * garbage collector — a full-resolution photograph is hundreds of megabytes,
+   * garbage collector. A full-resolution photograph is hundreds of megabytes,
    * and "load several images in a row" is the shortest path to exhausting a
    * tab's memory.
    *
@@ -393,7 +393,7 @@ export class RotylEngine {
     if (live && live.stamped < live.points.length) {
       // `max`/`min` blending is idempotent, so stamping only the samples added
       // since the last frame gives exactly the same mask as re-stamping all of
-      // them — at a fraction of the cost on a long stroke.
+      // them, at a fraction of the cost on a long stroke.
       media.mask.stamp(
         encoder,
         { points: live.points, radius: live.radius, hardness: live.hardness },

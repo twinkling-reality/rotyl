@@ -2,7 +2,7 @@
  * The research pages: an index, and one page per thing that was measured.
  *
  * GENERATED, NEVER WRITTEN. Figures come out of the results JSON the benchmark
- * harnesses produce, by path, at build time. That is not tidiness — it is the
+ * harnesses produce, by path, at build time. That is not tidiness. It is the
  * one failure these pages exist to prevent. Every table in every README is
  * transcribed by hand, and transcription is how "the print chain has never been
  * timed" survived three chapters after it stopped being true. A path that no
@@ -15,8 +15,8 @@
  * working. Vite serves them in development and emits them at build, and they
  * cost the application nothing in either.
  *
- * LIGHT ONLY, like the editor. Rotyl has no dark mode on purpose — a neutral
- * light surround is what lets someone judge a photograph — and a set of pages
+ * LIGHT ONLY, like the editor. Rotyl has no dark mode on purpose, a neutral
+ * light surround is what lets someone judge a photograph, and a set of pages
  * about that editor that flipped to dark at night would be a different product
  * wearing the same name.
  */
@@ -152,7 +152,7 @@ a { color: inherit; text-decoration: none; }
 p a, li a { color: var(--accent); }
 p a:hover, li a:hover { text-decoration: underline; }
 
-/* The one piece of chrome: where you are, and the way back. No rule under it —
+/* The one piece of chrome: where you are, and the way back. No rule under it.
    the editor draws its own only once there is a file to separate from, and a
    line above a page that opens on whitespace is separating nothing. */
 .top {
@@ -178,7 +178,7 @@ p a:hover, li a:hover { text-decoration: underline; }
 h1 { margin: 0; font-family: var(--serif); font-size: 34px; font-weight: 400; line-height: 42px; letter-spacing: -0.01em; }
 .standfirst { margin: 12px 0 0; color: var(--text-secondary); font-size: 15px; line-height: 24px; max-width: 60ch; }
 
-/* The index: a date and a title. Nothing else earns a column — which file
+/* The index: a date and a title. Nothing else earns a column, which file
    produced a measurement is the entry's business, not the list's. */
 .list { margin-top: 56px; }
 .row {
@@ -330,7 +330,7 @@ ${main}
  *
  * The application puts "Research" in the top RIGHT, where the actions live,
  * because there it is somewhere to go. Here it is where you already are, so it
- * belongs on the left as a trail back — the same word doing two different jobs,
+ * belongs on the left as a trail back, the same word doing two different jobs,
  * and the side is what says which. The last segment is not a link, because a
  * link to the page you are on is a dead end dressed as a way out.
  */
@@ -432,7 +432,7 @@ ${entry.trials ? renderTrials(entry.trials) : ''}
 <p>Measured by <code>${escape(entry.harness)}</code>${entry.taken ? `, on ${escape(entry.taken)}` : ''}.
 Every GPU figure is fenced on the device that did the work, and the tables here
 are read out of that harness's own results when this page is built rather than
-typed into it — so a number on this page cannot disagree with the run that
+typed into it, so a number on this page cannot disagree with the run that
 produced it.</p>
 <p>The commands beside each table re-take that measurement. Run them in real
 Chrome, on a machine doing nothing else; the arguments behind the numbers are in
@@ -440,7 +440,7 @@ the README next to the code they justify.</p>
 </footer>
 </main></div></div>`;
 
-  return shell(`${entry.title} — Rotyl`, breadcrumb(entry.title), main);
+  return shell(`${entry.title}. Rotyl`, breadcrumb(entry.title), main);
 }
 
 export function renderIndex(entries: readonly Entry[]): string {
@@ -463,5 +463,5 @@ export function renderIndex(entries: readonly Entry[]): string {
 <div class="list">${rows}</div>
 </div>`;
 
-  return shell('Research — Rotyl', breadcrumb(), main);
+  return shell('Research. Rotyl', breadcrumb(), main);
 }

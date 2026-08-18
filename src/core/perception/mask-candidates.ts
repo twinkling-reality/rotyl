@@ -8,7 +8,7 @@ import type { MaskProposal } from './segmentation-engine.ts';
  * the click is ambiguous: a point on a sleeve is a cuff, a shirt, and a person,
  * and the model has no way to know which was meant. It ranks them by its own
  * predicted IoU, which is the right order for picking a default and the wrong
- * order for offering a choice — confidence is not a quantity anyone can see.
+ * order for offering a choice. Confidence is not a quantity anyone can see.
  *
  * SIZE IS. So the candidates are ordered by how much they cover, smallest
  * first, which is the axis the user is actually deciding along, and the
@@ -47,8 +47,8 @@ const EMPTY_AREA = 0.0005;
 /**
  * Above this overlap two answers are the same answer.
  *
- * The three heads frequently agree — an isolated object on a plain ground has
- * no smaller reading and no larger one — and presenting three buttons that do
+ * The three heads frequently agree, an isolated object on a plain ground has
+ * no smaller reading and no larger one, and presenting three buttons that do
  * the same thing is worse than presenting one, because it implies a choice that
  * is not there.
  */

@@ -38,8 +38,8 @@ export function exportDimensions(source: Dimensions, maxTextureDimension: number
 /**
  * Render the exported image.
  *
- * The same renderer, the same controls, and the same final pass as the preview
- * — so what lands in the file is what the composite produced on screen, at full
+ * The same renderer, the same controls, and the same final pass as the preview,
+ * so what lands in the file is what the composite produced on screen, at full
  * resolution and without the selection overlay, which lives in a later pass the
  * export path never reaches.
  *
@@ -70,7 +70,7 @@ export async function renderExport(request: ExportRequest): Promise<void> {
     mask.beginFrame();
     refiner.beginFrame();
     // Engine masks are refined against the full-resolution source at export
-    // resolution, not magnified from the preview's matte — the same argument
+    // resolution, not magnified from the preview's matte, the same argument
     // that makes a brush stroke replay exactly rather than being upscaled.
     mask.replay(encoder, commands, {
       refiner,

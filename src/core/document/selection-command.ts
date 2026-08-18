@@ -1,7 +1,7 @@
 /**
  * Selection edits, modelled as a serialisable command log.
  *
- * The commands — not the mask texture — are the source of truth. That single
+ * The commands, not the mask texture, are the source of truth. That single
  * decision buys three things at once:
  *
  *   undo/redo         replay the prefix, instead of snapshotting a
@@ -53,7 +53,7 @@ export interface BrushStroke {
  *
  * Stored at whatever resolution produced it, which for an engine is a few
  * hundred pixels square regardless of the photograph. Keeping it small is the
- * point — it is a resolution-independent statement about the image in exactly
+ * point. It is a resolution-independent statement about the image in exactly
  * the way a stroke's coordinates are, so replaying it into a larger mask
  * reconstructs the boundary rather than magnifying an old one, and no edit ever
  * costs a full-resolution snapshot.
@@ -78,7 +78,7 @@ export interface CoverageMask {
  * overlay is for.
  *
  * Scanning backwards is enough because `clear` is absolute and `erase` can only
- * ever remove coverage — neither needs the mask itself to be inspected.
+ * ever remove coverage. Neither needs the mask itself to be inspected.
  *
  * Deliberately approximate in one direction: erasing away every painted pixel
  * without pressing Clear still reports coverage, so the overlay keeps lifting
@@ -112,7 +112,7 @@ export function hasAnyCoverage(commands: readonly SelectionCommand[]): boolean {
  * the picture that a style applies to, stated once and true from then on.
  *
  * The alternative was to make a command apply to its own frame alone, and it is
- * right about something real — a stroke's coordinates say where something was
+ * right about something real. A stroke's coordinates say where something was
  * when it was drawn, so a selection held across a moving subject drifts off it.
  * But nothing can currently produce the missing frames, so exact match does not
  * trade drift for accuracy; it trades a selection that drifts for no selection
@@ -121,7 +121,7 @@ export function hasAnyCoverage(commands: readonly SelectionCommand[]): boolean {
  *
  * That is a statement about today rather than about the design. When tracking
  * lands it contributes commands on the frames it has followed the object to,
- * and those fold on top of the held value at each of them — the same mechanism,
+ * and those fold on top of the held value at each of them, the same mechanism,
  * with the gap filled in properly rather than held.
  *
  * SORTED BY FRAME, stably, not left in the order they were applied. Someone who

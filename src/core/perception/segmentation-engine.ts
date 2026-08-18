@@ -8,8 +8,8 @@ import type { Dimensions } from '../render/resolution.ts';
  * reason object selection feels immediate. Understanding a frame is expensive
  * and depends only on the frame; answering "which object is under this point"
  * is cheap and depends on the click. Collapsing them into one call would make
- * every click pay the frame cost, and would make video tracking — where one
- * encode serves many prompts and many frames — impossible to build on top.
+ * every click pay the frame cost, and would make video tracking, where one
+ * encode serves many prompts and many frames, impossible to build on top.
  *
  * Nothing here mentions a model, a runtime, or a file format. A different
  * engine, or one running somewhere else entirely, replaces this and nothing
@@ -27,8 +27,8 @@ export interface SceneFrame {
    * Carried here rather than passed alongside for the same reason the frame's
    * size is: a prompt answered against one frame and committed against another
    * would land on the wrong pixels, and nothing downstream could tell. Note
-   * that the VIEW's identity does not change between video frames — only its
-   * contents do — so this is also the only field that distinguishes two frames
+   * that the VIEW's identity does not change between video frames, only its
+   * contents do, so this is also the only field that distinguishes two frames
    * of the same clip.
    */
   readonly frame: number;
@@ -54,7 +54,7 @@ export interface PromptPoint {
  * A region the object is inside.
  *
  * Corners in either order; an engine normalises them. A box says something a
- * click cannot — where the thing ENDS — which is why it is the better prompt
+ * click cannot, where the thing ENDS, which is why it is the better prompt
  * for an object with no unambiguous middle, and why it composes with points
  * rather than replacing them.
  */

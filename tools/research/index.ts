@@ -17,8 +17,8 @@ import { TRIALS } from './trials.ts';
  * When a measurement last changed, asked of the repository rather than of
  * anyone's memory.
  *
- * The results files carry no timestamp of their own — a gap worth closing in
- * the harnesses eventually — so the commit that last touched one is the honest
+ * The results files carry no timestamp of their own, a gap worth closing in
+ * the harnesses eventually, so the commit that last touched one is the honest
  * stand-in, and it answers the question a reader actually has: is this current.
  * Absent outside a checkout, which is a missing date rather than a wrong one.
  */
@@ -79,7 +79,7 @@ function figureMeta(root: string): readonly FigureMeta[] {
   }
   // Checked rather than asserted: this file is written by a separate tool, and
   // the failure it can produce is a caption describing a picture that is not
-  // there — which reads as a fact.
+  // there, which reads as a fact.
   if (!Array.isArray(parsed)) throw new Error('research: the figure index is not a list');
   return parsed.map((entry: unknown) => {
     if (typeof entry !== 'object' || entry === null) throw new Error('research: a figure is not an object');
@@ -122,7 +122,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
       date: lastChanged('tools/research/trials.ts'),
       lede: [
         `Every measurement on the other pages was taken on ${taken}. This one is the residue of all of them: what was tried, what it measured, and what happened to it.`,
-        'It exists because a rejected approach leaves no results file behind, and the reasoning survives only in a README paragraph or in nobody’s head — which is how the same idea gets proposed twice a year and re-measured each time. The rule for an entry is that it has to name a number, or an observation specific enough to argue with.',
+        'It exists because a rejected approach leaves no results file behind, and the reasoning survives only in a README paragraph or in nobody’s head, which is how the same idea gets proposed twice a year and re-measured each time. The rule for an entry is that it has to name a number, or an observation specific enough to argue with.',
       ],
       sections: [],
       trials: TRIALS,
