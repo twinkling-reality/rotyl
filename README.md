@@ -81,7 +81,7 @@ draws buttons instead of a track for a decision with no meaningful midpoint.
 
 **Comic** flattens with an anisotropic Kuwahara filter, finds contours with a
 flow-based difference of Gaussians along the structure tensor, then quantises to
-cel bands and multiplies the ink over them. Nineteen passes over three
+cel bands and multiplies the ink over them. Twenty passes over three
 differently-sized buffers.
 
 It also carries a **palette**, and that is the control that decides whether the
@@ -103,18 +103,54 @@ It is applied after the cel step and indexed by the quantised lightness, so the
 palette lands in the flat bands rather than reintroducing a gradient across
 them.
 
+**And it is fitted to the picture before it is applied.** A palette is a claim
+about where a photograph's lightness lives, and photographs disagree: measured
+on the reference scene, hazy traffic has a lightness spread of 0.136 where every
+palette here spans 0.23 to 0.29. Applied literally, a ramp is therefore read
+through two and a half of its five stops and the whole frame comes out in one
+colour — which looks like a palette that was chosen badly and is really a
+palette that was barely used. So one pass measures the picture's own mean and
+spread and one affine map moves it onto the palette's, which was the single
+largest change to how a stylised frame looks in this chapter. It costs a
+fullscreen pass onto a 1×1 target: one invocation, a fixed grid of a thousand
+taps. Fixed, because sample points that do not move between frames follow the
+scene rather than the grain — an auto-exposure that pumps would be worse than no
+fitting at all.
+
+**Poster** flattens with an iterated separable bilateral, quantises to flat
+areas in Oklab, snaps them to the palette, and draws a line where two areas
+meet. Nine passes, one at output resolution.
+
+It is the same palette data read the other way round. A ramp indexed by
+lightness cannot keep two things apart — a red tail light and a grey wall of the
+same lightness come out the same colour — so this style takes the NEAREST stop
+in all three dimensions instead. The palette becomes a set rather than a ramp,
+and a picture in five chosen colours still shows a car against a road.
+
+Its outline is a region boundary rather than an edge detection, which is the
+cheaper idea and also the better one. The line is drawn where the quantised
+colour here differs from the quantised colour a line's width away: five taps,
+and one threshold whose units are "how different do two areas have to be". A
+difference of Gaussians has no such opinion — it responds to contrast, so it
+inks smog and sensor noise, and the threshold that stops it doing that also
+stops it drawing the faint boundary that mattered.
+
 **Print** separates the image into four ink densities and screens each one at
 its own angle, over warm paper, slightly misregistered. Three passes, only the
 last at output resolution.
 
-They share the colour maths, a box downsample and the shape of a fullscreen
-pass, and nothing else. That is the test: the second style landed without a line
-changing in the compositor, and both are held to the same contract by the same
-harness in `test/style-harness.ts`.
+What the three share is the colour maths, a box downsample, the palette and its
+fitting, and the shape of a fullscreen pass. Nothing else, and in particular not
+a line of the compositor: each landed without one changing, and all three are
+held to the same contract by the same harness in `test/style-harness.ts`. What
+they deliberately do not share is the stage that makes each one what it is —
+a Kuwahara flatten and a bilateral flatten are not two settings of one thing,
+they are the difference between painterly and printed.
 
 ### Resolution is derived, not configured
 
-Both styles have a characteristic length — a Kuwahara radius, a screen pitch.
+Every style has a characteristic length — a Kuwahara radius, a bilateral sigma,
+a screen pitch, the width of a line.
 Written the obvious way that length is a pixel count which must grow with
 resolution to keep the look constant, and cost then grows with the _fourth_
 power of resolution.
@@ -242,6 +278,26 @@ frame on screen at full resolution, named for it. Tracking does not exist yet.
 A panel of stylisation over a moving scene is what the Area tool is for: drag a
 rectangle once and the traffic runs through it.
 
+**Every stage runs per frame with no knowledge of the last one**, which is the
+thing most likely to make stylised footage look cheap: a decision that flips
+between two frames boils, however good either frame is. Measured on a fixed
+camera, where everything that differs between consecutive frames is grain and
+the codec's own noise, no style amplifies its input and all three attenuate it.
+In output codes, the 99th percentile per-pixel change from one frame to the next
+is 9.5 for the source, 3.2 for comic, 4.5 for poster and 12.6 for print.
+
+The comic chain being the steadiest is the opposite of what was expected of it:
+an anisotropic Kuwahara does not choose between two nearly equal sectors on one
+pixel's noise, it chooses on the variance of two hundred samples. What does boil
+is a hard threshold against a fixed field, which is what a halftone dot is, and
+what a hard quantiser would be if it were left hard. The poster style's first
+version measured a 99th percentile of 23 codes and 1.7% of pixels visibly
+flickering; putting a floor under the width of every soft transition — in the
+units of the thing being decided rather than in pixels — took that to 4.5 and
+0.5%, at no cost anyone can see on a still. That rule generalises: a style may
+make any decision it likes, as long as the decision is allowed to be undecided
+somewhere. `tools/style-bench` has the numbers and how they were taken.
+
 **A selection holds from the frame it was made on until something later changes
 it**, which is what every keyframe system does and what a selection is for: a
 region of the picture that a style applies to, stated once and true from then
@@ -318,17 +374,35 @@ Apple M3 Pro, Chrome. Medians over repeated runs, GPU-fenced.
 | ------------------------ | ------ | ------ | ------ |
 | brush stroke (composite) | 1.0 ms | 2.0 ms | 3.1 ms |
 | brush stamp into mask    | 1.0 ms | 0.9 ms | 1.1 ms |
-| full style chain         | 88 ms  | 79 ms  | 119 ms |
 
 The style chain only re-runs when a style control changes, never while brushing
-— which is why the numbers that matter for feel are the first two rows. During a
-slider drag the chain drops to a draft tier: 8.9 ms at default detail on a 12 MP
-image, 27 ms at maximum detail.
+— which is why the numbers that matter for feel are those two rows.
 
-Those three rows are the comic style. The print chain has not been timed the
-same way; it is three passes against nineteen, and only one of them runs at
-output resolution, so it should be well under the comic figures — but that is an
-argument, not a measurement.
+The chains themselves, full quality tier, default controls, from
+`tools/style-bench`:
+
+|        | 720p   | 2 MP   | 12 MP  | 24 MP  |
+| ------ | ------ | ------ | ------ | ------ |
+| comic  | 140 ms | 117 ms | 122 ms | 124 ms |
+| poster | 1.3 ms | 1.4 ms | 4.9 ms | 25 ms  |
+| print  | 0.5 ms | 0.6 ms | 2.0 ms | 13 ms  |
+
+An earlier version of this table gave the comic chain as 88/79/119 ms and said
+the print chain had never been timed the same way. Both are now measured by one
+harness against one picture, and the comic figures came out about a third higher
+than the ad-hoc ones they replace — that scene is dense with architectural edges
+and the Kuwahara's sample bound grows with local anisotropy, so it is a hard
+case rather than a typical one. What it is not is a regression.
+
+**Almost all of the comic chain is one stage.** Its cost tracks the flatten
+buffer's pixel count and barely moves with output resolution; 720p costs more
+than 2 MP because a 16:9 flatten buffer holding the same apparent radius is 19%
+larger than a 3:2 one. During a slider drag it drops to a draft tier: 17 ms at
+default detail on a 12 MP image, 82 ms at maximum detail.
+
+**The other two are per-frame budgets.** 1.3 and 0.5 ms against a 33 ms video
+frame, which is what makes a style something a clip can be played through rather
+than something a clip is rendered with.
 
 Object selection, once the model is loaded:
 
@@ -362,10 +436,18 @@ every scrubbed frame needs the styled layer again — and it moves the cost to t
 first brush stroke on each frame, where a 105 ms stall is far worse than the
 same work spread across a scrub.
 
-Bundle: 141 KB of JavaScript (47 KB gzipped), plus 31 KB of subset fonts. Three
+Bundle: 135 KB of JavaScript (41 KB gzipped), plus 31 KB of subset fonts. Three
 runtime dependencies, and two of them are code-split: 36 KB gzipped of inference
 runtime that only the Object tool fetches, and 33 KB of demuxer that only a
 video fetches.
+
+That is smaller than it was before a third style was added, because shaders
+reach the bundle as strings and this codebase comments them as heavily as its
+TypeScript: 78 KB of WGSL, two thirds of it explanation. A build-time transform
+removes the comments and keeps every newline — 17 KB gzipped, a quarter of the
+application bundle, and a WGSL compile error still reports the line it is on.
+It runs in development too, so the string the browser gets is the string both
+test suites exercise.
 
 ## Type and fonts
 
@@ -400,7 +482,13 @@ of geometry did not justify a dependency.
   command. There is no way to say "this frame only" or "the whole clip", and
   both would be reasonable things to want.
 - Playback has no audio and no loop, and drops frames rather than running slow
-  when the style chain cannot keep up.
+  when the style chain cannot keep up. Which it only does for the comic style:
+  the other two are around a millisecond a frame at 720p.
+- The print style twinkles on video — 3% of pixels move more than 8 codes
+  between consecutive frames of a fixed camera, against 0.1% for comic. A dot
+  appears or disappears when the density crosses the spot function, and that is
+  a hard threshold against a screen that does not move with the picture. It may
+  not want fixing; a print is allowed to look like a print.
 - WebM and Matroska are refused, by signature, with a message that says so.
   They are a second demuxer at 15 KB and mostly carry codecs whose decode has
   not been measured here.
