@@ -251,6 +251,39 @@ export function App(): JSX.Element {
     [runtime, uploadInto],
   );
 
+  /**
+   * Close the file and go back to the drop zone.
+   *
+   * Everything the file owned goes with it: the decoder and its hardware decode
+   * session, the source texture and mask on the GPU, the command log, and
+   * whatever the perception layer had understood about the picture. Anything
+   * kept would be a claim about a file that is no longer open.
+   *
+   * The style and its controls deliberately survive. They are a choice about
+   * how the tool is set up rather than about this photograph, and re-picking a
+   * palette on every file would be the tool forgetting what it was told.
+   */
+  const closeFile = useCallback((): void => {
+    providerRef.current?.dispose();
+    providerRef.current = undefined;
+
+    runtime?.engine.unloadMedia();
+    runtime?.perception.endPrompt();
+    runtime?.perception.setFrame(undefined);
+
+    setLoaded(undefined);
+    setError(undefined);
+    setBusy(undefined);
+    setFrame(0);
+    setScrubbing(false);
+    setPlaying(false);
+    setCandidates([]);
+    setChosenCandidate(undefined);
+    setPromptAnchor(undefined);
+    setPerception({ kind: 'idle' });
+    setHistoryRevision(0);
+  }, [runtime]);
+
   // Open a file that arrived before the device was ready.
   useEffect(() => {
     if (!runtime || !pending) return;
@@ -615,7 +648,16 @@ export function App(): JSX.Element {
   if (state.status === 'unsupported') {
     return (
       <div class="app">
-        <TopBar canUndo={false} canRedo={false} onUndo={noop} onRedo={noop} onExport={noop} exportDisabled />
+        <TopBar
+          canUndo={false}
+          canRedo={false}
+          onUndo={noop}
+          onRedo={noop}
+          onExport={noop}
+          exportDisabled
+          onClose={noop}
+          hasEdits={false}
+        />
         <div class="dropzone-region">
           <p class="notice notice--quiet">
             Rotyl renders on the GPU and needs WebGPU. It is available in Chrome and Edge 113 and later,
@@ -629,7 +671,16 @@ export function App(): JSX.Element {
   if (state.status === 'lost') {
     return (
       <div class="app">
-        <TopBar canUndo={false} canRedo={false} onUndo={noop} onRedo={noop} onExport={noop} exportDisabled />
+        <TopBar
+          canUndo={false}
+          canRedo={false}
+          onUndo={noop}
+          onRedo={noop}
+          onExport={noop}
+          exportDisabled
+          onClose={noop}
+          hasEdits={false}
+        />
         <div class="dropzone-region">
           <p class="notice">The graphics device was lost. Reload to continue.</p>
         </div>
@@ -647,6 +698,8 @@ export function App(): JSX.Element {
   // Which frames carry an edit. A per-frame selection that leaves no trace on
   // the timeline is a selection nobody can find again.
   const edited = selection ? editedFrames(selection.appliedCommands) : [];
+  // Closing is only worth asking about when there is something to lose.
+  const hasEdits = (selection?.appliedCommands.length ?? 0) > 0;
 
   return (
     <div class="app">
@@ -663,6 +716,8 @@ export function App(): JSX.Element {
         }}
         onExport={() => void onExport()}
         exportDisabled={!loaded || activity !== undefined}
+        onClose={closeFile}
+        hasEdits={hasEdits}
       />
 
       {loaded && runtime ? (

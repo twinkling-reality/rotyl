@@ -166,6 +166,50 @@ test('offers the research page from the empty state, and generates it from the r
   await expect(page.getByText('undefined')).toHaveCount(0);
 });
 
+test('closes a file, and opens another without a reload', async ({ page }) => {
+  // For most of this project's life a session held one file, and opening a
+  // second meant reloading. The load path was re-entrant the whole time; what
+  // was missing was any way out of the one that was open.
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  await expect(page.locator('canvas')).toBeVisible();
+
+  const close = page.getByRole('button', { name: 'Close' });
+  await close.click();
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
+
+  await page.locator('input[type=file]').setInputFiles(clip);
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.getByRole('slider', { name: 'Frame' })).toBeVisible();
+});
+
+test('asks once before closing over work, and only then', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  // Nothing drawn yet, so nothing to lose: it just closes.
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
+
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error('no canvas');
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.5);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.5, { steps: 8 });
+  await page.mouse.up();
+
+  await page.getByRole('button', { name: 'Close' }).click();
+  const confirm = page.getByRole('button', { name: 'Discard edits?' });
+  await expect(confirm).toBeVisible();
+  // Still open until the second click: the question is not the answer.
+  await expect(canvas).toBeVisible();
+
+  await confirm.click();
+  await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
+});
+
 test('reveals the style controls only when asked', async ({ page }) => {
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();

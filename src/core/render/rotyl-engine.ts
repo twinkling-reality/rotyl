@@ -248,6 +248,34 @@ export class RotylEngine {
     return sourceTexture;
   }
 
+  /**
+   * Release the loaded media and go back to having none.
+   *
+   * A full-resolution photograph and its mask are hundreds of megabytes, so
+   * closing one has to give them back rather than wait for the next open to
+   * displace them. The engine itself survives: its pipelines, its refiner and
+   * its display pass are per-device, not per-file, and rebuilding them to show
+   * a drop zone would be work done to look tidy.
+   *
+   * The document is reset with it. A command log describes strokes on a
+   * particular picture, and carrying one across to the next file would apply
+   * somebody's careful selection to an image it was never drawn on.
+   */
+  unloadMedia(): void {
+    if (!this.#media) return;
+    this.#media.mask.dispose();
+    this.#media.pool.dispose();
+    this.#media = undefined;
+    this.#live = undefined;
+    this.document.reset();
+    this.#frame = 0;
+    this.#maskRevision = -1;
+    this.#maskFrame = 0;
+    this.#styleDirty = true;
+    this.#compositeDirty = true;
+    this.#displayDirty = true;
+  }
+
   /** Reset the view so the whole image is visible. */
   fitView(canvasSize: Size, padding = 0): void {
     const media = this.#media;

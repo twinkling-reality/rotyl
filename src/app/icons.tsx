@@ -148,6 +148,15 @@ export function SquareIcon(props: IconProps): JSX.Element {
   );
 }
 
+export function CloseIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </Icon>
+  );
+}
+
 export function PlayIcon(props: IconProps): JSX.Element {
   return (
     <Icon {...props}>

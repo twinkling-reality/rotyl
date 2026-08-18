@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
+import { useEffect, useState } from 'preact/hooks';
 import { Activity } from './Activity.tsx';
-import { DownloadIcon, RedoIcon, UndoIcon } from './icons.tsx';
+import { CloseIcon, DownloadIcon, RedoIcon, UndoIcon } from './icons.tsx';
 
 export interface TopBarProps {
   readonly file?: { readonly name: string; readonly width: number; readonly height: number };
@@ -13,6 +14,10 @@ export interface TopBarProps {
   readonly onRedo: () => void;
   readonly onExport: () => void;
   readonly exportDisabled: boolean;
+  /** Give the file back and return to the drop zone. */
+  readonly onClose: () => void;
+  /** Whether closing would discard work, which decides if it asks first. */
+  readonly hasEdits: boolean;
 }
 
 export function TopBar({
@@ -25,10 +30,15 @@ export function TopBar({
   onRedo,
   onExport,
   exportDisabled,
+  onClose,
+  hasEdits,
 }: TopBarProps): JSX.Element {
   return (
     <header class={`top-bar${file ? ' top-bar--editing' : ''}`}>
-      <h1 class="wordmark">Rotyl</h1>
+      <div class="top-bar__lead">
+        <h1 class="wordmark">Rotyl</h1>
+        {file ? <CloseFile onClose={onClose} hasEdits={hasEdits} /> : null}
+      </div>
 
       {/*
         Status renders whether or not a file is loaded. Nesting it inside the
@@ -91,3 +101,55 @@ export function TopBar({
     </header>
   );
 }
+
+/**
+ * Leaving, and being asked once when leaving costs something.
+ *
+ * A selection is a few minutes of careful work with no file behind it, so a
+ * stray click on an X should not take it. This product has no dialogs anywhere,
+ * and adding one here for a decision this small would be a heavier answer than
+ * the problem: the button asks in place instead, and forgets it was asking
+ * after a few seconds so it cannot sit there armed.
+ *
+ * With nothing to lose it just closes, because a confirmation nobody needs is
+ * the fastest way to teach people to click through confirmations.
+ */
+function CloseFile({ onClose, hasEdits }: { onClose: () => void; hasEdits: boolean }): JSX.Element {
+  const [asking, setAsking] = useState(false);
+
+  useEffect(() => {
+    if (!asking) return undefined;
+    const timer = setTimeout(() => {
+      setAsking(false);
+    }, ASKS_FOR);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [asking]);
+
+  if (asking) {
+    return (
+      <button type="button" class="close-file close-file--asking" onClick={onClose}>
+        Discard edits?
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      class="close-file icon-button"
+      title="Close"
+      onClick={() => {
+        if (hasEdits) setAsking(true);
+        else onClose();
+      }}
+    >
+      <CloseIcon />
+      <span class="visually-hidden">Close</span>
+    </button>
+  );
+}
+
+/** Long enough to answer, short enough that it is never still armed later. */
+const ASKS_FOR = 4000;

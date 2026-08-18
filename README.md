@@ -494,6 +494,27 @@ application bundle, and a WGSL compile error still reports the line it is on.
 It runs in development too, so the string the browser gets is the string both
 test suites exercise.
 
+## Closing a file
+
+The X beside the wordmark gives the file back: the decoder and its hardware
+decode session, the source texture and mask on the GPU, the command log, and
+whatever the perception layer had understood about the picture. A full-
+resolution photograph and its mask are hundreds of megabytes, so closing one
+has to release them rather than wait for the next open to displace them.
+
+The style and its controls survive on purpose. They are a choice about how the
+tool is set up rather than about this photograph, and re-picking a palette on
+every file would be the tool forgetting what it was told.
+
+For most of this project's life a session held one file and opening a second
+meant reloading the page. The load path had been re-entrant the whole time.
+What was missing was any way out of the one that was open.
+
+Closing over work asks first, in place, and forgets it was asking after four
+seconds so it cannot sit there armed. Closing over nothing does not ask at all,
+because a confirmation nobody needs is the fastest way to teach people to click
+through confirmations.
+
 ## Saying that it is working
 
 One component, `src/app/Activity.tsx`, and every wait in the product goes
@@ -569,8 +590,6 @@ of geometry did not justify a dependency.
 - WebM and Matroska are refused, by signature, with a message that says so.
   They are a second demuxer at 15 KB and mostly carry codecs whose decode has
   not been measured here.
-- Only one file per session: opening a second means reloading the page. That
-  predates video and is more obvious with it.
 - The print screen's pitch is a fraction of the image, not a distance in pixels,
   because that is what makes the preview and the export the same picture. At
   100% zoom on a very large photograph the dots are correspondingly large.
