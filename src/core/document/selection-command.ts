@@ -26,6 +26,19 @@ export interface StrokePoint {
   readonly y: number;
 }
 
+/**
+ * A rectangle in image pixels, as dragged.
+ *
+ * Not normalised: a rectangle dragged upward or leftward is the same rectangle,
+ * and the one place that has to know it is the shader that rasterises it.
+ */
+export interface SelectionRect {
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+}
+
 export interface BrushStroke {
   /** Sample positions in image pixels, in the order the pointer produced them. */
   readonly points: readonly StrokePoint[];
@@ -79,7 +92,14 @@ export function hasAnyCoverage(commands: readonly SelectionCommand[]): boolean {
     const command = commands[i];
     if (!command) continue;
     if (command.kind === 'clear') return false;
-    if (command.kind === 'paint' || command.kind === 'invert' || command.kind === 'applyMask') return true;
+    if (
+      command.kind === 'paint' ||
+      command.kind === 'invert' ||
+      command.kind === 'applyMask' ||
+      (command.kind === 'rect' && command.mode === 'paint')
+    ) {
+      return true;
+    }
   }
   return false;
 }
@@ -126,6 +146,18 @@ export type SelectionCommand = { readonly frame: number } & (
   | { readonly kind: 'erase'; readonly stroke: BrushStroke }
   | { readonly kind: 'clear' }
   | { readonly kind: 'invert' }
+  /**
+   * A rectangle, meant literally.
+   *
+   * Stated in image pixels like a stroke, and for the same reason: a rectangle
+   * exported at 6000 px is the rectangle that was dragged, with an edge
+   * rasterised at that resolution rather than a magnified approximation of a
+   * preview's.
+   *
+   * Distinct from the box the Object tools drag, which is a question for a
+   * model and answers with an object rather than with the region.
+   */
+  | { readonly kind: 'rect'; readonly rect: SelectionRect; readonly mode: 'paint' | 'erase' }
   /**
    * The single, explicit bridge from perception to render.
    *

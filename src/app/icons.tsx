@@ -1,5 +1,5 @@
 /**
- * The twelve icons the interface uses.
+ * The thirteen icons the interface uses.
  *
  * Path data from Lucide (ISC licence, © Lucide Contributors), copied rather
  * than depended on: this is about a kilobyte of geometry, and a package plus a
@@ -135,6 +135,15 @@ export function RedoIcon(props: IconProps): JSX.Element {
     <Icon {...props}>
       <path d="m15 14 5-5-5-5" />
       <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13" />
+    </Icon>
+  );
+}
+
+/** A solid square, against BoxSelect's dashed one: a shape, not a hint. */
+export function SquareIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
     </Icon>
   );
 }

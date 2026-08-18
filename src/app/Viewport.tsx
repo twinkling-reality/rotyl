@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'preact/hooks';
 import type { JSX } from 'preact';
 import type { RotylRuntime } from './use-rotyl.ts';
-import { isBrush, type Tool } from './tool.ts';
+import { isBrush, isDragRegion, type Tool } from './tool.ts';
+import type { BrushMode } from '../core/render/rotyl-engine.ts';
 import { CandidatePicker } from './CandidatePicker.tsx';
 import type { SelectIntent } from '../core/perception/perception-store.ts';
 import type { MaskCandidate } from '../core/perception/mask-candidates.ts';
 import type { PromptBox } from '../core/perception/segmentation-engine.ts';
+import type { SelectionRect } from '../core/document/selection-command.ts';
 import { OVERLAY_HIDDEN, OVERLAY_VISIBLE } from '../core/render/display-renderer.ts';
 import {
   canvasToImage,
@@ -35,6 +37,7 @@ export interface ViewportProps {
   readonly onObjectPicked: (point: { x: number; y: number }, intent: SelectIntent) => void;
   /** A region dragged with the box tool, in image pixels. */
   readonly onBoxPicked: (box: PromptBox) => void;
+  readonly onRectDragged: (rect: SelectionRect, mode: BrushMode) => void;
   /** Overlaid on the canvas — the toolbar, so it centres on the image. */
   readonly children?: JSX.Element | JSX.Element[];
 }
@@ -70,6 +73,7 @@ export function Viewport({
   onSelectionChanged,
   onObjectPicked,
   onBoxPicked,
+  onRectDragged,
   children,
 }: ViewportProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -88,6 +92,7 @@ export function Viewport({
     onSelectionChanged,
     onObjectPicked,
     onBoxPicked,
+    onRectDragged,
   });
   settings.current = {
     tool,
@@ -98,6 +103,7 @@ export function Viewport({
     onSelectionChanged,
     onObjectPicked,
     onBoxPicked,
+    onRectDragged,
   };
 
   useEffect(() => {
@@ -113,9 +119,15 @@ export function Viewport({
     let frame = 0;
     let hasSized = false;
 
-    /** A box being dragged with the box tool: where it started, in both spaces. */
+    /** A region being dragged out: where it started, in both spaces, and what it means. */
     let boxing:
-      { readonly client: { x: number; y: number }; readonly image: { x: number; y: number } } | undefined;
+      | {
+          readonly client: { x: number; y: number };
+          readonly image: { x: number; y: number };
+          readonly tool: Tool;
+          readonly subtract: boolean;
+        }
+      | undefined;
 
     /**
      * Keep the candidate picker over the thing it is describing.
@@ -294,8 +306,13 @@ export function Viewport({
         return;
       }
 
-      if (active === 'box') {
-        boxing = { client: { x: event.clientX, y: event.clientY }, image: toImage(event) };
+      if (isDragRegion(active)) {
+        boxing = {
+          client: { x: event.clientX, y: event.clientY },
+          image: toImage(event),
+          tool: active,
+          subtract: event.altKey,
+        };
         return;
       }
 
@@ -370,7 +387,17 @@ export function Viewport({
 
       if (box) {
         const corner = toImage(event);
-        if (Math.hypot(event.clientX - box.client.x, event.clientY - box.client.y) > DRAG_SLOP) {
+        const dragged = Math.hypot(event.clientX - box.client.x, event.clientY - box.client.y) > DRAG_SLOP;
+        if (box.tool === 'rect') {
+          // A press that never became a drag is a rectangle of no area, which
+          // is nothing rather than a mistake worth reporting.
+          if (dragged) {
+            settings.current.onRectDragged(
+              { x0: box.image.x, y0: box.image.y, x1: corner.x, y1: corner.y },
+              box.subtract ? 'erase' : 'paint',
+            );
+          }
+        } else if (dragged) {
           settings.current.onBoxPicked({ x0: box.image.x, y0: box.image.y, x1: corner.x, y1: corner.y });
         } else {
           // A press that never became a drag is still a question, and there is
@@ -448,7 +475,7 @@ export function Viewport({
       <canvas
         ref={canvasRef}
         class={`viewport__canvas${isBrush(tool) ? ' viewport__canvas--brushing' : ''}${
-          tool === 'box' ? ' viewport__canvas--boxing' : ''
+          isDragRegion(tool) ? ' viewport__canvas--boxing' : ''
         }`}
       />
       <div ref={cursorRef} class="brush-cursor" aria-hidden="true" />

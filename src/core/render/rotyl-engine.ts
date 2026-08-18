@@ -22,7 +22,7 @@ import { DisplayRenderer, OVERLAY_VISIBLE, type OverlayState } from './display-r
 import { outputDimensions, type Dimensions } from './resolution.ts';
 import { fitToCanvas, type Size, type ViewTransform } from '../view/view-transform.ts';
 import type { SceneFrame } from '../perception/segmentation-engine.ts';
-import type { SelectionCommand } from '../document/selection-command.ts';
+import type { SelectionCommand, SelectionRect } from '../document/selection-command.ts';
 
 export type BrushMode = 'paint' | 'erase';
 
@@ -104,6 +104,13 @@ export class RotylEngine {
    * commands apply without changing the log at all. Keying the rebuild on the
    * revision alone would leave the previous frame's selection on screen, and it
    * would look like a caching bug rather than a missing frame.
+   *
+   * Covered end to end rather than by a unit test, deliberately. Draining the
+   * dirty flags means a real `render`, which builds a whole style chain's
+   * pipelines, and doing that in a Node test aborted the Dawn worker in three
+   * runs out of twelve however it was arranged. The Playwright suite scrubs a
+   * clip and compares the pixels that came back, in a browser with no such
+   * limit, which is the stronger test of this anyway.
    */
   #maskFrame = 0;
 
@@ -314,6 +321,18 @@ export class RotylEngine {
     this.document.apply(
       live.mode === 'paint' ? { kind: 'paint', stroke, frame } : { kind: 'erase', stroke, frame },
     );
+  }
+
+  /**
+   * Commit a dragged rectangle, stamped with the frame it was drawn on.
+   *
+   * A rectangle needs no live preview on the GPU: the pointer is dragging a
+   * shape whose outline the host is already drawing, and unlike a stroke there
+   * is nothing accumulated along the way that would be lost by waiting for the
+   * release.
+   */
+  commitRect(rect: SelectionRect, mode: BrushMode): void {
+    this.document.apply({ kind: 'rect', rect, mode, frame: this.#frame });
   }
 
   cancelStroke(): void {

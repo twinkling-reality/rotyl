@@ -507,6 +507,9 @@ export function App(): JSX.Element {
         case 'r':
           setTool('box');
           break;
+        case 'a':
+          setTool('rect');
+          break;
         case 'b':
           setTool('paint');
           break;
@@ -650,6 +653,13 @@ export function App(): JSX.Element {
               }}
               onBoxPicked={(box) => {
                 void runtime.perception.selectBox(box);
+              }}
+              onRectDragged={(rect, mode) => {
+                runtime.engine.commitRect(rect, mode);
+                // Same as a stroke: a shape drawn by hand ends whatever object
+                // was being refined.
+                runtime.perception.endPrompt();
+                setHistoryRevision(runtime.engine.document.revision);
               }}
             >
               {/*

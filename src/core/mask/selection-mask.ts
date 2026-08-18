@@ -1,11 +1,12 @@
 import { MASK_FORMAT } from '../gpu/formats.ts';
 import { ResourcePool } from '../gpu/resource-pool.ts';
 import { FullscreenPass } from '../gpu/fullscreen-pass.ts';
-import type { BrushStroke, SelectionCommand } from '../document/selection-command.ts';
+import type { BrushStroke, SelectionCommand, SelectionRect } from '../document/selection-command.ts';
 import type { Dimensions } from '../render/resolution.ts';
 import type { MaskRefiner } from './mask-refiner.ts';
 import colorWgsl from '../color/color.wgsl?raw';
 import brushStampWgsl from './wgsl/brush-stamp.wgsl?raw';
+import rectStampWgsl from './wgsl/rect-stamp.wgsl?raw';
 import maskOpWgsl from './wgsl/mask-op.wgsl?raw';
 
 /**
@@ -69,6 +70,16 @@ export class SelectionMask {
   #current = 0;
 
   readonly #brushPipelines: { readonly paint: GPURenderPipeline; readonly erase: GPURenderPipeline };
+  /**
+   * Built on the first rectangle, not in the constructor.
+   *
+   * Most documents never hold one, and a SelectionMask is constructed per
+   * image, per export and per test case — so two pipelines nobody asked for is
+   * exactly the churn the Dawn Node bindings are least stable under. The mask
+   * refiner compiles its own the same way and for the same reason.
+   */
+  #rectPipelines: { readonly paint: GPURenderPipeline; readonly erase: GPURenderPipeline } | undefined;
+  readonly #brushPipelineLayout: GPUPipelineLayout;
   readonly #brushBindGroup: GPUBindGroup;
 
   #instanceBuffer: GPUBuffer;
@@ -140,6 +151,7 @@ export class SelectionMask {
 
     const brushModule = device.createShaderModule({ label: 'brush-stamp', code: brushStampWgsl });
     const brushPipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [brushLayout] });
+    this.#brushPipelineLayout = brushPipelineLayout;
     const makeBrushPipeline = (operation: GPUBlendOperation): GPURenderPipeline =>
       device.createRenderPipeline({
         label: `brush-stamp-${operation}`,
@@ -310,6 +322,77 @@ export class SelectionMask {
     pass.end();
   }
 
+  /**
+   * A rectangle is the brush's machinery with a different distance function, so
+   * it borrows the vertex layout, the uniform, the bind group and the two blend
+   * modes, and brings only its own shader.
+   */
+  #ensureRectPipelines(): { readonly paint: GPURenderPipeline; readonly erase: GPURenderPipeline } {
+    const existing = this.#rectPipelines;
+    if (existing) return existing;
+
+    const device = this.#device;
+    const rectModule = device.createShaderModule({ label: 'rect-stamp', code: rectStampWgsl });
+    const makeRectPipeline = (operation: GPUBlendOperation): GPURenderPipeline =>
+      device.createRenderPipeline({
+        label: `rect-stamp-${operation}`,
+        layout: this.#brushPipelineLayout,
+        vertex: {
+          module: rectModule,
+          entryPoint: 'vertexMain',
+          buffers: [
+            {
+              arrayStride: INSTANCE_BYTES,
+              stepMode: 'instance',
+              attributes: [
+                { shaderLocation: 0, offset: 0, format: 'float32x4' },
+                { shaderLocation: 1, offset: 16, format: 'float32x4' },
+              ],
+            },
+          ],
+        },
+        fragment: {
+          module: rectModule,
+          entryPoint: 'fragmentMain',
+          targets: [
+            {
+              format: MASK_FORMAT,
+              blend: {
+                color: { srcFactor: 'one', dstFactor: 'one', operation },
+                alpha: { srcFactor: 'one', dstFactor: 'one', operation },
+              },
+            },
+          ],
+        },
+        primitive: { topology: 'triangle-list' },
+      });
+
+    const pipelines = { paint: makeRectPipeline('max'), erase: makeRectPipeline('min') };
+    this.#rectPipelines = pipelines;
+    return pipelines;
+  }
+
+  /** Stamp one rectangle. Shares the brush's instance ring, so it is fenced with it. */
+  stampRect(encoder: GPUCommandEncoder, rect: SelectionRect, mode: 'paint' | 'erase'): void {
+    const base = this.#reserve(1);
+    const polarity = mode === 'paint' ? 1 : -1;
+    this.#device.queue.writeBuffer(
+      this.#instanceBuffer,
+      base * INSTANCE_BYTES,
+      new Float32Array([rect.x0, rect.y0, rect.x1, rect.y1, 0, 0, polarity, 0]),
+    );
+
+    const pass = encoder.beginRenderPass({
+      label: `rect-${mode}`,
+      colorAttachments: [{ view: this.texture.createView(), loadOp: 'load', storeOp: 'store' }],
+    });
+    pass.setPipeline(this.#ensureRectPipelines()[mode]);
+    pass.setBindGroup(0, this.#brushBindGroup);
+    pass.setVertexBuffer(0, this.#instanceBuffer, base * INSTANCE_BYTES, INSTANCE_BYTES);
+    pass.draw(6, 1);
+    pass.end();
+  }
+
   #runOperation(encoder: GPUCommandEncoder, operation: OperationName, source?: GPUTexture): void {
     const bindGroup = this.#device.createBindGroup({
       layout: this.#opBindGroupLayout,
@@ -409,6 +492,9 @@ export class SelectionMask {
           break;
         case 'clear':
           this.clear(encoder);
+          break;
+        case 'rect':
+          this.stampRect(encoder, command.rect, command.mode);
           break;
         case 'invert':
           this.invert(encoder);

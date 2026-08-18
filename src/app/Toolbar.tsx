@@ -7,6 +7,7 @@ import {
   EraserIcon,
   PointerClickIcon,
   SlidersIcon,
+  SquareIcon,
   TrashIcon,
 } from './icons.tsx';
 
@@ -76,6 +77,22 @@ export function Toolbar({
         className={tool === 'box' ? 'tool--active' : ''}
         onClick={() => {
           onToolChange('box');
+        }}
+      />
+      {/*
+        The divider is load-bearing. Object and Box ask a model what is there;
+        everything to the right of it draws exactly what you draw. Box and Area
+        are the same gesture meaning opposite things, and putting them on
+        opposite sides of a line is the cheapest way to say so.
+      */}
+      <div class="toolbar__divider" role="separator" />
+      <ToolButton
+        label="Area"
+        icon={<SquareIcon />}
+        pressed={tool === 'rect'}
+        className={tool === 'rect' ? 'tool--active' : ''}
+        onClick={() => {
+          onToolChange('rect');
         }}
       />
       <ToolButton

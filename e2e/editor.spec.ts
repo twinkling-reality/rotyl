@@ -463,3 +463,31 @@ test('undo goes to the frame it undid', async ({ page }) => {
   await expect(page.getByText('16 / 60')).toBeVisible();
   await expect(page.locator('.timeline__mark')).toHaveCount(0);
 });
+
+test('selects the area dragged, not the object inside it', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  // Area, not Box. The two are the same gesture: one asks a model what is in
+  // the region, this one takes the region.
+  await page.getByRole('button', { name: 'Area' }).click();
+  await expect(page.getByRole('button', { name: 'Area' })).toHaveAttribute('aria-pressed', 'true');
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  const undo = page.getByRole('button', { name: 'Undo' });
+  await expect(undo).toBeDisabled();
+
+  await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.35);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.65, { steps: 12 });
+  await page.mouse.up();
+
+  // No model was downloaded and nothing was asked of one: the shape is the
+  // answer, so this lands as an ordinary undoable edit straight away.
+  await expect(undo).toBeEnabled();
+  await expect(page.getByText('Downloading the object model')).toBeHidden();
+});

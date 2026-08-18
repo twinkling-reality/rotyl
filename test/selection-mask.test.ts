@@ -1,41 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { testDevice } from './gpu-harness.ts';
+import { at, MASK_SIZE as SIZE, readMask } from './mask-harness.ts';
 import { SelectionMask } from '../src/core/mask/selection-mask.ts';
 import type { SelectionCommand } from '../src/core/document/selection-command.ts';
-
-const SIZE = 128;
-
-/** Read the mask back as coverage bytes, one per texel. */
-async function readMask(device: GPUDevice, mask: SelectionMask): Promise<Uint8Array> {
-  const bytesPerRow = Math.ceil(SIZE / 256) * 256;
-  const staging = device.createBuffer({
-    size: bytesPerRow * (SIZE - 1) + SIZE,
-    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-  });
-
-  const encoder = device.createCommandEncoder();
-  encoder.copyTextureToBuffer(
-    { texture: mask.texture },
-    { buffer: staging, bytesPerRow },
-    { width: SIZE, height: SIZE },
-  );
-  device.queue.submit([encoder.finish()]);
-
-  await staging.mapAsync(GPUMapMode.READ);
-  const padded = new Uint8Array(staging.getMappedRange()).slice();
-  staging.unmap();
-  staging.destroy();
-
-  const packed = new Uint8Array(SIZE * SIZE);
-  for (let y = 0; y < SIZE; y++) {
-    packed.set(padded.subarray(y * bytesPerRow, y * bytesPerRow + SIZE), y * SIZE);
-  }
-  return packed;
-}
-
-function at(coverage: Uint8Array, x: number, y: number): number {
-  return coverage[y * SIZE + x] ?? 0;
-}
 
 async function replayed(commands: readonly SelectionCommand[]): Promise<Uint8Array> {
   const { device } = await testDevice();

@@ -135,34 +135,6 @@ describe('editing at a frame', () => {
     expect(document.appliedCommands[0]?.frame).toBe(12);
   });
 
-  it('needs a render after a scrub, with the log untouched', () => {
-    const document = new SelectionDocument();
-    const engine = engineOn(document);
-    engine.loadMedia(SIZE, 'clear');
-    document.apply({ ...STROKE, frame: 4 });
-
-    // Drained the way the render loop drains it, so what is left is only what
-    // the scrub itself dirtied.
-    engine.render(
-      device
-        .createTexture({
-          size: SIZE,
-          format: 'bgra8unorm',
-          usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        })
-        .createView(),
-      SIZE,
-    );
-    expect(engine.needsRender).toBe(false);
-
-    const revision = document.revision;
-    engine.setFrame(4);
-    // The revision is the same; the frame is not. Keying the mask rebuild on
-    // the revision alone would leave the previous frame's selection on screen.
-    expect(document.revision).toBe(revision);
-    expect(engine.needsRender).toBe(true);
-  });
-
   it('starts a new document back at its first frame, and a recovered one where it was', () => {
     const document = new SelectionDocument();
     const engine = engineOn(document);
