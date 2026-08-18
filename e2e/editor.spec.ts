@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { BlobSource, EncodedPacketSink, Input, MP4 } from 'mediabunny';
 
 /**
  * One end-to-end pass through the product's actual claim: open an image, select
@@ -10,6 +12,22 @@ import { dirname, join } from 'node:path';
  * a real browser can answer. That WebGPU comes up, that a file picker and a
  * pointer drive the engine, and that the download produces bytes.
  */
+
+/** The product's own frame provider, as much of it as reading a file back needs. */
+interface ProviderModule {
+  readonly FrameProvider: {
+    open(
+      file: Blob,
+      maxDimension: number,
+    ): Promise<{
+      readonly ok: boolean;
+      readonly value: {
+        readFrame(index: number, use: (frame: VideoFrame) => void): Promise<boolean>;
+        dispose(): void;
+      };
+    }>;
+  };
+}
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 const fixture = join(fixtures, 'sample.png');
@@ -159,7 +177,16 @@ test('offers the research page from the empty state, and generates it from the r
 
   // A figure out of the other harness's results, so both are known to be read.
   await page.goto('/research/video.html');
-  await expect(page.getByRole('cell', { name: '0.9 ms' }).first()).toBeVisible();
+  await expect(page.getByRole('cell', { name: '0.6 ms' }).first()).toBeVisible();
+
+  // And out of the results file that has its own command, which the page reads
+  // as well: a bundle size needs a build and no browser, so it is not part of
+  // the run the timings come from.
+  await page.goto('/research/the-clip.html');
+  await expect(page.getByRole('cell', { name: '30.5 KB' }).first()).toBeVisible();
+  // Stated in bytes rather than as 0.0 KB, which would read as a rounding error
+  // rather than as the finding it is.
+  await expect(page.getByText('costs 12 bytes')).toBeVisible();
 
   await page.goto('/research/trials.html');
   await expect(page.getByRole('cell', { name: /59.5 KB gzipped/ })).toBeVisible();
@@ -511,12 +538,145 @@ test('exports the frame on screen, named for it', async ({ page }) => {
   await expect(page.getByText('24 / 60')).toBeVisible();
 
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export' }).click();
+  // A clip offers two answers, and the quieter one is the frame.
+  await page.getByRole('button', { name: 'Frame', exact: true }).click();
   const saved = await download;
   // Named for the frame, because exporting three of them should not write the
   // same file three times.
   expect(saved.suggestedFilename()).toBe('sample-rotyl-f00024.png');
   expect(await saved.path()).toBeTruthy();
+});
+
+/**
+ * The whole clip, and then read back with the demuxer that opened the original.
+ *
+ * A download event proves bytes arrived. What it does not prove is that they
+ * are a video, that they are the RIGHT number of frames, or that the container
+ * is one anything can open, and all three of those are ways this can be broken
+ * while still producing a file.
+ */
+test('exports the whole clip as a video', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  await expect(page.getByText('1 / 60')).toBeVisible();
+
+  // Something selected, so the file being written is the product's claim rather
+  // than a re-encode of the source. A dragged rectangle rather than a brush
+  // stroke, because this test then knows exactly which pixels it asked to
+  // change and can look at the ones it did not.
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  await page.getByRole('button', { name: 'Area' }).click();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.7, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Clip' }).click();
+  const saved = await download;
+  expect(saved.suggestedFilename()).toBe('sample-rotyl.mp4');
+
+  const path = await saved.path();
+  expect(path).toBeTruthy();
+  if (!path) return;
+  const bytes = await readFile(path);
+
+  const input = new Input({ formats: [MP4], source: new BlobSource(new Blob([bytes])) });
+  const track = await input.getPrimaryVideoTrack();
+  expect(track).not.toBeNull();
+  if (!track) return;
+  expect(track.displayWidth).toBe(320);
+  expect(track.displayHeight).toBe(240);
+
+  let frames = 0;
+  let keyframes = 0;
+  const sink = new EncodedPacketSink(track);
+  for await (const packet of sink.packets(undefined, undefined, { metadataOnly: true })) {
+    frames++;
+    if (packet.type === 'key') keyframes++;
+  }
+  input.dispose();
+
+  // Every frame of the source, and no more.
+  expect(frames).toBe(60);
+  // More than one, because the file this writes is a file this tool can open
+  // and seek cost is set by keyframe spacing and by nothing else.
+  expect(keyframes).toBeGreaterThan(1);
+
+  // And the editor is usable afterwards rather than left on the last frame of
+  // its own export.
+  await expect(page.getByText('1 / 60')).toBeVisible();
+
+  // The product's whole claim, in the file rather than on the screen: a frame
+  // in the middle of the clip is changed where the selection is and left alone
+  // where it is not. Compared against the source clip decoded the same way, in
+  // the browser, because Node has no WebCodecs.
+  const difference = await page.evaluate(
+    async ([encoded, index, providerModule]) => {
+      // The product's own frame provider, reached the way the benchmarks reach
+      // project code in a page: through the dev server, so its bare imports
+      // resolve. Reading the exported file with the same code that reads any
+      // other clip is the point rather than a shortcut.
+      // Declared rather than asserted: the specifier is a runtime string, so the
+      // import has no type of its own, and naming the shape it is expected to
+      // have is the honest way to say what this test relies on.
+      const loaded: ProviderModule = await import(providerModule);
+      const { FrameProvider } = loaded;
+
+      const pixels = async (blob: Blob, want: number): Promise<Uint8ClampedArray> => {
+        const opened = await FrameProvider.open(blob, 8192);
+        if (!opened.ok) throw new Error('the exported clip could not be opened');
+        let data: Uint8ClampedArray | undefined;
+        const shown = await opened.value.readFrame(want, (frame) => {
+          const surface = new OffscreenCanvas(frame.displayWidth, frame.displayHeight);
+          const context = surface.getContext('2d');
+          if (!context) throw new Error('no 2d context');
+          context.drawImage(frame, 0, 0);
+          data = context.getImageData(0, 0, surface.width, surface.height).data;
+        });
+        opened.value.dispose();
+        if (!shown || !data) throw new Error('that frame could not be read');
+        return data;
+      };
+
+      const decoded = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+      const written = await pixels(new Blob([decoded]), index);
+      const source = await pixels(await (await fetch('/e2e/fixtures/sample.mp4')).blob(), index);
+
+      // Mean absolute difference over a patch, in codes.
+      const patch = (x0: number, y0: number, size: number): number => {
+        let total = 0;
+        let count = 0;
+        for (let y = y0; y < y0 + size; y++) {
+          for (let x = x0; x < x0 + size; x++) {
+            const o = (y * 320 + x) * 4;
+            for (let channel = 0; channel < 3; channel++) {
+              total += Math.abs((written[o + channel] ?? 0) - (source[o + channel] ?? 0));
+              count++;
+            }
+          }
+        }
+        return total / count;
+      };
+
+      return { selected: patch(144, 104, 32), corner: patch(4, 4, 32) };
+    },
+    [bytes.toString('base64'), 30, '/src/platform/video/frame-provider.ts'] as const,
+  );
+
+  // Stylised inside the rectangle.
+  expect(difference.selected).toBeGreaterThan(6);
+  // And left alone outside it. Not zero: a clip is re-encoded, and H.264 is
+  // lossy. The composite is still exact outside the selection and the file it
+  // is written into is not, which measures about three codes here. Asserted as
+  // a ratio as well as a bound, so a style that stopped applying could not pass
+  // by the codec's error alone being small.
+  expect(difference.corner).toBeLessThan(4);
+  expect(difference.selected).toBeGreaterThan(difference.corner * 2);
 });
 
 test('undo goes to the frame it undid', async ({ page }) => {

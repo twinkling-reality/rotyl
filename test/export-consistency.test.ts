@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { disposeWithTestDevice, readTextureRgba, testDevice, writeTextureRgba } from './gpu-harness.ts';
-import { renderExport } from '../src/core/render/export-renderer.ts';
+import { ExportRenderer } from '../src/core/render/export-renderer.ts';
 import { CompositeRenderer } from '../src/core/render/composite-renderer.ts';
 import { MaskRefiner } from '../src/core/mask/mask-refiner.ts';
 import {
@@ -86,19 +86,18 @@ async function exportAt(size: number): Promise<Uint8Array> {
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
   });
 
-  await renderExport({
+  const exporter = new ExportRenderer({
     device,
     renderer,
     refiner,
     sourceTexture,
     sourceSize: { width: size, height: size },
-    // The stroke is expressed as a fraction of this image, so the same
-    // selection is described at either resolution.
-    commands: [centreStroke(size)],
-    style: COMIC_STYLE,
-    controls: defaultControls(COMIC_STYLE),
-    target,
+    outputSize: { width: size, height: size },
   });
+  // The stroke is expressed as a fraction of this image, so the same selection
+  // is described at either resolution.
+  await exporter.render(target, [centreStroke(size)], 0, COMIC_STYLE, defaultControls(COMIC_STYLE));
+  exporter.dispose();
 
   const output = await readTextureRgba(device, target, size, size);
   sourceTexture.destroy();
