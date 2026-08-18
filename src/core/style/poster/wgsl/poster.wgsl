@@ -22,6 +22,18 @@
 const MIN_BAND_SOFTNESS: f32 = 0.12;
 /** Least width of a palette boundary, in Oklab distance. */
 const MIN_MARGIN_SOFTNESS: f32 = 0.02;
+/**
+ * Least HALF width of the outline's threshold, in Oklab distance.
+ *
+ * Same rule as the two above and the same units, "how different do two areas
+ * have to be". What it does not do is make the outline temporally sound on
+ * detailed content, and the sweep that establishes that is in
+ * tools/style-bench: the quantity being thresholded is a distance between two
+ * QUANTISED colours, so it is discrete, and a width cannot resolve a decision
+ * whose input jumps. It is worth having anyway because it costs nothing and
+ * because a hazy frame and a face are both cases where the input does not jump.
+ */
+const MIN_LINE_SOFTNESS: f32 = 0.02;
 
 struct Uniforms {
   // xy: one output texel. zw: the line's half width, in uv - a fraction of the
@@ -160,7 +172,14 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
   apart = max(apart, distance(flat, flatLabAt(uv - vec2f(u.texel.z, 0.0), picture)));
   apart = max(apart, distance(flat, flatLabAt(uv + vec2f(0.0, u.texel.w), picture)));
   apart = max(apart, distance(flat, flatLabAt(uv - vec2f(0.0, u.texel.w), picture)));
-  let line = u.lineWeight * smoothstep(u.lineThreshold, u.lineThreshold + u.lineSoftness, apart);
+  // CENTRED ON THE THRESHOLD, not opening at it. A transition that starts where
+  // the decision is does not resolve that decision, it displaces it: widening
+  // one to survive noise leaves every genuine boundary part way up the ramp,
+  // and a boundary is about one band apart, which is barely past the threshold
+  // to begin with. Measured, widening the one-sided window took the outlines
+  // off the reference scene altogether while the flicker was still there.
+  let lineSoftness = max(u.lineSoftness, MIN_LINE_SOFTNESS);
+  let line = u.lineWeight * smoothstep(u.lineThreshold - lineSoftness, u.lineThreshold + lineSoftness, apart);
 
   // The line takes the palette's darkest stop rather than black, so a picture
   // in petrol and aqua is drawn in petrol. With no palette that stop is black

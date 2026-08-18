@@ -163,6 +163,8 @@ export function resolvePosterParams(
     // does not only darken the lines - it draws more of them, reaching further
     // into boundaries the flatten found faint.
     lineThreshold: lerp(0.2, 0.045, line),
+    // HALF the width of that threshold's transition: the decision is resolved
+    // around the threshold rather than displaced past it. The shader floors it.
     lineSoftness: 0.02,
 
     styleMix: fadeToNothing(strength),
