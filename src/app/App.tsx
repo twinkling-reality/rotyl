@@ -14,7 +14,15 @@ import { uploadFrameToTexture, uploadImageToTexture } from '../platform/texture-
 // pulls in nothing.
 import { describeVideoLoadError, looksLikeVideo } from '../platform/video/video-file.ts';
 import type { FrameProvider } from '../platform/video/frame-provider.ts';
-import { exportFilename, exportImage, imageFileSource, type ExportSource } from '../platform/image-export.ts';
+import {
+  ExportCancelled,
+  exportFilename,
+  openSink,
+  runExport,
+  type ExportFormat,
+  type ExportSource,
+} from '../platform/export/export.ts';
+import { clipSource, imageFileSource, videoSource } from '../platform/export/export-source.ts';
 import { defaultControls, type StyleControls, type StyleDefinition } from '../core/style/style.ts';
 import { editedFrames } from '../core/document/selection-command.ts';
 import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
@@ -107,6 +115,15 @@ export function App(): JSX.Element {
   const [playing, setPlaying] = useState(false);
   /** Read by the playback loop, which must not be restarted to see a change. */
   const playingRef = useRef(false);
+  /**
+   * How far a clip export has got, and how to stop it.
+   *
+   * A fraction only where one is real, which until now was the model download
+   * alone. A clip is the second: hundreds of frames with a known total, where
+   * "Exporting" on its own would be indistinguishable from a hang for minutes.
+   */
+  const [exportProgress, setExportProgress] = useState<number | undefined>(undefined);
+  const exportAbort = useRef<AbortController | undefined>(undefined);
 
   /**
    * The decoder, and the texture it uploads into.
@@ -476,63 +493,98 @@ export function App(): JSX.Element {
     [runtime, onScrub],
   );
 
-  const onExport = useCallback(async (): Promise<void> => {
-    if (!runtime || !loaded) return;
-    setBusy('Exporting');
-    setError(undefined);
-    try {
+  /**
+   * Write it out.
+   *
+   * ONE PATH FOR BOTH. A source hands over frames and a sink takes them; a
+   * photograph is a one-frame document and goes through the same loop once.
+   * The only decision here is which pair the user asked for, which is the one
+   * decision that genuinely belongs in the interface.
+   */
+  const onExport = useCallback(
+    async (what: 'frame' | 'clip'): Promise<void> => {
+      if (!runtime || !loaded) return;
+      // Anything that replaces what is on screen ends playback, and an export
+      // walks the decoder through the whole file.
+      if (playingRef.current) pause();
+
       const provider = providerRef.current;
+      const clip = what === 'clip' && provider !== undefined;
+      const format: ExportFormat = clip ? 'mp4' : 'png';
+      const controller = new AbortController();
+      exportAbort.current = controller;
+
+      setBusy('Exporting');
+      setExportProgress(clip ? 0 : undefined);
+      setError(undefined);
+
+      // Only when it moves. A clip is hundreds of frames and setting state per
+      // frame would re-render the application two hundred times a second to
+      // move a hairline by a fraction of a pixel.
+      let shownPercent = -1;
+
       // A video frame is already full resolution as the decoder hands it over,
       // so there is nothing to go back to the file for. A photograph is decoded
-      // again, because the preview may have been capped.
-      const source: ExportSource =
-        loaded.video && provider
-          ? {
-              width: provider.info.width,
-              height: provider.info.height,
-              async fill(device, texture) {
-                const shown = await provider.readFrame(frame, (decoded) => {
-                  uploadFrameToTexture(device, decoded, texture);
-                });
-                if (!shown) throw new Error('That frame could not be decoded again.');
-              },
-              release: () => undefined,
-            }
-          : await imageFileSource(loaded.file, runtime.maxTextureDimension);
+      // again, because the preview may have been capped for memory.
+      const openSource = (): Promise<ExportSource> => {
+        if (clip) return Promise.resolve(clipSource(provider));
+        if (provider) return Promise.resolve(videoSource(provider, [frame]));
+        return imageFileSource(loaded.file, runtime.maxTextureDimension);
+      };
 
-      const result = await exportImage({
-        device: runtime.device,
-        maxTextureDimension: runtime.maxTextureDimension,
-        renderer: runtime.engine.compositeRenderer,
-        refiner: runtime.engine.maskRefiner,
-        source,
-        // The frame on screen is the frame exported, so it is that frame's
-        // commands and no others.
-        commands: runtime.engine.frameCommands,
-        style,
-        controls,
-        format: 'png',
-      });
+      try {
+        const result = await runExport({
+          device: runtime.device,
+          maxTextureDimension: runtime.maxTextureDimension,
+          renderer: runtime.engine.compositeRenderer,
+          refiner: runtime.engine.maskRefiner,
+          source: await openSource(),
+          sink: await openSink(format),
+          // The whole log. Which commands are in effect on a frame is core's
+          // question, and an export that answered it here could answer it
+          // differently from the preview.
+          commands: runtime.engine.document.appliedCommands,
+          style,
+          controls,
+          onProgress: (written, total) => {
+            const percent = Math.round((written / total) * 100);
+            if (percent === shownPercent) return;
+            shownPercent = percent;
+            setExportProgress(written / total);
+          },
+          signal: controller.signal,
+        });
 
-      const url = URL.createObjectURL(result.blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = exportFilename(loaded.name, 'png', loaded.video ? frame : undefined);
-      link.click();
-      // Revoked on the next task so the download has taken the reference; a
-      // leaked object URL pins the whole encoded image in memory.
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 0);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Export failed.');
-    } finally {
-      // Export replaced the style chain's stage textures with
-      // export-resolution ones; the next interactive frame rebuilds them.
-      runtime.engine.invalidateStyle();
-      setBusy(undefined);
-    }
-  }, [runtime, loaded, style, controls, frame]);
+        const url = URL.createObjectURL(result.blob);
+        const link = document.createElement('a');
+        link.href = url;
+        // A frame of a clip carries its number, because exporting three of them
+        // would otherwise write the same name three times. The clip is the
+        // document and takes the document's name.
+        link.download = exportFilename(loaded.name, format, !clip && loaded.video ? frame : undefined);
+        link.click();
+        // Revoked on the next task so the download has taken the reference; a
+        // leaked object URL pins the whole encoded file in memory.
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 0);
+      } catch (cause) {
+        // Stopping is not failing, and saying so would be the product arguing
+        // with a button the user just pressed.
+        if (!(cause instanceof ExportCancelled)) {
+          setError(cause instanceof Error ? cause.message : 'Export failed.');
+        }
+      } finally {
+        exportAbort.current = undefined;
+        // Export replaced the style chain's stage textures with
+        // export-resolution ones; the next interactive frame rebuilds them.
+        runtime.engine.invalidateStyle();
+        setBusy(undefined);
+        setExportProgress(undefined);
+      }
+    },
+    [runtime, loaded, style, controls, frame, pause],
+  );
 
   // --- keyboard ---
   useEffect(() => {
@@ -655,6 +707,9 @@ export function App(): JSX.Element {
           onRedo={noop}
           onExport={noop}
           exportDisabled
+          canExportClip={false}
+          exporting={false}
+          onCancelExport={noop}
           onClose={noop}
           hasEdits={false}
         />
@@ -678,6 +733,9 @@ export function App(): JSX.Element {
           onRedo={noop}
           onExport={noop}
           exportDisabled
+          canExportClip={false}
+          exporting={false}
+          onCancelExport={noop}
           onClose={noop}
           hasEdits={false}
         />
@@ -689,7 +747,7 @@ export function App(): JSX.Element {
   }
 
   const selection = runtime?.engine.document;
-  const status = activity ? { label: activity } : describePerception(perception);
+  const status = activity ? { label: activity, progress: exportProgress } : describePerception(perception);
   // Object selection can fail on its own, a download that will not complete,
   // a runtime the browser will not start, and it has no other surface.
   const notice = error ?? (perception.kind === 'failed' ? perception.message : undefined);
@@ -714,8 +772,13 @@ export function App(): JSX.Element {
         onRedo={() => {
           stepHistory('redo');
         }}
-        onExport={() => void onExport()}
+        onExport={(what) => void onExport(what)}
         exportDisabled={!loaded || activity !== undefined}
+        canExportClip={loaded?.video !== undefined}
+        exporting={exportProgress !== undefined}
+        onCancelExport={() => {
+          exportAbort.current?.abort();
+        }}
         onClose={closeFile}
         hasEdits={hasEdits}
       />

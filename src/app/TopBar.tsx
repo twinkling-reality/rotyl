@@ -12,8 +12,14 @@ export interface TopBarProps {
   readonly canRedo: boolean;
   readonly onUndo: () => void;
   readonly onRedo: () => void;
-  readonly onExport: () => void;
+  /** What to write: the frame on screen, or every frame. */
+  readonly onExport: (what: 'frame' | 'clip') => void;
   readonly exportDisabled: boolean;
+  /** Whether there is a clip to write, as opposed to one picture. */
+  readonly canExportClip: boolean;
+  /** A clip export in progress, which is the only one long enough to stop. */
+  readonly exporting: boolean;
+  readonly onCancelExport: () => void;
   /** Give the file back and return to the drop zone. */
   readonly onClose: () => void;
   /** Whether closing would discard work, which decides if it asks first. */
@@ -30,6 +36,9 @@ export function TopBar({
   onRedo,
   onExport,
   exportDisabled,
+  canExportClip,
+  exporting,
+  onCancelExport,
   onClose,
   hasEdits,
 }: TopBarProps): JSX.Element {
@@ -82,10 +91,13 @@ export function TopBar({
             <RedoIcon />
             <span class="visually-hidden">Redo</span>
           </button>
-          <button type="button" class="export-button" onClick={onExport} disabled={exportDisabled}>
-            <DownloadIcon />
-            Export
-          </button>
+          <ExportControl
+            onExport={onExport}
+            disabled={exportDisabled}
+            canExportClip={canExportClip}
+            exporting={exporting}
+            onCancel={onCancelExport}
+          />
         </div>
       ) : (
         /*
@@ -99,6 +111,84 @@ export function TopBar({
         </a>
       )}
     </header>
+  );
+}
+
+/**
+ * Saving, which is one thing for a photograph and two for a clip.
+ *
+ * A photograph has one answer and gets one button. A clip has two, and the one
+ * that gets the weight is the clip, because the clip is what somebody opened a
+ * video to make. Saving the frame on screen stays a text button beside it,
+ * quieter by size and colour rather than by being hidden behind anything.
+ *
+ * While a clip is being written the pair becomes a single Stop, in place. A
+ * clip export is minutes of work on the comic style and seconds on the other
+ * two, and an operation that cannot be called off is a hang with a progress
+ * bar on it. It replaces the buttons rather than sitting beside them because
+ * there is exactly one thing to do while it runs.
+ */
+function ExportControl({
+  onExport,
+  disabled,
+  canExportClip,
+  exporting,
+  onCancel,
+}: {
+  onExport: (what: 'frame' | 'clip') => void;
+  disabled: boolean;
+  canExportClip: boolean;
+  exporting: boolean;
+  onCancel: () => void;
+}): JSX.Element {
+  if (exporting) {
+    return (
+      <button type="button" class="export-button export-button--stop" onClick={onCancel}>
+        Stop
+      </button>
+    );
+  }
+
+  if (!canExportClip) {
+    return (
+      <button
+        type="button"
+        class="export-button"
+        onClick={() => {
+          onExport('frame');
+        }}
+        disabled={disabled}
+      >
+        <DownloadIcon />
+        Export
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        class="text-button"
+        onClick={() => {
+          onExport('frame');
+        }}
+        disabled={disabled}
+      >
+        Frame
+      </button>
+      <button
+        type="button"
+        class="export-button"
+        onClick={() => {
+          onExport('clip');
+        }}
+        disabled={disabled}
+      >
+        <DownloadIcon />
+        Clip
+      </button>
+    </>
   );
 }
 

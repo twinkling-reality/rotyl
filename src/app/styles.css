@@ -416,6 +416,35 @@ button {
   cursor: default;
 }
 
+/* Stopping borrows the danger colour for as long as it is offered and gives it
+   straight back, the same way closing over unsaved work asks. */
+.export-button--stop {
+  background: var(--danger);
+}
+
+/* The quieter half of a pair. Smaller and lighter in colour, never lighter in
+   weight: this project takes its hierarchy from size and spacing. */
+.text-button {
+  height: var(--h-control);
+  padding: 0 var(--s-2);
+  border-radius: var(--r-sm);
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.text-button:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.text-button:disabled {
+  color: var(--line-strong);
+  cursor: default;
+}
+
 /* ---------- empty state ---------- */
 
 .dropzone-region {
