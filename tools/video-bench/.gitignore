@@ -1,4 +1,7 @@
 clips/
 .bundle/
-# results.json is checked in: it is the evidence for the README.
+# results.json is checked in: it is the evidence for the README. So are the
+# bundle sizes, which have their own command because they need a build and no
+# browser, and which the research page reads at build time like everything else.
 results-*.json
+!results-bundle.json

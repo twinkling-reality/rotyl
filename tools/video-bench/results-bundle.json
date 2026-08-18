@@ -1,0 +1,44 @@
+{
+  "what": "mediabunny through Rotyl own build, reading and writing containers",
+  "minifier": "oxc",
+  "cases": {
+    "read MP4": {
+      "raw": 148304,
+      "gzip": 35997
+    },
+    "read MP4 QTFF": {
+      "raw": 148554,
+      "gzip": 36046
+    },
+    "read MP4 QTFF WEBM": {
+      "raw": 216311,
+      "gzip": 50537
+    },
+    "write MP4, packets only": {
+      "raw": 132380,
+      "gzip": 31202
+    },
+    "write MP4": {
+      "raw": 211467,
+      "gzip": 49650
+    },
+    "write MP4 MOV": {
+      "raw": 211502,
+      "gzip": 49662
+    },
+    "write MP4 WEBM": {
+      "raw": 249458,
+      "gzip": 58291
+    },
+    "read MP4 QTFF + write MP4": {
+      "raw": 337997,
+      "gzip": 78614
+    }
+  },
+  "deltas": {
+    "writing, on top of reading": 42568,
+    "a second container to write": 12,
+    "Matroska to write": 8641,
+    "the encoder wrapper": 18448
+  }
+}
