@@ -1,0 +1,2444 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "real-chain": {
+    "the synthetic scene": {
+      "720p": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 134.5,
+            "min": 130.8,
+            "max": 150.8
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 44.9,
+            "min": 43.1,
+            "max": 48
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 50.4,
+            "min": 49.6,
+            "max": 52.4
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 1.3,
+            "min": 1.1,
+            "max": 1.4
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 0.5,
+            "min": 0.4,
+            "max": 0.6
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 1.3,
+            "min": 1.2,
+            "max": 1.3
+          }
+        }
+      },
+      "2 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 108.7,
+            "min": 103.4,
+            "max": 112.2
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 42.7,
+            "min": 40.1,
+            "max": 47.6
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 220.5,
+            "min": 217.2,
+            "max": 227.7
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 1.4,
+            "min": 1.3,
+            "max": 1.6
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 0.6,
+            "min": 0.5,
+            "max": 0.6
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 1.4,
+            "min": 1.3,
+            "max": 1.9
+          }
+        }
+      },
+      "12 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 114.5,
+            "min": 110.5,
+            "max": 118.5
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 43,
+            "min": 41.1,
+            "max": 46.7
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 382.7,
+            "min": 380.6,
+            "max": 388.3
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 3.9,
+            "min": 3.8,
+            "max": 4.1
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 1.9,
+            "min": 1.8,
+            "max": 2.1
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 3.9,
+            "min": 3.8,
+            "max": 4
+          }
+        }
+      },
+      "24 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 116.4,
+            "min": 112.2,
+            "max": 122.7
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 43.1,
+            "min": 41.8,
+            "max": 45.7
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 381.2,
+            "min": 378.3,
+            "max": 389.7
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 6.8,
+            "min": 6.6,
+            "max": 7.1
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 3.9,
+            "min": 3.7,
+            "max": 4.8
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 6.9,
+            "min": 6.7,
+            "max": 7
+          }
+        }
+      }
+    },
+    "facade": {
+      "720p": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 121.3,
+            "min": 119.2,
+            "max": 123.9
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 45.7,
+            "min": 44.5,
+            "max": 49.5
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 47.3,
+            "min": 46.7,
+            "max": 49.2
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 1.3,
+            "min": 1.2,
+            "max": 1.5
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 0.5,
+            "min": 0.4,
+            "max": 0.6
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 1.3,
+            "min": 1.2,
+            "max": 1.4
+          }
+        }
+      },
+      "2 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 100.2,
+            "min": 98.1,
+            "max": 104.6
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 43.1,
+            "min": 42,
+            "max": 46.7
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 198.8,
+            "min": 196.3,
+            "max": 202.5
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 1.4,
+            "min": 1.3,
+            "max": 1.6
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 0.6,
+            "min": 0.5,
+            "max": 0.7
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 1.4,
+            "min": 1.3,
+            "max": 1.6
+          }
+        }
+      },
+      "12 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 109.5,
+            "min": 106.3,
+            "max": 112.8
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 44.5,
+            "min": 43,
+            "max": 47.9
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 348.6,
+            "min": 337.6,
+            "max": 352.7
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 3.9,
+            "min": 3.8,
+            "max": 4.1
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 2,
+            "min": 2,
+            "max": 2.2
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 3.9,
+            "min": 3.8,
+            "max": 4.7
+          }
+        }
+      },
+      "24 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 109.9,
+            "min": 107.1,
+            "max": 114.8
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 45.5,
+            "min": 43.5,
+            "max": 46
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 347.9,
+            "min": 340.3,
+            "max": 355
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 7.1,
+            "min": 6.9,
+            "max": 7.4
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 4.1,
+            "min": 4,
+            "max": 5.1
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 6.9,
+            "min": 6.9,
+            "max": 8
+          }
+        }
+      }
+    },
+    "foliage": {
+      "720p": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 125.4,
+            "min": 122.8,
+            "max": 131.8
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 48.8,
+            "min": 48.3,
+            "max": 51.6
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 45.5,
+            "min": 45.1,
+            "max": 46.7
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 1.3,
+            "min": 1.2,
+            "max": 1.4
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 0.5,
+            "min": 0.4,
+            "max": 0.5
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 1.3,
+            "min": 1.2,
+            "max": 1.4
+          }
+        }
+      },
+      "2 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 107.3,
+            "min": 104.7,
+            "max": 111
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 46.3,
+            "min": 44.8,
+            "max": 48.8
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 194.2,
+            "min": 190.4,
+            "max": 197.8
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 1.4,
+            "min": 1.4,
+            "max": 1.5
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 0.6,
+            "min": 0.5,
+            "max": 0.7
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 1.5,
+            "min": 1.4,
+            "max": 1.5
+          }
+        }
+      },
+      "12 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 115.7,
+            "min": 113.4,
+            "max": 119.3
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 46.6,
+            "min": 45.4,
+            "max": 49.6
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 341.6,
+            "min": 336.4,
+            "max": 345.7
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 3.8,
+            "min": 3.7,
+            "max": 3.9
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 1.9,
+            "min": 1.8,
+            "max": 2.1
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 3.9,
+            "min": 3.7,
+            "max": 4.1
+          }
+        }
+      },
+      "24 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 115.5,
+            "min": 114.4,
+            "max": 118.2
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 46.9,
+            "min": 46.5,
+            "max": 50.1
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 342.2,
+            "min": 336.1,
+            "max": 345
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 6.7,
+            "min": 6.6,
+            "max": 6.8
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 3.7,
+            "min": 3.5,
+            "max": 3.8
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 6.7,
+            "min": 6.5,
+            "max": 6.8
+          }
+        }
+      }
+    },
+    "fog": {
+      "720p": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 116.7,
+            "min": 113.1,
+            "max": 118.1
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 43,
+            "min": 42,
+            "max": 45.9
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 46.6,
+            "min": 45.8,
+            "max": 47.5
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 1.3,
+            "min": 1.2,
+            "max": 1.4
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 0.5,
+            "min": 0.4,
+            "max": 0.6
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 1.3,
+            "min": 1.2,
+            "max": 1.4
+          }
+        }
+      },
+      "2 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 97.9,
+            "min": 94.9,
+            "max": 102
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 39,
+            "min": 38.2,
+            "max": 41.4
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 196.6,
+            "min": 195.2,
+            "max": 200.6
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 1.4,
+            "min": 1.2,
+            "max": 1.6
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 0.6,
+            "min": 0.5,
+            "max": 0.7
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 1.4,
+            "min": 1.4,
+            "max": 1.5
+          }
+        }
+      },
+      "12 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 103.9,
+            "min": 100.4,
+            "max": 105.7
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 40.6,
+            "min": 39.3,
+            "max": 42.9
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 344.5,
+            "min": 341,
+            "max": 347.8
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 3.9,
+            "min": 3.8,
+            "max": 4
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 1.9,
+            "min": 1.8,
+            "max": 2
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 3.8,
+            "min": 3.8,
+            "max": 4
+          }
+        }
+      },
+      "24 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 105.4,
+            "min": 103.5,
+            "max": 109.6
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 40.3,
+            "min": 39.7,
+            "max": 43.6
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 346.2,
+            "min": 340.4,
+            "max": 350.8
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 6.6,
+            "min": 6.6,
+            "max": 6.7
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 3.7,
+            "min": 3.5,
+            "max": 3.8
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 6.8,
+            "min": 6.6,
+            "max": 7.1
+          }
+        }
+      }
+    },
+    "portrait": {
+      "720p": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 101.8,
+            "min": 99.9,
+            "max": 106.8
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 40.4,
+            "min": 38.7,
+            "max": 42.2
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 39.2,
+            "min": 38.6,
+            "max": 40.2
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 1.3,
+            "min": 1.2,
+            "max": 1.4
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 0.5,
+            "min": 0.4,
+            "max": 0.6
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 1.3,
+            "min": 1.1,
+            "max": 1.3
+          }
+        }
+      },
+      "2 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 85.1,
+            "min": 83,
+            "max": 88.4
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 36.9,
+            "min": 35.9,
+            "max": 39.3
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 161,
+            "min": 156.9,
+            "max": 164.6
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 1.5,
+            "min": 1.4,
+            "max": 1.7
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 0.6,
+            "min": 0.5,
+            "max": 0.6
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 1.5,
+            "min": 1.4,
+            "max": 1.6
+          }
+        }
+      },
+      "12 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 93.3,
+            "min": 89.5,
+            "max": 97.2
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 37.6,
+            "min": 36.9,
+            "max": 39.4
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 284.5,
+            "min": 281.4,
+            "max": 289.3
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 3.9,
+            "min": 3.8,
+            "max": 4
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 1.9,
+            "min": 1.9,
+            "max": 2
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 3.9,
+            "min": 3.7,
+            "max": 4
+          }
+        }
+      },
+      "24 MP": {
+        "comic, default": {
+          "full": {
+            "n": 11,
+            "median": 93.6,
+            "min": 90.8,
+            "max": 95
+          }
+        },
+        "comic, detail 0": {
+          "full": {
+            "n": 11,
+            "median": 38.3,
+            "min": 37.7,
+            "max": 39.9
+          }
+        },
+        "comic, detail 1": {
+          "full": {
+            "n": 11,
+            "median": 285.4,
+            "min": 281.2,
+            "max": 289
+          }
+        },
+        "poster, default": {
+          "full": {
+            "n": 11,
+            "median": 6.8,
+            "min": 6.7,
+            "max": 6.9
+          }
+        },
+        "print, default": {
+          "full": {
+            "n": 11,
+            "median": 3.7,
+            "min": 3.6,
+            "max": 3.9
+          }
+        },
+        "poster, no line": {
+          "full": {
+            "n": 11,
+            "median": 6.8,
+            "min": 6.6,
+            "max": 7
+          }
+        }
+      }
+    }
+  },
+  "real-chain:wall-seconds": 113.5,
+  "real-perturbation": {
+    "the synthetic scene": {
+      "sigma 0.5": {
+        "input": {
+          "mean": 0.468,
+          "p99": 1,
+          "flicker": 0
+        },
+        "comic, default": {
+          "mean": 0.191,
+          "p99": 1,
+          "flicker": 0.035,
+          "amplification": {
+            "mean": 0.408,
+            "p99": 1
+          }
+        },
+        "comic, detail 0": {
+          "mean": 0.152,
+          "p99": 1,
+          "flicker": 0.006,
+          "amplification": {
+            "mean": 0.325,
+            "p99": 1
+          }
+        },
+        "comic, detail 1": {
+          "mean": 0.292,
+          "p99": 2,
+          "flicker": 0.117,
+          "amplification": {
+            "mean": 0.624,
+            "p99": 2
+          }
+        },
+        "poster, default": {
+          "mean": 0.129,
+          "p99": 1,
+          "flicker": 0.148,
+          "amplification": {
+            "mean": 0.276,
+            "p99": 1
+          }
+        },
+        "print, default": {
+          "mean": 0.307,
+          "p99": 2,
+          "flicker": 0.01,
+          "amplification": {
+            "mean": 0.656,
+            "p99": 2
+          }
+        },
+        "poster, no line": {
+          "mean": 0.053,
+          "p99": 1,
+          "flicker": 0.017,
+          "amplification": {
+            "mean": 0.113,
+            "p99": 1
+          }
+        }
+      },
+      "sigma 2": {
+        "input": {
+          "mean": 2.123,
+          "p99": 6,
+          "flicker": 0.008
+        },
+        "comic, default": {
+          "mean": 0.482,
+          "p99": 3,
+          "flicker": 0.227,
+          "amplification": {
+            "mean": 0.227,
+            "p99": 0.5
+          }
+        },
+        "comic, detail 0": {
+          "mean": 0.381,
+          "p99": 2,
+          "flicker": 0.077,
+          "amplification": {
+            "mean": 0.179,
+            "p99": 0.333
+          }
+        },
+        "comic, detail 1": {
+          "mean": 0.782,
+          "p99": 7,
+          "flicker": 0.798,
+          "amplification": {
+            "mean": 0.368,
+            "p99": 1.167
+          }
+        },
+        "poster, default": {
+          "mean": 0.405,
+          "p99": 3,
+          "flicker": 0.556,
+          "amplification": {
+            "mean": 0.191,
+            "p99": 0.5
+          }
+        },
+        "print, default": {
+          "mean": 0.76,
+          "p99": 5,
+          "flicker": 0.151,
+          "amplification": {
+            "mean": 0.358,
+            "p99": 0.833
+          }
+        },
+        "poster, no line": {
+          "mean": 0.146,
+          "p99": 2,
+          "flicker": 0.128,
+          "amplification": {
+            "mean": 0.069,
+            "p99": 0.333
+          }
+        }
+      }
+    },
+    "facade": {
+      "sigma 0.5": {
+        "input": {
+          "mean": 0.468,
+          "p99": 1,
+          "flicker": 0
+        },
+        "comic, default": {
+          "mean": 0.308,
+          "p99": 3,
+          "flicker": 0.192,
+          "amplification": {
+            "mean": 0.658,
+            "p99": 3
+          }
+        },
+        "comic, detail 0": {
+          "mean": 0.251,
+          "p99": 2,
+          "flicker": 0.077,
+          "amplification": {
+            "mean": 0.536,
+            "p99": 2
+          }
+        },
+        "comic, detail 1": {
+          "mean": 0.61,
+          "p99": 8,
+          "flicker": 0.906,
+          "amplification": {
+            "mean": 1.303,
+            "p99": 8
+          }
+        },
+        "poster, default": {
+          "mean": 0.804,
+          "p99": 12,
+          "flicker": 1.396,
+          "amplification": {
+            "mean": 1.718,
+            "p99": 12
+          }
+        },
+        "print, default": {
+          "mean": 0.286,
+          "p99": 2,
+          "flicker": 0.007,
+          "amplification": {
+            "mean": 0.611,
+            "p99": 2
+          }
+        },
+        "poster, no line": {
+          "mean": 0.257,
+          "p99": 2,
+          "flicker": 0.051,
+          "amplification": {
+            "mean": 0.549,
+            "p99": 2
+          }
+        }
+      },
+      "sigma 2": {
+        "input": {
+          "mean": 2.123,
+          "p99": 6,
+          "flicker": 0.008
+        },
+        "comic, default": {
+          "mean": 0.803,
+          "p99": 10,
+          "flicker": 1.248,
+          "amplification": {
+            "mean": 0.378,
+            "p99": 1.667
+          }
+        },
+        "comic, detail 0": {
+          "mean": 0.66,
+          "p99": 7,
+          "flicker": 0.838,
+          "amplification": {
+            "mean": 0.311,
+            "p99": 1.167
+          }
+        },
+        "comic, detail 1": {
+          "mean": 1.73,
+          "p99": 29,
+          "flicker": 3.479,
+          "amplification": {
+            "mean": 0.815,
+            "p99": 4.833
+          }
+        },
+        "poster, default": {
+          "mean": 2.594,
+          "p99": 78,
+          "flicker": 4.933,
+          "amplification": {
+            "mean": 1.222,
+            "p99": 13
+          }
+        },
+        "print, default": {
+          "mean": 0.704,
+          "p99": 5,
+          "flicker": 0.2,
+          "amplification": {
+            "mean": 0.332,
+            "p99": 0.833
+          }
+        },
+        "poster, no line": {
+          "mean": 0.666,
+          "p99": 8,
+          "flicker": 0.849,
+          "amplification": {
+            "mean": 0.314,
+            "p99": 1.333
+          }
+        }
+      }
+    },
+    "foliage": {
+      "sigma 0.5": {
+        "input": {
+          "mean": 0.468,
+          "p99": 1,
+          "flicker": 0
+        },
+        "comic, default": {
+          "mean": 0.21,
+          "p99": 2,
+          "flicker": 0.067,
+          "amplification": {
+            "mean": 0.449,
+            "p99": 2
+          }
+        },
+        "comic, detail 0": {
+          "mean": 0.189,
+          "p99": 2,
+          "flicker": 0.029,
+          "amplification": {
+            "mean": 0.404,
+            "p99": 2
+          }
+        },
+        "comic, detail 1": {
+          "mean": 0.34,
+          "p99": 3,
+          "flicker": 0.306,
+          "amplification": {
+            "mean": 0.726,
+            "p99": 3
+          }
+        },
+        "poster, default": {
+          "mean": 0.544,
+          "p99": 7,
+          "flicker": 0.914,
+          "amplification": {
+            "mean": 1.162,
+            "p99": 7
+          }
+        },
+        "print, default": {
+          "mean": 0.273,
+          "p99": 2,
+          "flicker": 0.004,
+          "amplification": {
+            "mean": 0.583,
+            "p99": 2
+          }
+        },
+        "poster, no line": {
+          "mean": 0.191,
+          "p99": 2,
+          "flicker": 0.123,
+          "amplification": {
+            "mean": 0.408,
+            "p99": 2
+          }
+        }
+      },
+      "sigma 2": {
+        "input": {
+          "mean": 2.122,
+          "p99": 6,
+          "flicker": 0.008
+        },
+        "comic, default": {
+          "mean": 0.604,
+          "p99": 6,
+          "flicker": 0.646,
+          "amplification": {
+            "mean": 0.285,
+            "p99": 1
+          }
+        },
+        "comic, detail 0": {
+          "mean": 0.53,
+          "p99": 5,
+          "flicker": 0.433,
+          "amplification": {
+            "mean": 0.25,
+            "p99": 0.833
+          }
+        },
+        "comic, detail 1": {
+          "mean": 0.98,
+          "p99": 12,
+          "flicker": 1.305,
+          "amplification": {
+            "mean": 0.462,
+            "p99": 2
+          }
+        },
+        "poster, default": {
+          "mean": 1.662,
+          "p99": 58,
+          "flicker": 2.719,
+          "amplification": {
+            "mean": 0.783,
+            "p99": 9.667
+          }
+        },
+        "print, default": {
+          "mean": 0.692,
+          "p99": 5,
+          "flicker": 0.189,
+          "amplification": {
+            "mean": 0.326,
+            "p99": 0.833
+          }
+        },
+        "poster, no line": {
+          "mean": 0.536,
+          "p99": 7,
+          "flicker": 0.832,
+          "amplification": {
+            "mean": 0.253,
+            "p99": 1.167
+          }
+        }
+      }
+    },
+    "fog": {
+      "sigma 0.5": {
+        "input": {
+          "mean": 0.468,
+          "p99": 1,
+          "flicker": 0
+        },
+        "comic, default": {
+          "mean": 0.167,
+          "p99": 1,
+          "flicker": 0.027,
+          "amplification": {
+            "mean": 0.357,
+            "p99": 1
+          }
+        },
+        "comic, detail 0": {
+          "mean": 0.14,
+          "p99": 1,
+          "flicker": 0.019,
+          "amplification": {
+            "mean": 0.299,
+            "p99": 1
+          }
+        },
+        "comic, detail 1": {
+          "mean": 0.302,
+          "p99": 2,
+          "flicker": 0.168,
+          "amplification": {
+            "mean": 0.645,
+            "p99": 2
+          }
+        },
+        "poster, default": {
+          "mean": 0.189,
+          "p99": 2,
+          "flicker": 0.278,
+          "amplification": {
+            "mean": 0.404,
+            "p99": 2
+          }
+        },
+        "print, default": {
+          "mean": 0.25,
+          "p99": 2,
+          "flicker": 0.018,
+          "amplification": {
+            "mean": 0.534,
+            "p99": 2
+          }
+        },
+        "poster, no line": {
+          "mean": 0.07,
+          "p99": 1,
+          "flicker": 0.019,
+          "amplification": {
+            "mean": 0.15,
+            "p99": 1
+          }
+        }
+      },
+      "sigma 2": {
+        "input": {
+          "mean": 2.122,
+          "p99": 6,
+          "flicker": 0.008
+        },
+        "comic, default": {
+          "mean": 0.426,
+          "p99": 3,
+          "flicker": 0.296,
+          "amplification": {
+            "mean": 0.201,
+            "p99": 0.5
+          }
+        },
+        "comic, detail 0": {
+          "mean": 0.358,
+          "p99": 3,
+          "flicker": 0.193,
+          "amplification": {
+            "mean": 0.169,
+            "p99": 0.5
+          }
+        },
+        "comic, detail 1": {
+          "mean": 0.772,
+          "p99": 7,
+          "flicker": 0.822,
+          "amplification": {
+            "mean": 0.364,
+            "p99": 1.167
+          }
+        },
+        "poster, default": {
+          "mean": 0.615,
+          "p99": 10,
+          "flicker": 1.106,
+          "amplification": {
+            "mean": 0.29,
+            "p99": 1.667
+          }
+        },
+        "print, default": {
+          "mean": 0.606,
+          "p99": 5,
+          "flicker": 0.266,
+          "amplification": {
+            "mean": 0.286,
+            "p99": 0.833
+          }
+        },
+        "poster, no line": {
+          "mean": 0.194,
+          "p99": 3,
+          "flicker": 0.231,
+          "amplification": {
+            "mean": 0.091,
+            "p99": 0.5
+          }
+        }
+      }
+    },
+    "portrait": {
+      "sigma 0.5": {
+        "input": {
+          "mean": 0.463,
+          "p99": 1,
+          "flicker": 0
+        },
+        "comic, default": {
+          "mean": 0.156,
+          "p99": 1,
+          "flicker": 0.016,
+          "amplification": {
+            "mean": 0.337,
+            "p99": 1
+          }
+        },
+        "comic, detail 0": {
+          "mean": 0.141,
+          "p99": 1,
+          "flicker": 0.011,
+          "amplification": {
+            "mean": 0.305,
+            "p99": 1
+          }
+        },
+        "comic, detail 1": {
+          "mean": 0.239,
+          "p99": 1,
+          "flicker": 0.053,
+          "amplification": {
+            "mean": 0.516,
+            "p99": 1
+          }
+        },
+        "poster, default": {
+          "mean": 0.453,
+          "p99": 5,
+          "flicker": 0.71,
+          "amplification": {
+            "mean": 0.978,
+            "p99": 5
+          }
+        },
+        "print, default": {
+          "mean": 0.236,
+          "p99": 2,
+          "flicker": 0.004,
+          "amplification": {
+            "mean": 0.51,
+            "p99": 2
+          }
+        },
+        "poster, no line": {
+          "mean": 0.182,
+          "p99": 2,
+          "flicker": 0.109,
+          "amplification": {
+            "mean": 0.393,
+            "p99": 2
+          }
+        }
+      },
+      "sigma 2": {
+        "input": {
+          "mean": 2.088,
+          "p99": 6,
+          "flicker": 0.007
+        },
+        "comic, default": {
+          "mean": 0.424,
+          "p99": 3,
+          "flicker": 0.238,
+          "amplification": {
+            "mean": 0.203,
+            "p99": 0.5
+          }
+        },
+        "comic, detail 0": {
+          "mean": 0.406,
+          "p99": 3,
+          "flicker": 0.241,
+          "amplification": {
+            "mean": 0.194,
+            "p99": 0.5
+          }
+        },
+        "comic, detail 1": {
+          "mean": 0.602,
+          "p99": 3,
+          "flicker": 0.327,
+          "amplification": {
+            "mean": 0.288,
+            "p99": 0.5
+          }
+        },
+        "poster, default": {
+          "mean": 1.387,
+          "p99": 38,
+          "flicker": 2.033,
+          "amplification": {
+            "mean": 0.664,
+            "p99": 6.333
+          }
+        },
+        "print, default": {
+          "mean": 0.574,
+          "p99": 5,
+          "flicker": 0.109,
+          "amplification": {
+            "mean": 0.275,
+            "p99": 0.833
+          }
+        },
+        "poster, no line": {
+          "mean": 0.545,
+          "p99": 7,
+          "flicker": 0.846,
+          "amplification": {
+            "mean": 0.261,
+            "p99": 1.167
+          }
+        }
+      }
+    }
+  },
+  "real-perturbation:wall-seconds": 6.3,
+  "real-clips": {
+    "the synthetic scene, fixed camera": {
+      "comic, default": {
+        "source": {
+          "mean": 2.418,
+          "p99": 9.3,
+          "flicker": 2.927
+        },
+        "styled": {
+          "mean": 0.922,
+          "p99": 3.2,
+          "flicker": 0.091
+        },
+        "amplification": {
+          "mean": 0.381,
+          "p99": 0.344
+        },
+        "pairs": 23
+      },
+      "comic, detail 0": {
+        "source": {
+          "mean": 2.418,
+          "p99": 9.3,
+          "flicker": 2.927
+        },
+        "styled": {
+          "mean": 0.759,
+          "p99": 2.6,
+          "flicker": 0.056
+        },
+        "amplification": {
+          "mean": 0.314,
+          "p99": 0.28
+        },
+        "pairs": 23
+      },
+      "comic, detail 1": {
+        "source": {
+          "mean": 2.418,
+          "p99": 9.3,
+          "flicker": 2.927
+        },
+        "styled": {
+          "mean": 1.406,
+          "p99": 5.5,
+          "flicker": 0.435
+        },
+        "amplification": {
+          "mean": 0.581,
+          "p99": 0.591
+        },
+        "pairs": 23
+      },
+      "poster, default": {
+        "source": {
+          "mean": 2.418,
+          "p99": 9.3,
+          "flicker": 2.927
+        },
+        "styled": {
+          "mean": 0.541,
+          "p99": 4.7,
+          "flicker": 0.529
+        },
+        "amplification": {
+          "mean": 0.224,
+          "p99": 0.505
+        },
+        "pairs": 23
+      },
+      "print, default": {
+        "source": {
+          "mean": 2.418,
+          "p99": 9.3,
+          "flicker": 2.927
+        },
+        "styled": {
+          "mean": 1.393,
+          "p99": 12.7,
+          "flicker": 3.004
+        },
+        "amplification": {
+          "mean": 0.576,
+          "p99": 1.366
+        },
+        "pairs": 23
+      },
+      "poster, no line": {
+        "source": {
+          "mean": 2.418,
+          "p99": 9.3,
+          "flicker": 2.927
+        },
+        "styled": {
+          "mean": 0.322,
+          "p99": 3.5,
+          "flicker": 0.134
+        },
+        "amplification": {
+          "mean": 0.133,
+          "p99": 0.376
+        },
+        "pairs": 23
+      }
+    },
+    "facade, fixed camera": {
+      "comic, default": {
+        "source": {
+          "mean": 1.194,
+          "p99": 5.6,
+          "flicker": 0.256
+        },
+        "styled": {
+          "mean": 0.687,
+          "p99": 4.9,
+          "flicker": 0.461
+        },
+        "amplification": {
+          "mean": 0.575,
+          "p99": 0.875
+        },
+        "pairs": 23
+      },
+      "comic, detail 0": {
+        "source": {
+          "mean": 1.194,
+          "p99": 5.6,
+          "flicker": 0.256
+        },
+        "styled": {
+          "mean": 0.594,
+          "p99": 3.5,
+          "flicker": 0.252
+        },
+        "amplification": {
+          "mean": 0.497,
+          "p99": 0.625
+        },
+        "pairs": 23
+      },
+      "comic, detail 1": {
+        "source": {
+          "mean": 1.194,
+          "p99": 5.6,
+          "flicker": 0.256
+        },
+        "styled": {
+          "mean": 1.076,
+          "p99": 11.2,
+          "flicker": 1.349
+        },
+        "amplification": {
+          "mean": 0.901,
+          "p99": 2
+        },
+        "pairs": 23
+      },
+      "poster, default": {
+        "source": {
+          "mean": 1.194,
+          "p99": 5.6,
+          "flicker": 0.256
+        },
+        "styled": {
+          "mean": 1.57,
+          "p99": 32.1,
+          "flicker": 2.343
+        },
+        "amplification": {
+          "mean": 1.315,
+          "p99": 5.732
+        },
+        "pairs": 23
+      },
+      "print, default": {
+        "source": {
+          "mean": 1.194,
+          "p99": 5.6,
+          "flicker": 0.256
+        },
+        "styled": {
+          "mean": 0.727,
+          "p99": 7.7,
+          "flicker": 1.124
+        },
+        "amplification": {
+          "mean": 0.609,
+          "p99": 1.375
+        },
+        "pairs": 23
+      },
+      "poster, no line": {
+        "source": {
+          "mean": 1.194,
+          "p99": 5.6,
+          "flicker": 0.256
+        },
+        "styled": {
+          "mean": 0.809,
+          "p99": 5.3,
+          "flicker": 0.395
+        },
+        "amplification": {
+          "mean": 0.678,
+          "p99": 0.946
+        },
+        "pairs": 23
+      }
+    },
+    "foliage, fixed camera": {
+      "comic, default": {
+        "source": {
+          "mean": 1.702,
+          "p99": 6.8,
+          "flicker": 0.643
+        },
+        "styled": {
+          "mean": 0.887,
+          "p99": 4.3,
+          "flicker": 0.351
+        },
+        "amplification": {
+          "mean": 0.521,
+          "p99": 0.632
+        },
+        "pairs": 23
+      },
+      "comic, detail 0": {
+        "source": {
+          "mean": 1.702,
+          "p99": 6.8,
+          "flicker": 0.643
+        },
+        "styled": {
+          "mean": 0.791,
+          "p99": 3.8,
+          "flicker": 0.264
+        },
+        "amplification": {
+          "mean": 0.465,
+          "p99": 0.559
+        },
+        "pairs": 23
+      },
+      "comic, detail 1": {
+        "source": {
+          "mean": 1.702,
+          "p99": 6.8,
+          "flicker": 0.643
+        },
+        "styled": {
+          "mean": 1.167,
+          "p99": 5.9,
+          "flicker": 0.555
+        },
+        "amplification": {
+          "mean": 0.686,
+          "p99": 0.868
+        },
+        "pairs": 23
+      },
+      "poster, default": {
+        "source": {
+          "mean": 1.702,
+          "p99": 6.8,
+          "flicker": 0.643
+        },
+        "styled": {
+          "mean": 1.535,
+          "p99": 33.2,
+          "flicker": 2.094
+        },
+        "amplification": {
+          "mean": 0.902,
+          "p99": 4.882
+        },
+        "pairs": 23
+      },
+      "print, default": {
+        "source": {
+          "mean": 1.702,
+          "p99": 6.8,
+          "flicker": 0.643
+        },
+        "styled": {
+          "mean": 1.074,
+          "p99": 9.9,
+          "flicker": 1.836
+        },
+        "amplification": {
+          "mean": 0.631,
+          "p99": 1.456
+        },
+        "pairs": 23
+      },
+      "poster, no line": {
+        "source": {
+          "mean": 1.702,
+          "p99": 6.8,
+          "flicker": 0.643
+        },
+        "styled": {
+          "mean": 0.771,
+          "p99": 5.9,
+          "flicker": 0.556
+        },
+        "amplification": {
+          "mean": 0.453,
+          "p99": 0.868
+        },
+        "pairs": 23
+      }
+    },
+    "fog, fixed camera": {
+      "comic, default": {
+        "source": {
+          "mean": 1.966,
+          "p99": 7.1,
+          "flicker": 0.737
+        },
+        "styled": {
+          "mean": 0.779,
+          "p99": 2.8,
+          "flicker": 0.112
+        },
+        "amplification": {
+          "mean": 0.396,
+          "p99": 0.394
+        },
+        "pairs": 23
+      },
+      "comic, detail 0": {
+        "source": {
+          "mean": 1.966,
+          "p99": 7.1,
+          "flicker": 0.737
+        },
+        "styled": {
+          "mean": 0.647,
+          "p99": 2.3,
+          "flicker": 0.079
+        },
+        "amplification": {
+          "mean": 0.329,
+          "p99": 0.324
+        },
+        "pairs": 23
+      },
+      "comic, detail 1": {
+        "source": {
+          "mean": 1.966,
+          "p99": 7.1,
+          "flicker": 0.737
+        },
+        "styled": {
+          "mean": 1.158,
+          "p99": 4.7,
+          "flicker": 0.378
+        },
+        "amplification": {
+          "mean": 0.589,
+          "p99": 0.662
+        },
+        "pairs": 23
+      },
+      "poster, default": {
+        "source": {
+          "mean": 1.966,
+          "p99": 7.1,
+          "flicker": 0.737
+        },
+        "styled": {
+          "mean": 0.516,
+          "p99": 5.7,
+          "flicker": 0.645
+        },
+        "amplification": {
+          "mean": 0.262,
+          "p99": 0.803
+        },
+        "pairs": 23
+      },
+      "print, default": {
+        "source": {
+          "mean": 1.966,
+          "p99": 7.1,
+          "flicker": 0.737
+        },
+        "styled": {
+          "mean": 1.171,
+          "p99": 13.7,
+          "flicker": 2.567
+        },
+        "amplification": {
+          "mean": 0.596,
+          "p99": 1.93
+        },
+        "pairs": 23
+      },
+      "poster, no line": {
+        "source": {
+          "mean": 1.966,
+          "p99": 7.1,
+          "flicker": 0.737
+        },
+        "styled": {
+          "mean": 0.291,
+          "p99": 3.1,
+          "flicker": 0.109
+        },
+        "amplification": {
+          "mean": 0.148,
+          "p99": 0.437
+        },
+        "pairs": 23
+      }
+    },
+    "portrait, fixed camera": {
+      "comic, default": {
+        "source": {
+          "mean": 1.831,
+          "p99": 7.6,
+          "flicker": 1.039
+        },
+        "styled": {
+          "mean": 0.866,
+          "p99": 3.4,
+          "flicker": 0.102
+        },
+        "amplification": {
+          "mean": 0.473,
+          "p99": 0.447
+        },
+        "pairs": 23
+      },
+      "comic, detail 0": {
+        "source": {
+          "mean": 1.831,
+          "p99": 7.6,
+          "flicker": 1.039
+        },
+        "styled": {
+          "mean": 0.724,
+          "p99": 2.9,
+          "flicker": 0.086
+        },
+        "amplification": {
+          "mean": 0.395,
+          "p99": 0.382
+        },
+        "pairs": 23
+      },
+      "comic, detail 1": {
+        "source": {
+          "mean": 1.831,
+          "p99": 7.6,
+          "flicker": 1.039
+        },
+        "styled": {
+          "mean": 1.205,
+          "p99": 4.8,
+          "flicker": 0.145
+        },
+        "amplification": {
+          "mean": 0.658,
+          "p99": 0.632
+        },
+        "pairs": 23
+      },
+      "poster, default": {
+        "source": {
+          "mean": 1.831,
+          "p99": 7.6,
+          "flicker": 1.039
+        },
+        "styled": {
+          "mean": 1.16,
+          "p99": 15.9,
+          "flicker": 1.35
+        },
+        "amplification": {
+          "mean": 0.634,
+          "p99": 2.092
+        },
+        "pairs": 23
+      },
+      "print, default": {
+        "source": {
+          "mean": 1.831,
+          "p99": 7.6,
+          "flicker": 1.039
+        },
+        "styled": {
+          "mean": 1.298,
+          "p99": 12.5,
+          "flicker": 2.99
+        },
+        "amplification": {
+          "mean": 0.709,
+          "p99": 1.645
+        },
+        "pairs": 23
+      },
+      "poster, no line": {
+        "source": {
+          "mean": 1.831,
+          "p99": 7.6,
+          "flicker": 1.039
+        },
+        "styled": {
+          "mean": 0.673,
+          "p99": 5.1,
+          "flicker": 0.384
+        },
+        "amplification": {
+          "mean": 0.368,
+          "p99": 0.671
+        },
+        "pairs": 23
+      }
+    },
+    "Tears of Steel, exterior": {
+      "comic, default": {
+        "source": {
+          "mean": 2.188,
+          "p99": 24.5,
+          "flicker": 4.344
+        },
+        "styled": {
+          "mean": 2.423,
+          "p99": 44,
+          "flicker": 4.222
+        },
+        "amplification": {
+          "mean": 1.107,
+          "p99": 1.796
+        },
+        "pairs": 23
+      },
+      "comic, detail 0": {
+        "source": {
+          "mean": 2.188,
+          "p99": 24.5,
+          "flicker": 4.344
+        },
+        "styled": {
+          "mean": 2.005,
+          "p99": 34.2,
+          "flicker": 3.671
+        },
+        "amplification": {
+          "mean": 0.916,
+          "p99": 1.396
+        },
+        "pairs": 23
+      },
+      "comic, detail 1": {
+        "source": {
+          "mean": 2.188,
+          "p99": 24.5,
+          "flicker": 4.344
+        },
+        "styled": {
+          "mean": 2.934,
+          "p99": 55.8,
+          "flicker": 5.311
+        },
+        "amplification": {
+          "mean": 1.341,
+          "p99": 2.278
+        },
+        "pairs": 23
+      },
+      "poster, default": {
+        "source": {
+          "mean": 2.188,
+          "p99": 24.5,
+          "flicker": 4.344
+        },
+        "styled": {
+          "mean": 4.033,
+          "p99": 102.3,
+          "flicker": 6.46
+        },
+        "amplification": {
+          "mean": 1.843,
+          "p99": 4.176
+        },
+        "pairs": 23
+      },
+      "print, default": {
+        "source": {
+          "mean": 2.188,
+          "p99": 24.5,
+          "flicker": 4.344
+        },
+        "styled": {
+          "mean": 1.926,
+          "p99": 27.3,
+          "flicker": 4.257
+        },
+        "amplification": {
+          "mean": 0.88,
+          "p99": 1.114
+        },
+        "pairs": 23
+      },
+      "poster, no line": {
+        "source": {
+          "mean": 2.188,
+          "p99": 24.5,
+          "flicker": 4.344
+        },
+        "styled": {
+          "mean": 1.671,
+          "p99": 27.2,
+          "flicker": 3.915
+        },
+        "amplification": {
+          "mean": 0.764,
+          "p99": 1.11
+        },
+        "pairs": 23
+      }
+    },
+    "Tears of Steel, interior": {
+      "comic, default": {
+        "source": {
+          "mean": 2.125,
+          "p99": 14,
+          "flicker": 2.907
+        },
+        "styled": {
+          "mean": 1.675,
+          "p99": 20.9,
+          "flicker": 1.907
+        },
+        "amplification": {
+          "mean": 0.788,
+          "p99": 1.493
+        },
+        "pairs": 23
+      },
+      "comic, detail 0": {
+        "source": {
+          "mean": 2.125,
+          "p99": 14,
+          "flicker": 2.907
+        },
+        "styled": {
+          "mean": 1.35,
+          "p99": 15.3,
+          "flicker": 1.52
+        },
+        "amplification": {
+          "mean": 0.635,
+          "p99": 1.093
+        },
+        "pairs": 23
+      },
+      "comic, detail 1": {
+        "source": {
+          "mean": 2.125,
+          "p99": 14,
+          "flicker": 2.907
+        },
+        "styled": {
+          "mean": 2.123,
+          "p99": 27.2,
+          "flicker": 2.95
+        },
+        "amplification": {
+          "mean": 0.999,
+          "p99": 1.943
+        },
+        "pairs": 23
+      },
+      "poster, default": {
+        "source": {
+          "mean": 2.125,
+          "p99": 14,
+          "flicker": 2.907
+        },
+        "styled": {
+          "mean": 2.364,
+          "p99": 62.6,
+          "flicker": 3.091
+        },
+        "amplification": {
+          "mean": 1.112,
+          "p99": 4.471
+        },
+        "pairs": 23
+      },
+      "print, default": {
+        "source": {
+          "mean": 2.125,
+          "p99": 14,
+          "flicker": 2.907
+        },
+        "styled": {
+          "mean": 1.708,
+          "p99": 18.7,
+          "flicker": 4.118
+        },
+        "amplification": {
+          "mean": 0.804,
+          "p99": 1.336
+        },
+        "pairs": 23
+      },
+      "poster, no line": {
+        "source": {
+          "mean": 2.125,
+          "p99": 14,
+          "flicker": 2.907
+        },
+        "styled": {
+          "mean": 1.31,
+          "p99": 18.2,
+          "flicker": 2.117
+        },
+        "amplification": {
+          "mean": 0.616,
+          "p99": 1.3
+        },
+        "pairs": 23
+      }
+    }
+  },
+  "real-clips:wall-seconds": 48.2,
+  "real-lightness": {
+    "pictures": {
+      "the synthetic scene": {
+        "p1": 0.349,
+        "p50": 0.642,
+        "p99": 0.839,
+        "mean": 0.596,
+        "spread": 0.135,
+        "chroma": 0.016
+      },
+      "facade": {
+        "p1": 0.151,
+        "p50": 0.613,
+        "p99": 0.964,
+        "mean": 0.607,
+        "spread": 0.208,
+        "chroma": 0.011
+      },
+      "foliage": {
+        "p1": 0.192,
+        "p50": 0.466,
+        "p99": 0.845,
+        "mean": 0.471,
+        "spread": 0.157,
+        "chroma": 0.03
+      },
+      "fog": {
+        "p1": 0.178,
+        "p50": 0.828,
+        "p99": 0.914,
+        "mean": 0.724,
+        "spread": 0.196,
+        "chroma": 0.011
+      },
+      "portrait": {
+        "p1": 0,
+        "p50": 0.459,
+        "p99": 0.814,
+        "mean": 0.443,
+        "spread": 0.213,
+        "chroma": 0.041
+      }
+    },
+    "palettes": {
+      "Mural": {
+        "mean": 0.6386437208348559,
+        "spread": 0.23399001915941856,
+        "chroma": 0.0680896584466568
+      },
+      "Riso": {
+        "mean": 0.5682553445777344,
+        "spread": 0.24932923798823983,
+        "chroma": 0.13314848424324915
+      },
+      "Emerald": {
+        "mean": 0.5507905627717176,
+        "spread": 0.27833881736333566,
+        "chroma": 0.07727678440585976
+      },
+      "Noir": {
+        "mean": 0.5369691607664938,
+        "spread": 0.28826395266281246,
+        "chroma": 0.024847240544599098
+      }
+    }
+  },
+  "real-lightness:wall-seconds": 0.8
+}
