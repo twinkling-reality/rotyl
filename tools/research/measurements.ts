@@ -555,6 +555,58 @@ function readback(video: unknown): Section {
   };
 }
 
+function tracksWhat(tracking: unknown): Section {
+  const SCENES = ['crossing', 'occlusion', 'blur', 'lighting'] as const;
+  const of = (scene: string, key: string): unknown => at(tracking, [`${scene}, with pointers`, key]);
+  const iou = (scene: string, key: string): string =>
+    num(tracking, [`${scene}, with pointers`, key]).toFixed(3);
+  const swapped = (scene: string): string => {
+    const list = of(scene, 'swapped');
+    return Array.isArray(list) && list.length > 0 ? `frames ${list.join(', ')}` : 'never';
+  };
+  return {
+    heading: 'It survives the three things the fixture did not have',
+    prose: [
+      'The clip these graphs were verified against was two lookalikes on converging paths, and the harness that drew it said plainly what it left out: no occlusion, no motion blur and no lighting change, which are the three things a memory bank exists for. Passing it was therefore weak evidence for the claim it was quoted for.',
+      'Three more clips, each changing exactly one of those and keeping the paths and the seed. Nothing takes the wrong object on any of them. The one that costs something is motion blur, which is also the one nobody was worried about: a smeared boundary is genuinely ambiguous, and seven points of IoU is the tracker declining to guess where a smear ends rather than losing the thing.',
+      'An illumination ramp of a stop and a half costs almost nothing, which is worth knowing because a memory entry encodes appearance and the obvious worry is that appearance from eight frames ago stops matching. It does not, at that size.',
+    ],
+    table: {
+      columns: ['clip', 'worst IoU against truth', 'took the distractor'],
+      rows: SCENES.map((scene) => [scene, iou(scene, 'worst_iou'), swapped(scene)]),
+    },
+    caveat:
+      'Worst over the frames where the object is wholly visible, from a single click on frame zero and no further input. A frame showing a sliver of an object scores badly however well a tracker is doing, so the two partial frames either side of the occlusion are reported separately in the results rather than folded in here. The masks are identical to the PyTorch reference on every frame of every clip, which is the other half of what this run checks.',
+    command: 'python tools/edgetam-export/verify.py --sweep',
+  };
+}
+
+function pointers(tracking: unknown): Section {
+  const delay = (which: string): number => num(tracking, [`occlusion, ${which}`, 'reacquisition_delay']);
+  const worst = (scene: string, which: string): string =>
+    num(tracking, [`${scene}, ${which}`, 'worst_iou']).toFixed(3);
+  return {
+    heading: 'Object pointers cost one frame, and it is the frame that matters',
+    prose: [
+      'The published mask decoder does not expose `object_pointer`, the token that carries an object’s identity between frames, so a first implementation either re-exports the decoder or goes without. Measured on the old fixture, going without cost nothing, and that result was published with a warning attached to it: pointers exist for re-identification after occlusion, and the fixture had none.',
+      'With an occlusion in the clip the cost appears, and it is exactly where the warning said it would be. It is not a swap and it is not drift. Without pointers the tracker misses the frame the object comes back on entirely, produces no mask at all, and picks it up on the next one.',
+      'Every average hides that. The worst IoU over whole frames is a shade better without pointers, because the run that skips the hardest frame is not scored on it. One frame late on a re-entry is a small thing on a fixture and a visible thing on a clip somebody exports, and it is the reason to re-export the decoder rather than a reason not to.',
+    ],
+    table: {
+      columns: ['', 'with pointers', 'without'],
+      rows: [
+        ['frames late returning from an occlusion', delay('with pointers').toFixed(0), delay('no pointers').toFixed(0)],
+        ['worst IoU, occlusion', worst('occlusion', 'with pointers'), worst('occlusion', 'no pointers')],
+        ['worst IoU, crossing', worst('crossing', 'with pointers'), worst('crossing', 'no pointers')],
+        ['worst IoU, motion blur', worst('blur', 'with pointers'), worst('blur', 'no pointers')],
+      ],
+    },
+    caveat:
+      'One occlusion, three frames long, on a synthetic clip. It establishes that the cost is real and where it falls, not how it grows with the length of an occlusion or the number of objects, which is what pointers are actually for and what this clip is still too short to say.',
+    command: 'python tools/edgetam-export/verify.py --sweep',
+  };
+}
+
 // --- writing a clip ---------------------------------------------------------
 
 function pipeline(video: unknown): Section {
@@ -693,7 +745,13 @@ function containerBytes(bundle: unknown): Section {
 
 // --- entries ----------------------------------------------------------------
 
-export function entries(style: unknown, real: unknown, video: unknown, bundle: unknown): readonly Entry[] {
+export function entries(
+  style: unknown,
+  real: unknown,
+  video: unknown,
+  tracking: unknown,
+  bundle: unknown,
+): readonly Entry[] {
   return [
     {
       slug: 'the-look',
@@ -766,7 +824,7 @@ export function entries(style: unknown, real: unknown, video: unknown, bundle: u
     },
     {
       slug: 'tracking',
-      results: 'tools/video-bench/results.json',
+      results: 'tools/edgetam-export/results.json',
       title: 'What tracking would cost, before building it',
       standfirst:
         'The two graphs a tracker needs, exported and run on the runtime that already ships, and the readback that looked like a bottleneck and is not.',
@@ -774,7 +832,7 @@ export function entries(style: unknown, real: unknown, video: unknown, bundle: u
       lede: [
         'Tracking does not exist yet. These are the numbers that say what it would cost and what shape it would have to take, taken before writing it rather than after.',
       ],
-      sections: [trackedFrame(video), readback(video)],
+      sections: [trackedFrame(video), readback(video), tracksWhat(tracking), pointers(tracking)],
     },
     {
       slug: 'the-editor',

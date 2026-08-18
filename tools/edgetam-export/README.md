@@ -17,10 +17,15 @@ order to avoid a directory of Python would be a much worse trade.
 
 ```bash
 python3.12 -m venv venv && ./venv/bin/pip install -r requirements.txt
-./venv/bin/python make_fixture.py
+./venv/bin/python make_fixture.py       # four clips, analytic ground truth
 ./venv/bin/python export.py
-./venv/bin/python verify.py
+./venv/bin/python verify.py --sweep     # every clip, with and without pointers
 ```
+
+`verify.py` alone takes `--scene crossing|occlusion|blur|lighting` and
+`--no-pointers` and prints a frame by frame trace, which is what to run when
+something is wrong. `--sweep` runs all eight combinations and writes
+`results.json`, which is committed and which the research page reads.
 
 `export.py` writes `onnx/memory_encoder.onnx` and `onnx/memory_attention.onnx`,
 which are gitignored: they are 139 MB and regenerating them is one command.
@@ -52,12 +57,21 @@ bank. Exports unchanged, but see the size note below.
 **One extra decoder output.** The published decoder declares `iou_scores`,
 `pred_masks` and `object_score_logits`. The memory bank also wants
 `object_pointer`, the token carrying an object's identity between frames, and it
-is not exposed. `verify.py --no-pointers` measures what going without costs: on
-the fixture, nothing. Worst IoU 0.982 against 0.949 with them. That is a weak
-result and should not be leaned on, because pointers exist for
-re-identification after occlusion and over long sequences and the fixture has
-neither. It establishes only that a first implementation is not blocked on
-re-exporting the decoder.
+is not exposed.
+
+`verify.py --no-pointers` used to report that going without cost nothing, and
+said in the same breath that the result was weak because pointers exist for
+re-identification after occlusion and the fixture had none. **It has one now,
+and the cost is exactly where the warning said.** Without pointers the tracker
+misses the frame the object comes back on, produces no mask at all, and picks it
+up on the next one. One frame late.
+
+Every average hides that, which is why it is a field in `results.json` rather
+than something to notice: worst IoU over whole frames is a shade BETTER without
+pointers, because a run that skips the hardest frame is not scored on it. So a
+first implementation is still not blocked on re-exporting the decoder, and
+re-exporting it buys back the one frame that a person watching a clip would
+see.
 
 ## The memory bank is fixed-size
 
@@ -95,23 +109,38 @@ So video's marginal download is single-digit megabytes on top of the 20 MB
 already fetched for object selection, not seventy. Deduplicating the
 initializers, or making the tables graph inputs, is work for whoever ships it.
 
-## What the fixture is for
+## What the fixtures are for
 
-`make_fixture.py` draws ten frames of two identical objects on converging paths
-over a textured ground. A tracker that has lost its memory has nothing to
-distinguish them by and will take whichever is nearer; one whose memory is
-intact keeps the object it was pointed at. Ground truth is analytic, so "the
-mask stayed on the object" is a measurement rather than an impression.
+`make_fixture.py` draws four clips over a textured ground, with analytic ground
+truth, so "the mask stayed on the object" is a measurement rather than an
+impression. The first is the control and the other three each change exactly one
+thing about it, which is the only way a row means anything.
 
-Measured, on a click on frame 0 with no further input:
+**crossing**, the original. Two identical objects on converging paths. A tracker
+that has lost its memory has nothing to distinguish them by and will take
+whichever is nearer; one whose memory is intact keeps the one it was pointed at.
 
-|                              | worst IoU vs truth | swapped to the distractor |
-| ---------------------------- | ------------------ | ------------------------- |
-| PyTorch reference            | 0.949              | never                     |
-| these graphs on ONNX Runtime | 0.949              | never                     |
+**occlusion**, which is the one that was missing. The target passes behind a bar
+for three frames and comes out the far side, with an identical object waiting
+there. The bar is the object's own width plus three frames of travel, so "fully
+hidden" follows from the geometry rather than from a number somebody has to keep
+in step with it. Nothing in the picture says which object was pointed at on the
+frame it reappears.
 
-The masks are identical, not merely similar: IoU 1.000 against the PyTorch run
-on every frame.
+**blur**, the same paths with each object integrated along its own velocity over
+half a frame, which is a 180 degree shutter. The ground truth stays the sharp
+circle: a smeared object's extent is a matter of opinion, and the question is
+whether the tracker stays on the thing rather than whether it agrees about where
+a smear ends.
+
+**lighting**, the same paths under a ramp of a stop and a half with a warm
+shift, applied to the whole picture. A memory entry encodes appearance, so this
+asks whether appearance from eight frames ago still matches what is on screen.
+
+Nothing takes the wrong object on any of them, and the masks are identical to
+the PyTorch reference on every frame of all four, not merely similar. The
+numbers are on `/research/tracking.html`, out of `results.json`, along with what
+motion blur costs, which is the only one of the three that costs anything.
 
 ## Two things found on the way
 

@@ -104,13 +104,16 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // to be fetched before it can run at all. See tools/style-bench/fetch-real.sh.
   const real = read('tools/style-bench/results-real.json');
   const video = read('tools/video-bench/results.json');
+  // Written by a Python harness against PyTorch rather than by a browser, which
+  // is why it is neither of the two above.
+  const tracking = read('tools/edgetam-export/results.json');
   // Its own file because its own command writes it: bundle sizes need a build
   // and no browser, so they are not part of the run the other numbers come from.
   const bundle = read('tools/video-bench/results-bundle.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
-    ...entries(style, real, video, bundle),
+    ...entries(style, real, video, tracking, bundle),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',

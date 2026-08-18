@@ -1,0 +1,874 @@
+{
+  "crossing, with pointers": {
+    "reacquisition_delay": null,
+    "worst_iou": 0.9493,
+    "worst_iou_partial": 1.0,
+    "swapped": [],
+    "hidden_frames": [],
+    "hidden_area": [],
+    "hidden_on_distractor": [],
+    "worst_vs_pytorch": 1.0,
+    "pytorch_worst_iou": 0.9493,
+    "pytorch_swapped": [],
+    "frames_total": 10,
+    "frames": [
+      {
+        "frame": 0,
+        "visible": true,
+        "whole": true,
+        "target": 0.9956,
+        "distractor": 0.0,
+        "area": 6648
+      },
+      {
+        "frame": 1,
+        "visible": true,
+        "whole": true,
+        "target": 0.9841,
+        "distractor": 0.0,
+        "area": 6728
+      },
+      {
+        "frame": 2,
+        "visible": true,
+        "whole": true,
+        "target": 0.9895,
+        "distractor": 0.0,
+        "area": 6591
+      },
+      {
+        "frame": 3,
+        "visible": true,
+        "whole": true,
+        "target": 0.9735,
+        "distractor": 0.0,
+        "area": 6459
+      },
+      {
+        "frame": 4,
+        "visible": true,
+        "whole": true,
+        "target": 0.9592,
+        "distractor": 0.0,
+        "area": 6907
+      },
+      {
+        "frame": 5,
+        "visible": true,
+        "whole": true,
+        "target": 0.9818,
+        "distractor": 0.0,
+        "area": 6744
+      },
+      {
+        "frame": 6,
+        "visible": true,
+        "whole": true,
+        "target": 0.9495,
+        "distractor": 0.0,
+        "area": 6977
+      },
+      {
+        "frame": 7,
+        "visible": true,
+        "whole": true,
+        "target": 0.9493,
+        "distractor": 0.0,
+        "area": 6979
+      },
+      {
+        "frame": 8,
+        "visible": true,
+        "whole": true,
+        "target": 0.9731,
+        "distractor": 0.0,
+        "area": 6808
+      },
+      {
+        "frame": 9,
+        "visible": true,
+        "whole": true,
+        "target": 0.9631,
+        "distractor": 0.0,
+        "area": 6879
+      }
+    ]
+  },
+  "crossing, no pointers": {
+    "reacquisition_delay": null,
+    "worst_iou": 0.9819,
+    "worst_iou_partial": 1.0,
+    "swapped": [],
+    "hidden_frames": [],
+    "hidden_area": [],
+    "hidden_on_distractor": [],
+    "worst_vs_pytorch": 0.9452,
+    "pytorch_worst_iou": 0.9493,
+    "pytorch_swapped": [],
+    "frames_total": 10,
+    "frames": [
+      {
+        "frame": 0,
+        "visible": true,
+        "whole": true,
+        "target": 0.9956,
+        "distractor": 0.0,
+        "area": 6648
+      },
+      {
+        "frame": 1,
+        "visible": true,
+        "whole": true,
+        "target": 0.9885,
+        "distractor": 0.0,
+        "area": 6692
+      },
+      {
+        "frame": 2,
+        "visible": true,
+        "whole": true,
+        "target": 0.9853,
+        "distractor": 0.0,
+        "area": 6720
+      },
+      {
+        "frame": 3,
+        "visible": true,
+        "whole": true,
+        "target": 0.9927,
+        "distractor": 0.0,
+        "area": 6666
+      },
+      {
+        "frame": 4,
+        "visible": true,
+        "whole": true,
+        "target": 0.9819,
+        "distractor": 0.0,
+        "area": 6743
+      },
+      {
+        "frame": 5,
+        "visible": true,
+        "whole": true,
+        "target": 0.9935,
+        "distractor": 0.0,
+        "area": 6650
+      },
+      {
+        "frame": 6,
+        "visible": true,
+        "whole": true,
+        "target": 0.9937,
+        "distractor": 0.0,
+        "area": 6595
+      },
+      {
+        "frame": 7,
+        "visible": true,
+        "whole": true,
+        "target": 0.9851,
+        "distractor": 0.0,
+        "area": 6705
+      },
+      {
+        "frame": 8,
+        "visible": true,
+        "whole": true,
+        "target": 0.9937,
+        "distractor": 0.0,
+        "area": 6607
+      },
+      {
+        "frame": 9,
+        "visible": true,
+        "whole": true,
+        "target": 0.9921,
+        "distractor": 0.0,
+        "area": 6672
+      }
+    ]
+  },
+  "occlusion, with pointers": {
+    "reacquisition_delay": 0,
+    "worst_iou": 0.9789,
+    "worst_iou_partial": 0.1183,
+    "swapped": [],
+    "hidden_frames": [
+      8,
+      9,
+      10
+    ],
+    "hidden_area": [
+      0,
+      0,
+      0
+    ],
+    "hidden_on_distractor": [],
+    "worst_vs_pytorch": 1.0,
+    "pytorch_worst_iou": 0.9789,
+    "pytorch_swapped": [],
+    "frames_total": 16,
+    "frames": [
+      {
+        "frame": 0,
+        "visible": true,
+        "whole": true,
+        "target": 0.9889,
+        "distractor": 0.0,
+        "area": 6691
+      },
+      {
+        "frame": 1,
+        "visible": true,
+        "whole": true,
+        "target": 0.9792,
+        "distractor": 0.0,
+        "area": 6764
+      },
+      {
+        "frame": 2,
+        "visible": true,
+        "whole": true,
+        "target": 0.9913,
+        "distractor": 0.0,
+        "area": 6665
+      },
+      {
+        "frame": 3,
+        "visible": true,
+        "whole": true,
+        "target": 0.9864,
+        "distractor": 0.0,
+        "area": 6712
+      },
+      {
+        "frame": 4,
+        "visible": true,
+        "whole": true,
+        "target": 0.9845,
+        "distractor": 0.0,
+        "area": 6723
+      },
+      {
+        "frame": 5,
+        "visible": true,
+        "whole": false,
+        "target": 0.9516,
+        "distractor": 0.0,
+        "area": 6486
+      },
+      {
+        "frame": 6,
+        "visible": true,
+        "whole": false,
+        "target": 0.5556,
+        "distractor": 0.0,
+        "area": 3880
+      },
+      {
+        "frame": 7,
+        "visible": true,
+        "whole": false,
+        "target": 0.1304,
+        "distractor": 0.0,
+        "area": 926
+      },
+      {
+        "frame": 8,
+        "visible": false,
+        "whole": false,
+        "target": 0.0,
+        "distractor": 0.0,
+        "area": 0
+      },
+      {
+        "frame": 9,
+        "visible": false,
+        "whole": false,
+        "target": 0.0,
+        "distractor": 0.0,
+        "area": 0
+      },
+      {
+        "frame": 10,
+        "visible": false,
+        "whole": false,
+        "target": 0.0,
+        "distractor": 0.0,
+        "area": 0
+      },
+      {
+        "frame": 11,
+        "visible": true,
+        "whole": false,
+        "target": 0.1183,
+        "distractor": 0.0,
+        "area": 807
+      },
+      {
+        "frame": 12,
+        "visible": true,
+        "whole": false,
+        "target": 0.546,
+        "distractor": 0.0,
+        "area": 3667
+      },
+      {
+        "frame": 13,
+        "visible": true,
+        "whole": false,
+        "target": 0.9409,
+        "distractor": 0.0,
+        "area": 6418
+      },
+      {
+        "frame": 14,
+        "visible": true,
+        "whole": true,
+        "target": 0.9789,
+        "distractor": 0.0,
+        "area": 6766
+      },
+      {
+        "frame": 15,
+        "visible": true,
+        "whole": true,
+        "target": 0.9806,
+        "distractor": 0.0,
+        "area": 6754
+      }
+    ]
+  },
+  "occlusion, no pointers": {
+    "reacquisition_delay": 1,
+    "worst_iou": 0.9821,
+    "worst_iou_partial": 0.0,
+    "swapped": [],
+    "hidden_frames": [
+      8,
+      9,
+      10
+    ],
+    "hidden_area": [
+      0,
+      0,
+      0
+    ],
+    "hidden_on_distractor": [],
+    "worst_vs_pytorch": 0.0,
+    "pytorch_worst_iou": 0.9789,
+    "pytorch_swapped": [],
+    "frames_total": 16,
+    "frames": [
+      {
+        "frame": 0,
+        "visible": true,
+        "whole": true,
+        "target": 0.9889,
+        "distractor": 0.0,
+        "area": 6691
+      },
+      {
+        "frame": 1,
+        "visible": true,
+        "whole": true,
+        "target": 0.9831,
+        "distractor": 0.0,
+        "area": 6733
+      },
+      {
+        "frame": 2,
+        "visible": true,
+        "whole": true,
+        "target": 0.988,
+        "distractor": 0.0,
+        "area": 6677
+      },
+      {
+        "frame": 3,
+        "visible": true,
+        "whole": true,
+        "target": 0.9821,
+        "distractor": 0.0,
+        "area": 6744
+      },
+      {
+        "frame": 4,
+        "visible": true,
+        "whole": true,
+        "target": 0.9841,
+        "distractor": 0.0,
+        "area": 6728
+      },
+      {
+        "frame": 5,
+        "visible": true,
+        "whole": false,
+        "target": 0.9528,
+        "distractor": 0.0,
+        "area": 6527
+      },
+      {
+        "frame": 6,
+        "visible": true,
+        "whole": false,
+        "target": 0.5636,
+        "distractor": 0.0,
+        "area": 3954
+      },
+      {
+        "frame": 7,
+        "visible": true,
+        "whole": false,
+        "target": 0.1308,
+        "distractor": 0.0,
+        "area": 906
+      },
+      {
+        "frame": 8,
+        "visible": false,
+        "whole": false,
+        "target": 0.0,
+        "distractor": 0.0,
+        "area": 0
+      },
+      {
+        "frame": 9,
+        "visible": false,
+        "whole": false,
+        "target": 0.0,
+        "distractor": 0.0,
+        "area": 0
+      },
+      {
+        "frame": 10,
+        "visible": false,
+        "whole": false,
+        "target": 0.0,
+        "distractor": 0.0,
+        "area": 0
+      },
+      {
+        "frame": 11,
+        "visible": true,
+        "whole": false,
+        "target": 0.0,
+        "distractor": 0.0,
+        "area": 0
+      },
+      {
+        "frame": 12,
+        "visible": true,
+        "whole": false,
+        "target": 0.5349,
+        "distractor": 0.0,
+        "area": 3545
+      },
+      {
+        "frame": 13,
+        "visible": true,
+        "whole": false,
+        "target": 0.9528,
+        "distractor": 0.0,
+        "area": 6396
+      },
+      {
+        "frame": 14,
+        "visible": true,
+        "whole": true,
+        "target": 0.9892,
+        "distractor": 0.0,
+        "area": 6639
+      },
+      {
+        "frame": 15,
+        "visible": true,
+        "whole": true,
+        "target": 0.9906,
+        "distractor": 0.0,
+        "area": 6648
+      }
+    ]
+  },
+  "blur, with pointers": {
+    "reacquisition_delay": null,
+    "worst_iou": 0.8804,
+    "worst_iou_partial": 1.0,
+    "swapped": [],
+    "hidden_frames": [],
+    "hidden_area": [],
+    "hidden_on_distractor": [],
+    "worst_vs_pytorch": 1.0,
+    "pytorch_worst_iou": 0.8804,
+    "pytorch_swapped": [],
+    "frames_total": 10,
+    "frames": [
+      {
+        "frame": 0,
+        "visible": true,
+        "whole": true,
+        "target": 0.922,
+        "distractor": 0.0,
+        "area": 7183
+      },
+      {
+        "frame": 1,
+        "visible": true,
+        "whole": true,
+        "target": 0.9419,
+        "distractor": 0.0,
+        "area": 7005
+      },
+      {
+        "frame": 2,
+        "visible": true,
+        "whole": true,
+        "target": 0.9032,
+        "distractor": 0.0,
+        "area": 7320
+      },
+      {
+        "frame": 3,
+        "visible": true,
+        "whole": true,
+        "target": 0.9253,
+        "distractor": 0.0,
+        "area": 7158
+      },
+      {
+        "frame": 4,
+        "visible": true,
+        "whole": true,
+        "target": 0.9315,
+        "distractor": 0.0,
+        "area": 7112
+      },
+      {
+        "frame": 5,
+        "visible": true,
+        "whole": true,
+        "target": 0.9019,
+        "distractor": 0.0,
+        "area": 7346
+      },
+      {
+        "frame": 6,
+        "visible": true,
+        "whole": true,
+        "target": 0.919,
+        "distractor": 0.0,
+        "area": 7207
+      },
+      {
+        "frame": 7,
+        "visible": true,
+        "whole": true,
+        "target": 0.9148,
+        "distractor": 0.0,
+        "area": 7242
+      },
+      {
+        "frame": 8,
+        "visible": true,
+        "whole": true,
+        "target": 0.8996,
+        "distractor": 0.0,
+        "area": 7364
+      },
+      {
+        "frame": 9,
+        "visible": true,
+        "whole": true,
+        "target": 0.8804,
+        "distractor": 0.0,
+        "area": 7525
+      }
+    ]
+  },
+  "blur, no pointers": {
+    "reacquisition_delay": null,
+    "worst_iou": 0.8926,
+    "worst_iou_partial": 1.0,
+    "swapped": [],
+    "hidden_frames": [],
+    "hidden_area": [],
+    "hidden_on_distractor": [],
+    "worst_vs_pytorch": 0.9601,
+    "pytorch_worst_iou": 0.8804,
+    "pytorch_swapped": [],
+    "frames_total": 10,
+    "frames": [
+      {
+        "frame": 0,
+        "visible": true,
+        "whole": true,
+        "target": 0.922,
+        "distractor": 0.0,
+        "area": 7183
+      },
+      {
+        "frame": 1,
+        "visible": true,
+        "whole": true,
+        "target": 0.9188,
+        "distractor": 0.0,
+        "area": 7192
+      },
+      {
+        "frame": 2,
+        "visible": true,
+        "whole": true,
+        "target": 0.9058,
+        "distractor": 0.0,
+        "area": 7312
+      },
+      {
+        "frame": 3,
+        "visible": true,
+        "whole": true,
+        "target": 0.9099,
+        "distractor": 0.0,
+        "area": 7281
+      },
+      {
+        "frame": 4,
+        "visible": true,
+        "whole": true,
+        "target": 0.8983,
+        "distractor": 0.0,
+        "area": 7375
+      },
+      {
+        "frame": 5,
+        "visible": true,
+        "whole": true,
+        "target": 0.9219,
+        "distractor": 0.0,
+        "area": 7174
+      },
+      {
+        "frame": 6,
+        "visible": true,
+        "whole": true,
+        "target": 0.9508,
+        "distractor": 0.0,
+        "area": 6941
+      },
+      {
+        "frame": 7,
+        "visible": true,
+        "whole": true,
+        "target": 0.9459,
+        "distractor": 0.0,
+        "area": 6971
+      },
+      {
+        "frame": 8,
+        "visible": true,
+        "whole": true,
+        "target": 0.9182,
+        "distractor": 0.0,
+        "area": 7215
+      },
+      {
+        "frame": 9,
+        "visible": true,
+        "whole": true,
+        "target": 0.8926,
+        "distractor": 0.0,
+        "area": 7422
+      }
+    ]
+  },
+  "lighting, with pointers": {
+    "reacquisition_delay": null,
+    "worst_iou": 0.9736,
+    "worst_iou_partial": 1.0,
+    "swapped": [],
+    "hidden_frames": [],
+    "hidden_area": [],
+    "hidden_on_distractor": [],
+    "worst_vs_pytorch": 1.0,
+    "pytorch_worst_iou": 0.9736,
+    "pytorch_swapped": [],
+    "frames_total": 10,
+    "frames": [
+      {
+        "frame": 0,
+        "visible": true,
+        "whole": true,
+        "target": 0.9956,
+        "distractor": 0.0,
+        "area": 6648
+      },
+      {
+        "frame": 1,
+        "visible": true,
+        "whole": true,
+        "target": 0.9841,
+        "distractor": 0.0,
+        "area": 6728
+      },
+      {
+        "frame": 2,
+        "visible": true,
+        "whole": true,
+        "target": 0.9899,
+        "distractor": 0.0,
+        "area": 6586
+      },
+      {
+        "frame": 3,
+        "visible": true,
+        "whole": true,
+        "target": 0.9736,
+        "distractor": 0.0,
+        "area": 6460
+      },
+      {
+        "frame": 4,
+        "visible": true,
+        "whole": true,
+        "target": 0.9843,
+        "distractor": 0.0,
+        "area": 6648
+      },
+      {
+        "frame": 5,
+        "visible": true,
+        "whole": true,
+        "target": 0.9768,
+        "distractor": 0.0,
+        "area": 6778
+      },
+      {
+        "frame": 6,
+        "visible": true,
+        "whole": true,
+        "target": 0.9848,
+        "distractor": 0.0,
+        "area": 6725
+      },
+      {
+        "frame": 7,
+        "visible": true,
+        "whole": true,
+        "target": 0.9915,
+        "distractor": 0.0,
+        "area": 6664
+      },
+      {
+        "frame": 8,
+        "visible": true,
+        "whole": true,
+        "target": 0.9919,
+        "distractor": 0.0,
+        "area": 6657
+      },
+      {
+        "frame": 9,
+        "visible": true,
+        "whole": true,
+        "target": 0.9919,
+        "distractor": 0.0,
+        "area": 6649
+      }
+    ]
+  },
+  "lighting, no pointers": {
+    "reacquisition_delay": null,
+    "worst_iou": 0.9794,
+    "worst_iou_partial": 1.0,
+    "swapped": [],
+    "hidden_frames": [],
+    "hidden_area": [],
+    "hidden_on_distractor": [],
+    "worst_vs_pytorch": 0.9691,
+    "pytorch_worst_iou": 0.9736,
+    "pytorch_swapped": [],
+    "frames_total": 10,
+    "frames": [
+      {
+        "frame": 0,
+        "visible": true,
+        "whole": true,
+        "target": 0.9956,
+        "distractor": 0.0,
+        "area": 6648
+      },
+      {
+        "frame": 1,
+        "visible": true,
+        "whole": true,
+        "target": 0.9885,
+        "distractor": 0.0,
+        "area": 6690
+      },
+      {
+        "frame": 2,
+        "visible": true,
+        "whole": true,
+        "target": 0.9862,
+        "distractor": 0.0,
+        "area": 6714
+      },
+      {
+        "frame": 3,
+        "visible": true,
+        "whole": true,
+        "target": 0.9915,
+        "distractor": 0.0,
+        "area": 6666
+      },
+      {
+        "frame": 4,
+        "visible": true,
+        "whole": true,
+        "target": 0.9794,
+        "distractor": 0.0,
+        "area": 6758
+      },
+      {
+        "frame": 5,
+        "visible": true,
+        "whole": true,
+        "target": 0.9828,
+        "distractor": 0.0,
+        "area": 6737
+      },
+      {
+        "frame": 6,
+        "visible": true,
+        "whole": true,
+        "target": 0.9952,
+        "distractor": 0.0,
+        "area": 6629
+      },
+      {
+        "frame": 7,
+        "visible": true,
+        "whole": true,
+        "target": 0.9869,
+        "distractor": 0.0,
+        "area": 6701
+      },
+      {
+        "frame": 8,
+        "visible": true,
+        "whole": true,
+        "target": 0.9838,
+        "distractor": 0.0,
+        "area": 6712
+      },
+      {
+        "frame": 9,
+        "visible": true,
+        "whole": true,
+        "target": 0.9929,
+        "distractor": 0.0,
+        "area": 6656
+      }
+    ]
+  }
+}
