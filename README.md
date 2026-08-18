@@ -5,6 +5,23 @@ Select part of an image and transform only that part. Everything else stays byte
 Runs on your machine. Your image is never uploaded. The only thing that crosses
 the network is the object model, once, coming to you.
 
+**What this file is:** how Rotyl is put together and why each decision went the
+way it did. Every measurement behind it lives on `/research.html`, generated
+from the benchmarks rather than typed in here.
+
+- [Running it](#running-it)
+- [How it is put together](#how-it-is-put-together): the layers, the render
+  path, what a style is, and why the selection is a command log
+- [Selecting an object](#selecting-an-object): the model, and why a 256 px mask
+  is not a boundary
+- [Video, so far](#video-so-far): playing, holding a selection across frames,
+  reading frames, and writing the clip out
+- [What was measured, and where it lives](#what-was-measured-and-where-it-lives)
+- [Closing a file](#closing-a-file) and
+  [saying that it is working](#saying-that-it-is-working)
+- [Type and fonts](#type-and-fonts), [licence](#licence),
+  [known limits](#known-limits)
+
 ## Running it
 
 ```bash
@@ -27,6 +44,12 @@ src/platform/  browser adapters: decode, texture upload, encode, mux, inference
 src/app/       Preact UI
 ```
 
+It ships as 139 KB of JavaScript, 42.5 KB gzipped, plus 31 KB of subset fonts.
+Three runtime dependencies, all but the framework code-split, so a photograph
+fetches none of the other two: the inference runtime arrives on the first object
+click, the demuxer on the first video, the container writer on the first clip
+export.
+
 `core` never imports from `platform` or `app`. That is enforced by
 `tsconfig.core.json`, which compiles `src/core` with `"lib": ["es2023"]` and no
 `dom`, so a stray `window` or `HTMLElement` fails the build rather than being
@@ -42,6 +65,15 @@ measured 50% slower than doing it on the main thread, because moving a
 full-resolution image across the boundary costs more than the parallelism
 returns. Every rejection this project has made is collected, with what decided
 it, on the research page the drop zone links to.
+
+One more decision belongs here because it is about the build rather than about
+the picture. **Shaders reach the bundle as strings**, and this codebase comments
+them as heavily as its TypeScript: 78 KB of WGSL, two thirds of it explanation,
+shipped to every user. A build-time transform removes the comments and keeps
+every newline, which is worth 17 KB gzipped, a quarter of the application
+bundle, and leaves a WGSL compile error still reporting the line it is on. It
+runs in development too, so the string the browser gets is the string both test
+suites exercise.
 
 ### The render path
 
@@ -275,6 +307,8 @@ Open an MP4 or a MOV, select a region, and play it. Every frame goes through the
 same renderer a photograph does, the same style chain, the same composite, the
 same selection.
 
+### Playing it
+
 **Playback holds full quality until it demonstrably cannot**, and the tolerance
 for that is deliberately wide. This is an editor showing what a filter does, not
 a media player, so a third of the frames carrying the real look beats all of
@@ -288,6 +322,8 @@ no tier saves it. Tracking does not exist yet.
 
 A panel of stylisation over a moving scene is what the Area tool is for: drag a
 rectangle once and the traffic runs through it.
+
+### Why stylised footage does not boil
 
 **Every stage runs per frame with no knowledge of the last one**, which is the
 thing most likely to make stylised footage look cheap: a decision that flips
@@ -308,6 +344,8 @@ units of the thing being decided rather than in pixels, took that to 4.5 and
 0.5%, at no cost anyone can see on a still. That rule generalises: a style may
 make any decision it likes, as long as the decision is allowed to be undecided
 somewhere. `tools/style-bench` has the numbers and how they were taken.
+
+### A selection belongs to a frame, and to every frame after it
 
 **A selection holds from the frame it was made on until something later changes
 it**, which is what every keyframe system does and what a selection is for: a
@@ -342,6 +380,8 @@ work while frame 100 was on screen.
 A still image is a one-frame document. `frame` is required on every command
 rather than optional, so there is no second shape to reason about and no branch
 anywhere asking which kind of file this is.
+
+### Getting frames out of a file
 
 **There is no such thing as decoding frame N.** There is decoding from the
 keyframe at or before N and discarding what comes between, so what a scrub costs
@@ -445,14 +485,21 @@ What decided all of this, and what it cost to find out, is in
 `tools/video-bench`, including the two numbers that say tracking cannot live
 in the render loop.
 
-### Everything that was measured, one finding at a time
+## What was measured, and where it lives
 
-`/research.html`, linked from the top right before a file is open: an index,
-and a page per thing
-that was learned. What a style costs and whether it holds still, what decode
-costs and where colour goes, what writing a clip costs, what tracking would cost
-before building it, what editing costs, and a ledger of every approach that was
-tried and dropped, with the number that decided it.
+**Every number this project relies on is on a page generated from the harness
+that took it.** `/research.html`, linked from the top right before a file is
+open: an index, and a page per finding. What a style costs and whether it holds
+still, what decode costs and where colour goes, what writing a clip costs, what
+tracking would cost before building it, what editing costs, and a ledger of
+every approach that was tried and dropped with the number that decided it.
+
+**The tables are not written, they are read.** Generated at build time out of
+the harnesses' own `results.json`, which is the point of it rather than a detail
+of it: a path that no longer resolves fails the build, so a stale number cannot
+reach a reader who has no way of checking it. This README carries none of those
+tables for the same reason. Every figure quoted in prose here is one somebody
+could check against a page that regenerates.
 
 One entry is one finding, because the question a reader has is "what did we
 learn" rather than "which harness produced this". Dates come from the commit
@@ -463,122 +510,15 @@ about whether output is worth looking at that shows none of it is asking to be
 taken on trust; a page of decode timings with a hero image on top is a marketing
 habit. The figures are rendered by the same harness, from the same scene,
 through the same compositor as the numbers beside them, and their captions name
-the tiles from the figure's own metadata, so a caption cannot describe a
-picture that changed underneath it. They are the one generated artefact here
-that is committed, because they need a GPU and a browser to produce and the
-build cannot make them; what the build does instead is refuse to reference one
-that is missing.
-
-It is GENERATED, at build time, out of the harnesses' own `results.json`, which
-is the point of it rather than a detail of it. Every table in every README here
-is transcribed by hand, and transcription is how "the print chain has never been
-timed" survived three chapters after it stopped being true. A path that no
-longer resolves fails the build; a stale number cannot reach a reader who has no
-way of checking it.
+the tiles from the figure's own metadata, so a caption cannot describe a picture
+that changed underneath it. They are the one generated artefact here that is
+committed, because they need a GPU and a browser to produce and the build cannot
+make them; what the build does instead is refuse to reference one that is
+missing.
 
 It is a static file and not a route, so it costs the application bundle nothing.
 Vite renders it per request in development and emits it at build, and nothing
 generated is checked in.
-
-## Measured
-
-Apple M3 Pro, Chrome. Medians over repeated runs, GPU-fenced.
-
-|                          | 2 MP   | 12 MP  | 24 MP  |
-| ------------------------ | ------ | ------ | ------ |
-| brush stroke (composite) | 1.0 ms | 2.0 ms | 3.1 ms |
-| brush stamp into mask    | 1.0 ms | 0.9 ms | 1.1 ms |
-
-The style chain only re-runs when a style control changes, never while brushing,
-which is why the numbers that matter for feel are those two rows.
-
-The chains themselves, full quality tier, default controls, from
-`tools/style-bench`:
-
-|        | 720p   | 2 MP   | 12 MP  | 24 MP  |
-| ------ | ------ | ------ | ------ | ------ |
-| comic  | 140 ms | 117 ms | 122 ms | 124 ms |
-| poster | 1.3 ms | 1.4 ms | 4.9 ms | 25 ms  |
-| print  | 0.5 ms | 0.6 ms | 2.0 ms | 13 ms  |
-
-An earlier version of this table gave the comic chain as 88/79/119 ms and said
-the print chain had never been timed the same way. Both are now measured by one
-harness against one picture, and the comic figures came out about a third higher
-than the ad-hoc ones they replace. That scene is dense with architectural edges
-and the Kuwahara's sample bound grows with local anisotropy, so it is a hard
-case rather than a typical one. What it is not is a regression.
-
-**Almost all of the comic chain is one stage.** Its cost tracks the flatten
-buffer's pixel count and barely moves with output resolution; 720p costs more
-than 2 MP because a 16:9 flatten buffer holding the same apparent radius is 19%
-larger than a 3:2 one. During a slider drag it drops to a draft tier: 17 ms at
-default detail on a 12 MP image, 82 ms at maximum detail.
-
-**The other two are per-frame budgets.** 1.3 and 0.5 ms against a 33 ms video
-frame, which is what makes a style something a clip can be played through rather
-than something a clip is rendered with.
-
-Object selection, once the model is loaded:
-
-|                                | 1 MP  | 24 MP |
-| ------------------------------ | ----- | ----- |
-| reading the frame (once)       | 19 ms | 43 ms |
-| a click (model plus composite) | 12 ms | 13 ms |
-
-A click is flat because the model always works at 1024 px square; only building
-that input scales with the photograph. Refinement adds 2 ms per engine mask to a
-mask rebuild at 24 MP, and a rebuild happens once per edit, not per frame.
-
-Video, on an ordinary 1080p30 clip:
-
-|                                  | 1 s keyframes | one keyframe |
-| -------------------------------- | ------------- | ------------ |
-| walk the container's index       | 1.8 ms        | 1.6 ms       |
-| decode the next frame            | 0.47 ms       | 0.45 ms      |
-| seek to an arbitrary frame       | 15 ms         | 88 ms        |
-| frame onto the GPU               | 0.6 ms        | 0.6 ms       |
-| render one new frame, draft tier | 16 ms         | 16 ms        |
-
-The last row is the whole renderer, style chain, composite and display, re-run
-because the source pixels changed, which is what every scrubbed frame is. The
-draft tier is what makes that affordable, and it is the same tier a style slider
-drops to while it is moving.
-
-Skipping the chain while nothing is selected looks like an easy eight-fold win
-and is not one. It only helps before a selection exists, because afterwards
-every scrubbed frame needs the styled layer again, and it moves the cost to the
-first brush stroke on each frame, where a 105 ms stall is far worse than the
-same work spread across a scrub.
-
-Writing a clip, end to end: decode, style chain, composite, capture, encode and
-mux, per frame, at the export quality tier.
-
-|        | 720p             | 1080p            |
-| ------ | ---------------- | ---------------- |
-| poster | 2.9 ms (345 fps) | 5.0 ms (199 fps) |
-| print  | 2.7 ms (375 fps) | 5.3 ms (190 fps) |
-| comic  | 117 ms (9 fps)   | 339 ms (3 fps)   |
-
-The encoder alone, with the GPU taken out of the loop, is 4.7 ms a frame at
-1080p. So for the two cheap styles that whole table is the encoder, and the only
-row where it is not is the one where the style is 339 ms.
-
-Bundle: 139 KB of JavaScript (42.5 KB gzipped), plus 31 KB of subset fonts.
-Three runtime dependencies, and two of them are code-split: 36 KB gzipped of
-inference runtime that only the Object tool fetches, 42 KB of demuxer that only
-a video fetches, and 32 KB of container writer that only a clip export fetches.
-Opening a video costs 8.8 KB more than it did before clip export existed, and
-that is the honest price of two consumers of one library: chunks are assigned
-per module rather than per symbol, so what both halves touch lands in the shared
-one carrying the exports only the writer needs.
-
-That is smaller than it was before a third style was added, because shaders
-reach the bundle as strings and this codebase comments them as heavily as its
-TypeScript: 78 KB of WGSL, two thirds of it explanation. A build-time transform
-removes the comments and keeps every newline. 17 KB gzipped, a quarter of the
-application bundle, and a WGSL compile error still reports the line it is on.
-It runs in development too, so the string the browser gets is the string both
-test suites exercise.
 
 ## Closing a file
 

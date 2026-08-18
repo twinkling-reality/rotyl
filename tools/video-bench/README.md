@@ -33,6 +33,16 @@ appears nowhere: it throttles when the pane is hidden, which silently turns a
 3 ms number into a 16 ms one. Medians of 15 to 30 runs after warm-up, on an
 Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 
+**Seven findings, each with the command that re-takes it:**
+
+1. [The 12 MB readback does not bind](#1-the-12-mb-readback-does-not-bind-and-it-is-avoidable-anyway)
+2. [Memory attention is 60 ms](#2-memory-attention-is-60-ms-and-38-at-half-precision)
+3. [Decode is 71× real time](#3-decode-is-71-real-time-the-only-cost-is-seeking)
+4. [A decoded frame needs no colour path](#4-a-decoded-frame-lands-in-the-existing-colour-contract-unchanged)
+5. [The export pipeline is 5 ms a frame](#5-the-whole-export-pipeline-is-5-ms-a-frame-and-almost-all-of-it-is-the-encoder)
+6. [Writing a container costs as much as the application](#6-writing-a-container-costs-as-much-as-the-whole-application)
+7. [The encoder is not what moves colour](#7-the-encoder-is-not-what-moves-colour)
+
 ---
 
 ## 1. The 12 MB readback does not bind, and it is avoidable anyway
@@ -101,7 +111,7 @@ devices, and by the numbers above it does not need to.
 
 ---
 
-## 2. Memory attention is 59 ms, and 38 at half precision
+## 2. Memory attention is 60 ms, and 38 at half precision
 
 The export README measured 226 ms on the CPU execution provider and said plainly
 that it was not a prediction. On WebGPU, fenced:
@@ -160,7 +170,7 @@ mask arrives after the frame does.
 
 ---
 
-## 3. Decode is 72× real time; the only cost is seeking
+## 3. Decode is 71× real time; the only cost is seeking
 
 1080p30 H.264 High with B-frames, hardware decode, driven by mediabunny's packet
 sink into our own `VideoDecoder`. Two clips, identical content, differing only
