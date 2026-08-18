@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 /**
  * The house voice, as a test rather than as a note somebody has to remember.
  *
- * NO EM DASHES. Not a typographic preference: an em dash is where two thoughts
+ * NO EM DASHES. Not a typographic preference: the character is where two thoughts
  * get welded into one sentence, and the sentence that comes out is one nobody
  * can take in at a glance. Removing it forces the choice the writing was
  * avoiding, which is a comma when the second half is subordinate and a full
@@ -17,6 +17,16 @@ import { readFileSync } from 'node:fs';
  */
 
 const BINARY = /\.(woff2|png|jpe?g|mp4|webm|webp|lock)$/;
+
+/**
+ * Built from its code point rather than written.
+ *
+ * A literal here would make this file the one place in the repository that
+ * fails its own rule, and the fix for that is either an exception or a lie
+ * about what the rule is. This way there is no exception: the character does
+ * not appear in the project at all.
+ */
+const EM_DASH = String.fromCodePoint(0x2014);
 
 function tracked(): readonly string[] {
   return execFileSync('git', ['ls-files'], { encoding: 'utf8' })
@@ -35,7 +45,7 @@ describe('the house voice', () => {
         continue;
       }
       for (const [index, line] of text.split('\n').entries()) {
-        if (line.includes('—')) offences.push(`${path}:${String(index + 1)}`);
+        if (line.includes(EM_DASH)) offences.push(`${path}:${String(index + 1)}`);
       }
     }
     expect(offences).toEqual([]);

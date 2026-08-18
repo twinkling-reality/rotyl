@@ -1,9 +1,12 @@
 import type { JSX } from 'preact';
+import { Activity } from './Activity.tsx';
 import { DownloadIcon, RedoIcon, UndoIcon } from './icons.tsx';
 
 export interface TopBarProps {
   readonly file?: { readonly name: string; readonly width: number; readonly height: number };
   readonly status?: string;
+  /** 0 to 1 where the status has a real fraction behind it. */
+  readonly statusProgress?: number | undefined;
   readonly canUndo: boolean;
   readonly canRedo: boolean;
   readonly onUndo: () => void;
@@ -15,6 +18,7 @@ export interface TopBarProps {
 export function TopBar({
   file,
   status,
+  statusProgress,
   canUndo,
   canRedo,
   onUndo,
@@ -50,7 +54,7 @@ export function TopBar({
                   ·
                 </span>
               ) : null}
-              <span class="file-status__meta">{status}</span>
+              <Activity label={status} progress={statusProgress} />
             </>
           ) : null}
         </div>

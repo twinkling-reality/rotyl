@@ -249,6 +249,92 @@ button {
   color: var(--text-primary);
 }
 
+/* ---------- motion ---------- */
+
+/*
+ * Two keyframes, and everything that moves uses one of them.
+ *
+ * `rise` is how anything arrives: four pixels and a fade, over the standard
+ * duration. Four rather than twelve because these are panels and status lines
+ * appearing beside a photograph, and the photograph is the only thing on screen
+ * allowed to draw the eye. Nothing scales, nothing bounces, nothing spins.
+ *
+ * There is no matching exit. An element that animates out has to stay mounted
+ * while it does, which means every component that can disappear grows a piece
+ * of timing state; the honest trade is that things arrive gently and leave at
+ * once, which nobody reads as abrupt because the thing they were looking at is
+ * still there.
+ */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 180% 0;
+  }
+  to {
+    background-position: -80% 0;
+  }
+}
+
+/* ---------- activity ---------- */
+
+.activity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  animation: rise var(--dur) var(--ease-out);
+}
+
+/*
+ * The words carry the motion, so there is nothing else on screen to look at.
+ * A gradient clipped to the glyphs sweeps once every 1.6s, slow enough to read
+ * as breathing rather than as a progress bar in disguise.
+ */
+.activity__label {
+  background: linear-gradient(
+    100deg,
+    var(--text-tertiary) 30%,
+    var(--text-primary) 45%,
+    var(--text-tertiary) 60%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 1.6s var(--ease-inout) infinite;
+}
+
+/* Only where a real fraction exists. Nothing else here knows its own progress. */
+.activity__track {
+  /* Fixed: it sits in a flex row that would otherwise shrink it, and a progress
+     bar whose length depends on the label beside it is not a progress bar. */
+  flex: none;
+  width: 56px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.activity__fill {
+  display: block;
+  height: 100%;
+  /* Not the accent: it is spent on focus, the drag-over dropzone and a focused
+     slider, and a progress bar is not a fourth place worth spending it. */
+  background: var(--text-secondary);
+  transform-origin: left;
+  transition: transform var(--dur) var(--ease-out);
+}
+
 /* ---------- controls ---------- */
 
 .icon-button {
@@ -351,6 +437,7 @@ button {
 }
 
 .notice {
+  animation: rise var(--dur) var(--ease-out);
   margin: var(--s-4) 0 0;
   font-size: var(--fs-sm);
   color: var(--danger);
@@ -459,6 +546,7 @@ button {
 }
 
 .candidates {
+  animation: rise var(--dur) var(--ease-out);
   position: absolute;
   left: 0;
   top: 0;
@@ -588,6 +676,7 @@ button {
 /* ---------- style panel ---------- */
 
 .style-panel {
+  animation: rise var(--dur) var(--ease-out);
   flex: none;
   width: var(--w-panel);
   max-width: 45vw;
@@ -749,6 +838,20 @@ button {
   white-space: nowrap;
 }
 
+/*
+ * A sweep across text is exactly what someone who asks for less motion is
+ * asking to be rid of, and the global rule below cannot help: freezing the
+ * animation leaves the gradient stopped mid-sweep, with half the word pale.
+ * The label falls back to a flat colour instead.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .activity__label {
+    background: none;
+    color: var(--text-secondary);
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     /* 0.01ms rather than 0: transitionend still fires, so nothing awaiting it deadlocks. */
@@ -774,6 +877,7 @@ button {
  * style panel's slider wholesale, because it is the same instrument.
  */
 .timeline {
+  animation: rise var(--dur) var(--ease-out);
   display: flex;
   align-items: center;
   gap: var(--s-3);

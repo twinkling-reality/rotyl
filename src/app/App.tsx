@@ -60,14 +60,14 @@ const TOLERATED_SKIP = 0.6;
  * happens once, so a bare "Loading" would look indistinguishable from a hang.
  * The other two are hundreds of milliseconds and a number would just flicker.
  */
-function describePerception(status: PerceptionStatus): string | undefined {
+function describePerception(status: PerceptionStatus): { label: string; progress?: number } | undefined {
   switch (status.kind) {
     case 'loading':
-      return `Downloading the object model, ${String(Math.round(status.progress * 100))}%`;
+      return { label: 'Downloading the object model', progress: status.progress };
     case 'understanding':
-      return 'Reading the image';
+      return { label: 'Reading the image' };
     case 'thinking':
-      return 'Finding the object';
+      return { label: 'Finding the object' };
     default:
       return undefined;
   }
@@ -638,7 +638,7 @@ export function App(): JSX.Element {
   }
 
   const selection = runtime?.engine.document;
-  const status = activity ?? describePerception(perception);
+  const status = activity ? { label: activity } : describePerception(perception);
   // Object selection can fail on its own, a download that will not complete,
   // a runtime the browser will not start, and it has no other surface.
   const notice = error ?? (perception.kind === 'failed' ? perception.message : undefined);
@@ -652,7 +652,7 @@ export function App(): JSX.Element {
     <div class="app">
       <TopBar
         {...(loaded ? { file: { name: loaded.name, width: loaded.width, height: loaded.height } } : {})}
-        {...(status ? { status } : {})}
+        {...(status ? { status: status.label, statusProgress: status.progress } : {})}
         canUndo={selection?.canUndo ?? false}
         canRedo={selection?.canRedo ?? false}
         onUndo={() => {

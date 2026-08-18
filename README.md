@@ -494,6 +494,38 @@ application bundle, and a WGSL compile error still reports the line it is on.
 It runs in development too, so the string the browser gets is the string both
 test suites exercise.
 
+## Saying that it is working
+
+One component, `src/app/Activity.tsx`, and every wait in the product goes
+through it: opening a file, restoring after a lost device, downloading the
+object model, reading a frame, finding an object, exporting. A product that
+spins one way here and pulses another way there reads as several products.
+
+It is a shimmer across the words rather than a spinner. A spinner says
+something is happening; text that says what is happening says that too, and
+answers the next question as well. The sweep is what stops it reading as a label
+that has got stuck, which is the whole job the spinner was doing. Where a real
+fraction exists there is a hairline under it, and the model download is the only
+place one does.
+
+**Nothing appears for the first 220 ms.** Under that, an indicator is a flash
+the eye reads as a glitch, and the work has finished before anyone has worked
+out what appeared. Over it, silence reads as a hang. Most opens and every style
+change therefore show nothing at all.
+
+The file picker gets the same treatment, and needs it most: a file input fires
+no event for "the dialog is open", so a click used to produce nothing visible
+until the operating system got around to drawing it. Window focus is the only
+signal that it closed, because `change` fires when a file is chosen and never
+when the dialog is dismissed.
+
+Everything that arrives on screen arrives the same way: four pixels and a fade,
+over 140 ms. There is no matching exit, because an element that animates out has
+to stay mounted while it does, and that is a piece of timing state in every
+component that can disappear. Things arrive gently and leave at once. Asking for
+less motion removes the sweep rather than freezing it half way, which is what
+the global reduced-motion rule alone would have done.
+
 ## Type and fonts
 
 Geist and Geist Mono, SIL OFL 1.1 (see `public/fonts/LICENSE.txt`). Subset to
