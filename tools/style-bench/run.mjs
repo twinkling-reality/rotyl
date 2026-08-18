@@ -17,11 +17,15 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { encodePng } from './png.mjs';
 
 const ALL = ['chain', 'perturbation', 'clips', 'stills', 'sweep', 'figures'];
+// Needs fetch-real.sh to have been run; kept out of `all` so the offline
+// benchmarks stay runnable without a network.
+const REAL = ['real-chain', 'real-perturbation', 'real-clips', 'real-lightness'];
 
 const args = process.argv.slice(2);
-const which = args.length === 1 && args[0] === 'all' ? ALL : args;
+const which =
+  args.length === 1 && args[0] === 'all' ? ALL : args.length === 1 && args[0] === 'real' ? REAL : args;
 if (which.length === 0) {
-  console.error(`usage: node tools/style-bench/run.mjs <all|${ALL.join('|')}>...`);
+  console.error(`usage: node tools/style-bench/run.mjs <all|real|${[...ALL, ...REAL].join('|')}>...`);
   process.exit(1);
 }
 
@@ -91,7 +95,7 @@ for (const key of ['stills', 'sweep']) {
 
 const json = JSON.stringify(result, null, 2);
 console.log(json);
-const out = `tools/style-bench/results${which === ALL ? '' : `-${which.join('-')}`}.json`;
+const out = `tools/style-bench/results${which === ALL ? '' : which === REAL ? '-real' : `-${which.join('-')}`}.json`;
 writeFileSync(out, `${json}\n`);
 console.log(`\nwritten to ${out}`);
 

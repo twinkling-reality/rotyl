@@ -7,13 +7,27 @@
 // and the PNGs out. See the README for what each one answers.
 
 import { adapterInfo, device } from '../video-bench/util.ts';
-import { chain } from './chain.ts';
-import { clips, perturbation } from './stability.ts';
+import { chain, realChain } from './chain.ts';
+import { clips, perturbation, realClips, realPerturbation } from './stability.ts';
 import { stills } from './stills.ts';
 import { sweep } from './sweep.ts';
 import { figures } from './figures.ts';
+import { lightnessStats } from './lightness.ts';
 
-export const MEASUREMENTS = ['chain', 'perturbation', 'clips', 'stills', 'sweep', 'figures'] as const;
+export const MEASUREMENTS = [
+  'chain',
+  'perturbation',
+  'clips',
+  'stills',
+  'sweep',
+  'figures',
+  // The same three, against inputs a camera produced. See fetch-real.sh, which
+  // has to have been run first.
+  'real-chain',
+  'real-perturbation',
+  'real-clips',
+  'real-lightness',
+] as const;
 
 export type Measurement = (typeof MEASUREMENTS)[number];
 
@@ -49,6 +63,11 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('stills', () => stills(dev));
   await step('sweep', () => sweep(dev));
   await step('figures', () => figures(dev));
+
+  await step('real-chain', () => realChain(dev));
+  await step('real-perturbation', () => realPerturbation(dev));
+  await step('real-clips', () => realClips(dev));
+  await step('real-lightness', () => lightnessStats());
 
   if (failures.length > 0) out['gpu-errors'] = failures;
   dev.destroy();

@@ -25,8 +25,19 @@
 // what moves.
 
 import { BlobSource, EncodedPacketSink, Input, MP4, type EncodedPacket } from 'mediabunny';
-import { amplification, CLIPS, difference, sceneBytes, StyleStage, type Difference } from './harness.ts';
-import { CASES } from './chain.ts';
+import {
+  amplification,
+  CLIPS,
+  difference,
+  pictureBytes,
+  REAL,
+  REAL_PICTURES,
+  SCENE_PICTURE,
+  StyleStage,
+  type Difference,
+  type Picture,
+} from './harness.ts';
+import { CASES, CONTENT_CASES, type Case } from './chain.ts';
 
 /** Deterministic, so the perturbation is the same on every machine. */
 function mulberry32(seed: number): () => number {
@@ -64,8 +75,12 @@ function perturb(source: Uint8Array, sigma: number, seed: number): Uint8Array {
 
 const SIZE = { width: 1280, height: 720 };
 
-export async function perturbation(device: GPUDevice): Promise<unknown> {
-  const base = await sceneBytes(SIZE.width, SIZE.height);
+async function perturbOne(
+  device: GPUDevice,
+  picture: Picture,
+  cases: readonly Case[],
+): Promise<Record<string, unknown>> {
+  const base = await pictureBytes(picture, SIZE.width, SIZE.height);
   const stage = new StyleStage(device, SIZE);
   stage.uploadBytes(base);
   const out: Record<string, unknown> = {};
@@ -75,7 +90,7 @@ export async function perturbation(device: GPUDevice): Promise<unknown> {
     const input = difference(base, shaken);
     const rows: Record<string, unknown> = { input };
 
-    for (const item of CASES) {
+    for (const item of cases) {
       await stage.render(item.style, item.controls, 'full', true);
       const first = await stage.readOutput();
       stage.uploadBytes(shaken);
@@ -92,6 +107,27 @@ export async function perturbation(device: GPUDevice): Promise<unknown> {
   }
 
   stage.dispose();
+  return out;
+}
+
+export async function perturbation(device: GPUDevice): Promise<unknown> {
+  return perturbOne(device, SCENE_PICTURE, CASES);
+}
+
+/**
+ * The same perturbation against four photographs.
+ *
+ * This is the cleanest of the three real measurements and the least like real
+ * life, which is exactly what it is for. No codec, no camera, no subject: one
+ * picture rendered twice with grain of a known size added the second time, so
+ * the ratio out to in is the style's own amplification and nothing else's. If
+ * the finding survives here and not on the film, the difference is the film.
+ */
+export async function realPerturbation(device: GPUDevice): Promise<unknown> {
+  const out: Record<string, unknown> = {};
+  for (const picture of [SCENE_PICTURE, ...REAL_PICTURES]) {
+    out[picture.name] = await perturbOne(device, picture, CONTENT_CASES);
+  }
   return out;
 }
 
@@ -179,11 +215,12 @@ async function overClip(
   url: string,
   size: { width: number; height: number },
   count: number,
+  cases: readonly Case[] = CASES,
 ): Promise<Record<string, unknown>> {
   const out: Record<string, unknown> = {};
   const stage = new StyleStage(device, size);
 
-  for (const item of CASES) {
+  for (const item of cases) {
     let previousSource: Uint8Array | undefined;
     let previousStyled: Uint8Array | undefined;
     const source: Running = { mean: 0, p99: 0, flicker: 0, n: 0 };
@@ -222,4 +259,70 @@ export async function clips(device: GPUDevice): Promise<unknown> {
     'static-720p, fixed camera': await overClip(device, `${CLIPS}/static-720p.mp4`, SIZE, 12),
     'pan-720p, camera moving': await overClip(device, `${CLIPS}/pan-720p.mp4`, SIZE, 12),
   };
+}
+
+/**
+ * The temporal measurement again, on inputs a camera produced.
+ *
+ * THREE KINDS OF ROW, and they are here together because no one of them
+ * settles it:
+ *
+ *   the control     the synthetic scene, re-taken in this same run rather than
+ *                   quoted from the table next door.
+ *   one variable    the four photographs put through exactly the recipe
+ *                   make-clips.sh uses, so the picture is the only thing that
+ *                   differs from the control. Real texture, synthetic grain.
+ *   everything      two shots of a film, stream copied. Real texture, real
+ *                   sensor noise, real codec noise, and real subject motion,
+ *                   which is the one thing the fixed camera was isolating and
+ *                   which no real shot can be without.
+ *
+ * The film rows cannot be read as absolutes for that last reason: an actor
+ * moving is a large honest change and it lands in the source column. What they
+ * can be read as is the ratio, which is what the amplification field is, and
+ * which is the number the original finding was actually about.
+ */
+export async function realClips(device: GPUDevice): Promise<unknown> {
+  const out: Record<string, unknown> = {};
+  // 24 frames rather than the control table's 12: real content varies more
+  // between pairs, and the extra frames cost seconds.
+  const FRAMES = 24;
+
+  out['the synthetic scene, fixed camera'] = await overClip(
+    device,
+    `${CLIPS}/static-720p.mp4`,
+    SIZE,
+    FRAMES,
+    CONTENT_CASES,
+  );
+  for (const picture of REAL_PICTURES) {
+    out[`${picture.name}, fixed camera`] = await overClip(
+      device,
+      `${REAL}/static-${picture.name}-720p.mp4`,
+      SIZE,
+      FRAMES,
+      CONTENT_CASES,
+    );
+  }
+
+  // Letterboxed 2.39:1, which is what the film is. Not padded to 16:9: the
+  // black bars would be a fifth of every pixel this measurement averages over,
+  // and a bar cannot boil.
+  const FILM = { width: 1280, height: 534 };
+  out['Tears of Steel, exterior'] = await overClip(
+    device,
+    `${REAL}/tos-bridge.mp4`,
+    FILM,
+    FRAMES,
+    CONTENT_CASES,
+  );
+  out['Tears of Steel, interior'] = await overClip(
+    device,
+    `${REAL}/tos-interior.mp4`,
+    FILM,
+    FRAMES,
+    CONTENT_CASES,
+  );
+
+  return out;
 }

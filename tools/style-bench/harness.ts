@@ -23,6 +23,8 @@ import type { StyleControls, StyleDefinition, StyleQuality } from '../../src/cor
 
 export const CLIPS = '/tools/style-bench/clips';
 export const SCENE = `${CLIPS}/scene.png`;
+/** Fetched by URL and pinned by hash; see fetch-real.sh for why. */
+export const REAL = '/tools/style-bench/real';
 
 /** copyTextureToBuffer wants a row stride that is a multiple of 256. */
 const ROW_ALIGN = 256;
@@ -242,18 +244,78 @@ export function amplification(styled: Difference, source: Difference): Record<st
   };
 }
 
-export async function loadScene(width: number, height: number): Promise<ImageBitmap> {
-  const blob = await (await fetch(SCENE)).blob();
-  return createImageBitmap(blob, { resizeWidth: width, resizeHeight: height, resizeQuality: 'high' });
+/**
+ * A picture a measurement can be taken against.
+ *
+ * `fit` is here rather than assumed because the two kinds of picture disagree
+ * about it and both answers are right for their own case. The synthetic scene
+ * is 16:9 and the size ladder is 3:2, and the existing table was taken with it
+ * STRETCHED into that; changing it now would move numbers this file has no
+ * business moving. A photograph cannot be treated that way: the four fetched
+ * ones run from 0.75:1 to 1.39:1, so stretching them into 3:2 would scale one
+ * axis by up to two, and what that distorts is local anisotropy, which is
+ * precisely what the expensive stage's cost depends on. So they are cropped.
+ */
+export interface Picture {
+  readonly name: string;
+  readonly url: string;
+  readonly fit: 'stretch' | 'crop';
 }
 
-/** The scene as bytes, so a perturbation can be applied and measured exactly. */
-export async function sceneBytes(width: number, height: number): Promise<Uint8Array> {
-  const bitmap = await loadScene(width, height);
+export const SCENE_PICTURE: Picture = { name: 'the synthetic scene', url: SCENE, fit: 'stretch' };
+
+/** What the four are, and why each one is here, is in fetch-real.sh. */
+export const REAL_PICTURES: readonly Picture[] = [
+  { name: 'facade', url: `${REAL}/facade.jpg`, fit: 'crop' },
+  { name: 'foliage', url: `${REAL}/foliage.jpg`, fit: 'crop' },
+  { name: 'fog', url: `${REAL}/fog.jpg`, fit: 'crop' },
+  { name: 'portrait', url: `${REAL}/portrait.jpg`, fit: 'crop' },
+];
+
+export async function loadPicture(picture: Picture, width: number, height: number): Promise<ImageBitmap> {
+  const blob = await (await fetch(picture.url)).blob();
+  if (picture.fit === 'stretch') {
+    return createImageBitmap(blob, { resizeWidth: width, resizeHeight: height, resizeQuality: 'high' });
+  }
+
+  const full = await createImageBitmap(blob);
+  const want = width / height;
+  const have = full.width / full.height;
+  const cropWidth = have > want ? Math.round(full.height * want) : full.width;
+  const cropHeight = have > want ? full.height : Math.round(full.width / want);
+  try {
+    return await createImageBitmap(
+      full,
+      (full.width - cropWidth) >> 1,
+      (full.height - cropHeight) >> 1,
+      cropWidth,
+      cropHeight,
+      {
+        resizeWidth: width,
+        resizeHeight: height,
+        resizeQuality: 'high',
+      },
+    );
+  } finally {
+    full.close();
+  }
+}
+
+export async function loadScene(width: number, height: number): Promise<ImageBitmap> {
+  return loadPicture(SCENE_PICTURE, width, height);
+}
+
+/** A picture as bytes, so a perturbation can be applied and measured exactly. */
+export async function pictureBytes(picture: Picture, width: number, height: number): Promise<Uint8Array> {
+  const bitmap = await loadPicture(picture, width, height);
   const canvas = new OffscreenCanvas(width, height);
   const context = canvas.getContext('2d');
   if (!context) throw new Error('no 2d context');
   context.drawImage(bitmap, 0, 0);
   bitmap.close();
   return new Uint8Array(context.getImageData(0, 0, width, height).data.buffer);
+}
+
+export async function sceneBytes(width: number, height: number): Promise<Uint8Array> {
+  return pictureBytes(SCENE_PICTURE, width, height);
 }
