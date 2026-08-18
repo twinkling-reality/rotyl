@@ -15,6 +15,7 @@ export class SelectionDocument {
   /** Number of commands currently applied; commands past this are redoable. */
   #applied = 0;
   #revision = 0;
+  #groups = 0;
   #listeners = new Set<() => void>();
 
   /** The commands that are currently in effect, oldest first. */
@@ -49,6 +50,16 @@ export class SelectionDocument {
   }
 
   /**
+   * An id for a gesture that is about to produce more than one command.
+   *
+   * Owned here rather than by the caller so two jobs cannot pick the same
+   * number, which would silently weld their commands into one undo.
+   */
+  beginGroup(): number {
+    return ++this.#groups;
+  }
+
+  /**
    * Step back one command, and say which one.
    *
    * ONE CURSOR OVER ONE LIST, EVEN ACROSS FRAMES, and the returned command is
@@ -68,24 +79,50 @@ export class SelectionDocument {
    */
   undo(): SelectionCommand | undefined {
     if (!this.canUndo) return undefined;
-    this.#applied--;
+    const last = this.#commands[this.#applied - 1];
+    this.#applied = this.#startOfGroup(this.#applied - 1);
     this.#bump();
-    return this.#commands[this.#applied];
+    // The FIRST command of the group, not the last, which matters only for a
+    // group and matters a lot there: a caller that follows the cursor should
+    // land on the frame the gesture was made on rather than on the frame three
+    // hundred frames later where it happened to stop.
+    return this.#commands[this.#applied] ?? last;
   }
 
   /** Step forward one command, and say which one. See `undo`. */
   redo(): SelectionCommand | undefined {
     if (!this.canRedo) return undefined;
     const command = this.#commands[this.#applied];
-    this.#applied++;
+    this.#applied = this.#endOfGroup(this.#applied);
     this.#bump();
     return command;
+  }
+
+  /** Where the group containing `index` starts, or `index` when it is alone. */
+  #startOfGroup(index: number): number {
+    const group = this.#commands[index]?.group;
+    if (group === undefined) return index;
+    let start = index;
+    while (start > 0 && this.#commands[start - 1]?.group === group) start--;
+    return start;
+  }
+
+  /** One past the end of the group starting at `index`. */
+  #endOfGroup(index: number): number {
+    const group = this.#commands[index]?.group;
+    if (group === undefined) return index + 1;
+    let end = index + 1;
+    while (end < this.#commands.length && this.#commands[end]?.group === group) end++;
+    return end;
   }
 
   /** Drop the entire history, for loading a new document. */
   reset(): void {
     this.#commands = [];
     this.#applied = 0;
+    // Group ids are NOT reset. They are only ever compared for equality, and a
+    // counter that restarts could weld a new document's first group onto a
+    // stale command someone was still holding.
     this.#bump();
   }
 

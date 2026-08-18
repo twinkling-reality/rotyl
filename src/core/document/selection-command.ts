@@ -141,7 +141,27 @@ export function editedFrames(commands: readonly SelectionCommand[]): readonly nu
   return [...new Set(commands.map((command) => command.frame))].toSorted((a, b) => a - b);
 }
 
-export type SelectionCommand = { readonly frame: number } & (
+export type SelectionCommand = {
+  readonly frame: number;
+  /**
+   * Which gesture produced this, when one gesture produced several commands.
+   *
+   * Tracking is the only thing that does, and it is why this exists: following
+   * an object through three hundred frames contributes three hundred commands,
+   * and three hundred presses of undo to take them back is not undo, it is a
+   * punishment. Commands sharing a group undo and redo together.
+   *
+   * Absent on everything else, because everything else is one gesture and one
+   * command already, and an optional field that is usually absent is cheaper to
+   * read than a group of one on every stroke.
+   *
+   * Deliberately NOT a nesting structure. A group is a flat run of consecutive
+   * commands with the same id, which is all a long-running job produces, and
+   * anything richer would be a transaction system built for a case that does
+   * not exist.
+   */
+  readonly group?: number;
+} & (
   | { readonly kind: 'paint'; readonly stroke: BrushStroke }
   | { readonly kind: 'erase'; readonly stroke: BrushStroke }
   | { readonly kind: 'clear' }
