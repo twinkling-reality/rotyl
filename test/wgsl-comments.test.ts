@@ -10,6 +10,8 @@ import { stripWgslComments } from '../vite.config.ts';
  * directions: strip too little and the saving quietly disappears, strip too
  * much and a shader stops compiling in a build that no test renders.
  */
+const lineCount = (text: string): number => text.split('\n').length;
+
 describe('stripping WGSL comments', () => {
   it('preserves the line count exactly', () => {
     // Load-bearing. A WGSL compile error is a line and a column into the
@@ -17,8 +19,7 @@ describe('stripping WGSL comments', () => {
     // transform that removed blank lines would point every production shader
     // error at the wrong place.
     const source = readFileSync('src/core/style/poster/wgsl/poster.wgsl', 'utf8');
-    const lines = (text: string): number => text.split('\n').length;
-    expect(lines(stripWgslComments(source))).toBe(lines(source));
+    expect(lineCount(stripWgslComments(source))).toBe(lineCount(source));
   });
 
   it('removes both comment forms and keeps the code between them', () => {
