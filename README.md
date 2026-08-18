@@ -138,6 +138,16 @@ unambiguous middle. It composes with clicks rather than replacing them: draw a
 box, switch back to the Object tool, and Alt-click whatever it caught by
 mistake. Drag is the box, so Shift-drag pans there, as it does in the brushes.
 
+**A box is a question, not a selection.** It asks what object lies inside the
+region and answers with the object, so dragging one around a building gives the
+building and not the rectangle. That is the point of it, and it is also the
+first thing anyone gets wrong, because the gesture is the one every other editor
+uses for a marquee. The Area tool is the marquee: the same drag, taking the
+region exactly, with an edge where it was put and no model involved. Alt-drag
+cuts one back out. The two sit on opposite sides of the toolbar's divider —
+everything left of it asks a model what is there, everything right of it draws
+what you draw.
+
 A segmentation model (EdgeTAM) runs on your machine, in the browser. The first
 use downloads it, about 16 MB compressed for the runtime and 20 MB for the
 weights, and caches both; after that it is offline. Your image is never sent
@@ -192,6 +202,9 @@ Open an MP4 or a MOV, select a region, and play it. Every frame goes through the
 same renderer a photograph does — the same style chain, the same composite, the
 same selection — at thirty frames a second on the draft tier. Export saves the
 frame on screen at full resolution, named for it. Tracking does not exist yet.
+
+A panel of stylisation over a moving scene is what the Area tool is for: drag a
+rectangle once and the traffic runs through it.
 
 **A selection holds from the frame it was made on until something later changes
 it**, which is what every keyframe system does and what a selection is for: a
@@ -394,8 +407,14 @@ of geometry did not justify a dependency.
   running the full style chain more than once per process, and abort
   intermittently when GPU work is spread across separate cases in one file. The
   GPU tests are scoped accordingly — each such file renders once and asserts
-  many times — and browsers have no such limit. Roughly one run in eight still
-  aborts under load, with and without those tests.
+  many times — and browsers have no such limit. Between one run in eight and one
+  in four still aborts under load, with and without those tests; the abort
+  arrives after every assertion has passed, so it reads as an unexplained crash
+  rather than a failure. Run it again before concluding anything from one.
+  The cost is steep enough to shape what is worth testing here: a single
+  `RotylEngine.render` in a file that already builds several engines took one
+  file from none in twelve to ten in twelve, measured back to back. What that
+  test covered is covered in Playwright instead, where a browser has no limit.
 - The end-to-end suite covers the object tool's interaction but not the model:
   36 MB over the network is the wrong thing to put in a loop that has to be
   reliable. The model path is verified by hand in a browser.
