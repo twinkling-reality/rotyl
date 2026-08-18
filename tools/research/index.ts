@@ -101,10 +101,13 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   const read = (path: string): unknown => JSON.parse(readFileSync(`${root}/${path}`, 'utf8'));
   const style = read('tools/style-bench/results.json');
   const video = read('tools/video-bench/results.json');
+  // Its own file because its own command writes it: bundle sizes need a build
+  // and no browser, so they are not part of the run the other numbers come from.
+  const bundle = read('tools/video-bench/results-bundle.json');
 
   const taken = hardware(video);
   const dated: readonly Entry[] = [
-    ...entries(style, video).map((entry) => ({
+    ...entries(style, video, bundle).map((entry) => ({
       ...entry,
       taken,
       date: lastChanged(

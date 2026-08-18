@@ -7,8 +7,8 @@ import { looksLikeVideo, type VideoLoadError } from './video-file.ts';
  * THERE IS NO SUCH THING AS DECODING FRAME N. There is decoding from the
  * keyframe at or before N and discarding what comes between, so the cost of
  * asking for a frame is set by keyframe spacing and by nothing else. Measured
- * on 1080p30 (tools/video-bench): decoding the next frame costs 0.46 ms, and
- * seeking costs 12 ms on a clip with one-second keyframes and 88 ms on the same
+ * on 1080p30 (tools/video-bench): decoding the next frame costs 0.47 ms, and
+ * seeking costs 15 ms on a clip with one-second keyframes and 88 ms on the same
  * content with one keyframe in it.
  *
  * That single fact is the whole design. A scrub that moves forward must never

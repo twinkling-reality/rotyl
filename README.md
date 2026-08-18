@@ -23,7 +23,7 @@ pnpm e2e      # Playwright, real Chrome
 
 ```
 src/core/      the engine, no DOM, no framework
-src/platform/  browser adapters: decode, texture upload, encode, inference
+src/platform/  browser adapters: decode, texture upload, encode, mux, inference
 src/app/       Preact UI
 ```
 
@@ -67,7 +67,9 @@ so the hardware does the decode and encode and the byte round trip is exact.
 **Export is not a second code path.** It is the same renderer with the same
 parameters, stopping at the same pass. The selection overlay lives in the
 display pass, which export never reaches, so a UI affordance cannot leak into a
-saved file.
+saved file. Writing a clip is that loop run once per frame rather than a second
+one: a source hands over frames, a sink takes them, and a photograph is a
+one-frame document that goes through it once.
 
 **Boundaries have no seam.** Every stage before the composite runs over the
 whole image. Masking earlier would be cheaper but wrong: a style's kernels
@@ -282,8 +284,7 @@ second because the frames it cannot render are skipped rather than queued.
 Dropping to the draft tier unconditionally was the first attempt and it was
 wrong twice over: on a small clip at high detail the two tiers are the same
 render anyway, since both clamp to the clip's own short edge, and on a large one
-no tier saves it. Export saves the
-frame on screen at full resolution, named for it. Tracking does not exist yet.
+no tier saves it. Tracking does not exist yet.
 
 A panel of stylisation over a moving scene is what the Area tool is for: drag a
 rectangle once and the traffic runs through it.
@@ -345,12 +346,16 @@ anywhere asking which kind of file this is.
 **There is no such thing as decoding frame N.** There is decoding from the
 keyframe at or before N and discarding what comes between, so what a scrub costs
 is set by keyframe spacing and by nothing else. Measured on 1080p30: the next
-frame costs 0.46 ms, a seek costs 12 ms on a clip with one-second keyframes and
+frame costs 0.47 ms, a seek costs 15 ms on a clip with one-second keyframes and
 88 ms on the same content with a single keyframe. That one fact is the whole
 design of the frame provider, one decoder is held open and fed forward, and it
 re-seeks only when the target is behind the playhead or when a keyframe lies
 between the two, which is exactly when starting again is cheaper than
 continuing.
+
+It also decides what an export writes. A clip leaves here with a keyframe every
+second rather than every two, which costs some bytes and buys a file this editor
+can scrub at the speed the row above describes rather than the one below it.
 
 Frames are addressed by index, and the index is built by walking the container
 rather than by dividing a duration by a frame rate. A variable frame rate, or
@@ -369,8 +374,72 @@ in a review.
 
 The demuxer is mediabunny, reached through a dynamic import, so a session that
 never opens a video never fetches it. MP4 and QuickTime only: they share one
-demuxer, so accepting `.mov` costs 64 bytes, where Matroska is a second demuxer
-at 15 KB carrying codecs whose decode has not been measured here.
+demuxer, so accepting `.mov` costs 49 bytes, where Matroska is a second demuxer
+at 14 KB carrying codecs whose decode has not been measured here.
+
+### Writing the clip out
+
+Export offers two answers on a clip and one on a photograph, and the one that
+gets the weight is the clip, because the clip is what somebody opened a video to
+make. The frame on screen stays available beside it, quieter by size and colour
+rather than hidden behind anything.
+
+**It is the same loop, not a second one.** A source hands over frames and a sink
+takes them; a photograph is a one-frame document and goes through it once. So
+the renderer, the parameters and the pass it stops at are the same three things
+they were when export could only write a picture, and the only new decision is
+which pair the user asked for. A second container would be one entry in a table,
+and a second codec one entry in another.
+
+**The composite reaches the encoder through the canvas it already renders into.**
+Measured, per frame at 1080p: capturing the canvas costs nothing detectable,
+where copying the composite into a buffer and rebuilding a frame from the bytes
+costs 1.4 ms and needs every row de-padded to undo the 256-byte alignment WebGPU
+imposes on texture-to-buffer copies.
+
+That path had to be checked rather than assumed, because a canvas is PRESENTED
+rather than read, so capturing one is a claim about when as much as about what.
+Being one frame out would be invisible in every timing number and would put the
+selection drawn on frame N onto the pixels of frame N minus one. Run for real
+and decoded back, all sixteen probe frames matched the source frame they were
+rendered from and no other.
+
+**A clip is written several times faster than it plays**, for a style that fits
+inside a frame, and several times slower for one that does not: 5.0 ms a frame
+at 1080p for poster and print, 339 for comic. Which is why an export says how
+far it has got and can be stopped, and why Stop replaces the buttons rather than
+sitting beside them. There is exactly one thing to do while it runs.
+
+**The encoder is the pipeline.** Handed the same picture with the GPU taken out
+of the loop entirely it measures 4.7 ms a frame at 1080p against 5.0 for
+everything, because every stage before it runs on threads it is not using.
+Writing the packets into a container rather than binning them costs a tenth of a
+millisecond, so whatever a muxer costs, it is not per frame.
+
+**And rate control had to be said out loud.** A qualitative quality level
+resolves to a quantizer where the codec supports one, which is constant quality
+and an unbounded file: measured on a styled 1080p frame, the default asks for
+30 Mbit/s where the same level asked for as a bitrate is 12. Neither is faster.
+It is five times the size of every file anybody exports, for nothing.
+
+Keyframes are written every second rather than every two, which costs some bytes
+and buys a file this editor can scrub: seek cost is set by keyframe spacing and
+by nothing else.
+
+**The container writer is behind its own dynamic import**, one further in than
+the demuxer, and that is a measured decision rather than tidiness: writing costs
+41.6 KB gzipped on top of a chunk that already reads, which is the size of the
+whole application bundle to the tenth of a kilobyte. A photograph fetches
+neither, a video fetches the reader, and only asking for a clip fetches the
+writer. A second container inside it would cost twelve bytes, for the same
+reason `.mov` costs forty-nine on the way in.
+
+**Colour needed nothing on the way out either.** Sixteen flat patches through
+the composite, out through the encoder and back come out bit-identical to the
+same patches encoded by ffmpeg and decoded the same way. The error is entirely
+the midtone shift Chrome applies on the 4:2:0 decode path, which was already
+measured and attributed, and the container is tagged BT.709 limited range, which
+is what an H.264 file is supposed to say.
 
 What decided all of this, and what it cost to find out, is in
 `tools/video-bench`, including the two numbers that say tracking cannot live
@@ -381,9 +450,9 @@ in the render loop.
 `/research.html`, linked from the top right before a file is open: an index,
 and a page per thing
 that was learned. What a style costs and whether it holds still, what decode
-costs and where colour goes, what tracking would cost before building it, what
-editing costs, and a ledger of every approach that was tried and dropped, with
-the number that decided it.
+costs and where colour goes, what writing a clip costs, what tracking would cost
+before building it, what editing costs, and a ledger of every approach that was
+tried and dropped, with the number that decided it.
 
 One entry is one finding, because the question a reader has is "what did we
 learn" rather than "which harness produced this". Dates come from the commit
@@ -465,9 +534,9 @@ Video, on an ordinary 1080p30 clip:
 |                                  | 1 s keyframes | one keyframe |
 | -------------------------------- | ------------- | ------------ |
 | walk the container's index       | 1.8 ms        | 1.6 ms       |
-| decode the next frame            | 0.46 ms       | 0.46 ms      |
-| seek to an arbitrary frame       | 12 ms         | 88 ms        |
-| frame onto the GPU               | 0.9 ms        | 0.9 ms       |
+| decode the next frame            | 0.47 ms       | 0.45 ms      |
+| seek to an arbitrary frame       | 15 ms         | 88 ms        |
+| frame onto the GPU               | 0.6 ms        | 0.6 ms       |
 | render one new frame, draft tier | 16 ms         | 16 ms        |
 
 The last row is the whole renderer, style chain, composite and display, re-run
@@ -481,10 +550,27 @@ every scrubbed frame needs the styled layer again, and it moves the cost to the
 first brush stroke on each frame, where a 105 ms stall is far worse than the
 same work spread across a scrub.
 
-Bundle: 135 KB of JavaScript (41 KB gzipped), plus 31 KB of subset fonts. Three
-runtime dependencies, and two of them are code-split: 36 KB gzipped of inference
-runtime that only the Object tool fetches, and 33 KB of demuxer that only a
-video fetches.
+Writing a clip, end to end: decode, style chain, composite, capture, encode and
+mux, per frame, at the export quality tier.
+
+|        | 720p             | 1080p            |
+| ------ | ---------------- | ---------------- |
+| poster | 2.9 ms (345 fps) | 5.0 ms (199 fps) |
+| print  | 2.7 ms (375 fps) | 5.3 ms (190 fps) |
+| comic  | 117 ms (9 fps)   | 339 ms (3 fps)   |
+
+The encoder alone, with the GPU taken out of the loop, is 4.7 ms a frame at
+1080p. So for the two cheap styles that whole table is the encoder, and the only
+row where it is not is the one where the style is 339 ms.
+
+Bundle: 139 KB of JavaScript (42.5 KB gzipped), plus 31 KB of subset fonts.
+Three runtime dependencies, and two of them are code-split: 36 KB gzipped of
+inference runtime that only the Object tool fetches, 42 KB of demuxer that only
+a video fetches, and 32 KB of container writer that only a clip export fetches.
+Opening a video costs 8.8 KB more than it did before clip export existed, and
+that is the honest price of two consumers of one library: chunks are assigned
+per module rather than per symbol, so what both halves touch lands in the shared
+one carrying the exports only the writer needs.
 
 That is smaller than it was before a third style was added, because shaders
 reach the bundle as strings and this codebase comments them as heavily as its
@@ -565,17 +651,33 @@ of geometry did not justify a dependency.
 
 ## Known limits
 
-- Video can be opened, played, scrubbed, selected on, and exported one frame at
-  a time. Tracking does not exist, so a selection held across a moving subject
-  drifts off it and has to be corrected by selecting again further along. What
-  is known about building it is measured. `tools/video-bench` puts memory attention at
-  59 ms a frame on WebGPU and 38 at half precision, which with the encoder and
-  the decoder makes a tracked frame around 90 ms, so tracking runs behind the
-  playhead rather than in the render loop. The graphs it needs are produced by
-  `tools/edgetam-export`, which also demonstrates them holding a mask across ten
-  frames, mask-for-mask identical to the PyTorch tracker.
-- Exporting a video writes one frame as a still. There is no encoder and no
-  muxer, so "export the clip" is untouched work.
+- Video can be opened, played, scrubbed, selected on, and written out a frame
+  or a clip at a time. Tracking does not exist, so a selection held across a
+  moving subject drifts off it and has to be corrected by selecting again
+  further along. What is known about building it is measured.
+  `tools/video-bench` puts memory attention at 60 ms a frame on WebGPU and 38 at
+  half precision, which with the encoder and the decoder makes a tracked frame
+  around 90 ms, so tracking runs behind the playhead rather than in the render
+  loop. The graphs it needs are produced by `tools/edgetam-export`, which also
+  demonstrates them holding a mask across ten frames, mask-for-mask identical to
+  the PyTorch tracker.
+- **A clip is re-encoded, so outside the selection it is the source pixels
+  written again rather than the source bytes.** The composite is still exact
+  there, and H.264 is not: measured against the source, a region nobody selected
+  comes back three to five codes away on grainy footage. A still export has no
+  such step and remains byte-exact. Nothing here can fix that short of a
+  lossless codec, which is a file nobody wants.
+- A clip is written into memory before it is saved, because that is what puts
+  the index at the front of the file. A ten-second 1080p export is about 12 MB;
+  a ten-minute one would be closer to a gigabyte, and this has no answer for
+  that beyond failing. Streaming it to disk needs a file handle the user grants,
+  which is a different feature.
+- Exporting a clip writes H.264 in MP4 and nothing else. HEVC and AV1 encode in
+  some browsers and have been measured in none here, and the codec list is one
+  array waiting for somebody with the numbers.
+- Audio is not written. There is no audio anywhere in the product yet, and a
+  clip that silently dropped a soundtrack it had been given would be worse than
+  one that never had it.
 - Clear and Invert act from the frame being shown onward, like every other
   command. There is no way to say "this frame only" or "the whole clip", and
   both would be reasonable things to want.

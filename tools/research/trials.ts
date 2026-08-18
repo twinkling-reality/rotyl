@@ -23,7 +23,7 @@ export const TRIALS: readonly Trial[] = [
   {
     what: 'One decoder held open and fed forward, re-seeking only backward or far',
     verdict: 'adopted',
-    evidence: 'The next frame costs 0.46 ms and a seek 12 ms, or 88 ms on a clip with a single keyframe',
+    evidence: 'The next frame costs 0.47 ms and a seek 15 ms, or 88 ms on a clip with a single keyframe',
     where: 'tools/video-bench, measurement 3',
   },
   {
@@ -46,6 +46,48 @@ export const TRIALS: readonly Trial[] = [
     evidence:
       '46 ms a frame against a 20 ms budget still plays 44 of 50 frames a second, because unrenderable frames are skipped rather than queued',
     where: 'README, "Video, so far"',
+  },
+  {
+    what: 'Capturing the composite from the canvas it already renders into',
+    verdict: 'adopted',
+    evidence:
+      'Costs nothing detectable; the alternative, copying the texture into a buffer and rebuilding a frame from the bytes, costs 1.4 ms a frame at 1080p and a de-padding loop',
+    where: 'tools/video-bench, measurement 5',
+  },
+  {
+    what: 'mediabunny driving the encoder as well as writing the container',
+    verdict: 'adopted',
+    evidence:
+      'Costs 0.26 ms a frame, 5%, and 18.0 KB gzipped inside a chunk only a clip export fetches, against owning codec strings, backpressure, flush ordering and the muxer’s first packet',
+    where: 'src/platform/export/clip-sink.ts',
+  },
+  {
+    what: 'A bitrate for a clip export, rather than the encoder’s default quality level',
+    verdict: 'adopted',
+    evidence:
+      'A qualitative level resolves to a quantizer, which asked for 30 Mbit/s where the same level as a bitrate asked for 12, at identical speed',
+    where: 'tools/video-bench, measurement 5',
+  },
+  {
+    what: 'latencyMode realtime for the export encoder',
+    verdict: 'rejected',
+    evidence:
+      'Slower at both sizes, a reproducible three-second stall at 720p, and the mode is permitted to drop frames, which for an export is a corrupt file',
+    where: 'tools/video-bench, measurement 5',
+  },
+  {
+    what: 'Writing Matroska as well as MP4',
+    verdict: 'rejected',
+    evidence:
+      '8.4 KB gzipped for a second container writer, where QuickTime is 12 bytes, and it carries codecs whose encode has not been measured here',
+    where: 'tools/video-bench, measurement 6',
+  },
+  {
+    what: 'Putting the container writer in the video chunk',
+    verdict: 'rejected',
+    evidence:
+      '41.6 KB gzipped, the size of the entire application bundle, paid by everyone who opens a video rather than by everyone who exports a clip',
+    where: 'tools/video-bench, measurement 6',
   },
   {
     what: 'React for the interface',

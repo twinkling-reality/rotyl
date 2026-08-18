@@ -54,6 +54,12 @@ function text(source: unknown, path: readonly string[]): string {
 }
 
 const ms = (value: number): string => `${value.toFixed(value < 10 ? 1 : 0)} ms`;
+/**
+ * Bytes below a kilobyte, because one of these is twelve of them and "0.0 KB"
+ * reads as a rounding error rather than as the finding it is.
+ */
+const asBytes = (count: number): string =>
+  count < 1024 ? `${count.toFixed(0)} bytes` : `${(count / 1024).toFixed(1)} KB`;
 const pct = (value: number): string => `${value.toFixed(2)}%`;
 
 const SIZES = ['720p', '2 MP', '12 MP', '24 MP'] as const;
@@ -377,9 +383,145 @@ function readback(video: unknown): Section {
   };
 }
 
+// --- writing a clip ---------------------------------------------------------
+
+function pipeline(video: unknown): Section {
+  const rung = (size: string, name: string): string =>
+    ms(num(video, ['encode', `${size}, ladder (poster)`, name, 'ms_per_frame']));
+  const row = (label: string, name: string): readonly string[] => [
+    label,
+    rung('720p', name),
+    rung('1080p', name),
+  ];
+  return {
+    heading: 'The encoder is the pipeline',
+    prose: [
+      'A VideoEncoder is asynchronous and holds its own queue, so timing one frame answers nothing. What decides whether a clip export is a wait or an ordeal is sustained throughput with everything in flight at once, measured as a ladder where each rung adds exactly one step to the one below it.',
+      'It does not add up, and that is the finding. The encoder handed the same picture with the GPU taken out of the loop measures 4.7 ms a frame at 1080p, against 5.0 for the whole thing: every rung below it runs on threads the encoder is not using. At 1080p with a style that fits in a frame there is nothing worth optimising except the encoder.',
+      'Writing the packets into a container rather than binning them costs a tenth of a millisecond. Whatever a muxer costs, it is not per frame.',
+    ],
+    table: {
+      columns: ['ms per frame, poster, export tier', '720p', '1080p'],
+      rows: [
+        row('decode the frame and upload it', 'decode'),
+        row('and the style chain and composite', 'composite'),
+        row('and capture the canvas as a frame', 'capture, canvas'),
+        row('and encode it', 'encode'),
+        row('and write it into an MP4', 'mux'),
+      ],
+    },
+    caveat:
+      'Ninety frames of a 1080p30 clip, wall clock, at the export quality tier. The alternative to capturing the canvas, copying the composite into a buffer and rebuilding a frame from the bytes, costs 1.4 ms a frame more at 1080p and needs every row de-padded to undo the 256-byte alignment WebGPU imposes on texture-to-buffer copies.',
+    command: 'node tools/video-bench/run.mjs encode',
+  };
+}
+
+function clipThroughput(video: unknown): Section {
+  const endToEnd = (size: string, style: string, key: string): number =>
+    num(video, ['encode', `${size}, end to end`, style, key]);
+  const row = (style: string): readonly string[] => [
+    style,
+    `${ms(endToEnd('720p', style, 'ms_per_frame'))} (${endToEnd('720p', style, 'frames_per_s').toFixed(0)} fps)`,
+    `${ms(endToEnd('1080p', style, 'ms_per_frame'))} (${endToEnd('1080p', style, 'frames_per_s').toFixed(0)} fps)`,
+  ];
+  return {
+    heading: 'What a clip costs to write, per style',
+    prose: [
+      'Decode, style, composite, capture, encode and mux, end to end. Two of the three styles write a clip several times faster than it plays. The third is the style-cost table again with an encoder underneath it that never has to wait.',
+      'A minute of 1080p through the comic chain is five and a half minutes of work. That is what makes progress and a way to stop part of the feature rather than polish on it.',
+    ],
+    table: {
+      columns: ['end to end', '720p', '1080p'],
+      rows: [row('poster'), row('print'), row('comic')],
+    },
+    command: 'node tools/video-bench/run.mjs encode',
+  };
+}
+
+function rateControl(video: unknown): Section {
+  const rate = (name: string, key: string): number =>
+    num(video, ['encode', 'rate control (1080p, poster)', name, key]);
+  const row = (label: string, name: string): readonly string[] => [
+    label,
+    ms(rate(name, 'ms_per_frame')),
+    `${(rate(name, 'bytes') / 1e6).toFixed(2)} MB`,
+    `${rate(name, 'megabits_per_s').toFixed(1)} Mbit/s`,
+  ];
+  return {
+    heading: 'Rate control is a decision about size, not about speed',
+    prose: [
+      'A qualitative quality level resolves to a quantizer where the codec supports one, which is constant quality and therefore an unbounded file. It is also the default, so a clip export that says nothing about rate control ships five times the bytes for no time at all.',
+      'Asking for the same level as a bitrate is a predictable file and a variable picture. Rotyl asks for very-high as a bitrate, which is about 12 Mbit/s at 1080p and scales with resolution.',
+    ],
+    table: {
+      columns: ['what was asked for', 'ms per frame', 'file', 'rate'],
+      rows: [
+        row('high, as a quantizer', 'high, quantizer'),
+        row('high, as a bitrate', 'high, bitrate'),
+        row('very-high, as a bitrate', 'very-high, bitrate'),
+        row('12 Mbit/s, stated', '12 Mbit/s'),
+      ],
+    },
+    caveat:
+      'Ninety frames of styled 1080p, three seconds. Measured on the styled output rather than on the source, because that is what an export encodes and flat areas compress nothing like film grain does.',
+    command: 'node tools/video-bench/run.mjs encode',
+  };
+}
+
+function encodeColour(video: unknown): Section {
+  const worst = (who: string): string =>
+    `${num(video, ['encode-colour', who, 'round_trip', 'worst']).toFixed(0)} codes`;
+  const median = (who: string): string =>
+    `${num(video, ['encode-colour', who, 'round_trip', 'median_abs']).toFixed(0)} codes`;
+  return {
+    heading: 'The encoder is not what moves colour',
+    prose: [
+      'Colour had been measured on the way in and never on the way out, which is the direction a clip export depends on. Pixels leave through a canvas, become a video frame, are converted to YCbCr by the encoder and come back through the browser’s own conversion, and every one of those steps can apply a transfer function.',
+      'The same sixteen patches, put through the real composite at zero coverage, which returns the source byte for byte, then written out and decoded back. All sixteen come back bit-identical to ffmpeg’s round trip, not merely close: the error is entirely the midtone shift Chrome applies on the 4:2:0 decode path, which was already measured and attributed.',
+      'The container is tagged correctly too, which matters for every player that is not this one. So there is no export colour path either; there is the colour path, and this is one more thing that already sits in it.',
+    ],
+    table: {
+      columns: ['sixteen patches, round tripped', 'worst error', 'median'],
+      rows: [
+        ['through Rotyl’s encoder', worst('ours'), median('ours')],
+        [
+          'through ffmpeg, same decode path',
+          worst('ffmpeg, same decode path'),
+          median('ffmpeg, same decode path'),
+        ],
+      ],
+    },
+    command: 'node tools/video-bench/run.mjs encode-colour',
+  };
+}
+
+function containerBytes(bundle: unknown): Section {
+  const gzip = (name: string): string => asBytes(num(bundle, ['cases', name, 'gzip']));
+  const delta = (name: string): string => asBytes(num(bundle, ['deltas', name]));
+  return {
+    heading: 'Writing a container costs as much as the application',
+    prose: [
+      'Measured through Rotyl’s own build, so the answer is what this bundler’s tree shaking actually produces rather than what a standalone one would.',
+      `Writing costs ${delta('writing, on top of reading')} gzipped on top of a chunk that already reads, which is the size of the entire application bundle to the tenth of a kilobyte. So the writer is its own dynamic import, fetched by an export and by nothing else, the same treatment the demuxer and the model get.`,
+      `A second container to write costs ${delta('a second container to write')}: QuickTime is the same muxer with a different brand list, exactly as it is on the read side. The encoder wrapper is ${delta('the encoder wrapper')} of the writer, and driving the encoder by hand instead would save that and cost five per cent a frame.`,
+      'Shipped, there are two consumers of one library and the bundler puts what they share in a chunk of its own, so opening a video costs 8.8 KB more than it did for somebody who never exports one. The alternative arrangements are worse: one chunk makes every video session pay for the writer, and no split at all puts it in the application.',
+    ],
+    table: {
+      columns: ['gzipped', 'size'],
+      rows: [
+        ['read MP4 and QuickTime', gzip('read MP4 QTFF')],
+        ['write MP4, from packets', gzip('write MP4, packets only')],
+        ['write MP4, encoding as well', gzip('write MP4')],
+        ['read MP4 and QuickTime, and write MP4', gzip('read MP4 QTFF + write MP4')],
+      ],
+    },
+    command: 'node tools/video-bench/bundle-size.mjs',
+  };
+}
+
 // --- entries ----------------------------------------------------------------
 
-export function entries(style: unknown, video: unknown): readonly Entry[] {
+export function entries(style: unknown, video: unknown, bundle: unknown): readonly Entry[] {
   return [
     {
       slug: 'the-look',
@@ -415,6 +557,24 @@ export function entries(style: unknown, video: unknown): readonly Entry[] {
         'Four things were unknown before video could be built, all of them capable of forcing a different design. These settled the shape of the frame provider and the colour contract; the model’s side of it is on its own page.',
       ],
       sections: [decode(video), upload(video), colour(video)],
+    },
+    {
+      slug: 'the-clip',
+      title: 'What writing a clip costs',
+      standfirst:
+        'The export pipeline timed end to end, the two ways of getting the composite to the encoder, what rate control does to a file, and the probe showing the encoder leaves colour alone.',
+      harness: 'tools/video-bench',
+      lede: [
+        'Export had only ever written one frame. Three things stood between that and a clip, all of them capable of forcing a different design: what an encoded frame costs when everything is in flight at once, what a container writer costs in bytes, and whether the colour contract survives being written back out.',
+        'A fourth turned up on the way. A canvas is presented rather than read, so capturing one is a claim about when as much as about what, and being one frame out would be invisible in every timing number here.',
+      ],
+      sections: [
+        pipeline(video),
+        clipThroughput(video),
+        rateControl(video),
+        encodeColour(video),
+        containerBytes(bundle),
+      ],
     },
     {
       slug: 'tracking',
