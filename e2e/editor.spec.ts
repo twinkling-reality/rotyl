@@ -145,7 +145,7 @@ test('offers the research page from the empty state, and generates it from the r
   // path throws rather than rendering a blank cell, which makes this a test
   // that every number on it still has a measurement behind it.
   await page.goto('/');
-  const link = page.getByRole('link', { name: /what was measured/i });
+  const link = page.getByRole('link', { name: 'Research' });
   await expect(link).toBeVisible();
 
   await link.click();

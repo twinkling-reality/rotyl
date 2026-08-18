@@ -54,13 +54,6 @@ export function DropZone({ onFile, notice }: DropZoneProps): JSX.Element {
 
       {notice ? <p class="notice">{notice}</p> : null}
 
-      {/* The only link out of the product, and it is here because this is the
-          one screen with nothing on it. A measurements page belongs nowhere
-          near the toolbar: it is read once, by someone who is not editing. */}
-      <a class="dropzone__aside" href="/research.html">
-        What was measured, and what was tried
-      </a>
-
       <input
         ref={inputRef}
         type="file"

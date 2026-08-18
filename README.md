@@ -378,7 +378,8 @@ the render loop.
 
 ### Everything that was measured, one finding at a time
 
-`/research.html`, linked from the empty state: an index, and a page per thing
+`/research.html`, linked from the top right before a file is open: an index,
+and a page per thing
 that was learned. What a style costs and whether it holds still, what decode
 costs and where colour goes, what tracking would cost before building it, what
 editing costs — and a ledger of every approach that was tried and dropped, with

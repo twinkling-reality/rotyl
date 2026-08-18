@@ -236,6 +236,19 @@ button {
   justify-self: end;
 }
 
+/* The one link out of the product, in the corner the actions will take over. */
+.top-bar__research {
+  justify-self: end;
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+  padding: 0 var(--s-1);
+}
+
+.top-bar__research:hover {
+  color: var(--text-primary);
+}
+
 /* ---------- controls ---------- */
 
 .icon-button {
@@ -290,6 +303,10 @@ button {
 .dropzone-region {
   flex: 1;
   display: grid;
+  /* align-content, not only align-items: implicit rows stretch by default, so a
+     second child here is centred in its own half of the screen rather than
+     under the first one. */
+  place-content: center;
   place-items: center;
   padding: var(--s-7);
   min-height: 0;
@@ -311,20 +328,6 @@ button {
   transition:
     border-color var(--dur) var(--ease-out),
     background var(--dur) var(--ease-out);
-}
-
-/* Tertiary, small, and below the fold of attention: the rectangle is the
-   affordance and this must never compete with it. */
-.dropzone__aside {
-  margin-top: var(--s-4);
-  color: var(--text-tertiary);
-  font-size: var(--fs-sm);
-  text-decoration: none;
-}
-
-.dropzone__aside:hover {
-  color: var(--text-secondary);
-  text-decoration: underline;
 }
 
 .dropzone:hover {

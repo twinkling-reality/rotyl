@@ -74,7 +74,15 @@ export function TopBar({
           </button>
         </div>
       ) : (
-        <span />
+        /*
+          Only before a file is open, where this corner is empty anyway. Once
+          there is something to edit it becomes undo, redo and Export, and a
+          link to a measurements page has no business competing with those —
+          nobody reads a benchmark while they are working.
+        */
+        <a class="top-bar__research" href="/research.html">
+          Research
+        </a>
       )}
     </header>
   );
