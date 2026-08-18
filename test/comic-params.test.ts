@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_COMIC_CONTROLS, resolveComicParams } from '../src/core/style/comic/comic-params.ts';
 import { QUALITY_SCALE, type StyleQuality } from '../src/core/style/style.ts';
 import { bufferSizeForShortEdge } from '../src/core/render/resolution.ts';
+import { PALETTE_STOPS, PALETTES } from '../src/core/style/palette.ts';
 
 const QUALITIES: StyleQuality[] = ['draft', 'full', 'export'];
 
@@ -138,10 +139,15 @@ describe('control mapping', () => {
       for (let strength = 0; strength <= 1.0001; strength += 0.25) {
         const params = resolveComicParams({ detail, strength }, 1024, 'full');
         for (const [key, value] of Object.entries(params)) {
-          expect(
-            Number.isFinite(value),
-            `${key} at detail ${String(detail)} strength ${String(strength)}`,
-          ).toBe(true);
+          // The palette arrives as an array of stops, so this looks inside
+          // rather than asking whether an array is a finite number.
+          const numbers: readonly number[] = Array.isArray(value) ? value : [Number(value)];
+          for (const number of numbers) {
+            expect(
+              Number.isFinite(number),
+              `${key} at detail ${String(detail)} strength ${String(strength)}`,
+            ).toBe(true);
+          }
         }
         expect(params.bins).toBeGreaterThanOrEqual(1);
       }
@@ -161,5 +167,44 @@ describe('buffer sizing', () => {
 
   it('handles a degenerate source', () => {
     expect(bufferSizeForShortEdge({ width: 0, height: 0 }, 512)).toEqual({ width: 1, height: 1 });
+  });
+});
+
+/**
+ * The palette, as a parameter.
+ *
+ * A gradient map is the one thing in the chain that can change a picture's
+ * colour outright rather than nudging it, so what is checked here is that it is
+ * genuinely off by default and genuinely off when chosen to be.
+ */
+describe('the palette', () => {
+  it('costs nothing until one is chosen', () => {
+    const none = resolveComicParams({ palette: 0, colour: 1 }, 1024, 'full');
+    expect(none.paletteAmount).toBe(0);
+
+    const chosen = resolveComicParams({ palette: 1, colour: 1 }, 1024, 'full');
+    expect(chosen.paletteAmount).toBe(1);
+  });
+
+  it('hands the shader five Oklab stops, ascending in lightness', () => {
+    for (let index = 0; index < PALETTES.length; index++) {
+      const { paletteStops } = resolveComicParams({ palette: index }, 1024, 'full');
+      expect(paletteStops.length).toBe(PALETTE_STOPS * 4);
+
+      // Dark to light, because the map is indexed BY lightness: a ramp that
+      // doubled back would send two different tones to the same colour.
+      const lightness = [0, 1, 2, 3, 4].map((stop) => paletteStops[stop * 4] ?? 0);
+      for (let stop = 1; stop < lightness.length; stop++) {
+        expect(lightness[stop], `${PALETTES[index]?.name ?? ''} stop ${String(stop)}`).toBeGreaterThan(
+          lightness[stop - 1] ?? 0,
+        );
+      }
+    }
+  });
+
+  it('clamps a choice to a palette that exists', () => {
+    expect(resolveComicParams({ palette: 99, colour: 1 }, 1024, 'full').paletteStops).toEqual(
+      resolveComicParams({ palette: PALETTES.length - 1, colour: 1 }, 1024, 'full').paletteStops,
+    );
   });
 });

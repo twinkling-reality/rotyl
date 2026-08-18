@@ -44,9 +44,9 @@ export const DEFAULT_PRINT_CONTROLS = {
 } as const;
 
 export const PRINT_CONTROLS: readonly StyleControlSpec[] = [
-  { key: 'strength', label: 'Strength', initial: DEFAULT_PRINT_CONTROLS.strength },
-  { key: 'coarseness', label: 'Coarseness', initial: DEFAULT_PRINT_CONTROLS.coarseness },
-  { key: 'colour', label: 'Colour', initial: DEFAULT_PRINT_CONTROLS.colour },
+  { kind: 'scalar', key: 'strength', label: 'Strength', initial: DEFAULT_PRINT_CONTROLS.strength },
+  { kind: 'scalar', key: 'coarseness', label: 'Coarseness', initial: DEFAULT_PRINT_CONTROLS.coarseness },
+  { kind: 'scalar', key: 'colour', label: 'Colour', initial: DEFAULT_PRINT_CONTROLS.colour },
 ];
 
 /**

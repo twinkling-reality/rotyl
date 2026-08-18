@@ -330,8 +330,12 @@ export class ComicStylePipeline implements StylePipeline {
       params.inkOpacity,
       params.edgeThreshold,
       params.edgeSharpness,
+      params.paletteAmount,
       0,
-      0,
+      // The palette follows in the same slot: twenty floats on top of eight,
+      // well inside one 256-byte slot, so a palette costs no extra binding and
+      // no extra write.
+      ...params.paletteStops,
     ]);
     for (const [slot, reinject] of [
       [SLOT.edgeFirst, 0],

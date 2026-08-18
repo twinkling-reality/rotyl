@@ -13,13 +13,29 @@ struct Uniforms {
   inkOpacity: f32,
   edgeThreshold: f32,
   edgeSharpness: f32,
-  _pad: vec2f,
+  paletteAmount: f32,
+  _pad: f32,
+  /** Five Oklab stops, dark to light, in xyz. */
+  palette: array<vec4f, 5>,
 }
 
 @group(0) @binding(0) var flatTex: texture_2d<f32>;
 @group(0) @binding(1) var inkTex: texture_2d<f32>;
 @group(0) @binding(2) var linearSampler: sampler;
 @group(0) @binding(3) var<uniform> u: Uniforms;
+
+/**
+ * The palette colour for a given lightness.
+ *
+ * Four segments between five stops, interpolated in Oklab so the midpoint
+ * between two stops is the colour a person would call the midpoint. The same
+ * blend in linear RGB takes a deep teal to a cream through a muddy green.
+ */
+fn paletteAt(lightness: f32) -> vec3f {
+  let t = clamp(lightness, 0.0, 1.0) * 4.0;
+  let index = min(u32(floor(t)), 3u);
+  return mix(u.palette[index].xyz, u.palette[index + 1u].xyz, t - f32(index));
+}
 
 @fragment
 fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
@@ -38,6 +54,14 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
   // equivalent RGB or HSV boost does not.
   lab.y *= u.saturation;
   lab.z *= u.saturation;
+
+  // Gradient map, AFTER quantisation and using the quantised lightness as its
+  // index — so the palette lands in the same flat bands the cel step just made
+  // rather than reintroducing a ramp across them. Mixed in Oklab, including
+  // lightness: the palette's own ramp is then free to carry more or less
+  // contrast than the photograph did, which is most of what makes a picture
+  // read as chosen rather than sampled.
+  lab = mix(lab, paletteAt(lab.x), u.paletteAmount);
 
   // Clamp AFTER converting back: Oklab describes colours outside sRGB, and a
   // saturation boost routinely lands there. Clamping in Oklab would distort

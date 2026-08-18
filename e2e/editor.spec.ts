@@ -491,3 +491,53 @@ test('selects the area dragged, not the object inside it', async ({ page }) => {
   await expect(undo).toBeEnabled();
   await expect(page.getByText('Downloading the object model')).toBeHidden();
 });
+
+test('offers a palette as a choice, not as a slider', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  // The whole frame, so what is compared is the style and nothing else.
+  await page.getByRole('button', { name: 'Invert' }).click();
+  await page.getByRole('button', { name: 'Style' }).click();
+
+  const palette = page.getByRole('group', { name: 'Palette' });
+  await expect(palette).toBeVisible();
+  // A choice has no meaningful midpoint, so it is buttons.
+  await expect(palette.getByRole('button', { name: 'None' })).toHaveAttribute('aria-pressed', 'true');
+
+  // Parked between captures: clicking a control leaves the pointer on it, and
+  // what is being compared is the picture, not where the mouse ended up.
+  const park = async (): Promise<Buffer> => {
+    await page.mouse.move(0, 0);
+    return canvas.screenshot();
+  };
+
+  // Docking the panel narrows the viewport, so the canvas resizes and redraws.
+  // Capturing before that settles compares two different-sized images, which
+  // can never match however long it is retried.
+  const settled = async (): Promise<Buffer> => {
+    let last = await park();
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const next = await park();
+      if (Buffer.compare(next, last) === 0) return next;
+      last = next;
+    }
+    return last;
+  };
+
+  const before = await settled();
+
+  await palette.getByRole('button', { name: 'Riso' }).click();
+  await expect(palette.getByRole('button', { name: 'Riso' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(async () => {
+    expect(Buffer.compare(await park(), before)).not.toBe(0);
+  }).toPass();
+
+  // And off again, exactly. A palette of None is a mix factor of zero, which
+  // returns the colour it was given rather than approximately returning it.
+  await palette.getByRole('button', { name: 'None' }).click();
+  await expect(async () => {
+    expect(Buffer.compare(await park(), before)).toBe(0);
+  }).toPass();
+});

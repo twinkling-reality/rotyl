@@ -55,6 +55,49 @@ function Slider({ label, value, onInput, onInteractionChange }: SliderProps): JS
   );
 }
 
+interface ChoiceProps {
+  readonly label: string;
+  readonly options: readonly string[];
+  readonly value: number;
+  readonly onChange: (value: number) => void;
+}
+
+/**
+ * A control with no meaningful midpoint.
+ *
+ * Buttons rather than a track, because half way between two palettes is not a
+ * palette. It reuses the style picker's own segmented control at the top of
+ * this panel: the two are the same gesture, choosing one of a short list, and
+ * they should not look like different kinds of thing.
+ */
+function Choice({ label, options, value, onChange }: ChoiceProps): JSX.Element {
+  return (
+    <div class="slider-field">
+      <div class="slider-field__labels">
+        <span class="slider-field__name">{label}</span>
+      </div>
+      <div class="style-choice" role="group" aria-label={label}>
+        {options.map((option, index) => {
+          const active = index === value;
+          return (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={active}
+              class={`style-choice__option${active ? ' style-choice__option--active' : ''}`}
+              onClick={() => {
+                onChange(index);
+              }}
+            >
+              {option}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Style controls, docked rather than floating.
  *
@@ -99,17 +142,29 @@ export function StylePanel({
         <span class="style-panel__hint mono">local</span>
       </div>
 
-      {style.controls.map((spec) => (
-        <Slider
-          key={spec.key}
-          label={spec.label}
-          value={controls[spec.key] ?? spec.initial}
-          onInput={(value) => {
-            onChange({ ...controls, [spec.key]: value });
-          }}
-          onInteractionChange={onInteractionChange}
-        />
-      ))}
+      {style.controls.map((spec) =>
+        spec.kind === 'choice' ? (
+          <Choice
+            key={spec.key}
+            label={spec.label}
+            options={spec.options}
+            value={Math.round(controls[spec.key] ?? spec.initial)}
+            onChange={(value) => {
+              onChange({ ...controls, [spec.key]: value });
+            }}
+          />
+        ) : (
+          <Slider
+            key={spec.key}
+            label={spec.label}
+            value={controls[spec.key] ?? spec.initial}
+            onInput={(value) => {
+              onChange({ ...controls, [spec.key]: value });
+            }}
+            onInteractionChange={onInteractionChange}
+          />
+        ),
+      )}
     </aside>
   );
 }

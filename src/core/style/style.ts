@@ -27,12 +27,32 @@ import type { Dimensions } from '../render/resolution.ts';
  */
 export type StyleControls = Readonly<Record<string, number>>;
 
-export interface StyleControlSpec {
-  readonly key: string;
-  /** Shown next to the slider, and used as its accessible name. */
-  readonly label: string;
-  readonly initial: number;
-}
+/**
+ * One control a style declares.
+ *
+ * A CHOICE IS STILL A NUMBER. Its value is an index into `options`, which is
+ * why `StyleControls` stays a record of numbers and why nothing between here
+ * and the export path had to learn a second shape: the app stores it, compares
+ * it and hands it back exactly as it does a slider. All the declaration buys is
+ * that the panel draws buttons instead of a track, and that a style can offer a
+ * decision that has no meaningful midpoint.
+ */
+export type StyleControlSpec =
+  | {
+      readonly kind: 'scalar';
+      readonly key: string;
+      /** Shown next to the slider, and used as its accessible name. */
+      readonly label: string;
+      readonly initial: number;
+    }
+  | {
+      readonly kind: 'choice';
+      readonly key: string;
+      readonly label: string;
+      /** An index into `options`. */
+      readonly initial: number;
+      readonly options: readonly string[];
+    };
 
 /**
  * Read one control, clamped, with the style's own default for anything absent
@@ -42,6 +62,19 @@ export function control(controls: StyleControls, key: string, fallback: number):
   const value = controls[key];
   if (value === undefined || !Number.isFinite(value)) return fallback;
   return Math.min(1, Math.max(0, value));
+}
+
+/**
+ * Read a choice as an index, rounded and clamped to the options that exist.
+ *
+ * Separate from `control` because that one clamps to [0, 1], which is right for
+ * every scalar and silently wrong for an index — a palette chosen fourth would
+ * come back as the first.
+ */
+export function choice(controls: StyleControls, key: string, count: number, fallback: number): number {
+  const value = controls[key];
+  const index = value === undefined || !Number.isFinite(value) ? fallback : Math.round(value);
+  return Math.min(Math.max(0, count - 1), Math.max(0, index));
 }
 
 /**

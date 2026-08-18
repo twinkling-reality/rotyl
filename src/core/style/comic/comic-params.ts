@@ -1,4 +1,6 @@
+import { PALETTE_NAMES, PALETTES, paletteUniform } from '../palette.ts';
 import {
+  choice,
   control,
   fadeToNothing,
   lerp,
@@ -49,11 +51,23 @@ export const DEFAULT_COMIC_CONTROLS = {
   strength: 0.7,
   /** Scale of abstraction. 0 = broad flat shapes, 1 = fine detail preserved. */
   detail: 0.5,
+  /** Index into PALETTES. 0 is no palette. */
+  palette: 0,
+  /** How far toward the palette. 0 = the photograph's own colour. */
+  colour: 0.85,
 } as const;
 
 export const COMIC_CONTROLS: readonly StyleControlSpec[] = [
-  { key: 'strength', label: 'Strength', initial: DEFAULT_COMIC_CONTROLS.strength },
-  { key: 'detail', label: 'Detail', initial: DEFAULT_COMIC_CONTROLS.detail },
+  { kind: 'scalar', key: 'strength', label: 'Strength', initial: DEFAULT_COMIC_CONTROLS.strength },
+  { kind: 'scalar', key: 'detail', label: 'Detail', initial: DEFAULT_COMIC_CONTROLS.detail },
+  {
+    kind: 'choice',
+    key: 'palette',
+    label: 'Palette',
+    initial: DEFAULT_COMIC_CONTROLS.palette,
+    options: PALETTE_NAMES,
+  },
+  { kind: 'scalar', key: 'colour', label: 'Colour', initial: DEFAULT_COMIC_CONTROLS.colour },
 ];
 
 /**
@@ -95,6 +109,10 @@ export interface ComicParams {
   readonly quantSharpness: number;
   readonly saturation: number;
   readonly styleMix: number;
+  /** How far toward the palette, already zeroed when the palette is None. */
+  readonly paletteAmount: number;
+  /** Five Oklab stops, padded to vec4, ready for the uniform. */
+  readonly paletteStops: readonly number[];
 }
 
 export function resolveComicParams(
@@ -104,6 +122,7 @@ export function resolveComicParams(
 ): ComicParams {
   const detail = control(controls, 'detail', DEFAULT_COMIC_CONTROLS.detail);
   const strength = control(controls, 'strength', DEFAULT_COMIC_CONTROLS.strength);
+  const palette = choice(controls, 'palette', PALETTES.length, DEFAULT_COMIC_CONTROLS.palette);
   const q = QUALITY_SCALE[quality];
 
   // Apparent radii, as fractions of the image's short edge.
@@ -162,6 +181,11 @@ export function resolveComicParams(
     // quantisation smooths itself back into a no-op.
     quantSharpness: 8 * bins,
     saturation: lerp(1, 1.45, strength),
+
+    // Index zero is no palette, so it costs nothing rather than mapping the
+    // image onto a grey ramp that would merely desaturate it.
+    paletteAmount: palette === 0 ? 0 : control(controls, 'colour', DEFAULT_COMIC_CONTROLS.colour),
+    paletteStops: paletteUniform(palette),
 
     styleMix: fadeToNothing(strength),
   };
