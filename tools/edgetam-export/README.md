@@ -27,6 +27,15 @@ which are gitignored: they are 139 MB and regenerating them is one command.
 Weights come from `yonigozlan/EdgeTAM-hf`, the checkpoint the published ONNX
 release was exported from.
 
+**Apache-2.0, checked rather than assumed.** `facebookresearch/EdgeTAM` carries
+one `LICENSE`, Apache 2.0, with no `NOTICE` beside it and no acceptable-use
+policy, and `checkpoints/edgetam.pt` is inside that repository rather than under
+terms of its own. The Hugging Face checkpoint above and the ONNX release the
+product fetches at runtime declare the same. Nothing here blocks a public build.
+What it does mean is that the two graphs written by this script are a derivative
+work: anyone hosting them ships the licence text and the attribution with them,
+and says that the files were modified, which they were.
+
 ## What was missing, and what still is
 
 `onnx-community/EdgeTAM-ONNX` ships a vision encoder and a
