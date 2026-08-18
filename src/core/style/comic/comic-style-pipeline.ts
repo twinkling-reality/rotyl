@@ -6,6 +6,8 @@ import { bufferSizeForShortEdge, shortEdge, type Dimensions } from '../../render
 import type { StyleControls, StyleDefinition, StylePipeline, StyleQuality, StyledLayer } from '../style.ts';
 
 import colorWgsl from '../../color/color.wgsl?raw';
+import paletteWgsl from '../wgsl/palette.wgsl?raw';
+import levelsWgsl from '../wgsl/levels.wgsl?raw';
 import downsampleWgsl from '../wgsl/downsample.wgsl?raw';
 import inkWgsl from './wgsl/ink.wgsl?raw';
 import structureTensorWgsl from './wgsl/structure-tensor.wgsl?raw';
@@ -22,6 +24,7 @@ import celInkWgsl from './wgsl/cel-ink.wgsl?raw';
  *   flatten buffer   downsample -> [tensor -> blur -> Kuwahara] x2
  *                    -> orientation field for the ink
  *   ink buffer       lightness -> [DoG across the field -> integrate along it] x2
+ *   1x1              the picture's own lightness range, for fitting a palette
  *   output buffer    cel quantise + ink threshold + multiply
  *
  * The three buffers are deliberately different sizes; see comic-params for why
@@ -64,6 +67,8 @@ interface StageTextures {
   readonly tensor: readonly [GPUTexture, GPUTexture];
   readonly luminance: GPUTexture;
   readonly inkPair: readonly [GPUTexture, GPUTexture];
+  /** 1x1, holding what the levels pass measured about this frame. */
+  readonly levels: GPUTexture;
   readonly styled: GPUTexture;
   readonly pool: ResourcePool;
 }
@@ -111,6 +116,7 @@ export class ComicStylePipeline implements StylePipeline {
     readonly blur: FullscreenPass;
     readonly kuwahara: FullscreenPass;
     readonly luminance: FullscreenPass;
+    readonly levels: FullscreenPass;
     readonly edge: FullscreenPass;
     readonly streamline: FullscreenPass;
     readonly celInk: FullscreenPass;
@@ -174,6 +180,14 @@ export class ComicStylePipeline implements StylePipeline {
         bindGroupLayout: this.#layouts.luminance,
         targetFormat: SCALAR_FORMAT,
       }),
+      // Shares the luminance layout: a pass that measures takes no parameters.
+      levels: new FullscreenPass({
+        label: 'style:levels',
+        device,
+        fragmentWgsl: withColor(levelsWgsl),
+        bindGroupLayout: this.#layouts.luminance,
+        targetFormat: WORKING_FORMAT,
+      }),
       edge: new FullscreenPass({
         label: 'style:flow-dog-edge',
         device,
@@ -191,8 +205,9 @@ export class ComicStylePipeline implements StylePipeline {
       celInk: new FullscreenPass({
         label: 'style:cel-ink',
         device,
-        fragmentWgsl: withColorAndInk(celInkWgsl),
-        bindGroupLayout: this.#layouts.pair,
+        // Reads three textures, so it takes the same layout the edge pass does.
+        fragmentWgsl: `${colorWgsl}\n${paletteWgsl}\n${inkWgsl}\n${celInkWgsl}`,
+        bindGroupLayout: this.#layouts.edge,
         targetFormat: WORKING_FORMAT,
       }),
     };
@@ -285,6 +300,7 @@ export class ComicStylePipeline implements StylePipeline {
       ],
       luminance: make('style:luminance', ink, SCALAR_FORMAT),
       inkPair: [make('style:ink-a', ink, SCALAR_FORMAT), make('style:ink-b', ink, SCALAR_FORMAT)],
+      levels: make('style:levels', { width: 1, height: 1 }, WORKING_FORMAT),
       styled: make('style:styled', output, WORKING_FORMAT),
       pool,
     };
@@ -332,7 +348,11 @@ export class ComicStylePipeline implements StylePipeline {
       params.edgeSharpness,
       params.paletteAmount,
       0,
-      // The palette follows in the same slot: twenty floats on top of eight,
+      params.paletteMeanLightness,
+      params.paletteLightnessSpread,
+      0,
+      0,
+      // The palette follows in the same slot: twenty floats on top of twelve,
       // well inside one 256-byte slot, so a palette costs no extra binding and
       // no extra write.
       ...params.paletteStops,
@@ -421,13 +441,22 @@ export class ComicStylePipeline implements StylePipeline {
       );
     }
 
+    // Measured from the flattened picture rather than the source, so what the
+    // palette is fitted to is what the palette will be applied to.
+    this.#passes.levels.run(
+      encoder,
+      stages.levels.createView(),
+      this.#bindGroup(this.#layouts.luminance, [flattened.createView(), this.#sampler]),
+    );
+
     // --- cel + ink, at output resolution ---
     this.#passes.celInk.run(
       encoder,
       stages.styled.createView(),
-      this.#bindGroup(this.#layouts.pair, [
+      this.#bindGroup(this.#layouts.edge, [
         flattened.createView(),
         inkB.createView(),
+        stages.levels.createView(),
         this.#sampler,
         this.#uniformBinding(),
       ]),

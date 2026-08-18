@@ -78,4 +78,24 @@ export function paletteUniform(index: number): number[] {
   return palette.stops.flatMap((hex) => [...hexToOklab(hex), 0]);
 }
 
+/**
+ * Where a palette's own lightness sits: its mean and spread, and its mean
+ * chroma.
+ *
+ * Measured from the stops rather than declared, because a palette is chosen by
+ * picking five colours and nobody picking them is thinking about a standard
+ * deviation. The style layer uses these to fit the picture to the palette; see
+ * fitLightness in wgsl/palette.wgsl for why that is necessary at all.
+ */
+export function paletteLightness(index: number): { mean: number; spread: number; chroma: number } {
+  const palette = PALETTES[Math.min(PALETTES.length - 1, Math.max(0, Math.round(index)))] ?? PALETTES[0];
+  const lab = (palette?.stops ?? []).map((hex) => hexToOklab(hex));
+  if (lab.length === 0) return { mean: 0.5, spread: 0.25, chroma: 0.05 };
+
+  const mean = lab.reduce((total, [L]) => total + L, 0) / lab.length;
+  const variance = lab.reduce((total, [L]) => total + (L - mean) ** 2, 0) / lab.length;
+  const chroma = lab.reduce((total, [, a, b]) => total + Math.hypot(a, b), 0) / lab.length;
+  return { mean, spread: Math.sqrt(variance), chroma };
+}
+
 export const PALETTE_NAMES: readonly string[] = PALETTES.map((palette) => palette.name);

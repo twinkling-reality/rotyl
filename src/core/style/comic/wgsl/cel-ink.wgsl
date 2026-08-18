@@ -14,28 +14,20 @@ struct Uniforms {
   edgeThreshold: f32,
   edgeSharpness: f32,
   paletteAmount: f32,
-  _pad: f32,
+  _pad0: f32,
+  /** The palette's own lightness: mean, then spread. */
+  paletteLightness: vec2f,
+  _pad1: vec2f,
   /** Five Oklab stops, dark to light, in xyz. */
-  palette: array<vec4f, 5>,
+  palette: array<vec4f, PALETTE_STOPS>,
 }
 
 @group(0) @binding(0) var flatTex: texture_2d<f32>;
 @group(0) @binding(1) var inkTex: texture_2d<f32>;
-@group(0) @binding(2) var linearSampler: sampler;
-@group(0) @binding(3) var<uniform> u: Uniforms;
-
-/**
- * The palette colour for a given lightness.
- *
- * Four segments between five stops, interpolated in Oklab so the midpoint
- * between two stops is the colour a person would call the midpoint. The same
- * blend in linear RGB takes a deep teal to a cream through a muddy green.
- */
-fn paletteAt(lightness: f32) -> vec3f {
-  let t = clamp(lightness, 0.0, 1.0) * 4.0;
-  let index = min(u32(floor(t)), 3u);
-  return mix(u.palette[index].xyz, u.palette[index + 1u].xyz, t - f32(index));
-}
+/** 1x1: the picture's mean lightness, its spread, and its mean chroma. */
+@group(0) @binding(2) var levelsTex: texture_2d<f32>;
+@group(0) @binding(3) var linearSampler: sampler;
+@group(0) @binding(4) var<uniform> u: Uniforms;
 
 @fragment
 fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
@@ -61,7 +53,15 @@ fn fragmentMain(@location(0) uv: vec2f) -> @location(0) vec4f {
   // lightness: the palette's own ramp is then free to carry more or less
   // contrast than the photograph did, which is most of what makes a picture
   // read as chosen rather than sampled.
-  lab = mix(lab, paletteAt(lab.x), u.paletteAmount);
+  //
+  // The index is FITTED to this picture first. A palette spans about a quarter
+  // of the lightness axis in standard deviation and a hazy photograph spans
+  // half of that, sitting high, so applied literally a ramp is read through two
+  // and a half of its five stops and the whole frame comes out one colour. See
+  // wgsl/levels.wgsl for what is measured, and why measuring it per frame is
+  // safe on video.
+  let picture = textureSampleLevel(levelsTex, linearSampler, vec2f(0.5), 0.0).rgb;
+  lab = mix(lab, paletteRamp(u.palette, fitLightness(lab.x, picture.xy, u.paletteLightness)), u.paletteAmount);
 
   // Clamp AFTER converting back: Oklab describes colours outside sRGB, and a
   // saturation boost routinely lands there. Clamping in Oklab would distort

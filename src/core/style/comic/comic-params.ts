@@ -1,4 +1,4 @@
-import { PALETTE_NAMES, PALETTES, paletteUniform } from '../palette.ts';
+import { PALETTE_NAMES, PALETTES, paletteLightness, paletteUniform } from '../palette.ts';
 import {
   choice,
   control,
@@ -113,6 +113,9 @@ export interface ComicParams {
   readonly paletteAmount: number;
   /** Five Oklab stops, padded to vec4, ready for the uniform. */
   readonly paletteStops: readonly number[];
+  /** Where the palette's own lightness sits, so the picture can be fitted to it. */
+  readonly paletteMeanLightness: number;
+  readonly paletteLightnessSpread: number;
 }
 
 export function resolveComicParams(
@@ -155,6 +158,7 @@ export function resolveComicParams(
 
   const sigmaEdge = inkShortEdge * edgeFraction;
   const bins = Math.round(lerp(14, 4, strength));
+  const fit = paletteLightness(palette);
 
   return {
     flattenShortEdge,
@@ -186,6 +190,8 @@ export function resolveComicParams(
     // image onto a grey ramp that would merely desaturate it.
     paletteAmount: palette === 0 ? 0 : control(controls, 'colour', DEFAULT_COMIC_CONTROLS.colour),
     paletteStops: paletteUniform(palette),
+    paletteMeanLightness: fit.mean,
+    paletteLightnessSpread: fit.spread,
 
     styleMix: fadeToNothing(strength),
   };
