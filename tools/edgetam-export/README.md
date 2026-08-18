@@ -149,6 +149,54 @@ the PyTorch reference on every frame of all four, not merely similar. The
 numbers are on `/research/tracking.html`, out of `results.json`, along with what
 motion blur costs, which is the only one of the three that costs anything.
 
+## What a host has to supply, besides the two graphs
+
+The graphs are the expensive half and they are not the whole of it. A tracked
+frame is four sessions and a memory bank, and the parts that are neither are
+listed here because rediscovering them costs a day each and every one of them
+fails silently.
+
+**Three parameters that are in the checkpoint and in no graph.** All are tiny
+and all can be dumped to a few kilobytes beside the weights:
+
+| parameter                       | shape   | what it is for                                 |
+| ------------------------------- | ------- | ---------------------------------------------- |
+| `no_memory_embedding`           | 1×1×256 | subtract from the encoder's last feature map   |
+| `no_memory_positional_encoding` | 1×1×256 | the position that goes with it                 |
+| `no_object_pointer`             | 1×256   | what stands in for an object that is not there |
+
+The first is the trap the section below describes. The published vision encoder
+ADDS it, which is right for a single image and wrong for a tracked frame, where
+memory attention replaces it.
+
+**The vision position embeddings, which are 4 MB and should not be shipped.**
+`memory_attention` takes `vision_position_embeddings` at 4096×1×256, one per
+cell of the 64×64 feature grid. It comes from `vision_encoder.neck.position_
+encoding`, which is sinusoidal and takes no input beyond the grid size, so it is
+the same tensor on every frame of every clip. Compute it at load. Shipping it
+would add a third of the shared attention graph's whole size for something a
+loop can produce in a millisecond.
+
+**A 1024 px mask, where the decoder answers at 256.** `memory_encoder` takes
+`mask_for_memory` at 1×1×1024×1024, and the mask decoder's `pred_masks` is
+256 px square. The reference feeds it the high-resolution mask, so a host
+upsamples by four before encoding a memory. Feeding the 256 px mask into a graph
+that declares 1024 is a shape error and will say so; feeding it upsampled by
+nearest rather than bilinear will not say anything at all.
+
+**And the arithmetic either side of the encoder, which is deliberately not in
+the graph.** A mask from a click is thresholded and a mask from a previous
+frame's prediction is passed through a sigmoid, then both are scaled and shifted
+by `sigmoid_scale_for_mem_enc` and `sigmoid_bias_for_mem_enc`. `verify.py` does
+it in `encode_new_memory` and it is fifteen lines. It is outside the graph so
+the graph has one meaning rather than a mode.
+
+**What is still missing is the decoder.** Object pointers need
+`object_pointer_proj` applied to a decoder output token that the published
+decoder does not expose, so a host that does not re-export the decoder has no
+pointers at all, and that costs one frame on every re-entry from an occlusion.
+See the measurement above.
+
 ## Two things found on the way
 
 The published encoder adds `no_memory_embedding` to its last feature map. That

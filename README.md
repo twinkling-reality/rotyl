@@ -93,9 +93,9 @@ the code that produced it.
 
 ## Known limits, in short
 
-Tracking does not exist, so a selection held across a moving subject drifts off
-it. A clip is re-encoded, so outside the selection it is the source pixels
-written again rather than the source bytes. Object selection needs the network
+Tracking has an engine and no hosted weights, so a selection held across a
+moving subject still drifts off it. A clip is re-encoded, so outside the
+selection it is the source pixels written again rather than the source bytes. Object selection needs the network
 once, for about 36 MB of model. The full list, which is longer and does not
 flatter the project, is in [known limits](docs/limits.md).
 

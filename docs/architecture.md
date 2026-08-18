@@ -194,7 +194,14 @@ is the shape that was drawn rather than a magnified approximation.
 
 `applyMask` is the one route by which a mask produced outside the brush can
 reach the renderer, and it is how object selection connects, deliberately, and
-undoably.
+undoably. It is also how tracking connects, and that was the point of building
+it this way: a tracker contributes one of these per frame it has followed the
+object to, and nothing between the model and the renderer needed a new idea.
+
+What tracking did add is a group. One run is three hundred commands and one
+gesture, so commands carry the id of the gesture that made them and undo takes
+the whole run. It is one optional field and two loops, and it is the only thing
+in the log that knows more than one command can belong together.
 
 It is also what makes a lost graphics device survivable. Everything the renderer
 owns belongs to one `GPUDevice` and dies with it; the log belongs to the work

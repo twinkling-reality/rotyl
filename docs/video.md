@@ -20,7 +20,8 @@ second because the frames it cannot render are skipped rather than queued.
 Dropping to the draft tier unconditionally was the first attempt and it was
 wrong twice over: on a small clip at high detail the two tiers are the same
 render anyway, since both clamp to the clip's own short edge, and on a large one
-no tier saves it. Tracking does not exist yet.
+no tier saves it. Nothing here is affected by tracking, which is a job
+rather than a render-loop activity; see below.
 
 A panel of stylisation over a moving scene is what the Area tool is for: drag a
 rectangle once and the traffic runs through it. The tools either side of the
@@ -92,6 +93,48 @@ work while frame 100 was on screen.
 A still image is a one-frame document. `frame` is required on every command
 rather than optional, so there is no second shape to reason about and no branch
 anywhere asking which kind of file this is.
+
+## Tracking, and where it runs
+
+**The engine is built and the weights are not hosted**, so nothing in the
+product can start a run yet. What exists is the part that is this project's own
+design rather than the model's: `src/core/perception/tracking-job.ts`, which is
+DOM-free, has one seam, and is tested against a tracker made of arithmetic.
+
+**It does not follow the playhead, and that is the decision.** A tracked frame
+is about ninety milliseconds against playback's thirty-three, a memory bank is
+causal so there is no meaning to running it backwards, and the frame provider
+costs 0.47 ms forward against fifteen to seek back. Behind the playhead and
+ahead of it were both on the table and are wrong the same way: both make the set
+of frames that end up tracked a function of where somebody happened to scrub.
+
+So it is a job. It starts on the frame the selection was made on and walks
+forward at its own pace, and the playhead and the tracker become two independent
+cursors over one document. Frames it has reached show what it found; frames it
+has not show the held-forward selection they showed before, which is the fold's
+existing behaviour and needed no change.
+
+**One gesture, one undo.** Three hundred frames is three hundred commands, and
+three hundred presses of undo is not undo. Commands from one run carry a group,
+and undoing a group lands the playhead on the frame the selection was made on
+rather than three hundred frames later where it stopped. That is one field on
+`SelectionCommand` and two loops in `SelectionDocument`.
+
+**Stopping keeps what it found.** A run abandoned half way has followed the
+object as far as it got, and that work is worth what it would have been had the
+clip ended there. Making Stop mean undo would be a second, worse button for
+something the first button already does.
+
+**Tracking a second object is a second seed.** `runTracking` takes a list of
+masks, builds one track per mask, and advances all of them against one
+embedding per frame, so reading the frame, which is the expensive half, does not
+scale with the number of objects. The first track's command replaces what was
+held forward, which is the drift being removed, and the rest add. A second
+tracker is a second implementation of four methods and nothing else changes.
+
+What it needs to run is in `tools/edgetam-export`: two graphs that the published
+release does not contain, three parameters from the checkpoint, and a position
+encoding worth computing rather than shipping.
 
 ## Getting frames out of a file
 
