@@ -626,16 +626,18 @@ export function entries(style: unknown, video: unknown, bundle: unknown): readon
         {
           heading: 'What ships',
           prose: [
-            'Three runtime dependencies, two of them code-split so a session that never opens a video or an object never fetches them. Shaders reach the bundle as strings and this codebase comments them as heavily as its TypeScript, so a build-time transform removes the comments and keeps every newline, which is why adding a third style made the bundle smaller rather than larger.',
+            'Three runtime dependencies, all but the framework code-split, so what a session downloads depends on what it opens. A photograph fetches the application and the fonts and nothing else.',
+            'Shaders reach the bundle as strings and this codebase comments them as heavily as its TypeScript, so a build-time transform removes the comments and keeps every newline, which is why adding a third style made the bundle smaller rather than larger.',
           ],
           table: {
-            columns: ['gzipped', 'size'],
+            columns: ['gzipped', 'size', 'fetched'],
             rows: [
-              ['application', '41 KB'],
-              ['inference runtime, on first object click', '36 KB'],
-              ['demuxer, on first video', '33 KB'],
-              ['subset fonts', '31 KB'],
-              ['saved by stripping shader comments', '17 KB'],
+              ['application', '42.5 KB', 'always'],
+              ['subset fonts', '31 KB', 'always'],
+              ['inference runtime', '36 KB', 'first object click'],
+              ['demuxer', '42 KB', 'first video'],
+              ['container writer', '32 KB', 'first clip export'],
+              ['saved by stripping shader comments', '17 KB', ''],
             ],
           },
         },
