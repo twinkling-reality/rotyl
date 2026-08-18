@@ -22,6 +22,14 @@ echo "1080p30-gop30.mp4 (1 s keyframes)"
 ffmpeg -v error -y -f lavfi -i "mandelbrot=size=1920x1080:rate=30:maxiter=800" -t 10 \
   -vf "noise=alls=8:allf=t+u,format=yuv420p" $common -g 30 -keyint_min 30 1080p30-gop30.mp4
 
+echo "720p30-gop30.mp4 (the same content, one step down)"
+# The same picture at 720p, so the encode table can sit next to the style table,
+# which is anchored at 720p. Scaled from the 1080p clip rather than rendered
+# again: identical content is what makes the two rows comparable.
+# shellcheck disable=SC2086
+ffmpeg -v error -y -i 1080p30-gop30.mp4 -vf "scale=1280:720" -pix_fmt yuv420p $common \
+  -g 30 -keyint_min 30 720p30-gop30.mp4
+
 echo "1080p30-gop300.mp4 (one keyframe, the whole clip)"
 # shellcheck disable=SC2086
 ffmpeg -v error -y -i 1080p30-gop30.mp4 -pix_fmt yuv420p $common -g 300 -keyint_min 300 \

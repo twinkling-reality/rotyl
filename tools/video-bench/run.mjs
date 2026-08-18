@@ -22,6 +22,8 @@ const ALL = [
   'half-precision',
   'decode',
   'colour',
+  'encode',
+  'encode-colour',
   'shared-device',
 ];
 

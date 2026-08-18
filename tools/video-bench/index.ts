@@ -14,7 +14,8 @@ import { sharedDevice } from './shared-device.ts';
 import { attention, bankRampUp } from './attention.ts';
 import { halfPrecision } from './half-precision.ts';
 import { video, type Clip } from './decode.ts';
-import { colour } from './colour.ts';
+import { colour, encodeColour } from './colour.ts';
+import { encode } from './encode.ts';
 
 const CLIP_SET: Clip[] = [
   { name: '1080p30-gop30', url: `${CLIPS}/1080p30-gop30.mp4` },
@@ -30,6 +31,8 @@ export const MEASUREMENTS = [
   'half-precision',
   'decode',
   'colour',
+  'encode',
+  'encode-colour',
 ] as const;
 
 export type Measurement = (typeof MEASUREMENTS)[number];
@@ -58,6 +61,8 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('half-precision', () => halfPrecision(ONNX));
   await step('decode', () => video(dev, CLIP_SET));
   await step('colour', () => colour(dev, CLIPS));
+  await step('encode', () => encode(dev, CLIPS));
+  await step('encode-colour', () => encodeColour(dev, CLIPS));
   // LAST, AND NOT BY ACCIDENT. It assigns to `ort.env.webgpu.device` and
   // destroys the devices it made, which leaves that global pointing at a dead
   // device. Anything creating a session afterwards hangs rather than failing.
