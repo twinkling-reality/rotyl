@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 /**
  * The house voice, as a test rather than as a note somebody has to remember.
@@ -73,6 +74,22 @@ describe('the house voice', () => {
       );
       for (const [, anchor] of text.matchAll(/\]\(#([^)]+)\)/g)) {
         if (anchor !== undefined && !headings.has(anchor)) broken.push(`${path} -> #${anchor}`);
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it('has no link pointing at a file that is not there', () => {
+    // Documentation split across files is only better than one long file while
+    // the links between them hold, and nothing else in the build reads them.
+    const broken: string[] = [];
+    for (const path of tracked().filter((candidate) => candidate.endsWith('.md'))) {
+      const text = readFileSync(path, 'utf8');
+      for (const [, target] of text.matchAll(/]\(([^)#][^)]*)\)/g)) {
+        // Only relative paths: an http link is somebody else's to keep alive.
+        if (target === undefined || /^[a-z]+:/i.test(target)) continue;
+        const file = target.split('#')[0];
+        if (file && !existsSync(join(dirname(path), file))) broken.push(`${path} -> ${file}`);
       }
     }
     expect(broken).toEqual([]);
