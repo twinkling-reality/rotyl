@@ -626,7 +626,10 @@ export function App(): JSX.Element {
               runtime={runtime}
               tool={tool}
               brushRadius={brushRadius}
-              overlayVisible={overlayVisible}
+              // Off while playing. The overlay lifts everything unselected
+              // toward paper so a selection can be seen being made, and during
+              // playback the thing being looked at is the result instead.
+              overlayVisible={overlayVisible && !playing}
               paused={activity !== undefined}
               fitRequest={fitRequest}
               candidates={candidates}
