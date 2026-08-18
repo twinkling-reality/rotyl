@@ -2,6 +2,11 @@
   "name": "rotyl",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/twinkling-reality/rotyl.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
