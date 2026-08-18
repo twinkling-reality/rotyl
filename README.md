@@ -1,26 +1,16 @@
 # Rotyl
 
-Select part of an image and transform only that part. Everything else stays byte-identical.
+**Select part of an image or a video, transform only that part, export at full
+resolution.** Everything outside the selection stays byte-identical.
 
-Runs on your machine. Your image is never uploaded. The only thing that crosses
-the network is the object model, once, coming to you.
+Runs on your machine. Nothing is ever uploaded. The only thing that crosses the
+network is the object model, once, coming to you.
 
-**What this file is:** how Rotyl is put together and why each decision went the
-way it did. Every measurement behind it lives on `/research.html`, generated
-from the benchmarks rather than typed in here.
+![The right half of a video frame stylised while the left half stays exactly as
+it was, as the camera pans across a street](docs/media/hero.gif)
 
-- [Running it](#running-it)
-- [How it is put together](#how-it-is-put-together): the layers, the render
-  path, what a style is, and why the selection is a command log
-- [Selecting an object](#selecting-an-object): the model, and why a 256 px mask
-  is not a boundary
-- [Video, so far](#video-so-far): playing, holding a selection across frames,
-  reading frames, and writing the clip out
-- [What was measured, and where it lives](#what-was-measured-and-where-it-lives)
-- [Closing a file](#closing-a-file) and
-  [saying that it is working](#saying-that-it-is-working)
-- [Type and fonts](#type-and-fonts), [licence](#licence),
-  [known limits](#known-limits)
+One rectangle, dragged once. Everything inside it is stylised on every frame;
+everything outside it is the source, unchanged.
 
 ## Running it
 
@@ -36,6 +26,36 @@ pnpm verify   # typecheck, lint, format, unit tests, production build
 pnpm e2e      # Playwright, real Chrome
 ```
 
+## What it does
+
+**Selecting.** Brush a region, click the object, drag a box around it, or drag a
+plain rectangle. Everything left of the toolbar's divider asks a segmentation
+model what is there; everything right of it draws what you draw. The model runs
+on your machine, and the boundary it returns is reconstructed against the
+photograph rather than magnified from a 256 px answer.
+See [selecting an object](docs/selection.md).
+
+**Styling.** Three chains, sharing nothing but the seam: a painterly flatten with
+inked contours, a flat poster snapped to a fitted palette, and a four-ink
+halftone over warm paper. A style is a texture and a mix, so adding one is a
+directory and a line in a table.
+See [how it is put together](docs/architecture.md).
+
+**Video.** Open an MP4 or a MOV, play it, scrub it, and select on any frame. An
+edit holds from the frame it was made on until something later changes it.
+See [video](docs/video.md).
+
+**Exporting.** The frame on screen as a picture, or the whole clip as an MP4.
+Both are the preview's renderer at the preview's parameters stopping at the same
+pass, so a saved file cannot drift from what was on screen.
+
+![The comic style with the Mural palette applied inside a dragged rectangle,
+with the style panel open](docs/media/styles.webp)
+
+The selection boundary runs through the near car, so the same object appears
+stylised and untouched at once. The controls a style declares are what the panel
+draws, which is why adding a style needs no interface code.
+
 ## How it is put together
 
 ```
@@ -44,666 +64,45 @@ src/platform/  browser adapters: decode, texture upload, encode, mux, inference
 src/app/       Preact UI
 ```
 
+`core` never imports from `platform` or `app`, enforced by a second tsconfig that
+compiles it with no `dom` library, so a stray `window` fails the build rather
+than being caught in review. The payoff is concrete: every shader is unit-tested
+by running it for real through Dawn in Node, with no browser and no mocks.
+
 It ships as 139 KB of JavaScript, 42.5 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
-fetches none of the other two: the inference runtime arrives on the first object
-click, the demuxer on the first video, the container writer on the first clip
-export.
-
-`core` never imports from `platform` or `app`. That is enforced by
-`tsconfig.core.json`, which compiles `src/core` with `"lib": ["es2023"]` and no
-`dom`, so a stray `window` or `HTMLElement` fails the build rather than being
-caught in review. The payoff is concrete: every shader is unit-tested by running
-it for real through Dawn in Node, with no browser and no mocks.
-
-Three things were tried at this layer and dropped, each with a number rather
-than a preference. **React**, at 59.5 KB gzipped against Preact's 6.1 KB, for an
-application whose interface is a canvas and eight buttons. **A WebGL2 fallback**,
-which doubles the shader surface permanently in order to serve browsers that
-will have WebGPU before it is finished. And **Web Workers for export**, which
-measured 50% slower than doing it on the main thread, because moving a
-full-resolution image across the boundary costs more than the parallelism
-returns. Every rejection this project has made is collected, with what decided
-it, on the research page the drop zone links to.
-
-One more decision belongs here because it is about the build rather than about
-the picture. **Shaders reach the bundle as strings**, and this codebase comments
-them as heavily as its TypeScript: 78 KB of WGSL, two thirds of it explanation,
-shipped to every user. A build-time transform removes the comments and keeps
-every newline, which is worth 17 KB gzipped, a quarter of the application
-bundle, and leaves a WGSL compile error still reporting the line it is on. It
-runs in development too, so the string the browser gets is the string both test
-suites exercise.
-
-### The render path
-
-```
-source ──┬──────────────────────────────────┐
-         │                                  │
-         └─► style chain ──► styled ──┐     │
-                                      ▼     ▼
-                        composite: mix(source, styled, mask)
-                                      ▼
-                               ┌──────┴──────┐
-                          export file   display pass
-                                        (view + overlay)
-```
-
-Three things follow from this shape:
-
-**Unselected pixels are untouched.** The composite is the only pass that reads
-the mask, and `mix(source, styled, 0)` returns the source value exactly. Source
-textures are sampled through an sRGB view and the composite writes through one,
-so the hardware does the decode and encode and the byte round trip is exact.
-
-**Export is not a second code path.** It is the same renderer with the same
-parameters, stopping at the same pass. The selection overlay lives in the
-display pass, which export never reaches, so a UI affordance cannot leak into a
-saved file. Writing a clip is that loop run once per frame rather than a second
-one: a source hands over frames, a sink takes them, and a photograph is a
-one-frame document that goes through it once.
-
-**Boundaries have no seam.** Every stage before the composite runs over the
-whole image. Masking earlier would be cheaper but wrong: a style's kernels
-sample well outside their own pixel, so pixels just inside the selection would
-be computed from zeroed neighbours and draw a halo.
-
-### A style is a texture and a mix
-
-Nothing outside `src/core/style` knows what a style does. One declares its
-controls as named values and turns the source into a styled texture at output
-resolution; the compositor blends it through the mask and knows nothing else.
-The UI builds its controls from the declaration, so a style is a directory and a
-line in `styles.ts`. The engine, the export path, the composite and the panel
-are untouched.
-
-A control is a slider or a choice, and a choice is still a number: its value is
-an index into the options it declares. That is why adding one moved nothing
-between here and the export path. The app stores it, compares it and hands it
-back exactly as it does a slider, and all the declaration buys is that the panel
-draws buttons instead of a track for a decision with no meaningful midpoint.
-
-**Comic** flattens with an anisotropic Kuwahara filter, finds contours with a
-flow-based difference of Gaussians along the structure tensor, then quantises to
-cel bands and multiplies the ink over them. Twenty passes over three
-differently-sized buffers.
-
-It also carries a **palette**, and that is the control that decides whether the
-result looks designed or merely processed. The reason a filter looks like a
-filter is that it keeps the photograph's colour: stylise hazy traffic and the
-flattening, the quantisation and the ink all do their job, and the answer is
-grey, because the input was grey. An illustration of the same street is not
-grey, not because it was drawn better, but because somebody chose the colours,
-and no amount of edge detection supplies the choosing.
-
-So a palette maps LIGHTNESS to colour rather than nudging the colours already
-there. Dark parts of the picture take the dark end of a five-stop ramp, light
-parts the light end. Form survives completely, since it is carried by the
-lightness being used as the index, and hue is replaced wholesale, which is the
-point, because smog has no hue worth keeping. The ramp is interpolated in Oklab,
-so the midpoint of two stops is the colour a person would call the midpoint;
-the same blend in linear RGB takes a deep teal to a cream through a muddy green.
-It is applied after the cel step and indexed by the quantised lightness, so the
-palette lands in the flat bands rather than reintroducing a gradient across
-them.
-
-**And it is fitted to the picture before it is applied.** A palette is a claim
-about where a photograph's lightness lives, and photographs disagree: measured
-on the reference scene, hazy traffic has a lightness spread of 0.136 where every
-palette here spans 0.23 to 0.29. Applied literally, a ramp is therefore read
-through two and a half of its five stops and the whole frame comes out in one
-colour, which looks like a palette that was chosen badly and is really a
-palette that was barely used. So one pass measures the picture's own mean and
-spread and one affine map moves it onto the palette's, which was the single
-largest change to how a stylised frame looks in this chapter. It costs a
-fullscreen pass onto a 1×1 target: one invocation, a fixed grid of a thousand
-taps. Fixed, because sample points that do not move between frames follow the
-scene rather than the grain. An auto-exposure that pumps would be worse than no
-fitting at all.
-
-**Poster** flattens with an iterated separable bilateral, quantises to flat
-areas in Oklab, snaps them to the palette, and draws a line where two areas
-meet. Nine passes, one at output resolution.
-
-It is the same palette data read the other way round. A ramp indexed by
-lightness cannot keep two things apart, a red tail light and a grey wall of the
-same lightness come out the same colour, so this style takes the NEAREST stop
-in all three dimensions instead. The palette becomes a set rather than a ramp,
-and a picture in five chosen colours still shows a car against a road.
-
-Its outline is a region boundary rather than an edge detection, which is the
-cheaper idea and also the better one. The line is drawn where the quantised
-colour here differs from the quantised colour a line's width away: five taps,
-and one threshold whose units are "how different do two areas have to be". A
-difference of Gaussians has no such opinion. It responds to contrast, so it
-inks smog and sensor noise, and the threshold that stops it doing that also
-stops it drawing the faint boundary that mattered.
-
-**Print** separates the image into four ink densities and screens each one at
-its own angle, over warm paper, slightly misregistered. Three passes, only the
-last at output resolution.
-
-What the three share is the colour maths, a box downsample, the palette and its
-fitting, and the shape of a fullscreen pass. Nothing else, and in particular not
-a line of the compositor: each landed without one changing, and all three are
-held to the same contract by the same harness in `test/style-harness.ts`. What
-they deliberately do not share is the stage that makes each one what it is.
-a Kuwahara flatten and a bilateral flatten are not two settings of one thing,
-they are the difference between painterly and printed.
-
-### Resolution is derived, not configured
-
-Every style has a characteristic length. A Kuwahara radius, a bilateral sigma,
-a screen pitch, the width of a line.
-Written the obvious way that length is a pixel count which must grow with
-resolution to keep the look constant, and cost then grows with the _fourth_
-power of resolution.
-
-So it is inverted. Each stage declares the apparent scale it wants as a fraction
-of the image, and its buffer resolution is _derived_ to hold that scale. Cost
-becomes linear in pixels, "more detail" buys resolution rather than kernel
-width, and a coarser halftone costs less rather than more. A screen carries no
-detail below its own cell, so the buffer feeding it shrinks as the dots grow.
-
-Because every length is a fraction of the image and never of the output buffer,
-preview and export compose identically. That is a property of the two parameter
-modules alone, and it is tested in each of them exactly, across every output
-size and quality tier.
-
-### The selection is a command log
-
-Strokes, not pixels, are the source of truth. Replaying the log rebuilds the
-mask, which makes undo, redo, and export-at-a-different-resolution the same
-operation, and means no edit ever costs a full-resolution snapshot. Stroke
-coordinates and radii are in source pixels, so a brush edge exported at 6000 px
-is the shape that was drawn rather than a magnified approximation.
-
-`applyMask` is the one route by which a mask produced outside the brush can
-reach the renderer, and it is how object selection connects, deliberately, and
-undoably.
-
-It is also what makes a lost graphics device survivable. Everything the renderer
-owns belongs to one `GPUDevice` and dies with it; the log belongs to the work
-and does not, so the document is created outside the engine and handed to each
-one in turn. A loss costs the decoded pixels, which are read from the file
-again, and nothing else: a new device, a new engine around the same log, the
-image re-uploaded, and the view carried across so the canvas comes back where it
-was. Three rebuilds inside a minute is a driver that will keep doing it, and
-that is the point at which it says so rather than looping.
-
-## Selecting an object
-
-Click one with the Object tool and the whole thing is selected. Shift-click adds
-another region to the same object; Alt-click carves one away. Dragging pans, so
-there is no modifier to learn for the common case.
-
-Or draw around it with the Box tool. A box says something a click cannot, where
-the thing _ends_, which makes it the better prompt for anything without an
-unambiguous middle. It composes with clicks rather than replacing them: draw a
-box, switch back to the Object tool, and Alt-click whatever it caught by
-mistake. Drag is the box, so Shift-drag pans there, as it does in the brushes.
-
-**A box is a question, not a selection.** It asks what object lies inside the
-region and answers with the object, so dragging one around a building gives the
-building and not the rectangle. That is the point of it, and it is also the
-first thing anyone gets wrong, because the gesture is the one every other editor
-uses for a marquee. The Area tool is the marquee: the same drag, taking the
-region exactly, with an edge where it was put and no model involved. Alt-drag
-cuts one back out. The two sit on opposite sides of the toolbar's divider.
-everything left of it asks a model what is there, everything right of it draws
-what you draw.
-
-A segmentation model (EdgeTAM) runs on your machine, in the browser. The first
-use downloads it, about 16 MB compressed for the runtime and 20 MB for the
-weights, and caches both; after that it is offline. Your image is never sent
-anywhere. The only thing that crosses the network is the model coming to you.
-
-Three things about the shape of this are load-bearing.
-
-**What the system understands is not what it draws.** Reading the frame is
-expensive and happens once; answering "which object is under this point" is
-cheap and happens per click. Each prompt returns three candidates, usually the
-same click read as a part, a whole and a group, and `PerceptionStore` keeps all
-of them while the renderer is told about exactly one, through an ordinary
-undoable command. Nothing in the perception layer can touch a mask texture.
-
-**The click was ambiguous, so the answer is a choice.** A point on a sleeve is a
-cuff, a shirt and a person, and the model says so. The alternatives appear under
-the prompt as their own silhouettes, the arrow keys reach them too, and taking
-one _replaces_ the command rather than stacking another, so changing your mind
-about which object you meant costs one undo rather than two.
-
-They are offered smallest first, which is the axis a person chooses along;
-confidence decides only which is drawn first, because nobody can see it. Two
-readings that agree to within a tenth are one reading, and are shown as one:
-three buttons that do the same thing imply a choice that is not there. And the
-thumbnails share a single crop rather than each framing itself, since three
-silhouettes at three magnifications would destroy the one comparison being
-offered.
-
-**A 256 px mask is not a boundary.** The model answers at 256 px square whatever
-the photograph is, so on a 4000 px image its edge is wrong by a dozen pixels
-before anything else happens, and magnifying it cannot help: a nearest tap
-staircases and a bilinear tap gives a sixteen-pixel ramp following the mask's
-own grid. So the boundary is _reconstructed_ from the image with a guided filter
-(He, Sun and Tang) whose guide is the photograph in Oklab, three channels, not
-luminance, because two regions of equal lightness and different hue are exactly
-the case a scalar guide cannot see. Measured on a synthetic edge, in image
-pixels:
-
-| engine error | 1 texel | 2    | 3    | 4    | 6    |
-| ------------ | ------- | ---- | ---- | ---- | ---- |
-| magnified    | 3.5     | 7.5  | 11.5 | 15.5 | 23.5 |
-| refined      | −0.5    | −0.4 | 4.6  | 11.0 | 21.8 |
-
-The window spans about six engine texels, which is what sets where that gives
-out. The filter runs during replay rather than once, so the command log holds
-the model's own 256 px answer, 64 KB, and export reconstructs the
-boundary against the full-resolution image rather than magnifying a preview's.
-
-## Video, so far
-
-Open an MP4 or a MOV, select a region, and play it. Every frame goes through the
-same renderer a photograph does, the same style chain, the same composite, the
-same selection.
-
-### Playing it
-
-**Playback holds full quality until it demonstrably cannot**, and the tolerance
-for that is deliberately wide. This is an editor showing what a filter does, not
-a media player, so a third of the frames carrying the real look beats all of
-them carrying an approximation. The chain measures 46 ms a frame on a 720p clip
-at high detail against a 20 ms budget, and it still plays at 44 of 50 frames a
-second because the frames it cannot render are skipped rather than queued.
-Dropping to the draft tier unconditionally was the first attempt and it was
-wrong twice over: on a small clip at high detail the two tiers are the same
-render anyway, since both clamp to the clip's own short edge, and on a large one
-no tier saves it. Tracking does not exist yet.
-
-A panel of stylisation over a moving scene is what the Area tool is for: drag a
-rectangle once and the traffic runs through it.
-
-### Why stylised footage does not boil
-
-**Every stage runs per frame with no knowledge of the last one**, which is the
-thing most likely to make stylised footage look cheap: a decision that flips
-between two frames boils, however good either frame is. Measured on a fixed
-camera, where everything that differs between consecutive frames is grain and
-the codec's own noise, no style amplifies its input and all three attenuate it.
-In output codes, the 99th percentile per-pixel change from one frame to the next
-is 9.5 for the source, 3.2 for comic, 4.5 for poster and 12.6 for print.
-
-The comic chain being the steadiest is the opposite of what was expected of it:
-an anisotropic Kuwahara does not choose between two nearly equal sectors on one
-pixel's noise, it chooses on the variance of two hundred samples. What does boil
-is a hard threshold against a fixed field, which is what a halftone dot is, and
-what a hard quantiser would be if it were left hard. The poster style's first
-version measured a 99th percentile of 23 codes and 1.7% of pixels visibly
-flickering; putting a floor under the width of every soft transition, in the
-units of the thing being decided rather than in pixels, took that to 4.5 and
-0.5%, at no cost anyone can see on a still. That rule generalises: a style may
-make any decision it likes, as long as the decision is allowed to be undecided
-somewhere. `tools/style-bench` has the numbers and how they were taken.
-
-### A selection belongs to a frame, and to every frame after it
-
-**A selection holds from the frame it was made on until something later changes
-it**, which is what every keyframe system does and what a selection is for: a
-region of the picture that a style applies to, stated once and true from then
-on. Scrub or play past it and the style is still there.
-
-The other reading is that a command applies to its own frame alone, and it is
-right about something real: a stroke's coordinates say where something _was_
-when it was drawn, so a selection held across a moving subject drifts off it.
-This was built that way first and it was the wrong call. Nothing can currently
-produce the missing frames, so exact match does not trade drift for accuracy.
-it trades a selection that drifts for no selection at all. Holding forward is
-wrong slowly, and only when the subject moves. Exact match is wrong immediately
-and always. When tracking lands it will contribute commands on the frames it has
-followed the object to, and those fold on top of the held value at each of them:
-the same mechanism, with the gap filled in properly rather than held.
-
-Two smaller things, both the difference between honest and usable. The timeline
-marks the frames where an edit begins, because a selection whose origin cannot
-be found again cannot be corrected. And undo moves the playhead to whatever it
-undid: the log is one list with one cursor, so undo means the last thing you
-did, which may be somewhere you are not looking. An edit disappearing in front
-of you is undo, and an edit disappearing off screen is a bug report. Following
-the cursor also disarms the sharp edge, since the next stroke discards the redo
-tail and now does it on the frame the user is actually on.
-
-The fold is sorted by frame rather than left in the order the edits were made.
-Someone who paints at frame 100 and then scrubs back to clear frame 20 means the
-clear to happen first; in log order it would happen last and wipe frame 100's
-work while frame 100 was on screen.
-
-A still image is a one-frame document. `frame` is required on every command
-rather than optional, so there is no second shape to reason about and no branch
-anywhere asking which kind of file this is.
-
-### Getting frames out of a file
-
-**There is no such thing as decoding frame N.** There is decoding from the
-keyframe at or before N and discarding what comes between, so what a scrub costs
-is set by keyframe spacing and by nothing else. Measured on 1080p30: the next
-frame costs 0.47 ms, a seek costs 15 ms on a clip with one-second keyframes and
-88 ms on the same content with a single keyframe. That one fact is the whole
-design of the frame provider, one decoder is held open and fed forward, and it
-re-seeks only when the target is behind the playhead or when a keyframe lies
-between the two, which is exactly when starting again is cheaper than
-continuing.
-
-It also decides what an export writes. A clip leaves here with a keyframe every
-second rather than every two, which costs some bytes and buys a file this editor
-can scrub at the speed the row above describes rather than the one below it.
-
-Frames are addressed by index, and the index is built by walking the container
-rather than by dividing a duration by a frame rate. A variable frame rate, or
-the two-frame offset an edit list introduces on an ordinary file with B-frames,
-would both make "frame 1043" mean something different to the decoder than to the
-person who selected it, and eventually to the command log, which is what a
-frame index has to be exact for.
-
-**A decoded frame needs no colour path of its own.** It arrives as YCbCr, and
-what lands in the source texture is the same sRGB-encoded byte an image decodes
-to, within one code on a losslessly encoded probe. The sRGB view downstream then
-does the decode in hardware, exactly as it does for a photograph. Writing it
-through an sRGB view instead encodes it twice and is wrong by 73 codes at mid
-grey, which is the kind of thing that is obvious in a measurement and invisible
-in a review.
-
-The demuxer is mediabunny, reached through a dynamic import, so a session that
-never opens a video never fetches it. MP4 and QuickTime only: they share one
-demuxer, so accepting `.mov` costs 49 bytes, where Matroska is a second demuxer
-at 14 KB carrying codecs whose decode has not been measured here.
-
-### Writing the clip out
-
-Export offers two answers on a clip and one on a photograph, and the one that
-gets the weight is the clip, because the clip is what somebody opened a video to
-make. The frame on screen stays available beside it, quieter by size and colour
-rather than hidden behind anything.
-
-**It is the same loop, not a second one.** A source hands over frames and a sink
-takes them; a photograph is a one-frame document and goes through it once. So
-the renderer, the parameters and the pass it stops at are the same three things
-they were when export could only write a picture, and the only new decision is
-which pair the user asked for. A second container would be one entry in a table,
-and a second codec one entry in another.
-
-**The composite reaches the encoder through the canvas it already renders into.**
-Measured, per frame at 1080p: capturing the canvas costs nothing detectable,
-where copying the composite into a buffer and rebuilding a frame from the bytes
-costs 1.4 ms and needs every row de-padded to undo the 256-byte alignment WebGPU
-imposes on texture-to-buffer copies.
-
-That path had to be checked rather than assumed, because a canvas is PRESENTED
-rather than read, so capturing one is a claim about when as much as about what.
-Being one frame out would be invisible in every timing number and would put the
-selection drawn on frame N onto the pixels of frame N minus one. Run for real
-and decoded back, all sixteen probe frames matched the source frame they were
-rendered from and no other.
-
-**A clip is written several times faster than it plays**, for a style that fits
-inside a frame, and several times slower for one that does not: 5.0 ms a frame
-at 1080p for poster and print, 339 for comic. Which is why an export says how
-far it has got and can be stopped, and why Stop replaces the buttons rather than
-sitting beside them. There is exactly one thing to do while it runs.
-
-**The encoder is the pipeline.** Handed the same picture with the GPU taken out
-of the loop entirely it measures 4.7 ms a frame at 1080p against 5.0 for
-everything, because every stage before it runs on threads it is not using.
-Writing the packets into a container rather than binning them costs a tenth of a
-millisecond, so whatever a muxer costs, it is not per frame.
-
-**And rate control had to be said out loud.** A qualitative quality level
-resolves to a quantizer where the codec supports one, which is constant quality
-and an unbounded file: measured on a styled 1080p frame, the default asks for
-30 Mbit/s where the same level asked for as a bitrate is 12. Neither is faster.
-It is five times the size of every file anybody exports, for nothing.
-
-Keyframes are written every second rather than every two, which costs some bytes
-and buys a file this editor can scrub: seek cost is set by keyframe spacing and
-by nothing else.
-
-**The container writer is behind its own dynamic import**, one further in than
-the demuxer, and that is a measured decision rather than tidiness: writing costs
-41.6 KB gzipped on top of a chunk that already reads, which is the size of the
-whole application bundle to the tenth of a kilobyte. A photograph fetches
-neither, a video fetches the reader, and only asking for a clip fetches the
-writer. A second container inside it would cost twelve bytes, for the same
-reason `.mov` costs forty-nine on the way in.
-
-**Colour needed nothing on the way out either.** Sixteen flat patches through
-the composite, out through the encoder and back come out bit-identical to the
-same patches encoded by ffmpeg and decoded the same way. The error is entirely
-the midtone shift Chrome applies on the 4:2:0 decode path, which was already
-measured and attributed, and the container is tagged BT.709 limited range, which
-is what an H.264 file is supposed to say.
-
-What decided all of this, and what it cost to find out, is in
-`tools/video-bench`, including the two numbers that say tracking cannot live
-in the render loop.
-
-## What was measured, and where it lives
-
-**Every number this project relies on is on a page generated from the harness
-that took it.** `/research.html`, linked from the top right before a file is
-open: an index, and a page per finding. What a style costs and whether it holds
-still, what decode costs and where colour goes, what writing a clip costs, what
-tracking would cost before building it, what editing costs, and a ledger of
-every approach that was tried and dropped with the number that decided it.
-
-**The tables are not written, they are read.** Generated at build time out of
-the harnesses' own `results.json`, which is the point of it rather than a detail
-of it: a path that no longer resolves fails the build, so a stale number cannot
-reach a reader who has no way of checking it. This README carries none of those
-tables for the same reason. Every figure quoted in prose here is one somebody
-could check against a page that regenerates.
-
-One entry is one finding, because the question a reader has is "what did we
-learn" rather than "which harness produced this". Dates come from the commit
-that last touched the results, so "is this current" has an answer.
-
-The entry about the look carries pictures, and the others do not. An argument
-about whether output is worth looking at that shows none of it is asking to be
-taken on trust; a page of decode timings with a hero image on top is a marketing
-habit. The figures are rendered by the same harness, from the same scene,
-through the same compositor as the numbers beside them, and their captions name
-the tiles from the figure's own metadata, so a caption cannot describe a picture
-that changed underneath it. They are the one generated artefact here that is
-committed, because they need a GPU and a browser to produce and the build cannot
-make them; what the build does instead is refuse to reference one that is
-missing.
-
-It is a static file and not a route, so it costs the application bundle nothing.
-Vite renders it per request in development and emits it at build, and nothing
-generated is checked in.
-
-## Closing a file
-
-The X beside the wordmark gives the file back: the decoder and its hardware
-decode session, the source texture and mask on the GPU, the command log, and
-whatever the perception layer had understood about the picture. A full-
-resolution photograph and its mask are hundreds of megabytes, so closing one
-has to release them rather than wait for the next open to displace them.
-
-The style and its controls survive on purpose. They are a choice about how the
-tool is set up rather than about this photograph, and re-picking a palette on
-every file would be the tool forgetting what it was told.
-
-For most of this project's life a session held one file and opening a second
-meant reloading the page. The load path had been re-entrant the whole time.
-What was missing was any way out of the one that was open.
-
-Closing over work asks first, in place, and forgets it was asking after four
-seconds so it cannot sit there armed. Closing over nothing does not ask at all,
-because a confirmation nobody needs is the fastest way to teach people to click
-through confirmations.
-
-## Saying that it is working
-
-One component, `src/app/Activity.tsx`, and every wait in the product goes
-through it: opening a file, restoring after a lost device, downloading the
-object model, reading a frame, finding an object, exporting. A product that
-spins one way here and pulses another way there reads as several products.
-
-It is a shimmer across the words rather than a spinner. A spinner says
-something is happening; text that says what is happening says that too, and
-answers the next question as well. The sweep is what stops it reading as a label
-that has got stuck, which is the whole job the spinner was doing. Where a real
-fraction exists there is a hairline under it, and the model download is the only
-place one does.
-
-**Nothing appears for the first 220 ms.** Under that, an indicator is a flash
-the eye reads as a glitch, and the work has finished before anyone has worked
-out what appeared. Over it, silence reads as a hang. Most opens and every style
-change therefore show nothing at all.
-
-The file picker gets the same treatment, and needs it most: a file input fires
-no event for "the dialog is open", so a click used to produce nothing visible
-until the operating system got around to drawing it. Window focus is the only
-signal that it closed, because `change` fires when a file is chosen and never
-when the dialog is dismissed.
-
-Everything that arrives on screen arrives the same way: four pixels and a fade,
-over 140 ms. There is no matching exit, because an element that animates out has
-to stay mounted while it does, and that is a piece of timing state in every
-component that can disappear. Things arrive gently and leave at once. Asking for
-less motion removes the sweep rather than freezing it half way, which is what
-the global reduced-motion rule alone would have done.
-
-## Type and fonts
-
-Geist and Geist Mono, SIL OFL 1.1 (see `public/fonts/LICENSE.txt`). Subset to
-latin and clamped to the weights actually used. 23.2 KB and 8.1 KB. Regenerate
-from the `geist` npm package with:
-
-```bash
-fonttools varLib.instancer Geist[wght].ttf wght=300:500 -o _geist.ttf
-pyftsubset _geist.ttf --output-file=public/fonts/geist-latin-300-500.woff2 \
-  --flavor=woff2 --unicodes="U+0000-00FF,U+2000-206F,U+2122,U+2212" \
-  --layout-features="kern,liga,tnum,case,frac,ss03" --no-hinting --desubroutinize
-```
-
-Icons are eight Lucide paths inlined into `src/app/icons.tsx` (ISC). A kilobyte
-of geometry did not justify a dependency.
+fetches neither the inference runtime, nor the demuxer, nor the container writer.
+
+## Reading further
+
+| page                                           | what it covers                                                             |
+| ---------------------------------------------- | -------------------------------------------------------------------------- |
+| [How it is put together](docs/architecture.md) | the layers, the render path, what a style is, why the selection is a log   |
+| [Selecting an object](docs/selection.md)       | the model, the three readings of one click, and the guided filter          |
+| [Video](docs/video.md)                         | playing, holding a selection across frames, reading frames, writing a clip |
+| [What was measured](docs/measurements.md)      | why every number lives on a generated page instead of in these files       |
+| [The interface](docs/interface.md)             | closing a file, saying that it is working, type and fonts                  |
+| [Known limits](docs/limits.md)                 | what it cannot do, in its own words                                        |
+| [Licence](docs/licences.md)                    | MIT, and what the dependencies are                                         |
+
+**Every measurement is on `/research.html`**, linked from the top right before a
+file is open, and generated at build time from the benchmarks' own results rather
+than typed in by hand. One page per finding, with the command that re-takes it.
+The three harnesses in `tools/` carry the argument behind each number, next to
+the code that produced it.
+
+## Known limits, in short
+
+Tracking does not exist, so a selection held across a moving subject drifts off
+it. A clip is re-encoded, so outside the selection it is the source pixels
+written again rather than the source bytes. Object selection needs the network
+once, for about 36 MB of model. The full list, which is longer and does not
+flatter the project, is in [known limits](docs/limits.md).
 
 ## Licence
 
-Rotyl is MIT. See `LICENSE`.
+MIT. See [LICENSE](LICENSE).
 
-What it depends on is not all MIT, and one of them has an obligation attached,
-so it is written down here rather than left to whoever reads a lockfile:
-
-| what                 | licence     | how it is used                                    |
-| -------------------- | ----------- | ------------------------------------------------- |
-| preact               | MIT         | bundled                                           |
-| onnxruntime-web      | MIT         | bundled, code-split                               |
-| mediabunny 1.55.1    | MPL-2.0     | bundled unmodified, code-split                    |
-| Geist and Geist Mono | SIL OFL 1.1 | subset and served, see `public/fonts/LICENSE.txt` |
-| eight Lucide paths   | ISC         | inlined into `src/app/icons.tsx`                  |
-
-**mediabunny is the one that asks for something.** MPL-2.0 is file-level
-copyleft: it reaches the files it covers and no further, so it does not touch
-anything here, but anyone distributing a build has to say where those files came
-from. They come from https://github.com/Vanilagy/mediabunny, unmodified, at the
-version this project's lockfile pins.
-
-**The segmentation model is not covered by any of this.** It is fetched at
-runtime from a third party rather than bundled, and it carries its own terms;
-`tools/edgetam-export` says which checkpoint and where from. Anyone hosting
-Rotyl publicly should read those terms rather than assume this file speaks for
-them.
-
-## Known limits
-
-- Video can be opened, played, scrubbed, selected on, and written out a frame
-  or a clip at a time. Tracking does not exist, so a selection held across a
-  moving subject drifts off it and has to be corrected by selecting again
-  further along. What is known about building it is measured.
-  `tools/video-bench` puts memory attention at 60 ms a frame on WebGPU and 38 at
-  half precision, which with the encoder and the decoder makes a tracked frame
-  around 90 ms, so tracking runs behind the playhead rather than in the render
-  loop. The graphs it needs are produced by `tools/edgetam-export`, which also
-  demonstrates them holding a mask across ten frames, mask-for-mask identical to
-  the PyTorch tracker.
-- **A clip is re-encoded, so outside the selection it is the source pixels
-  written again rather than the source bytes.** The composite is still exact
-  there, and H.264 is not: measured against the source, a region nobody selected
-  comes back three to five codes away on grainy footage. A still export has no
-  such step and remains byte-exact. Nothing here can fix that short of a
-  lossless codec, which is a file nobody wants.
-- A clip is written into memory before it is saved, because that is what puts
-  the index at the front of the file. A ten-second 1080p export is about 12 MB;
-  a ten-minute one would be closer to a gigabyte, and this has no answer for
-  that beyond failing. Streaming it to disk needs a file handle the user grants,
-  which is a different feature.
-- Exporting a clip writes H.264 in MP4 and nothing else. HEVC and AV1 encode in
-  some browsers and have been measured in none here, and the codec list is one
-  array waiting for somebody with the numbers.
-- Audio is not written. There is no audio anywhere in the product yet, and a
-  clip that silently dropped a soundtrack it had been given would be worse than
-  one that never had it.
-- Clear and Invert act from the frame being shown onward, like every other
-  command. There is no way to say "this frame only" or "the whole clip", and
-  both would be reasonable things to want.
-- Playback has no audio and no loop, and drops frames rather than running slow
-  when the style chain cannot keep up. Which it only does for the comic style:
-  the other two are around a millisecond a frame at 720p.
-- The print style twinkles on video. 3% of pixels move more than 8 codes
-  between consecutive frames of a fixed camera, against 0.1% for comic. A dot
-  appears or disappears when the density crosses the spot function, and that is
-  a hard threshold against a screen that does not move with the picture. It may
-  not want fixing; a print is allowed to look like a print.
-- WebM and Matroska are refused, by signature, with a message that says so.
-  They are a second demuxer at 15 KB and mostly carry codecs whose decode has
-  not been measured here.
-- The print screen's pitch is a fraction of the image, not a distance in pixels,
-  because that is what makes the preview and the export the same picture. At
-  100% zoom on a very large photograph the dots are correspondingly large.
-- Object selection needs the network once, to fetch the model, and around 36 MB
-  of it. The image never leaves the machine; the model has to arrive on it.
-- Object selection only ever adds. Alt-click is a negative point, a statement
-  about the object, answered by the model, not a subtraction from the mask, so
-  removing a region that is already selected is still the eraser's job.
-- Object selection runs on the inference runtime's own WebGPU device, not
-  Rotyl's: it declines to accept an external one, and asked again against
-  1.27.0 it still does. The execution provider's `device` option fails session
-  creation whether or not the device is built with the features the runtime
-  asks for. The consequence is that the model's input crosses back through
-  system memory, 12 MB per image, which is 2.4 ms and not the bottleneck it
-  looked like. Its 17 MB of embeddings do not cross, which is the number that
-  would have mattered. For video the crossing is avoidable entirely: a
-  VideoFrame belongs to no device, so the tensor can be built on the runtime's
-  own device, which does take a GPU buffer as an input and returns the same
-  answer bit for bit.
-- The mask decoder is silently wrong on that runtime's older JSEP backend,
-  no error, an all-zero confidence, and a mask of the wrong object, so the
-  build is pinned. See `edgetam-engine.ts`.
-- Preview is capped at 4096 px on the long edge to bound memory. Export always
-  renders at full resolution, so for larger images the preview is a downscale of
-  the export rather than identical to it.
-- A lost GPU device is rebuilt around, but object selection pays for it: the
-  inference runtime's own device goes with ours, so the model is loaded again on
-  the next click. Its weights are in Cache Storage, so nothing is re-downloaded.
-- Erasing away an entire selection without pressing Clear leaves the selection
-  overlay on, because coverage is inferred from the command log rather than read
-  back from the GPU.
-- Export flattens transparency, matching the preview canvas, which is opaque.
-- HEIC is rejected by signature with a specific message, in every browser.
-- The unit suite runs shaders through Dawn's Node bindings, which do not survive
-  running the full style chain more than once per process, and abort
-  intermittently when GPU work is spread across separate cases in one file. The
-  GPU tests are scoped accordingly, each such file renders once and asserts
-  many times, and browsers have no such limit. Between one run in eight and one
-  in four still aborts under load, with and without those tests; the abort
-  arrives after every assertion has passed, so it reads as an unexplained crash
-  rather than a failure. Run it again before concluding anything from one.
-  The cost is steep enough to shape what is worth testing here: a single
-  `RotylEngine.render` in a file that already builds several engines took one
-  file from none in twelve to ten in twelve, measured back to back. What that
-  test covered is covered in Playwright instead, where a browser has no limit.
-- The end-to-end suite covers the object tool's interaction but not the model:
-  36 MB over the network is the wrong thing to put in a loop that has to be
-  reliable. The model path is verified by hand in a browser.
+The dependencies are not all MIT and one of them has an obligation attached, so
+they are written down rather than left to whoever reads a lockfile:
+[licences](docs/licences.md).
