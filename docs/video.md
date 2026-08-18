@@ -26,27 +26,36 @@ A panel of stylisation over a moving scene is what the Area tool is for: drag a
 rectangle once and the traffic runs through it. The tools either side of the
 toolbar's divider are in [selecting an object](selection.md).
 
-## Why stylised footage does not boil
+## What boils, and what does not
 
 **Every stage runs per frame with no knowledge of the last one**, which is the
 thing most likely to make stylised footage look cheap: a decision that flips
-between two frames boils, however good either frame is. Measured on a fixed
-camera, where everything that differs between consecutive frames is grain and
-the codec's own noise, no style amplifies its input and all three attenuate it.
-In output codes, the 99th percentile per-pixel change from one frame to the next
-is 9.5 for the source, 3.2 for comic, 4.5 for poster and 12.6 for print.
+between two frames boils, however good either frame is.
 
-The comic chain being the steadiest is the opposite of what was expected of it:
-an anisotropic Kuwahara does not choose between two nearly equal sectors on one
-pixel's noise, it chooses on the variance of two hundred samples. What does boil
-is a hard threshold against a fixed field, which is what a halftone dot is, and
-what a hard quantiser would be if it were left hard. The poster style's first
-version measured a 99th percentile of 23 codes and 1.7% of pixels visibly
-flickering; putting a floor under the width of every soft transition, in the
-units of the thing being decided rather than in pixels, took that to 4.5 and
-0.5%, at no cost anyone can see on a still. That rule generalises: a style may
-make any decision it likes, as long as the decision is allowed to be undecided
-somewhere. `tools/style-bench` has the numbers and how they were taken.
+The comic chain being the steadiest of the three is the opposite of what was
+expected of it, and it holds on photographs as well as on the drawn scene the
+first measurement used: an anisotropic Kuwahara does not choose between two
+nearly equal sectors on one pixel's noise, it chooses on the variance of two
+hundred samples.
+
+What does boil is a hard threshold against a fixed field, which is what a
+halftone dot is, and what a hard quantiser would be if it were left hard. The
+poster style's first version measured a 99th percentile of 23 codes and 1.7% of
+pixels visibly flickering; putting a floor under the width of every soft
+transition, in the units of the thing being decided rather than in pixels, took
+that to 4.9 and 0.6%, at no cost anyone can see on a still. That rule
+generalises: a style may make any decision it likes, as long as the decision is
+allowed to be undecided somewhere.
+
+**The rule was not applied everywhere, and it took a photograph to show it.**
+The poster style's outline compares two quantised colours a line's width apart,
+which is a hard decision with a neighbour on one side of it and therefore no
+derivative to floor. On a drawn scene of large flat regions that is invisible.
+On a brick wall it amplifies its input five times, because a brick wall is
+nothing but marginal region boundaries. That is a real defect, it is measured,
+and it is in [known limits](limits.md) rather than in a plan.
+`tools/style-bench` has the numbers, the three fixes that did not work, and how
+all of it was taken.
 
 ## A selection belongs to a frame, and to every frame after it
 

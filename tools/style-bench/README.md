@@ -16,13 +16,18 @@ steadier while it got worse to look at.
 
 ```bash
 ./tools/style-bench/make-clips.sh          # ffmpeg + node, writes clips/
+./tools/style-bench/fetch-real.sh          # curl + ffmpeg, writes real/
 pnpm dev --port 5180                       # in another shell
 node tools/style-bench/run.mjs all         # real Chrome, headed
+node tools/style-bench/run.mjs real        # the same three, on photographs
 ```
 
-`run.mjs` takes any subset: `chain`, `perturbation`, `clips`, `stills`, `sweep`.
-The inputs are gitignored, `results.json` is not, and the pictures land in
-`out/`.
+`run.mjs` takes any subset: `chain`, `perturbation`, `clips`, `stills`, `sweep`,
+`figures`, and the four that need `fetch-real.sh` to have run: `real-chain`,
+`real-perturbation`, `real-clips`, `real-lightness`. `all` is the first six and
+`real` is the last four, which are kept apart because only one of the two groups
+needs a network. The inputs are gitignored, `results.json` and `results-real.json`
+are not, and the pictures land in `out/`.
 
 Real Chrome and headed, for the reason `playwright.config.ts` gives: bundled
 Chromium falls back to SwiftShader, which reports success while producing
@@ -56,15 +61,101 @@ It is deliberately the case the palette exists for. Its lightness has a standard
 deviation of 0.136 against 0.23 to 0.29 for every palette in `palette.ts`, which
 is the measurement that produced the levels stage; see below.
 
-**What it is not is a photograph.** Real footage has texture statistics no
-procedure here reproduces, and the anisotropic Kuwahara's cost in particular
-depends on content: its sample bound grows with local anisotropy, so a frame of
-architecture costs more than a frame of foliage. Treat the comic figures as a
-hard case rather than a typical one.
+**What it is not is a photograph**, and that turned out to matter far more for
+one measurement than for the one it was expected to. The worry written here for
+a chapter was cost: the anisotropic Kuwahara's sample bound grows with local
+anisotropy, so a frame of architecture should cost more than a frame of foliage,
+and the comic figures were to be treated as a hard case rather than a typical
+one. Measured against four photographs, that is wrong in the ordering and nearly
+right in the conclusion. The scene is the dearest of the five by 7 to 24 per
+cent, which is the top of a narrow range rather than a class of its own, and
+foliage costs more than a brick wall does.
+
+**What was actually wrong was the temporal measurement**, in the one style
+nobody was worried about. See [measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took).
 
 `make-clips.sh` encodes three clips from it. The one that matters is
 `static-720p`: fixed camera, fixed scene, so everything that differs between two
 consecutive frames is grain and the encoder's own noise.
+
+---
+
+## 0. The same three measurements, on a picture a camera took
+
+Measurements 1 to 3 were all taken against a scene this directory draws. That
+was the right call and it was never checked. This is the check, and it changed
+one answer.
+
+### The methodology, which is the interesting part
+
+Real footage cannot be committed, so there were exactly two honest ways to take
+this: fetch a known input by URL and pin it by hash, or publish the number with a
+caveat saying the input is unavailable. **It is fetched.** The measurement in
+question is the one the whole per-frame design rests on, and a number nobody can
+re-take is a number nobody can contradict, which is worse than no number.
+
+`fetch-real.sh` verifies a SHA-256 before deriving anything. That accepts one
+failure mode the synthetic scene does not have, a URL that stops resolving, and
+removes the one that matters: if the bytes at the far end change, the script
+refuses to run rather than measuring a different picture under the same name.
+A stale hash fails loudly. A stale input does not fail at all.
+
+Three kinds of input, because no one of them settles it:
+
+- **the scene**, re-taken inside the same run rather than quoted from above. A
+  control that sits in another file taken on another day is not a control.
+- **four photographs**, put through exactly the recipe `make-clips.sh` uses, so
+  the picture is the only thing that differs. Real texture, synthetic grain.
+- **two shots of a film**, stream copied rather than re-encoded, so the codec
+  noise being measured is the film's and not this machine's. Real everything,
+  including subject motion, which is the one thing a fixed camera was isolating
+  and which no real shot can be without.
+
+The photographs are CC0 from Wikimedia Commons; the film is Tears of Steel,
+CC-BY 3.0, (CC) Blender Foundation. Nothing fetched is committed or
+redistributed. The shots are the quietest in the film, found by scanning all
+17,620 frames for the window whose worst consecutive-frame difference is
+smallest.
+
+### What came back
+
+**The cost question, which is the one this README worried about, is a non-event.**
+Content moves the comic chain by 7 to 24 per cent and moves the ordering the
+wrong way round: foliage costs more than a brick wall. Corrected above.
+
+**The comic chain holds.** It is steadier than its input on all four
+photographs, which is the finding that was surprising and the one the design
+leans on.
+
+**The poster chain does not, and it is the outline.** On a brick wall it
+amplifies its input by five where the scene reports it attenuating by two, and
+turning the outline off returns it to 0.95. With the codec taken out entirely, a
+perturbation whose 99th percentile is six codes comes out at seventy-eight, and
+at eight without the outline.
+
+The cause is exactly the rule
+[measurement 2](#what-this-measurement-bought-the-floor-under-a-soft-transition)
+established, broken in the one place it was never applied. Every hard decision in
+a style has a floor under its transition width. The outline compares the
+quantised colour here against the quantised colour a line away, `round()` flips a
+whole band on an infinitesimal change, that moves the comparison by a fifth of
+the Oklab range, and it crosses the line threshold, so an ink stroke appears at
+full strength. The scene has almost no pixel near a region boundary, and the
+population that flickers is exactly that one.
+
+**It is not fixed, and the trials page carries why.** Three shapes were tried.
+Softening the neighbour probe cuts the noise and the signal together, which
+weakens every genuine outline for a fifth of the flicker. Widening the threshold
+one-sidedly displaces the decision rather than resolving it, and took the
+outlines off the reference scene while the flicker was still there. A hard probe
+leaves a discrete quantity for a width to resolve, which no width can do. What
+did land is the shape correction, a transition centred on the threshold rather
+than opening at it, which costs nothing and is right for the same reason every
+other floor in this codebase is. A different outline operator is the honest fix
+and it is not a tuning pass.
+
+**The tables are on `/research/real-footage.html`**, generated from
+`results-real.json`, like every other table this project relies on.
 
 ---
 
@@ -78,16 +169,24 @@ Median milliseconds, full quality tier, default controls:
 
 | style  | 720p    | 2 MP    | 12 MP | 24 MP |
 | ------ | ------- | ------- | ----- | ----- |
-| comic  | 140.2   | 116.7   | 121.9 | 124.0 |
-| poster | **1.3** | **1.4** | 4.9   | 25.1  |
-| print  | **0.5** | **0.6** | 2.0   | 13.0  |
+| comic  | 133.7   | 109.7   | 114.4 | 114.3 |
+| poster | **1.3** | **1.4** | 4.2   | 6.8   |
+| print  | **0.5** | **0.6** | 2.3   | 3.7   |
 
-The 24 MP column is the only place the ordering stops being 20:1. Both cheap
-styles do all of their deciding in one pass at output resolution, so past about
-12 megapixels they are paying for pixels rather than for thinking, and the cost
-goes superlinear as the working set stops fitting anything. The comic chain is
-flat there for the same reason in reverse: its expensive stage runs on a buffer
-whose size is derived from an apparent scale and never grows.
+The ordering holds at every size, and an earlier version of this table said it
+did not. It reported 25.1 and 13.0 in the 24 MP column and argued from them that
+both cheap styles go superlinear past about 12 megapixels as the working set
+stops fitting anything. Re-taken twice on a quiet machine, in two differently
+ordered runs, the cell is 6.8: the growth from 12 to 24 megapixels is 1.6 times
+for twice the pixels, which is sublinear rather than super. The old figure was a
+busy machine, and it survived because nothing re-took it. **Check the min against
+the median before believing a row**, which is what that field is in the results
+file for. Both runs behind this table sit at 0.95 or better; the run that
+reproduced the old figure sat at 0.85.
+
+The comic chain is flat in output resolution for the reason its own stage
+implies: the expensive stage runs on a buffer whose size is derived from an
+apparent scale and never grows.
 
 Two things follow, and the second one is the whole reason a third style exists.
 
@@ -109,12 +208,12 @@ output's short edge. Both reproduce here.
 
 | comic, full tier | 720p  | 2 MP  | 12 MP | 24 MP |
 | ---------------- | ----- | ----- | ----- | ----- |
-| detail 0         | 48.5  | 46.3  | 46.5  | 48.3  |
-| detail 0.5       | 140.2 | 116.7 | 121.9 | 124.0 |
-| detail 1         | 55.9  | 229.9 | 397.3 | 400.8 |
+| detail 0         | 45.1  | 41.9  | 42.9  | 43.2  |
+| detail 0.5       | 133.7 | 109.7 | 114.4 | 114.3 |
+| detail 1         | 50.7  | 218.8 | 384.0 | 383.4 |
 
 At 720p and detail 1 the flatten buffer clamps to 720 and the radius falls to
-4.25, so draft, full and export are the same render. 56.9, 55.9, 55.6. At 2 MP
+4.25, so draft, full and export are the same render. 51.1, 50.7, 50.8. At 2 MP
 nothing clamps and the same setting costs four times as much.
 
 **The poster chain is a per-frame budget.** 1.3 ms at 720p against a 33 ms
@@ -136,10 +235,13 @@ number here**. Boiling is a small proportion of pixels moving a long way.
 | ------------- | ---- | -------- | --------- |
 | the source    | 2.43 | 9.5      | 3.05%     |
 | comic         | 0.92 | **3.2**  | **0.10%** |
-| poster        | 0.55 | **4.5**  | **0.52%** |
+| poster        | 0.55 | **4.9**  | **0.56%** |
 | print         | 1.39 | **12.6** | **3.01%** |
 
-**No style amplifies its input; every one attenuates it.** The comic chain is a
+**On this picture, no style amplifies its input; every one attenuates it.** Two
+of those three rows survive a photograph and the poster row does not; see
+[measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took),
+which is where that sentence gets its qualifier from. The comic chain is a
 heavy smoothing filter with a soft cel step, and it removes more grain than its
 decisions reintroduce. It makes footage steadier than the footage is. The
 hypothesis was wrong, and the reason it was wrong is worth keeping: the Kuwahara
@@ -178,7 +280,7 @@ always had.
 | ---------------------------- | ---- | ------- |
 | hard, `fwidth` only          | 23.3 | 1.67%   |
 | floored lightness and margin | 14.6 | 1.23%   |
-| chroma floored as well       | 4.5  | 0.52%   |
+| chroma floored as well       | 4.9  | 0.56%   |
 
 Chroma was the larger half. Colour steps are as discontinuous as lightness ones
 and there are more of them, because chroma is small everywhere in a hazy picture
@@ -193,7 +295,7 @@ only widens where the picture has no edge to sharpen.
 | ------------- | ----- | ----- | ------- |
 | the source    | 10.22 | 62.5  | 33.5%   |
 | comic         | 7.88  | 100.5 | 17.4%   |
-| poster        | 9.80  | 104.9 | 13.5%   |
+| poster        | 9.90  | 104.9 | 13.5%   |
 | print         | 8.64  | 127.3 | 18.7%   |
 
 When everything in the frame moves, everything in the styled frame moves, and

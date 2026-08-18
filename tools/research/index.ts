@@ -100,29 +100,24 @@ function figureMeta(root: string): readonly FigureMeta[] {
 export function renderResearchSite(root = '.'): readonly Emitted[] {
   const read = (path: string): unknown => JSON.parse(readFileSync(`${root}/${path}`, 'utf8'));
   const style = read('tools/style-bench/results.json');
+  // Its own file because its own command writes it, and because its inputs have
+  // to be fetched before it can run at all. See tools/style-bench/fetch-real.sh.
+  const real = read('tools/style-bench/results-real.json');
   const video = read('tools/video-bench/results.json');
   // Its own file because its own command writes it: bundle sizes need a build
   // and no browser, so they are not part of the run the other numbers come from.
   const bundle = read('tools/video-bench/results-bundle.json');
 
   const taken = hardware(video);
-  const dated: readonly Entry[] = [
-    ...entries(style, video, bundle).map((entry) => ({
-      ...entry,
-      taken,
-      date: lastChanged(
-        entry.harness.startsWith('tools/style-bench')
-          ? 'tools/style-bench/results.json'
-          : 'tools/video-bench/results.json',
-      ),
-    })),
+  const pages: readonly Entry[] = [
+    ...entries(style, real, video, bundle),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',
       standfirst:
         'The ledger of rejected approaches, each with the number that decided it. The only page here not generated from a results file, because a rejection leaves none behind.',
-      harness: 'hand, from the other four',
-      date: lastChanged('tools/research/trials.ts'),
+      harness: 'hand, from the other five',
+      results: 'tools/research/trials.ts',
       lede: [
         `Every measurement on the other pages was taken on ${taken}. This one is the residue of all of them: what was tried, what it measured, and what happened to it.`,
         'It exists because a rejected approach leaves no results file behind, and the reasoning survives only in a README paragraph or in nobody’s head, which is how the same idea gets proposed twice a year and re-measured each time. The rule for an entry is that it has to name a number, or an observation specific enough to argue with.',
@@ -132,10 +127,12 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
     },
   ];
 
+  const stamped = pages.map((entry) => ({ ...entry, taken, date: lastChanged(entry.results) }));
+
   const meta = figureMeta(root);
   return [
-    { path: 'research.html', html: renderIndex(dated) },
-    ...dated.map((entry) => ({
+    { path: 'research.html', html: renderIndex(stamped) },
+    ...stamped.map((entry) => ({
       path: `research/${entry.slug}.html`,
       html: renderEntry(entry, meta),
     })),

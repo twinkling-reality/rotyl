@@ -144,6 +144,15 @@ difference of Gaussians has no such opinion. It responds to contrast, so it
 inks smog and sensor noise, and the threshold that stops it doing that also
 stops it drawing the faint boundary that mattered.
 
+It is also the one hard decision in this codebase with no floor under its
+transition, and it is the only place the temporal rule below is broken. A
+quantised colour is the one thing a derivative cannot smooth, because the value
+being compared belongs to a neighbour, and a quantised colour flips a whole band
+on an infinitesimal change. On a detailed photograph that puts an ink stroke on
+and off between frames. It is measured, three shapes of fix were measured and
+rejected, and it is written down in [known limits](limits.md) rather than
+described as working.
+
 **Print** separates the image into four ink densities and screens each one at
 its own angle, over warm paper, slightly misregistered. Three passes, only the
 last at output resolution.

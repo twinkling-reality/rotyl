@@ -93,6 +93,7 @@ describe('the research pages', () => {
     // results file would silently swallow a table.
     const hostile = renderEntry({
       slug: 'x',
+      results: 'tools/style-bench/results.json',
       title: '<script>alert(1)</script>',
       standfirst: '&',
       harness: '<i>y</i>',

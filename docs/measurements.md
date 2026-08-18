@@ -17,8 +17,18 @@ tables for the same reason. Every figure quoted in prose here is one somebody
 could check against a page that regenerates.
 
 One entry is one finding, because the question a reader has is "what did we
-learn" rather than "which harness produced this". Dates come from the commit
-that last touched the results, so "is this current" has an answer.
+learn" rather than "which harness produced this". One harness therefore writes
+more than one results file, and an entry names the one it reads rather than
+having it inferred, so re-taking one measurement does not re-date a page that
+did not move. Dates come from the commit that last touched that file, so "is
+this current" has an answer.
+
+**One of the inputs is fetched rather than drawn**, which is the one exception
+to everything else here being reproducible from the repository alone. It is
+pinned by hash and it exists because the alternative was worse: the measurement
+it feeds is the one the per-frame design rests on, and a number nobody can
+re-take is a number nobody can contradict. `tools/style-bench/fetch-real.sh`
+argues it at length.
 
 The entry about the look carries pictures, and the others do not. An argument
 about whether output is worth looking at that shows none of it is asking to be

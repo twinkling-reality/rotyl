@@ -14,6 +14,41 @@ import type { Trial } from './page.ts';
  */
 export const TRIALS: readonly Trial[] = [
   {
+    what: 'Fetching a real input by URL and hash, rather than publishing a number nobody can re-take',
+    verdict: 'adopted',
+    evidence:
+      'The measurement it feeds reversed sign on a photograph: the poster chain amplifies its input by five on a brick wall where the drawn scene reports it attenuating by two',
+    where: 'tools/style-bench/fetch-real.sh, and "What survived a real picture"',
+  },
+  {
+    what: 'Softening the poster outline’s neighbour probe, so the field it thresholds is continuous',
+    verdict: 'rejected',
+    evidence:
+      'Cuts the signal as much as the noise: 78 codes to 69 on a brick wall, for a visible weakening of every genuine outline on every picture',
+    where: '"What survived a real picture", the outline',
+  },
+  {
+    what: 'Widening the poster outline’s threshold one-sidedly, as it was written',
+    verdict: 'rejected',
+    evidence:
+      'A transition opening at the decision displaces it rather than resolving it: wide enough to be steady took the outlines off the reference scene altogether, and a genuine boundary is only one band past the threshold to begin with',
+    where: '"What survived a real picture", the outline',
+  },
+  {
+    what: 'Centring that threshold’s transition on itself, and flooring its half width',
+    verdict: 'adopted',
+    evidence:
+      'The correct shape, and free: 0.98% of pixels move more than 8 codes against the previous render, against 1.92% for the probe change that was rejected',
+    where: 'src/core/style/poster/wgsl/poster.wgsl',
+  },
+  {
+    what: 'Making the poster outline temporally sound by any transition width at all',
+    verdict: 'open',
+    evidence:
+      'The quantity being thresholded is a distance between two quantised colours and is therefore discrete; a hard probe leaves nothing for a width to resolve, and a soft one loses the signal. A different outline operator, not a tuning pass',
+    where: 'docs/limits.md',
+  },
+  {
     what: 'A guided filter against the photograph, for the model’s mask boundary',
     verdict: 'adopted',
     evidence:

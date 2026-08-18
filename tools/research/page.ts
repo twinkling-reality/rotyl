@@ -78,6 +78,16 @@ export interface Entry {
   readonly standfirst: string;
   /** Where the numbers came from, and how to take them again. */
   readonly harness: string;
+  /**
+   * The file the figures were read out of, so the date is the date of THIS
+   * finding rather than of the harness that happens to have produced it.
+   *
+   * Named by the entry instead of inferred from `harness` because one harness
+   * now writes two results files: the offline measurements and the ones whose
+   * inputs have to be fetched. Inferring put a date on a page that had not
+   * moved.
+   */
+  readonly results: string;
   /** When the figures last changed, from the repository rather than from memory. */
   readonly date?: string | undefined;
   /** The machine they were taken on, read out of the results themselves. */

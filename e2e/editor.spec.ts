@@ -29,7 +29,32 @@ interface ProviderModule {
   };
 }
 
-const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
+const here = dirname(fileURLToPath(import.meta.url));
+const fixtures = join(here, 'fixtures');
+
+/**
+ * A figure out of the style harness's own results, by path.
+ *
+ * Walked rather than asserted, for the reason the research pages walk theirs:
+ * a wrong shape should say which step of the path was missing, and a literal
+ * copied into this file would make the test fail every time a benchmark is
+ * re-taken. That teaches whoever re-took it to edit the assertion, and an
+ * assertion nobody believes is worse than no assertion.
+ */
+async function medianAt(path: readonly string[]): Promise<number> {
+  let node: unknown = JSON.parse(await readFile(join(here, '../tools/style-bench/results.json'), 'utf8'));
+  const walked: string[] = [];
+  for (const key of path) {
+    if (node === null || typeof node !== 'object')
+      throw new Error(`results: ${walked.join('/')} is not an object`);
+    node = Object.getOwnPropertyDescriptor(node, key)?.value;
+    walked.push(key);
+    if (node === undefined) throw new Error(`results: no ${walked.join('/')}`);
+  }
+  if (typeof node !== 'number') throw new Error(`results: ${walked.join('/')} is not a number`);
+  return node;
+}
+
 const fixture = join(fixtures, 'sample.png');
 const clip = join(fixtures, 'sample.mp4');
 const webm = join(fixtures, 'sample.webm');
@@ -173,7 +198,19 @@ test('offers the research page from the empty state, and generates it from the r
   // a list and the figures are a page deeper.
   await page.getByRole('link', { name: /whether it holds still/i }).click();
   await expect(page).toHaveURL(/research\/the-look\.html$/);
-  await expect(page.getByRole('cell', { name: '140 ms' }).first()).toBeVisible();
+  // Read out of the results rather than written here. A literal would make this
+  // test fail every time a benchmark is re-taken, which teaches whoever re-took
+  // it to edit the assertion, and an assertion nobody believes is worse than
+  // none. What is being checked is that the cell holds the figure the harness
+  // last wrote, whatever that figure is.
+  const comic = await medianAt(['chain', '720p', 'comic, default', 'full', 'median']);
+  await expect(page.getByRole('cell', { name: `${comic.toFixed(0)} ms` }).first()).toBeVisible();
+
+  // The same three measurements against a photograph, which is a page of its
+  // own because it is a finding of its own and it reversed one of the above.
+  await page.goto('/research/real-footage.html');
+  await expect(page.getByRole('cell', { name: 'the synthetic scene' }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'It is the outline, and only the outline' })).toBeVisible();
 
   // A figure out of the other harness's results, so both are known to be read.
   await page.goto('/research/video.html');

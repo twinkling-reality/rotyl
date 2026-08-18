@@ -124,9 +124,9 @@ function stability(style: unknown): Section {
     ];
   };
   return {
-    heading: 'Nothing boils, and not for the reason anyone expected',
+    heading: 'Nothing boils here, and not for the reason anyone expected',
     prose: [
-      'No style amplifies its input. Every one attenuates it, and the chain that looked most at risk is the steadiest of the three.',
+      'On this picture no style amplifies its input, every one attenuates it, and the chain that looked most at risk is the steadiest of the three. Two of those three claims survive a photograph and one does not: see what survived a real picture, which re-takes this table against four of them and a film.',
       'The worry was reasonable. Every stage runs per frame with no knowledge of the last one, and two of them are winner-take-all decisions on a noisy field: a Kuwahara picking its most homogeneous sector, a difference of Gaussians thresholding a response. A pixel one code different between two frames could flip either.',
       'It does not, because neither decides on one pixel. The Kuwahara chooses on the variance of two hundred samples, and the chain removes more grain than its decisions reintroduce.',
     ],
@@ -140,7 +140,7 @@ function stability(style: unknown): Section {
       ],
     },
     caveat:
-      'In output codes, over consecutive decoded frames of a fixed camera on a fixed scene, so everything that differs between two of them is grain and the encoder’s own noise. The mean is the least useful column: boiling is a small proportion of pixels moving a long way, which is what the other two measure.',
+      'In output codes, over consecutive decoded frames of a fixed camera on a fixed scene, so everything that differs between two of them is grain and the encoder’s own noise. The mean is the least useful column: boiling is a small proportion of pixels moving a long way, which is what the other two measure. The scene is drawn rather than photographed, and the poster row in particular does not hold on a photograph.',
     command: 'node tools/style-bench/run.mjs clips',
   };
 }
@@ -180,11 +180,11 @@ function transitionFloor(): Section {
       rows: [
         ['hard, derivative only', '23.3', '1.67%'],
         ['lightness and palette margin floored', '14.6', '1.23%'],
-        ['chroma floored as well', '4.5', '0.52%'],
+        ['chroma floored as well', 'the row above', 'the row above'],
       ],
     },
     caveat:
-      'Taken during development by re-running the clip measurement against each version. The last row is what the results file reports today; the first two are gone from the code and cannot be regenerated without reverting it. The fix costs nothing measurable and nothing visible. The transition only widens where the picture has no edge to sharpen.',
+      'Taken during development by re-running the clip measurement against each version. The last row is whatever the table above reports today; the first two are gone from the code and cannot be regenerated without reverting it. The fix costs nothing measurable and nothing visible: the transition only widens where the picture has no edge to sharpen. What it did not reach is the outline, whose comparison against a NEIGHBOUR has no derivative to floor and stayed hard, which is the defect the real-picture page is about.',
   };
 }
 
@@ -194,7 +194,7 @@ function paletteFit(): Section {
     prose: [
       'A hazy photograph uses two and a half of a palette’s five stops, and comes out in one colour. That looks like a palette chosen badly. It is a palette barely used.',
       'A palette is a claim about where a photograph’s lightness lives, and photographs disagree. The reference scene has a spread of 0.136 against 0.23 to 0.29 for every palette in the codebase.',
-      'The fix is one pass measuring the picture’s own mean and spread, and one affine map moving it onto the palette’s. On a hazy frame it changes more than anything else measured here.',
+      'The fix is one pass measuring the picture’s own mean and spread, and one affine map moving it onto the palette’s. On a hazy frame it changes more than anything else measured here. The claim was re-taken against four photographs afterwards, because a scene drawn to be hazy is a poor witness to haze; it holds on all four, by less than the scene implies.',
     ],
     table: {
       columns: ['lightness', 'p1', 'p50', 'p99', 'mean', 'spread'],
@@ -211,6 +211,178 @@ function paletteFit(): Section {
     },
     caveat:
       'A fixed sampling grid is what makes measuring this per frame safe on video: the sample points do not move between frames and each tap is a local average of an already smoothed buffer, so the statistics follow the scene rather than the grain. The stability table above includes the fitted palettes, which is the check on that claim rather than the argument for it.',
+  };
+}
+
+// --- a real picture ---------------------------------------------------------
+
+const REAL_PICTURES = ['facade', 'foliage', 'fog', 'portrait'] as const;
+const REAL_CLIPS = [
+  ['the synthetic scene', 'the synthetic scene, fixed camera'],
+  ['facade', 'facade, fixed camera'],
+  ['foliage', 'foliage, fixed camera'],
+  ['fog', 'fog, fixed camera'],
+  ['portrait', 'portrait, fixed camera'],
+  ['a film, exterior', 'Tears of Steel, exterior'],
+  ['a film, interior', 'Tears of Steel, interior'],
+] as const;
+
+function realInputs(): Section {
+  return {
+    heading: 'The input a benchmark cannot commit',
+    prose: [
+      'Every temporal and cost number on the page before this was taken against a scene drawn by a script, and that harness says plainly that a script cannot produce a photograph’s texture statistics. The headline finding on it, that no style amplifies its input, is the whole argument for why per-frame stylisation is acceptable at all. It had never been put to a picture a camera took.',
+      'Real footage cannot be checked in, so there were two honest ways to take this. Fetch a known input by URL and pin it by hash, or publish the number with a note saying nobody can reproduce it. The second is worse than it sounds: the measurement it applies to is the one the design rests on, and a number nobody can re-take is a number nobody can contradict.',
+      'So it is fetched, and pinned by SHA-256 before anything is derived from it. That leaves one failure the synthetic scene does not have, a URL that stops resolving, and removes the one that matters. If the bytes at the far end change, the script refuses to run rather than quietly measuring a different picture.',
+      'Three kinds of input, because no one of them settles it. The scene itself, re-taken in the same run rather than quoted from the page next door. Four photographs put through exactly the recipe that made the scene’s clip, so the picture is the only thing that differs. And two shots of a film, stream copied rather than re-encoded, which carry real sensor grain and real codec noise and also real subject motion, the one thing a fixed camera was isolating and no real shot can be without.',
+    ],
+    table: {
+      columns: ['input', 'what it is there for'],
+      rows: [
+        ['the synthetic scene', 'the control, re-taken in the same run'],
+        ['facade', 'strong directional structure, near monochrome, high contrast'],
+        ['foliage', 'fine and isotropic: the other end of the axis'],
+        ['fog', 'hazy distance and thin road markings: what the scene was drawn to imitate'],
+        ['portrait', 'skin, and large out-of-focus areas'],
+        ['a film', 'real grain, real codec noise, real motion, CC-BY, hash pinned'],
+      ],
+    },
+    caveat:
+      'The photographs are CC0 from Wikimedia Commons. The film is Tears of Steel, CC-BY 3.0, (CC) Blender Foundation. Nothing fetched is committed or redistributed. The film’s two shots are the quietest in it, found by scanning every frame for the window whose worst consecutive-frame difference is smallest; neither is locked off, because no real shot is.',
+    command: './tools/style-bench/fetch-real.sh',
+  };
+}
+
+function realCost(real: unknown): Section {
+  const cell = (picture: string, size: string, name: string): string =>
+    ms(num(real, ['real-chain', picture, size, name, 'full', 'median']));
+  // Computed rather than typed, like every other figure here: a percentage in
+  // prose is exactly as capable of going stale as one in a table.
+  const at720 = (picture: string): number =>
+    num(real, ['real-chain', picture, '720p', 'comic, default', 'full', 'median']);
+  const scene = at720('the synthetic scene');
+  const cheaper = (picture: string): string => `${(((scene - at720(picture)) / scene) * 100).toFixed(0)}%`;
+  const cheapest = REAL_PICTURES.reduce((a, b) => (at720(a) < at720(b) ? a : b));
+  const dearest = REAL_PICTURES.reduce((a, b) => (at720(a) > at720(b) ? a : b));
+  return {
+    heading: 'Content barely moves the cost table, and not the way it was meant to',
+    prose: [
+      'This was expected to move. The anisotropic Kuwahara’s sample bound grows with local anisotropy, so a frame of architecture should cost more than a frame of foliage, and the harness that took the original figures carries a caveat telling readers to treat the comic column as a hard case rather than a typical one.',
+      `The prediction does not appear. Foliage is the dearest of the four photographs and a brick wall is not, which is the ordering backwards. What does appear is a smaller effect running the other way: the portrait is the cheapest of the five, ${cheaper(
+        'portrait',
+      )} below the scene, and large out-of-focus areas are exactly where anisotropy is low.`,
+      `So the caveat was right that the scene is not typical and wrong about how much that matters. Every photograph here is cheaper than it, by ${cheaper(
+        dearest,
+      )} to ${cheaper(
+        cheapest,
+      )}, which puts it at the top of a narrow range rather than in a class of its own. Cost is set by the stage resolutions, and those are derived from the output’s short edge and from nothing in the picture.`,
+    ],
+    table: {
+      columns: ['comic, default, full tier', ...SIZES],
+      rows: [
+        ['the synthetic scene', ...SIZES.map((size) => cell('the synthetic scene', size, 'comic, default'))],
+        ...REAL_PICTURES.map((picture) => [
+          picture,
+          ...SIZES.map((size) => cell(picture, size, 'comic, default')),
+        ]),
+      ],
+    },
+    caveat: `The two cheap chains are flat across content as well: poster runs ${cell('facade', '720p', 'poster, default')} on the wall and ${cell('foliage', '720p', 'poster, default')} on the leaves. Photographs are cropped to the ladder’s aspect rather than stretched into it, because stretching one axis by up to two is a change to local anisotropy, which is the thing under test.`,
+    command: 'node tools/style-bench/run.mjs real-chain',
+  };
+}
+
+function realStability(real: unknown): Section {
+  const cell = (clip: string, name: string): string =>
+    num(real, ['real-clips', clip, name, 'amplification', 'p99']).toFixed(2);
+  return {
+    heading: 'The comic chain holds. The poster chain does not.',
+    prose: [
+      'Half of the original finding survives and half of it is false. The comic chain really is steadier than its input, on a photograph as on a drawing, which is the part that was surprising and the part the design leans on. The claim that every style attenuates its input is not true of a photograph at all.',
+      'The poster chain amplifies by five on a brick wall and by five on foliage, where on the synthetic scene it attenuates by two. That is not a small drift in a number. It is the opposite sign, on the measurement that says whether stylised video is worth shipping, and it was invisible for as long as the input was drawn rather than photographed.',
+      'The two rows that are not fixed cameras are read differently and are here for a different reason. An actor moving is a large honest change and it lands in the source column, so the ratio is the only thing those rows can say. What they say is that the poster chain is four times its input on real footage while the other two are near one.',
+    ],
+    table: {
+      columns: ['styled change over source change, p99', 'comic', 'poster', 'poster, no outline', 'print'],
+      rows: REAL_CLIPS.map(([label, clip]) => [
+        label,
+        cell(clip, 'comic, default'),
+        cell(clip, 'poster, default'),
+        cell(clip, 'poster, no line'),
+        cell(clip, 'print, default'),
+      ]),
+    },
+    caveat:
+      'Twenty-four consecutive frames, in output codes, at the 99th percentile of the per-pixel change between one frame and the next. One means the style is exactly as steady as what it was given. The fourth column is the diagnostic the next section is about.',
+    command: 'node tools/style-bench/run.mjs real-clips',
+  };
+}
+
+function realOutline(real: unknown): Section {
+  const p99 = (picture: string, name: string): string =>
+    num(real, ['real-perturbation', picture, 'sigma 2', name, 'p99']).toFixed(0);
+  return {
+    heading: 'It is the outline, and only the outline',
+    prose: [
+      'With the codec, the camera and the subject all taken out, the same result appears and it has one cause. One picture is rendered twice with grain of a known size added the second time, so what is measured is the style and nothing else. On the wall a perturbation whose 99th percentile is six codes comes out the far side at seventy-eight. Turn the outline off and it comes out at eight.',
+      'The mechanism is exact, and it is this codebase’s own rule being broken in the one place it was never applied. Every hard decision in a style has a floor under its transition width. The outline compares the quantised colour here against the quantised colour a line away, and a quantised colour is what round() returns: it flips a whole band on an infinitesimal change, the flip moves the comparison by a fifth of the Oklab range, that crosses the line threshold, and an outline appears at full strength.',
+      'The scene could not show it. It was drawn with large near-flat regions, so almost no pixel in it sits near a region boundary, and the population that flickers is the population near one. A brick wall is nothing but marginal boundaries.',
+    ],
+    table: {
+      columns: ['grain σ 2, p99 out', 'input', 'comic', 'poster', 'poster, no outline', 'print'],
+      rows: [['the synthetic scene', ...REAL_PICTURES] as const]
+        .flat()
+        .map((picture) => [
+          picture,
+          p99(picture, 'input'),
+          p99(picture, 'comic, default'),
+          p99(picture, 'poster, default'),
+          p99(picture, 'poster, no line'),
+          p99(picture, 'print, default'),
+        ]),
+    },
+    caveat:
+      'What this does not do is fix it. Three things were tried and the page of trials carries what each cost: softening the neighbour probe reduces the signal as much as the noise, widening the threshold one-sidedly displaces the decision instead of resolving it, and a hard probe leaves nothing for a width to resolve. The quantity being thresholded is a distance between two quantised colours, so it is discrete, and no transition width resolves a decision whose input jumps. A different outline operator is the honest fix and it is not a tuning pass.',
+    command: 'node tools/style-bench/run.mjs real-perturbation',
+  };
+}
+
+function realLightness(real: unknown): Section {
+  const of = (picture: string, key: string): string =>
+    num(real, ['real-lightness', 'pictures', picture, key]).toFixed(3);
+  const palette = (name: string, key: string): string =>
+    num(real, ['real-lightness', 'palettes', name, key]).toFixed(3);
+  return {
+    heading: 'A photograph does use less of a palette than a palette assumes',
+    prose: [
+      'This one survives, and it is worth saying because it was the claim most at risk. The levels pass exists because the scene occupies about half the lightness range every palette assumes, and the scene was drawn hazy. Measuring the property an input was built to have is not a measurement.',
+      'Every photograph here is narrower than every palette. The closest, a portrait at 0.213 against the narrowest palette’s 0.234, still reaches only nine tenths of it; the fog, which is the case the fitting was written for, sits at 0.196 against 0.288 for the widest.',
+      'The scene does overstate it. At 0.135 it is narrower than any of the four, so the fitted map moves it further than it moves a photograph. The stage earns its place on all five, by less on real pictures than the argument for it implied.',
+    ],
+    table: {
+      columns: ['Oklab lightness', 'p1', 'p50', 'p99', 'mean', 'spread'],
+      rows: [
+        ...['the synthetic scene', ...REAL_PICTURES].map((picture) => [
+          picture,
+          of(picture, 'p1'),
+          of(picture, 'p50'),
+          of(picture, 'p99'),
+          of(picture, 'mean'),
+          of(picture, 'spread'),
+        ]),
+        ...['Mural', 'Noir'].map((name) => [
+          `${name} palette`,
+          '',
+          '',
+          '',
+          palette(name, 'mean'),
+          palette(name, 'spread'),
+        ]),
+      ],
+    },
+    caveat:
+      'Read from the sRGB bytes the chain is handed, through the same transfer function the hardware applies, at 720p. The palettes’ own figures come from the product’s function rather than from a copy of the numbers, so a palette edited in the codebase moves this table.',
+    command: 'node tools/style-bench/run.mjs real-lightness',
   };
 }
 
@@ -521,10 +693,11 @@ function containerBytes(bundle: unknown): Section {
 
 // --- entries ----------------------------------------------------------------
 
-export function entries(style: unknown, video: unknown, bundle: unknown): readonly Entry[] {
+export function entries(style: unknown, real: unknown, video: unknown, bundle: unknown): readonly Entry[] {
   return [
     {
       slug: 'the-look',
+      results: 'tools/style-bench/results.json',
       title: 'What a style costs, and whether it holds still',
       standfirst:
         'Three style chains timed against one picture, and the temporal measurement that contradicted what everyone assumed about per-frame stylisation.',
@@ -548,7 +721,21 @@ export function entries(style: unknown, video: unknown, bundle: unknown): readon
       ],
     },
     {
+      slug: 'real-footage',
+      results: 'tools/style-bench/results-real.json',
+      title: 'What survived a real picture, and what did not',
+      standfirst:
+        'The three style measurements re-taken against four photographs and two shots of a film, fetched by URL and pinned by hash. One finding reversed sign.',
+      harness: 'tools/style-bench',
+      lede: [
+        'Everything on the page before this was measured against a scene drawn by a script, including the finding that decided per-frame stylisation was acceptable at all. This is that page again, with the picture changed and nothing else.',
+        'Three things came back. The cost table does not depend on the content, which was expected to and was warned about. The comic chain is as steady on a photograph as it is on a drawing. And the poster chain, which the scene reports as the second steadiest of the three, amplifies its input by five on a brick wall.',
+      ],
+      sections: [realInputs(), realCost(real), realStability(real), realOutline(real), realLightness(real)],
+    },
+    {
       slug: 'video',
+      results: 'tools/video-bench/results.json',
       title: 'What decode costs, and where colour goes',
       standfirst:
         'Demux, decode, seek and upload across two clips that differ only in keyframe spacing, and the probe showing a decoded frame needs no colour path of its own.',
@@ -560,6 +747,7 @@ export function entries(style: unknown, video: unknown, bundle: unknown): readon
     },
     {
       slug: 'the-clip',
+      results: 'tools/video-bench/results.json',
       title: 'What writing a clip costs',
       standfirst:
         'The export pipeline timed end to end, the two ways of getting the composite to the encoder, what rate control does to a file, and the probe showing the encoder leaves colour alone.',
@@ -578,6 +766,7 @@ export function entries(style: unknown, video: unknown, bundle: unknown): readon
     },
     {
       slug: 'tracking',
+      results: 'tools/video-bench/results.json',
       title: 'What tracking would cost, before building it',
       standfirst:
         'The two graphs a tracker needs, exported and run on the runtime that already ships, and the readback that looked like a bottleneck and is not.',
@@ -589,6 +778,7 @@ export function entries(style: unknown, video: unknown, bundle: unknown): readon
     },
     {
       slug: 'the-editor',
+      results: 'tools/research/measurements.ts',
       title: 'What editing costs, and what ships',
       standfirst:
         'The figures that decide how the tool feels, taken by hand rather than by a harness, and kept apart from the rest for exactly that reason.',
