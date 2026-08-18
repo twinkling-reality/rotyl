@@ -150,12 +150,19 @@ test('offers the research page from the empty state, and generates it from the r
 
   await link.click();
   await expect(page).toHaveURL(/research\.html$/);
-  await expect(page.getByRole('heading', { name: 'Trials' })).toBeVisible();
 
-  // A figure that came out of style-bench's results, and one out of
-  // video-bench's, so both sources are known to have been read.
+  // One entry per finding rather than one page of everything, so the index is
+  // a list and the figures are a page deeper.
+  await page.getByRole('link', { name: /whether it holds still/i }).click();
+  await expect(page).toHaveURL(/research\/the-look\.html$/);
   await expect(page.getByRole('cell', { name: '140 ms' }).first()).toBeVisible();
+
+  // A figure out of the other harness's results, so both are known to be read.
+  await page.goto('/research/video.html');
   await expect(page.getByRole('cell', { name: '0.9 ms' }).first()).toBeVisible();
+
+  await page.goto('/research/trials.html');
+  await expect(page.getByRole('cell', { name: /59.5 KB gzipped/ })).toBeVisible();
   await expect(page.getByText('undefined')).toHaveCount(0);
 });
 

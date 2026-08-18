@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { defineConfig, type Plugin } from 'vite';
-import { renderResearchPage } from './tools/research/index.ts';
+import { renderResearchSite } from './tools/research/index.ts';
 
 /**
  * Strip WGSL comments, and keep every newline.
@@ -63,14 +63,22 @@ function researchPage(): Plugin {
     name: 'rotyl:research',
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
-        const path = request.url?.split('?')[0];
-        if (path !== '/research' && path !== '/research.html') return next();
+        const requested = request.url?.split('?')[0]?.replace(/^\//, '');
+        if (!requested?.startsWith('research')) return next();
+        // Rendered per request rather than once at startup, so re-running a
+        // benchmark shows up on a refresh.
+        const page = renderResearchSite().find(
+          (candidate) => candidate.path === requested || candidate.path === `${requested}.html`,
+        );
+        if (!page) return next();
         response.setHeader('Content-Type', 'text/html; charset=utf-8');
-        response.end(renderResearchPage());
+        response.end(page.html);
       });
     },
     generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'research.html', source: renderResearchPage() });
+      for (const page of renderResearchSite()) {
+        this.emitFile({ type: 'asset', fileName: page.path, source: page.html });
+      }
     },
   };
 }

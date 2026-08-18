@@ -376,11 +376,17 @@ What decided all of this, and what it cost to find out, is in
 `tools/video-bench` — including the two numbers that say tracking cannot live in
 the render loop.
 
-### Everything that was measured, on one page
+### Everything that was measured, one finding at a time
 
-`/research.html`, linked from the empty state. Every figure the benchmarks have
-produced, and every approach that was tried and dropped with the number that
-decided it.
+`/research.html`, linked from the empty state: an index, and a page per thing
+that was learned. What a style costs and whether it holds still, what decode
+costs and where colour goes, what tracking would cost before building it, what
+editing costs — and a ledger of every approach that was tried and dropped, with
+the number that decided it.
+
+One entry is one finding, because the question a reader has is "what did we
+learn" rather than "which harness produced this". Dates come from the commit
+that last touched the results, so "is this current" has an answer.
 
 It is GENERATED, at build time, out of the harnesses' own `results.json` — which
 is the point of it rather than a detail of it. Every table in every README here
