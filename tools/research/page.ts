@@ -103,6 +103,7 @@ const STYLE = `
   --bg: oklch(99% 0 0);
   --line-subtle: oklch(93.5% 0 0);
   --line: oklch(89.8% 0 0);
+  --line-strong: oklch(82% 0 0);
   --text-tertiary: oklch(62.5% 0 0);
   --text-secondary: oklch(48% 0 0);
   --text-primary: oklch(21.5% 0 0);
@@ -146,17 +147,26 @@ a { color: inherit; text-decoration: none; }
 p a, li a { color: var(--accent); }
 p a:hover, li a:hover { text-decoration: underline; }
 
-/* The one piece of chrome: where you are, and the way back. */
+/* The one piece of chrome: where you are, and the way back. No rule under it —
+   the editor draws its own only once there is a file to separate from, and a
+   line above a page that opens on whitespace is separating nothing. */
 .top {
   display: flex;
-  gap: 20px;
+  gap: 8px;
   align-items: baseline;
   padding: 22px 32px;
-  border-bottom: 1px solid var(--line-subtle);
   font-size: 13px;
 }
 .top a:hover { color: var(--accent); }
-.top .here { color: var(--text-tertiary); }
+.top .sep { color: var(--line-strong); }
+.top .here {
+  color: var(--text-tertiary);
+  /* An entry's title is a sentence; on a narrow screen it must not wrap the
+     trail onto a second line. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .wrap { max-width: 880px; margin: 0 auto; padding: 72px 32px 120px; }
 
@@ -286,8 +296,22 @@ ${main}
 `;
 }
 
-const topBar = (here: string): string =>
-  `<div class="top"><a href="/">Rotyl</a><a href="/research.html">Research</a><span class="here">${escape(here)}</span></div>`;
+/**
+ * A path, not a menu.
+ *
+ * The application puts "Research" in the top RIGHT, where the actions live,
+ * because there it is somewhere to go. Here it is where you already are, so it
+ * belongs on the left as a trail back — the same word doing two different jobs,
+ * and the side is what says which. The last segment is not a link, because a
+ * link to the page you are on is a dead end dressed as a way out.
+ */
+const breadcrumb = (here?: string): string =>
+  `<nav class="top" aria-label="Breadcrumb"><a href="/">Rotyl</a>` +
+  (here
+    ? `<span class="sep" aria-hidden="true">/</span><a href="/research.html">Research</a>` +
+      `<span class="sep" aria-hidden="true">/</span><span class="here" aria-current="page">${escape(here)}</span>`
+    : `<span class="sep" aria-hidden="true">/</span><span class="here" aria-current="page">Research</span>`) +
+  `</nav>`;
 
 function renderTable(table: Table): string {
   const head = table.columns
@@ -379,7 +403,7 @@ harness's own results at build time rather than typed, so they cannot disagree
 with the run that produced them.</footer>
 </main></div></div>`;
 
-  return shell(`${entry.title} — Rotyl`, topBar(entry.title), main);
+  return shell(`${entry.title} — Rotyl`, breadcrumb(entry.title), main);
 }
 
 export function renderIndex(entries: readonly Entry[]): string {
@@ -406,5 +430,5 @@ machine. The arguments behind the numbers are in the READMEs, next to the code
 they justify.</footer>
 </div>`;
 
-  return shell('Research — Rotyl', topBar('Index'), main);
+  return shell('Research — Rotyl', breadcrumb(), main);
 }
