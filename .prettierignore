@@ -8,4 +8,6 @@ tools/edgetam-export/venv
 tools/edgetam-export/onnx
 tools/edgetam-export/fixture
 tools/video-bench/clips
+tools/style-bench/clips
+tools/style-bench/out
 tools/video-bench/results.json

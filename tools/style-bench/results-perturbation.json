@@ -1,0 +1,153 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "perturbation": {
+    "sigma 0.5": {
+      "input": {
+        "mean": 0.468,
+        "p99": 1,
+        "flicker": 0
+      },
+      "comic, default": {
+        "mean": 0.191,
+        "p99": 1,
+        "flicker": 0.035,
+        "amplification": {
+          "mean": 0.408,
+          "p99": 1
+        }
+      },
+      "comic, detail 0": {
+        "mean": 0.152,
+        "p99": 1,
+        "flicker": 0.006,
+        "amplification": {
+          "mean": 0.325,
+          "p99": 1
+        }
+      },
+      "comic, detail 1": {
+        "mean": 0.292,
+        "p99": 2,
+        "flicker": 0.117,
+        "amplification": {
+          "mean": 0.624,
+          "p99": 2
+        }
+      },
+      "comic, palette Mural": {
+        "mean": 0.151,
+        "p99": 1,
+        "flicker": 0.044,
+        "amplification": {
+          "mean": 0.323,
+          "p99": 1
+        }
+      },
+      "print, default": {
+        "mean": 0.307,
+        "p99": 2,
+        "flicker": 0.01,
+        "amplification": {
+          "mean": 0.656,
+          "p99": 2
+        }
+      },
+      "print, fine": {
+        "mean": 0.473,
+        "p99": 2,
+        "flicker": 0.008,
+        "amplification": {
+          "mean": 1.011,
+          "p99": 2
+        }
+      },
+      "print, coarse": {
+        "mean": 0.166,
+        "p99": 2,
+        "flicker": 0.019,
+        "amplification": {
+          "mean": 0.355,
+          "p99": 2
+        }
+      }
+    },
+    "sigma 2": {
+      "input": {
+        "mean": 2.123,
+        "p99": 6,
+        "flicker": 0.008
+      },
+      "comic, default": {
+        "mean": 0.482,
+        "p99": 3,
+        "flicker": 0.227,
+        "amplification": {
+          "mean": 0.227,
+          "p99": 0.5
+        }
+      },
+      "comic, detail 0": {
+        "mean": 0.381,
+        "p99": 2,
+        "flicker": 0.077,
+        "amplification": {
+          "mean": 0.179,
+          "p99": 0.333
+        }
+      },
+      "comic, detail 1": {
+        "mean": 0.782,
+        "p99": 7,
+        "flicker": 0.798,
+        "amplification": {
+          "mean": 0.368,
+          "p99": 1.167
+        }
+      },
+      "comic, palette Mural": {
+        "mean": 0.419,
+        "p99": 3,
+        "flicker": 0.26,
+        "amplification": {
+          "mean": 0.197,
+          "p99": 0.5
+        }
+      },
+      "print, default": {
+        "mean": 0.76,
+        "p99": 5,
+        "flicker": 0.151,
+        "amplification": {
+          "mean": 0.358,
+          "p99": 0.833
+        }
+      },
+      "print, fine": {
+        "mean": 1.239,
+        "p99": 5,
+        "flicker": 0.071,
+        "amplification": {
+          "mean": 0.584,
+          "p99": 0.833
+        }
+      },
+      "print, coarse": {
+        "mean": 0.445,
+        "p99": 6,
+        "flicker": 0.303,
+        "amplification": {
+          "mean": 0.21,
+          "p99": 1
+        }
+      }
+    }
+  },
+  "perturbation:wall-seconds": 1.9
+}

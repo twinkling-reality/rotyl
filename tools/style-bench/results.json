@@ -1,0 +1,1631 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "chain": {
+    "720p": {
+      "comic, default": {
+        "draft": {
+          "n": 11,
+          "median": 18.3,
+          "min": 16.6,
+          "max": 18.9
+        },
+        "full": {
+          "n": 11,
+          "median": 140.2,
+          "min": 133.5,
+          "max": 156.5
+        },
+        "export": {
+          "n": 11,
+          "median": 148.8,
+          "min": 145.1,
+          "max": 162.3
+        }
+      },
+      "comic, detail 0": {
+        "draft": {
+          "n": 11,
+          "median": 9.6,
+          "min": 9.4,
+          "max": 10.4
+        },
+        "full": {
+          "n": 11,
+          "median": 48.5,
+          "min": 46.5,
+          "max": 54.7
+        },
+        "export": {
+          "n": 11,
+          "median": 168.4,
+          "min": 163.6,
+          "max": 185.1
+        }
+      },
+      "comic, detail 1": {
+        "draft": {
+          "n": 11,
+          "median": 56.9,
+          "min": 55.1,
+          "max": 59.3
+        },
+        "full": {
+          "n": 11,
+          "median": 55.9,
+          "min": 53.9,
+          "max": 58.8
+        },
+        "export": {
+          "n": 11,
+          "median": 55.6,
+          "min": 52.9,
+          "max": 57.8
+        }
+      },
+      "comic, palette Mural": {
+        "draft": {
+          "n": 11,
+          "median": 18.6,
+          "min": 16.9,
+          "max": 19.4
+        },
+        "full": {
+          "n": 11,
+          "median": 140.8,
+          "min": 136.5,
+          "max": 146.5
+        },
+        "export": {
+          "n": 11,
+          "median": 150.5,
+          "min": 147.6,
+          "max": 158.3
+        }
+      },
+      "poster, default": {
+        "draft": {
+          "n": 11,
+          "median": 0.9,
+          "min": 0.9,
+          "max": 1.4
+        },
+        "full": {
+          "n": 11,
+          "median": 1.3,
+          "min": 1.1,
+          "max": 1.4
+        },
+        "export": {
+          "n": 11,
+          "median": 1.7,
+          "min": 1.6,
+          "max": 2
+        }
+      },
+      "poster, detail 0": {
+        "draft": {
+          "n": 11,
+          "median": 0.9,
+          "min": 0.8,
+          "max": 1.2
+        },
+        "full": {
+          "n": 11,
+          "median": 1.1,
+          "min": 1,
+          "max": 1.2
+        },
+        "export": {
+          "n": 11,
+          "median": 1.2,
+          "min": 1.1,
+          "max": 1.8
+        }
+      },
+      "poster, detail 1": {
+        "draft": {
+          "n": 11,
+          "median": 1.2,
+          "min": 1.2,
+          "max": 1.6
+        },
+        "full": {
+          "n": 11,
+          "median": 1.7,
+          "min": 1.6,
+          "max": 2.3
+        },
+        "export": {
+          "n": 11,
+          "median": 1.7,
+          "min": 1.6,
+          "max": 2.1
+        }
+      },
+      "poster, palette Mural": {
+        "draft": {
+          "n": 11,
+          "median": 0.9,
+          "min": 0.9,
+          "max": 1.4
+        },
+        "full": {
+          "n": 11,
+          "median": 1.3,
+          "min": 1.2,
+          "max": 1.7
+        },
+        "export": {
+          "n": 11,
+          "median": 1.7,
+          "min": 1.6,
+          "max": 2.2
+        }
+      },
+      "poster, palette Riso": {
+        "draft": {
+          "n": 11,
+          "median": 0.9,
+          "min": 0.8,
+          "max": 1.4
+        },
+        "full": {
+          "n": 11,
+          "median": 1.3,
+          "min": 1.2,
+          "max": 1.7
+        },
+        "export": {
+          "n": 11,
+          "median": 1.8,
+          "min": 1.6,
+          "max": 1.9
+        }
+      },
+      "print, default": {
+        "draft": {
+          "n": 11,
+          "median": 0.5,
+          "min": 0.4,
+          "max": 0.6
+        },
+        "full": {
+          "n": 11,
+          "median": 0.5,
+          "min": 0.4,
+          "max": 0.5
+        },
+        "export": {
+          "n": 11,
+          "median": 0.5,
+          "min": 0.4,
+          "max": 1
+        }
+      },
+      "print, fine": {
+        "draft": {
+          "n": 11,
+          "median": 0.5,
+          "min": 0.4,
+          "max": 0.8
+        },
+        "full": {
+          "n": 11,
+          "median": 0.5,
+          "min": 0.4,
+          "max": 1.1
+        },
+        "export": {
+          "n": 11,
+          "median": 0.6,
+          "min": 0.4,
+          "max": 1.1
+        }
+      },
+      "print, coarse": {
+        "draft": {
+          "n": 11,
+          "median": 0.6,
+          "min": 0.5,
+          "max": 0.9
+        },
+        "full": {
+          "n": 11,
+          "median": 0.5,
+          "min": 0.4,
+          "max": 1
+        },
+        "export": {
+          "n": 11,
+          "median": 0.5,
+          "min": 0.4,
+          "max": 1.1
+        }
+      }
+    },
+    "2 MP": {
+      "comic, default": {
+        "draft": {
+          "n": 11,
+          "median": 16.7,
+          "min": 15.9,
+          "max": 17.1
+        },
+        "full": {
+          "n": 11,
+          "median": 116.7,
+          "min": 113.2,
+          "max": 120.2
+        },
+        "export": {
+          "n": 11,
+          "median": 337.7,
+          "min": 327.3,
+          "max": 357.9
+        }
+      },
+      "comic, detail 0": {
+        "draft": {
+          "n": 11,
+          "median": 8.3,
+          "min": 7.9,
+          "max": 8.5
+        },
+        "full": {
+          "n": 11,
+          "median": 46.3,
+          "min": 43.3,
+          "max": 47.6
+        },
+        "export": {
+          "n": 11,
+          "median": 145.1,
+          "min": 139.2,
+          "max": 153.7
+        }
+      },
+      "comic, detail 1": {
+        "draft": {
+          "n": 11,
+          "median": 78.5,
+          "min": 76.8,
+          "max": 82.4
+        },
+        "full": {
+          "n": 11,
+          "median": 229.9,
+          "min": 227.2,
+          "max": 237.4
+        },
+        "export": {
+          "n": 11,
+          "median": 229.2,
+          "min": 225.8,
+          "max": 234.2
+        }
+      },
+      "comic, palette Mural": {
+        "draft": {
+          "n": 11,
+          "median": 16.4,
+          "min": 15.9,
+          "max": 17.1
+        },
+        "full": {
+          "n": 11,
+          "median": 117.5,
+          "min": 113.1,
+          "max": 125.3
+        },
+        "export": {
+          "n": 11,
+          "median": 339.6,
+          "min": 329.4,
+          "max": 349.5
+        }
+      },
+      "poster, default": {
+        "draft": {
+          "n": 11,
+          "median": 1.2,
+          "min": 1.1,
+          "max": 1.4
+        },
+        "full": {
+          "n": 11,
+          "median": 1.4,
+          "min": 1.3,
+          "max": 1.7
+        },
+        "export": {
+          "n": 11,
+          "median": 1.8,
+          "min": 1.7,
+          "max": 2.1
+        }
+      },
+      "poster, detail 0": {
+        "draft": {
+          "n": 11,
+          "median": 1.1,
+          "min": 1.1,
+          "max": 1.5
+        },
+        "full": {
+          "n": 11,
+          "median": 1.3,
+          "min": 1.2,
+          "max": 1.5
+        },
+        "export": {
+          "n": 11,
+          "median": 1.4,
+          "min": 1.3,
+          "max": 1.6
+        }
+      },
+      "poster, detail 1": {
+        "draft": {
+          "n": 11,
+          "median": 1.4,
+          "min": 1.3,
+          "max": 1.9
+        },
+        "full": {
+          "n": 11,
+          "median": 2.5,
+          "min": 2.5,
+          "max": 2.8
+        },
+        "export": {
+          "n": 11,
+          "median": 4.1,
+          "min": 4,
+          "max": 4.3
+        }
+      },
+      "poster, palette Mural": {
+        "draft": {
+          "n": 11,
+          "median": 1.2,
+          "min": 1,
+          "max": 1.3
+        },
+        "full": {
+          "n": 11,
+          "median": 1.5,
+          "min": 1.3,
+          "max": 2
+        },
+        "export": {
+          "n": 11,
+          "median": 1.8,
+          "min": 1.7,
+          "max": 2.1
+        }
+      },
+      "poster, palette Riso": {
+        "draft": {
+          "n": 11,
+          "median": 1.2,
+          "min": 1,
+          "max": 1.4
+        },
+        "full": {
+          "n": 11,
+          "median": 1.4,
+          "min": 1.4,
+          "max": 2
+        },
+        "export": {
+          "n": 11,
+          "median": 1.8,
+          "min": 1.8,
+          "max": 1.9
+        }
+      },
+      "print, default": {
+        "draft": {
+          "n": 11,
+          "median": 0.6,
+          "min": 0.5,
+          "max": 1
+        },
+        "full": {
+          "n": 11,
+          "median": 0.6,
+          "min": 0.5,
+          "max": 1.1
+        },
+        "export": {
+          "n": 11,
+          "median": 0.6,
+          "min": 0.5,
+          "max": 0.7
+        }
+      },
+      "print, fine": {
+        "draft": {
+          "n": 11,
+          "median": 0.6,
+          "min": 0.5,
+          "max": 0.7
+        },
+        "full": {
+          "n": 11,
+          "median": 0.6,
+          "min": 0.5,
+          "max": 1.1
+        },
+        "export": {
+          "n": 11,
+          "median": 0.7,
+          "min": 0.6,
+          "max": 0.8
+        }
+      },
+      "print, coarse": {
+        "draft": {
+          "n": 11,
+          "median": 0.9,
+          "min": 0.8,
+          "max": 1.2
+        },
+        "full": {
+          "n": 11,
+          "median": 0.8,
+          "min": 0.6,
+          "max": 1.1
+        },
+        "export": {
+          "n": 11,
+          "median": 0.6,
+          "min": 0.5,
+          "max": 1
+        }
+      }
+    },
+    "12 MP": {
+      "comic, default": {
+        "draft": {
+          "n": 11,
+          "median": 17.4,
+          "min": 16.7,
+          "max": 18
+        },
+        "full": {
+          "n": 11,
+          "median": 121.9,
+          "min": 120.2,
+          "max": 129.1
+        },
+        "export": {
+          "n": 11,
+          "median": 353.4,
+          "min": 345.3,
+          "max": 362.2
+        }
+      },
+      "comic, detail 0": {
+        "draft": {
+          "n": 11,
+          "median": 8.9,
+          "min": 8.8,
+          "max": 9
+        },
+        "full": {
+          "n": 11,
+          "median": 46.5,
+          "min": 45.4,
+          "max": 51.6
+        },
+        "export": {
+          "n": 11,
+          "median": 149.2,
+          "min": 145.2,
+          "max": 164.4
+        }
+      },
+      "comic, detail 1": {
+        "draft": {
+          "n": 11,
+          "median": 78.9,
+          "min": 77,
+          "max": 79.8
+        },
+        "full": {
+          "n": 11,
+          "median": 397.3,
+          "min": 392.6,
+          "max": 419
+        },
+        "export": {
+          "n": 11,
+          "median": 1353.1,
+          "min": 1325.2,
+          "max": 1373.6
+        }
+      },
+      "comic, palette Mural": {
+        "draft": {
+          "n": 11,
+          "median": 16.9,
+          "min": 16.7,
+          "max": 17.4
+        },
+        "full": {
+          "n": 11,
+          "median": 123,
+          "min": 118.2,
+          "max": 132.2
+        },
+        "export": {
+          "n": 11,
+          "median": 356.5,
+          "min": 352,
+          "max": 388.9
+        }
+      },
+      "poster, default": {
+        "draft": {
+          "n": 11,
+          "median": 4.5,
+          "min": 4.2,
+          "max": 4.7
+        },
+        "full": {
+          "n": 11,
+          "median": 4.9,
+          "min": 4.7,
+          "max": 5.3
+        },
+        "export": {
+          "n": 11,
+          "median": 5.6,
+          "min": 5.3,
+          "max": 6
+        }
+      },
+      "poster, detail 0": {
+        "draft": {
+          "n": 11,
+          "median": 4.9,
+          "min": 4.7,
+          "max": 5.4
+        },
+        "full": {
+          "n": 11,
+          "median": 4.7,
+          "min": 4.4,
+          "max": 5.1
+        },
+        "export": {
+          "n": 11,
+          "median": 4.7,
+          "min": 4.4,
+          "max": 6.2
+        }
+      },
+      "poster, detail 1": {
+        "draft": {
+          "n": 11,
+          "median": 4.3,
+          "min": 4.1,
+          "max": 4.5
+        },
+        "full": {
+          "n": 11,
+          "median": 5.7,
+          "min": 5.4,
+          "max": 5.9
+        },
+        "export": {
+          "n": 11,
+          "median": 8.3,
+          "min": 8,
+          "max": 8.6
+        }
+      },
+      "poster, palette Mural": {
+        "draft": {
+          "n": 11,
+          "median": 4.5,
+          "min": 4.3,
+          "max": 4.7
+        },
+        "full": {
+          "n": 11,
+          "median": 4.5,
+          "min": 4.3,
+          "max": 4.8
+        },
+        "export": {
+          "n": 11,
+          "median": 4.8,
+          "min": 4.7,
+          "max": 5.3
+        }
+      },
+      "poster, palette Riso": {
+        "draft": {
+          "n": 11,
+          "median": 4.2,
+          "min": 4,
+          "max": 4.4
+        },
+        "full": {
+          "n": 11,
+          "median": 4.4,
+          "min": 4,
+          "max": 4.6
+        },
+        "export": {
+          "n": 11,
+          "median": 4.8,
+          "min": 4.3,
+          "max": 4.9
+        }
+      },
+      "print, default": {
+        "draft": {
+          "n": 11,
+          "median": 2.4,
+          "min": 2.2,
+          "max": 2.9
+        },
+        "full": {
+          "n": 11,
+          "median": 2,
+          "min": 1.9,
+          "max": 2.5
+        },
+        "export": {
+          "n": 11,
+          "median": 1.9,
+          "min": 1.8,
+          "max": 2.2
+        }
+      },
+      "print, fine": {
+        "draft": {
+          "n": 11,
+          "median": 1.9,
+          "min": 1.8,
+          "max": 2.2
+        },
+        "full": {
+          "n": 11,
+          "median": 1.9,
+          "min": 1.8,
+          "max": 2
+        },
+        "export": {
+          "n": 11,
+          "median": 1.8,
+          "min": 1.7,
+          "max": 2.3
+        }
+      },
+      "print, coarse": {
+        "draft": {
+          "n": 11,
+          "median": 2,
+          "min": 1.9,
+          "max": 2.1
+        },
+        "full": {
+          "n": 11,
+          "median": 2.3,
+          "min": 2.2,
+          "max": 2.6
+        },
+        "export": {
+          "n": 11,
+          "median": 2.2,
+          "min": 2.1,
+          "max": 2.6
+        }
+      }
+    },
+    "24 MP": {
+      "comic, default": {
+        "draft": {
+          "n": 11,
+          "median": 18.7,
+          "min": 17.9,
+          "max": 21.2
+        },
+        "full": {
+          "n": 11,
+          "median": 124,
+          "min": 120,
+          "max": 134.5
+        },
+        "export": {
+          "n": 11,
+          "median": 358.6,
+          "min": 351.6,
+          "max": 369.8
+        }
+      },
+      "comic, detail 0": {
+        "draft": {
+          "n": 11,
+          "median": 10,
+          "min": 9.7,
+          "max": 11.8
+        },
+        "full": {
+          "n": 11,
+          "median": 48.3,
+          "min": 46.3,
+          "max": 53.3
+        },
+        "export": {
+          "n": 11,
+          "median": 155.1,
+          "min": 149.2,
+          "max": 161
+        }
+      },
+      "comic, detail 1": {
+        "draft": {
+          "n": 11,
+          "median": 80.5,
+          "min": 76.6,
+          "max": 85.5
+        },
+        "full": {
+          "n": 11,
+          "median": 400.8,
+          "min": 393,
+          "max": 404.6
+        },
+        "export": {
+          "n": 11,
+          "median": 1341.9,
+          "min": 1321.5,
+          "max": 1377.7
+        }
+      },
+      "comic, palette Mural": {
+        "draft": {
+          "n": 11,
+          "median": 19,
+          "min": 17.9,
+          "max": 21.6
+        },
+        "full": {
+          "n": 11,
+          "median": 122.5,
+          "min": 120.3,
+          "max": 131
+        },
+        "export": {
+          "n": 11,
+          "median": 355.3,
+          "min": 351.5,
+          "max": 1082.9
+        }
+      },
+      "poster, default": {
+        "draft": {
+          "n": 11,
+          "median": 24.8,
+          "min": 24.6,
+          "max": 25.2
+        },
+        "full": {
+          "n": 11,
+          "median": 25.1,
+          "min": 24.8,
+          "max": 25.5
+        },
+        "export": {
+          "n": 11,
+          "median": 25.9,
+          "min": 25.6,
+          "max": 26.6
+        }
+      },
+      "poster, detail 0": {
+        "draft": {
+          "n": 11,
+          "median": 23.5,
+          "min": 23.3,
+          "max": 23.9
+        },
+        "full": {
+          "n": 11,
+          "median": 25.9,
+          "min": 25.5,
+          "max": 26.6
+        },
+        "export": {
+          "n": 11,
+          "median": 26.1,
+          "min": 25.8,
+          "max": 30.9
+        }
+      },
+      "poster, detail 1": {
+        "draft": {
+          "n": 11,
+          "median": 24,
+          "min": 23.7,
+          "max": 24.2
+        },
+        "full": {
+          "n": 11,
+          "median": 28.4,
+          "min": 28.2,
+          "max": 29.2
+        },
+        "export": {
+          "n": 11,
+          "median": 34.5,
+          "min": 34.1,
+          "max": 34.7
+        }
+      },
+      "poster, palette Mural": {
+        "draft": {
+          "n": 11,
+          "median": 24.8,
+          "min": 24.4,
+          "max": 25.3
+        },
+        "full": {
+          "n": 11,
+          "median": 25.2,
+          "min": 24.8,
+          "max": 25.4
+        },
+        "export": {
+          "n": 11,
+          "median": 25.6,
+          "min": 25.2,
+          "max": 26
+        }
+      },
+      "poster, palette Riso": {
+        "draft": {
+          "n": 11,
+          "median": 24.9,
+          "min": 24.7,
+          "max": 25.4
+        },
+        "full": {
+          "n": 11,
+          "median": 25.2,
+          "min": 24.9,
+          "max": 25.9
+        },
+        "export": {
+          "n": 11,
+          "median": 25.9,
+          "min": 25.6,
+          "max": 26
+        }
+      },
+      "print, default": {
+        "draft": {
+          "n": 11,
+          "median": 11.4,
+          "min": 11.2,
+          "max": 11.8
+        },
+        "full": {
+          "n": 11,
+          "median": 13,
+          "min": 12.8,
+          "max": 13.7
+        },
+        "export": {
+          "n": 11,
+          "median": 11.6,
+          "min": 11.5,
+          "max": 12.1
+        }
+      },
+      "print, fine": {
+        "draft": {
+          "n": 11,
+          "median": 11.7,
+          "min": 11.5,
+          "max": 12.2
+        },
+        "full": {
+          "n": 11,
+          "median": 10.8,
+          "min": 10.6,
+          "max": 10.9
+        },
+        "export": {
+          "n": 11,
+          "median": 10.1,
+          "min": 10.1,
+          "max": 10.5
+        }
+      },
+      "print, coarse": {
+        "draft": {
+          "n": 11,
+          "median": 11,
+          "min": 10.8,
+          "max": 11.3
+        },
+        "full": {
+          "n": 11,
+          "median": 12.1,
+          "min": 11.9,
+          "max": 12.4
+        },
+        "export": {
+          "n": 11,
+          "median": 11.8,
+          "min": 11.6,
+          "max": 12.2
+        }
+      }
+    }
+  },
+  "chain:wall-seconds": 133.7,
+  "perturbation": {
+    "sigma 0.5": {
+      "input": {
+        "mean": 0.468,
+        "p99": 1,
+        "flicker": 0
+      },
+      "comic, default": {
+        "mean": 0.191,
+        "p99": 1,
+        "flicker": 0.035,
+        "amplification": {
+          "mean": 0.408,
+          "p99": 1
+        }
+      },
+      "comic, detail 0": {
+        "mean": 0.152,
+        "p99": 1,
+        "flicker": 0.006,
+        "amplification": {
+          "mean": 0.325,
+          "p99": 1
+        }
+      },
+      "comic, detail 1": {
+        "mean": 0.292,
+        "p99": 2,
+        "flicker": 0.117,
+        "amplification": {
+          "mean": 0.624,
+          "p99": 2
+        }
+      },
+      "comic, palette Mural": {
+        "mean": 0.196,
+        "p99": 2,
+        "flicker": 0.074,
+        "amplification": {
+          "mean": 0.419,
+          "p99": 2
+        }
+      },
+      "poster, default": {
+        "mean": 0.13,
+        "p99": 1,
+        "flicker": 0.155,
+        "amplification": {
+          "mean": 0.278,
+          "p99": 1
+        }
+      },
+      "poster, detail 0": {
+        "mean": 0.124,
+        "p99": 1,
+        "flicker": 0.177,
+        "amplification": {
+          "mean": 0.265,
+          "p99": 1
+        }
+      },
+      "poster, detail 1": {
+        "mean": 0.101,
+        "p99": 1,
+        "flicker": 0.099,
+        "amplification": {
+          "mean": 0.216,
+          "p99": 1
+        }
+      },
+      "poster, palette Mural": {
+        "mean": 0.138,
+        "p99": 1,
+        "flicker": 0.135,
+        "amplification": {
+          "mean": 0.295,
+          "p99": 1
+        }
+      },
+      "poster, palette Riso": {
+        "mean": 0.173,
+        "p99": 1,
+        "flicker": 0.224,
+        "amplification": {
+          "mean": 0.37,
+          "p99": 1
+        }
+      },
+      "print, default": {
+        "mean": 0.307,
+        "p99": 2,
+        "flicker": 0.01,
+        "amplification": {
+          "mean": 0.656,
+          "p99": 2
+        }
+      },
+      "print, fine": {
+        "mean": 0.473,
+        "p99": 2,
+        "flicker": 0.008,
+        "amplification": {
+          "mean": 1.011,
+          "p99": 2
+        }
+      },
+      "print, coarse": {
+        "mean": 0.166,
+        "p99": 2,
+        "flicker": 0.019,
+        "amplification": {
+          "mean": 0.355,
+          "p99": 2
+        }
+      }
+    },
+    "sigma 2": {
+      "input": {
+        "mean": 2.123,
+        "p99": 6,
+        "flicker": 0.008
+      },
+      "comic, default": {
+        "mean": 0.482,
+        "p99": 3,
+        "flicker": 0.227,
+        "amplification": {
+          "mean": 0.227,
+          "p99": 0.5
+        }
+      },
+      "comic, detail 0": {
+        "mean": 0.381,
+        "p99": 2,
+        "flicker": 0.077,
+        "amplification": {
+          "mean": 0.179,
+          "p99": 0.333
+        }
+      },
+      "comic, detail 1": {
+        "mean": 0.782,
+        "p99": 7,
+        "flicker": 0.798,
+        "amplification": {
+          "mean": 0.368,
+          "p99": 1.167
+        }
+      },
+      "comic, palette Mural": {
+        "mean": 0.588,
+        "p99": 5,
+        "flicker": 0.495,
+        "amplification": {
+          "mean": 0.277,
+          "p99": 0.833
+        }
+      },
+      "poster, default": {
+        "mean": 0.407,
+        "p99": 2,
+        "flicker": 0.526,
+        "amplification": {
+          "mean": 0.192,
+          "p99": 0.333
+        }
+      },
+      "poster, detail 0": {
+        "mean": 0.394,
+        "p99": 2,
+        "flicker": 0.521,
+        "amplification": {
+          "mean": 0.186,
+          "p99": 0.333
+        }
+      },
+      "poster, detail 1": {
+        "mean": 0.328,
+        "p99": 2,
+        "flicker": 0.375,
+        "amplification": {
+          "mean": 0.154,
+          "p99": 0.333
+        }
+      },
+      "poster, palette Mural": {
+        "mean": 0.726,
+        "p99": 5,
+        "flicker": 0.616,
+        "amplification": {
+          "mean": 0.342,
+          "p99": 0.833
+        }
+      },
+      "poster, palette Riso": {
+        "mean": 0.751,
+        "p99": 7,
+        "flicker": 0.89,
+        "amplification": {
+          "mean": 0.354,
+          "p99": 1.167
+        }
+      },
+      "print, default": {
+        "mean": 0.76,
+        "p99": 5,
+        "flicker": 0.151,
+        "amplification": {
+          "mean": 0.358,
+          "p99": 0.833
+        }
+      },
+      "print, fine": {
+        "mean": 1.239,
+        "p99": 5,
+        "flicker": 0.071,
+        "amplification": {
+          "mean": 0.584,
+          "p99": 0.833
+        }
+      },
+      "print, coarse": {
+        "mean": 0.445,
+        "p99": 6,
+        "flicker": 0.303,
+        "amplification": {
+          "mean": 0.21,
+          "p99": 1
+        }
+      }
+    }
+  },
+  "perturbation:wall-seconds": 8.2,
+  "clips": {
+    "static-720p, fixed camera": {
+      "comic, default": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 0.92,
+          "p99": 3.2,
+          "flicker": 0.098
+        },
+        "amplification": {
+          "mean": 0.378,
+          "p99": 0.337
+        },
+        "pairs": 11
+      },
+      "comic, detail 0": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 0.76,
+          "p99": 2.5,
+          "flicker": 0.065
+        },
+        "amplification": {
+          "mean": 0.313,
+          "p99": 0.263
+        },
+        "pairs": 11
+      },
+      "comic, detail 1": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 1.401,
+          "p99": 5.5,
+          "flicker": 0.441
+        },
+        "amplification": {
+          "mean": 0.576,
+          "p99": 0.579
+        },
+        "pairs": 11
+      },
+      "comic, palette Mural": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 0.613,
+          "p99": 3.2,
+          "flicker": 0.149
+        },
+        "amplification": {
+          "mean": 0.252,
+          "p99": 0.337
+        },
+        "pairs": 11
+      },
+      "poster, default": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 0.554,
+          "p99": 4.5,
+          "flicker": 0.515
+        },
+        "amplification": {
+          "mean": 0.228,
+          "p99": 0.474
+        },
+        "pairs": 11
+      },
+      "poster, detail 0": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 0.534,
+          "p99": 4.5,
+          "flicker": 0.54
+        },
+        "amplification": {
+          "mean": 0.22,
+          "p99": 0.474
+        },
+        "pairs": 11
+      },
+      "poster, detail 1": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 0.622,
+          "p99": 5.7,
+          "flicker": 0.546
+        },
+        "amplification": {
+          "mean": 0.256,
+          "p99": 0.6
+        },
+        "pairs": 11
+      },
+      "poster, palette Mural": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 0.795,
+          "p99": 6.8,
+          "flicker": 0.817
+        },
+        "amplification": {
+          "mean": 0.327,
+          "p99": 0.716
+        },
+        "pairs": 11
+      },
+      "poster, palette Riso": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 0.662,
+          "p99": 5.8,
+          "flicker": 0.672
+        },
+        "amplification": {
+          "mean": 0.272,
+          "p99": 0.611
+        },
+        "pairs": 11
+      },
+      "print, default": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 1.386,
+          "p99": 12.6,
+          "flicker": 3.012
+        },
+        "amplification": {
+          "mean": 0.57,
+          "p99": 1.326
+        },
+        "pairs": 11
+      },
+      "print, fine": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 1.476,
+          "p99": 8.5,
+          "flicker": 1.147
+        },
+        "amplification": {
+          "mean": 0.607,
+          "p99": 0.895
+        },
+        "pairs": 11
+      },
+      "print, coarse": {
+        "source": {
+          "mean": 2.432,
+          "p99": 9.5,
+          "flicker": 3.049
+        },
+        "styled": {
+          "mean": 1.016,
+          "p99": 15.8,
+          "flicker": 3.33
+        },
+        "amplification": {
+          "mean": 0.418,
+          "p99": 1.663
+        },
+        "pairs": 11
+      }
+    },
+    "pan-720p, camera moving": {
+      "comic, default": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 7.879,
+          "p99": 100.5,
+          "flicker": 17.378
+        },
+        "amplification": {
+          "mean": 0.771,
+          "p99": 1.608
+        },
+        "pairs": 11
+      },
+      "comic, detail 0": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 5.622,
+          "p99": 97,
+          "flicker": 10.527
+        },
+        "amplification": {
+          "mean": 0.55,
+          "p99": 1.552
+        },
+        "pairs": 11
+      },
+      "comic, detail 1": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 12.009,
+          "p99": 101.2,
+          "flicker": 25.211
+        },
+        "amplification": {
+          "mean": 1.175,
+          "p99": 1.619
+        },
+        "pairs": 11
+      },
+      "comic, palette Mural": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 9.628,
+          "p99": 123.4,
+          "flicker": 19.996
+        },
+        "amplification": {
+          "mean": 0.942,
+          "p99": 1.974
+        },
+        "pairs": 11
+      },
+      "poster, default": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 9.799,
+          "p99": 104.9,
+          "flicker": 13.53
+        },
+        "amplification": {
+          "mean": 0.959,
+          "p99": 1.678
+        },
+        "pairs": 11
+      },
+      "poster, detail 0": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 9.128,
+          "p99": 104.7,
+          "flicker": 12.847
+        },
+        "amplification": {
+          "mean": 0.893,
+          "p99": 1.675
+        },
+        "pairs": 11
+      },
+      "poster, detail 1": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 10.718,
+          "p99": 104.9,
+          "flicker": 14.316
+        },
+        "amplification": {
+          "mean": 1.049,
+          "p99": 1.678
+        },
+        "pairs": 11
+      },
+      "poster, palette Mural": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 12.158,
+          "p99": 130.9,
+          "flicker": 23.105
+        },
+        "amplification": {
+          "mean": 1.189,
+          "p99": 2.094
+        },
+        "pairs": 11
+      },
+      "poster, palette Riso": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 12.851,
+          "p99": 151.3,
+          "flicker": 17.93
+        },
+        "amplification": {
+          "mean": 1.257,
+          "p99": 2.421
+        },
+        "pairs": 11
+      },
+      "print, default": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 8.642,
+          "p99": 127.3,
+          "flicker": 18.653
+        },
+        "amplification": {
+          "mean": 0.845,
+          "p99": 2.037
+        },
+        "pairs": 11
+      },
+      "print, fine": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 7.289,
+          "p99": 72,
+          "flicker": 19.544
+        },
+        "amplification": {
+          "mean": 0.713,
+          "p99": 1.152
+        },
+        "pairs": 11
+      },
+      "print, coarse": {
+        "source": {
+          "mean": 10.222,
+          "p99": 62.5,
+          "flicker": 33.519
+        },
+        "styled": {
+          "mean": 7.853,
+          "p99": 166.8,
+          "flicker": 12.788
+        },
+        "amplification": {
+          "mean": 0.768,
+          "p99": 2.669
+        },
+        "pairs": 11
+      }
+    }
+  },
+  "clips:wall-seconds": 68.6,
+  "stills:wall-seconds": 4.8,
+  "sweep:wall-seconds": 1.7
+}
