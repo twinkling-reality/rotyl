@@ -362,11 +362,15 @@ The costed answer is the first two together, and neither is expensive:
   Three narrow passes flatten where one wide pass would only blur, because each
   pulls a region toward its own mean.
 - **The outline is a region boundary, not an edge detection.** Comparing the
-  quantised colour here against the quantised colour a line's width away costs
-  five taps and has one threshold whose units are "how different do two areas
-  have to be". A difference of Gaussians has no such opinion: it responds to
-  contrast, so it inks smog and sensor noise, and the threshold that stops it
-  also stops it drawing the faint boundary that matters.
+  flattened colour here against the flattened colour a line's width away costs
+  four taps and has one threshold whose units are "how different do two areas
+  have to be". A difference of Gaussians reads the photograph and has no such
+  opinion: it answers to contrast wherever it finds it, so it inks smog and
+  sensor noise, and the threshold that stops it also stops it drawing the faint
+  boundary that matters. What it compared when this was written was two ROUNDED
+  colours, and
+  [measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took) is
+  what that cost.
 
 Whole chain, nine passes, one at output resolution: **1.2 ms at 720p** against
 the comic chain's 119.

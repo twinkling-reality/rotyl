@@ -15,8 +15,9 @@
 // the flatten took out on the way here. A difference of Gaussians reads the
 // photograph and has no such opinion. It answers to contrast wherever it finds
 // it, so it inks all three, and the threshold that stops it doing that also
-// stops it drawing the faint boundary that matters. Five taps, and one
-// threshold whose units are "how different do two areas have to be".
+// stops it drawing the faint boundary that matters. Four taps on top of the one
+// this pass already reads, and one threshold whose units are "how different do
+// two areas have to be".
 //
 // UNTIL THIS CHAPTER IT COMPARED THE QUANTISED COLOUR ON BOTH SIDES, and that
 // was wrong in a way only a photograph could show. round() flips a whole band

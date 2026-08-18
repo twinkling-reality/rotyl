@@ -140,7 +140,7 @@ Its outline is a region boundary rather than an edge detection, which is the
 cheaper idea and also the better one. What makes it one is WHICH PICTURE it
 reads: the flattened one, the bilateral's own piecewise-constant answer, which
 is where smog, sensor grain and the inside of foliage have already gone. The
-line is drawn where that colour changes across a line's width: five taps, and
+line is drawn where that colour changes across a line's width: four taps, and
 one threshold whose units are "how different do two areas have to be". A
 difference of Gaussians reads the photograph and has no such opinion. It answers
 to contrast wherever it finds it, so it inks all three, and the threshold that
