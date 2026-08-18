@@ -17,7 +17,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Fetching a real input by URL and hash, rather than publishing a number nobody can re-take',
     verdict: 'adopted',
     evidence:
-      'The measurement it feeds reversed sign on a photograph: the poster chain amplifies its input by five on a brick wall where the drawn scene reports it attenuating by two',
+      'The measurement it feeds reversed sign on a photograph: the poster chain amplified its input by five on a brick wall where the drawn scene reports it attenuating by two, which cost that style its outline operator',
     where: 'tools/style-bench/fetch-real.sh, and "What survived a real picture"',
   },
   {
@@ -36,16 +36,30 @@ export const TRIALS: readonly Trial[] = [
   },
   {
     what: 'Centring that threshold’s transition on itself, and flooring its half width',
-    verdict: 'adopted',
+    verdict: 'rejected',
     evidence:
-      'The correct shape, and free: 0.98% of pixels move more than 8 codes against the previous render, against 1.92% for the probe change that was rejected',
+      'The correct shape and free, so it shipped for a chapter: 0.98% of pixels move more than 8 codes against the previous render, against 1.92% for the probe change. It still left the wall three times above the floor, and it went with the operator it was shaping',
     where: 'src/core/style/poster/wgsl/poster.wgsl',
   },
   {
     what: 'Making the poster outline temporally sound by any transition width at all',
+    verdict: 'rejected',
+    evidence:
+      'The quantity being thresholded was a distance between two quantised colours and therefore discrete: a hard probe left nothing for a width to resolve and a soft one lost the signal. Every combination of the two was measured at four widths, and the best of them sat three times above the floor',
+    where: '"What survived a real picture", the four tuning passes',
+  },
+  {
+    what: 'Reading the flattened colour rather than its rounding, and making the outline’s weight that distance ramped up to the threshold',
+    verdict: 'adopted',
+    evidence:
+      'On a brick wall a perturbation of six codes comes out at 15 rather than 78, against 8 for the same picture with no outline at all, and the same clip goes from 5.7 times its input to 1.36. It costs 7.8% of the reference scene, and what it costs is the contours the quantiser was drawing on its own grid',
+    where: 'src/core/style/poster/wgsl/poster.wgsl',
+  },
+  {
+    what: 'Closing the last five codes between the poster outline and no outline at all',
     verdict: 'open',
     evidence:
-      'The quantity being thresholded is a distance between two quantised colours and is therefore discrete; a hard probe leaves nothing for a width to resolve, and a soft one loses the signal. A different outline operator, not a tuning pass',
+      'What is left is not the quantiser: it is the flatten’s own edge contrast moving under grain, and any weight that follows contrast follows that too. Widening the ramp buys it back in proportion and takes the outlines with it, measured at 12 codes for a ramp twice as wide and visibly grey lines',
     where: 'docs/limits.md',
   },
   {
@@ -250,14 +264,14 @@ export const TRIALS: readonly Trial[] = [
     what: 'A difference of Gaussians for the poster outline',
     verdict: 'rejected',
     evidence:
-      'It responds to contrast rather than to regions, so it inks smog and sensor noise, and the threshold that stops it also stops it drawing the faint boundary that mattered',
+      'It reads the photograph, so it answers to contrast wherever it finds it and inks smog and sensor noise, and the threshold that stops it also stops it drawing the faint boundary that mattered. What ships measures contrast too, in the flattened picture, which is where those three have already gone',
     where: 'src/core/style/poster/wgsl/poster.wgsl',
   },
   {
     what: 'An anisotropic Kuwahara for the poster flatten',
     verdict: 'rejected',
     evidence:
-      'O(radius²) and 140 ms at 720p; a separable bilateral iterated three times is O(radius) and 1.3',
+      'O(radius²) and 119 ms at 720p; a separable bilateral iterated three times is O(radius) and 1.2',
     where: 'tools/style-bench, measurement 1',
   },
   {

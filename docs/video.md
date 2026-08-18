@@ -49,14 +49,27 @@ generalises: a style may make any decision it likes, as long as the decision is
 allowed to be undecided somewhere.
 
 **The rule was not applied everywhere, and it took a photograph to show it.**
-The poster style's outline compares two quantised colours a line's width apart,
+The poster style's outline compared two quantised colours a line's width apart,
 which is a hard decision with a neighbour on one side of it and therefore no
 derivative to floor. On a drawn scene of large flat regions that is invisible.
-On a brick wall it amplifies its input five times, because a brick wall is
-nothing but marginal region boundaries. That is a real defect, it is measured,
-and it is in [known limits](limits.md) rather than in a plan.
-`tools/style-bench` has the numbers, the three fixes that did not work, and how
-all of it was taken.
+On a brick wall it amplified its input 5.7 times, because a brick wall is
+nothing but marginal region boundaries.
+
+**And the answer was a different operator, which is the second half of the
+rule.** A floor under a transition works when the quantity being decided is
+continuous. That one was not: it was a distance between two rounded colours, and
+rounding is the one thing a width cannot resolve. Both hard decisions in it were
+softened, in every combination and at four widths, and the best of those stopped
+three times above the floor. So the rounding went instead. The
+outline measures the flattened colour itself and a stroke's weight is that
+distance, which is continuous in the picture by construction, and the wall goes
+from 5.7 times its input to 1.36 against 0.95 for the same chain drawing no
+outline at all. What that costs is the contours the quantiser used to draw
+across a nearly flat field, which were the banding artefact rather than a
+boundary between two things. What it does not do is close the gap completely,
+and that is in [known limits](limits.md) with its number rather than in a plan.
+`tools/style-bench` has all of it, including the four tuning passes that came
+first.
 
 ## A selection belongs to a frame, and to every frame after it
 

@@ -128,7 +128,7 @@ fitting at all.
 
 **Poster** flattens with an iterated separable bilateral, quantises to flat
 areas in Oklab, snaps them to the palette, and draws a line where two areas
-meet. Nine passes, one at output resolution.
+meet. Nine passes, one at output resolution, and a millisecond at 720p.
 
 It is the same palette data read the other way round. A ramp indexed by
 lightness cannot keep two things apart, a red tail light and a grey wall of the
@@ -137,21 +137,29 @@ in all three dimensions instead. The palette becomes a set rather than a ramp,
 and a picture in five chosen colours still shows a car against a road.
 
 Its outline is a region boundary rather than an edge detection, which is the
-cheaper idea and also the better one. The line is drawn where the quantised
-colour here differs from the quantised colour a line's width away: five taps,
-and one threshold whose units are "how different do two areas have to be". A
-difference of Gaussians has no such opinion. It responds to contrast, so it
-inks smog and sensor noise, and the threshold that stops it doing that also
-stops it drawing the faint boundary that mattered.
+cheaper idea and also the better one. What makes it one is WHICH PICTURE it
+reads: the flattened one, the bilateral's own piecewise-constant answer, which
+is where smog, sensor grain and the inside of foliage have already gone. The
+line is drawn where that colour changes across a line's width: five taps, and
+one threshold whose units are "how different do two areas have to be". A
+difference of Gaussians reads the photograph and has no such opinion. It answers
+to contrast wherever it finds it, so it inks all three, and the threshold that
+stops it doing that also stops it drawing the faint boundary that mattered.
 
-It is also the one hard decision in this codebase with no floor under its
-transition, and it is the only place the temporal rule below is broken. A
-quantised colour is the one thing a derivative cannot smooth, because the value
-being compared belongs to a neighbour, and a quantised colour flips a whole band
-on an infinitesimal change. On a detailed photograph that puts an ink stroke on
-and off between frames. It is measured, three shapes of fix were measured and
-rejected, and it is written down in [known limits](limits.md) rather than
-described as working.
+For most of this project's life it compared the QUANTISED colour on both sides,
+and that was the one hard decision here with no floor under its transition,
+because a rounded value is what a floor cannot reach: the value belongs to a
+neighbour, and round() flips a whole band on an infinitesimal change. On a
+detailed photograph that put a stroke on and off between frames, five times the
+input on a brick wall. Both of its hard decisions were softened, in every
+combination and at four widths, and none of that worked, which is the useful
+half of it: the answer to a decision taken on a discrete quantity is not a wider
+transition, it is not taking a decision. A
+stroke's weight is the distance itself now, ramped up to the threshold, and what
+it costs is the contours the quantiser drew across a nearly flat field, which
+were the banding artefact rather than a boundary between two things. What is
+left of the flicker is the flatten's own edge contrast, and that is in
+[known limits](limits.md) with its number rather than described as solved.
 
 **Print** separates the image into four ink densities and screens each one at
 its own angle, over warm paper, slightly misregistered. Three passes, only the

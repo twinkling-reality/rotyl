@@ -216,7 +216,9 @@ test('offers the research page from the empty state, and generates it from the r
   // own because it is a finding of its own and it reversed one of the above.
   await page.goto('/research/real-footage.html');
   await expect(page.getByRole('cell', { name: 'the synthetic scene' }).first()).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'It is the outline, and only the outline' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'It was the outline, and the quantiser inside it' }),
+  ).toBeVisible();
 
   // A figure out of the other harness's results, so both are known to be read.
   await page.goto('/research/video.html');

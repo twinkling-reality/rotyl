@@ -54,17 +54,21 @@ one, and the measurement behind it is on `/research.html`.
   appears or disappears when the density crosses the spot function, and that is
   a hard threshold against a screen that does not move with the picture. It may
   not want fixing; a print is allowed to look like a print.
-- **The poster style's outline boils on detailed footage, and this one does want
-  fixing.** It is drawn where the quantised colour here differs from the
-  quantised colour a line's width away, and a quantised colour flips a whole
-  band on an infinitesimal change, so an outline can appear at full strength
-  between one frame and the next. On a photograph of a brick wall the chain
-  amplifies its input five times where the drawn reference scene reports it
-  attenuating by two; without the outline it is 0.95. Three shapes of fix were
-  measured and rejected, which is on the trials page: the quantity being
-  thresholded is discrete, so no transition width resolves it, and the answer is
-  a different outline operator rather than a tuning pass. Until then a clip of
-  fine detail through the poster style will flicker along its lines.
+- **The poster style's outline is steady on detailed footage now, and it is
+  still not as steady as no outline at all.** It used to be drawn where the
+  quantised colour here differed from the quantised colour a line's width away,
+  and a quantised colour flips a whole band on an infinitesimal change, so a
+  stroke could appear at full weight between one frame and the next: on a
+  photograph of a brick wall that chain amplified its input 5.7 times where the
+  drawn reference scene reports it attenuating by two. It compares the flattened
+  colour instead now, unrounded, and a stroke's weight is that distance ramped
+  up to the threshold, which takes the same clip to 1.36 against 0.95 for the
+  same chain with the outline switched off. The gap that is left is not the
+  quantiser. The flatten's own edge contrast moves under grain, and an outline
+  whose weight follows contrast follows that too, so a perturbation of six codes
+  comes out at fifteen where switching the outline off gives eight. Widening the
+  ramp closes it in proportion and greys every line on the way, which is a worse
+  picture in exchange for a number nobody watching a clip would find.
 - WebM and Matroska are refused, by signature, with a message that says so.
   They are a second demuxer at 15 KB and mostly carry codecs whose decode has
   not been measured here.

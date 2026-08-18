@@ -67,12 +67,13 @@ a chapter was cost: the anisotropic Kuwahara's sample bound grows with local
 anisotropy, so a frame of architecture should cost more than a frame of foliage,
 and the comic figures were to be treated as a hard case rather than a typical
 one. Measured against four photographs, that is wrong in the ordering and nearly
-right in the conclusion. The scene is the dearest of the five by 7 to 24 per
+right in the conclusion. The scene is the dearest of the five by 2 to 19 per
 cent, which is the top of a narrow range rather than a class of its own, and
 foliage costs more than a brick wall does.
 
 **What was actually wrong was the temporal measurement**, in the one style
-nobody was worried about. See [measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took).
+nobody was worried about, and it cost that style an operator.
+See [measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took).
 
 `make-clips.sh` encodes three clips from it. The one that matters is
 `static-720p`: fixed camera, fixed scene, so everything that differs between two
@@ -83,8 +84,8 @@ consecutive frames is grain and the encoder's own noise.
 ## 0. The same three measurements, on a picture a camera took
 
 Measurements 1 to 3 were all taken against a scene this directory draws. That
-was the right call and it was never checked. This is the check, and it changed
-one answer.
+was the right call and it was never checked. This is the check. It changed one
+answer, and the answer changed a style.
 
 ### The methodology, which is the interesting part
 
@@ -120,47 +121,71 @@ smallest.
 ### What came back
 
 **The cost question, which is the one this README worried about, is a non-event.**
-Content moves the comic chain by 7 to 24 per cent and moves the ordering the
+Content moves the comic chain by 2 to 19 per cent and moves the ordering the
 wrong way round: foliage costs more than a brick wall. Corrected above.
 
 **The comic chain holds.** It is steadier than its input on all four
 photographs, which is the finding that was surprising and the one the design
 leans on.
 
-**The poster chain does not, and it is the outline.** On a brick wall it
-amplifies its input by five where the scene reports it attenuating by two, and
-turning the outline off returns it to 0.95. With the codec taken out entirely, a
-perturbation whose 99th percentile is six codes comes out at seventy-eight, and
-at eight without the outline.
+**The poster chain did not, and it was the outline.** On a brick wall it
+amplified its input by 5.7 where the scene reports it attenuating by two, and
+turning the outline off returned it to 0.95. With the codec taken out entirely, a
+perturbation whose 99th percentile is six codes came out at seventy-eight, and at
+eight without the outline.
 
 The cause is exactly the rule
 [measurement 2](#what-this-measurement-bought-the-floor-under-a-soft-transition)
-established, broken in the one place it was never applied. Every hard decision in
-a style has a floor under its transition width. The outline compares the
+established, broken in the one place it could not be applied. Every hard decision
+in a style has a floor under its transition width. The outline compared the
 quantised colour here against the quantised colour a line away, `round()` flips a
-whole band on an infinitesimal change, that moves the comparison by a fifth of
-the Oklab range, and it crosses the line threshold, so an ink stroke appears at
-full strength. The scene has almost no pixel near a region boundary, and the
-population that flickers is exactly that one.
+whole band on an infinitesimal change, that moved the comparison by a fifth of
+the Oklab range, and it crossed the line threshold, so an ink stroke appeared at
+full weight. The scene has almost no pixel near a band edge, and the population
+that flickers is exactly that one.
 
 **Run `real-flicker` before theorising about it.** The stability tables say how
-much moves and never which pixels, and the difference is the whole diagnosis
-here: 2% of pixels sounds like a diffuse shimmer and is not diffuse at all. It
-traces the ink, along every boundary the flatten found marginal. `out/` gets one
+much moves and never which pixels, and the difference was the whole diagnosis
+here: 2% of pixels sounds like a diffuse shimmer and was not diffuse at all. It
+traced the ink, along every boundary the flatten found marginal. `out/` gets one
 picture per style per photograph, the styled frame at half brightness with
 everything that moved more than eight codes painted over it, and the pair with
-and without the outline settles the question in one look.
+and without the outline settled the question in one look. It is the check on the
+fix as well: what the same map shows now is scattered through the texture rather
+than drawn along the ink.
 
-**It is not fixed, and the trials page carries why.** Three shapes were tried.
-Softening the neighbour probe cuts the noise and the signal together, which
-weakens every genuine outline for a fifth of the flicker. Widening the threshold
-one-sidedly displaces the decision rather than resolving it, and took the
-outlines off the reference scene while the flicker was still there. A hard probe
-leaves a discrete quantity for a width to resolve, which no width can do. What
-did land is the shape correction, a transition centred on the threshold rather
-than opening at it, which costs nothing and is right for the same reason every
-other floor in this codebase is. A different outline operator is the honest fix
-and it is not a tuning pass.
+**Both hard decisions in it were softened before the operator was replaced**, in
+every combination and at four widths, and none of that could have worked. Softening the neighbour probe cuts the noise and the
+signal together, which weakens every genuine outline for a fifth of the flicker.
+Widening the threshold one-sidedly displaces the decision rather than resolving
+it, and took the outlines off the reference scene while the flicker was still
+there. Centring that transition is the right shape and free, and buys nothing on
+its own. The two together stop three times above the floor. A hard probe leaves a
+discrete quantity for a width to resolve, which no width can do.
+
+**So the probe stopped rounding.** The outline now measures the flattened colour
+itself, and a stroke's weight is that distance ramped up to the threshold rather
+than a decision taken at it: nothing below a quarter of the threshold, full
+weight at it, proportional in between. That is continuous in the picture by
+construction, and it is still a region boundary rather than an edge detection
+because of WHICH picture it reads. The bilateral's answer is where smog, grain
+and the inside of foliage have already gone. The wall goes from 5.7 times its
+input to 1.36, and the perturbation from seventy-eight codes to fifteen against
+a floor of eight.
+
+**What is left is not the quantiser, and it does not go away by tuning either.**
+The flatten's own edge contrast moves under grain, and an outline whose weight
+follows contrast follows that. Widening the ramp buys the difference back in
+proportion: twice as wide reaches twelve codes and visibly greys every line. The
+five codes are in `docs/limits.md` with that trade rather than described as
+solved.
+
+**The look was checked with a number, not with an eye.** Rendering the reference
+scene through both chains and differencing them, the new operator moves 7.8% of
+it more than eight codes, and what moves is the contours the old one drew where
+the band grid crossed a nearly flat field. Those are the banding artefact rather
+than a boundary between two things, they are also exactly the population that
+flickered, and losing them is the change a person can see.
 
 **The tables are on `/research/real-footage.html`**, generated from
 `results-real.json`, like every other table this project relies on.
@@ -177,20 +202,27 @@ Median milliseconds, full quality tier, default controls:
 
 | style  | 720p    | 2 MP    | 12 MP | 24 MP |
 | ------ | ------- | ------- | ----- | ----- |
-| comic  | 133.7   | 109.7   | 114.4 | 114.3 |
-| poster | **1.3** | **1.4** | 4.2   | 6.8   |
-| print  | **0.5** | **0.6** | 2.3   | 3.7   |
+| comic  | 119.2   | 100.3   | 107.0 | 107.6 |
+| poster | **1.2** | **1.3** | 2.9   | 5.3   |
+| print  | **0.5** | **0.6** | 2.0   | 4.1   |
 
 The ordering holds at every size, and an earlier version of this table said it
 did not. It reported 25.1 and 13.0 in the 24 MP column and argued from them that
 both cheap styles go superlinear past about 12 megapixels as the working set
-stops fitting anything. Re-taken twice on a quiet machine, in two differently
-ordered runs, the cell is 6.8: the growth from 12 to 24 megapixels is 1.6 times
-for twice the pixels, which is sublinear rather than super. The old figure was a
-busy machine, and it survived because nothing re-took it. **Check the min against
-the median before believing a row**, which is what that field is in the results
-file for. Both runs behind this table sit at 0.95 or better; the run that
-reproduced the old figure sat at 0.85.
+stops fitting anything. Re-taken on a quiet machine the growth from 12 to 24
+megapixels is 1.8 times for twice the pixels, which is sublinear rather than
+super. The old figure was a busy machine, and it survived because nothing
+re-took it. **Check the min against the median before believing a row**, which is
+what that field is in the results file for. Every row above a millisecond here
+sits at 0.95 or better; the run that reproduced the old figure sat at 0.85. Below
+a millisecond the ratio says nothing, because the medians are rounded to a tenth
+and 0.4 against 0.5 is 0.80 by arithmetic rather than by contention.
+
+The poster column moved in this chapter and it moved for a reason:
+[measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took)
+replaced the outline, and its four neighbour probes no longer run a five-stop
+palette search each. That is invisible at 720p and worth a third of the cost at
+12 megapixels, where the pass at output resolution is the whole chain.
 
 The comic chain is flat in output resolution for the reason its own stage
 implies: the expensive stage runs on a buffer whose size is derived from an
@@ -205,7 +237,7 @@ the same apparent radius is 19% larger than a 3:2 one. Everything at output
 resolution, the cel step, the ink threshold, the composite, is single digits.
 
 **A style does not have to be expensive to be flat.** The comic chain spends
-120 ms deciding what to smooth. The print chain spends half a millisecond and
+119 ms deciding what to smooth. The print chain spends half a millisecond and
 reads as more deliberately designed than the comic chain does, because what
 makes it look chosen is the four inks and the paper, not the amount of work.
 
@@ -216,15 +248,15 @@ output's short edge. Both reproduce here.
 
 | comic, full tier | 720p  | 2 MP  | 12 MP | 24 MP |
 | ---------------- | ----- | ----- | ----- | ----- |
-| detail 0         | 45.1  | 41.9  | 42.9  | 43.2  |
-| detail 0.5       | 133.7 | 109.7 | 114.4 | 114.3 |
-| detail 1         | 50.7  | 218.8 | 384.0 | 383.4 |
+| detail 0         | 43.2  | 40.7  | 41.5  | 42.5  |
+| detail 0.5       | 119.2 | 100.3 | 107.0 | 107.6 |
+| detail 1         | 49.2  | 203.4 | 349.0 | 349.7 |
 
 At 720p and detail 1 the flatten buffer clamps to 720 and the radius falls to
-4.25, so draft, full and export are the same render. 51.1, 50.7, 50.8. At 2 MP
+4.25, so draft, full and export are the same render. 49.3, 49.2, 49.1. At 2 MP
 nothing clamps and the same setting costs four times as much.
 
-**The poster chain is a per-frame budget.** 1.3 ms at 720p against a 33 ms
+**The poster chain is a per-frame budget.** 1.2 ms at 720p against a 33 ms
 frame. Video playback stops being limited by the style.
 
 ## 2. Temporal stability: the assumption was backwards
@@ -243,13 +275,14 @@ number here**. Boiling is a small proportion of pixels moving a long way.
 | ------------- | ---- | -------- | --------- |
 | the source    | 2.43 | 9.5      | 3.05%     |
 | comic         | 0.92 | **3.2**  | **0.10%** |
-| poster        | 0.55 | **4.9**  | **0.56%** |
+| poster        | 0.38 | **4.1**  | **0.29%** |
 | print         | 1.39 | **12.6** | **3.01%** |
 
 **On this picture, no style amplifies its input; every one attenuates it.** Two
-of those three rows survive a photograph and the poster row does not; see
-[measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took),
-which is where that sentence gets its qualifier from. The comic chain is a
+of those three rows survived a photograph unchanged and the poster row did not;
+see [measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took),
+which is where that row's outline was rebuilt and where this one was re-taken
+afterwards. The comic chain is a
 heavy smoothing filter with a soft cel step, and it removes more grain than its
 decisions reintroduce. It makes footage steadier than the footage is. The
 hypothesis was wrong, and the reason it was wrong is worth keeping: the Kuwahara
@@ -262,7 +295,7 @@ grain of a known size added the second time:
 | perturbation | input p99 | comic | poster | print |
 | ------------ | --------- | ----- | ------ | ----- |
 | sigma 0.5    | 1         | 1     | 1      | 2     |
-| sigma 2      | 6         | 3     | 2      | 5     |
+| sigma 2      | 6         | 3     | 3      | 5     |
 
 **Print is the one that boils**, and predictably: a halftone dot appears or
 disappears when the density crosses the spot function, which is a hard threshold
@@ -290,6 +323,10 @@ always had.
 | floored lightness and margin | 14.6 | 1.23%   |
 | chroma floored as well       | 4.9  | 0.56%   |
 
+That last row is where this chapter finished. The outline change in
+[measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took) has
+since taken the same clip to 4.1 and 0.29%, which is the table above.
+
 Chroma was the larger half. Colour steps are as discontinuous as lightness ones
 and there are more of them, because chroma is small everywhere in a hazy picture
 and its steps are correspondingly close together.
@@ -303,7 +340,7 @@ only widens where the picture has no edge to sharpen.
 | ------------- | ----- | ----- | ------- |
 | the source    | 10.22 | 62.5  | 33.5%   |
 | comic         | 7.88  | 100.5 | 17.4%   |
-| poster        | 9.90  | 104.9 | 13.5%   |
+| poster        | 7.15  | 86.1  | 13.7%   |
 | print         | 8.64  | 127.3 | 18.7%   |
 
 When everything in the frame moves, everything in the styled frame moves, and
@@ -331,8 +368,8 @@ The costed answer is the first two together, and neither is expensive:
   contrast, so it inks smog and sensor noise, and the threshold that stops it
   also stops it drawing the faint boundary that matters.
 
-Whole chain, nine passes, one at output resolution: **1.3 ms at 720p** against
-the comic chain's 140.
+Whole chain, nine passes, one at output resolution: **1.2 ms at 720p** against
+the comic chain's 119.
 
 ### The measurement that mattered most
 
@@ -368,7 +405,7 @@ than the argument for it.
 ## What follows
 
 1. **Style cost is a choice, not a constraint.** Two of the three styles run in
-   under 2 ms at 720p. The one that costs 140 ms spends all of it in a single
+   under 2 ms at 720p. The one that costs 119 ms spends all of it in a single
    stage whose look, on this scene, the cheap one matches or beats.
 2. **Per-frame independence is not the problem it was assumed to be** for
    smoothing-dominated chains. It is a real problem for hard thresholds against
@@ -377,6 +414,10 @@ than the argument for it.
    expressed in the units of the thing being decided.** That single rule is
    worth more to video than any amount of temporal filtering, and it costs
    nothing.
-4. **Fit the palette to the picture.** Imposing colour is what makes a result
+4. **A floor is only available where the quantity being decided is continuous.**
+   Where it is not, no width resolves anything and the decision itself has to
+   go: the poster outline compared two rounded colours, six widths were measured
+   against it, and what worked was reading the colour before it was rounded.
+5. **Fit the palette to the picture.** Imposing colour is what makes a result
    look chosen; imposing it on a range the picture does not occupy makes it look
    like one colour.

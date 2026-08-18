@@ -126,7 +126,7 @@ function stability(style: unknown): Section {
   return {
     heading: 'Nothing boils here, and not for the reason anyone expected',
     prose: [
-      'On this picture no style amplifies its input, every one attenuates it, and the chain that looked most at risk is the steadiest of the three. Two of those three claims survive a photograph and one does not: see what survived a real picture, which re-takes this table against four of them and a film.',
+      'On this picture no style amplifies its input, every one attenuates it, and the chain that looked most at risk is the steadiest of the three. Two of those three claims survived a photograph unchanged and the poster row did not: see what survived a real picture, which re-takes this table against four of them and a film, and which is where the outline this row depends on was rebuilt.',
       'The worry was reasonable. Every stage runs per frame with no knowledge of the last one, and two of them are winner-take-all decisions on a noisy field: a Kuwahara picking its most homogeneous sector, a difference of Gaussians thresholding a response. A pixel one code different between two frames could flip either.',
       'It does not, because neither decides on one pixel. The Kuwahara chooses on the variance of two hundred samples, and the chain removes more grain than its decisions reintroduce.',
     ],
@@ -140,7 +140,7 @@ function stability(style: unknown): Section {
       ],
     },
     caveat:
-      'In output codes, over consecutive decoded frames of a fixed camera on a fixed scene, so everything that differs between two of them is grain and the encoder’s own noise. The mean is the least useful column: boiling is a small proportion of pixels moving a long way, which is what the other two measure. The scene is drawn rather than photographed, and the poster row in particular does not hold on a photograph.',
+      'In output codes, over consecutive decoded frames of a fixed camera on a fixed scene, so everything that differs between two of them is grain and the encoder’s own noise. The mean is the least useful column: boiling is a small proportion of pixels moving a long way, which is what the other two measure. The scene is drawn rather than photographed, which is why every row here is read against the page that re-takes it on four that are not.',
     command: 'node tools/style-bench/run.mjs clips',
   };
 }
@@ -184,7 +184,7 @@ function transitionFloor(): Section {
       ],
     },
     caveat:
-      'Taken during development by re-running the clip measurement against each version. The last row is whatever the table above reports today; the first two are gone from the code and cannot be regenerated without reverting it. The fix costs nothing measurable and nothing visible: the transition only widens where the picture has no edge to sharpen. What it did not reach is the outline, whose comparison against a NEIGHBOUR has no derivative to floor and stayed hard, which is the defect the real-picture page is about.',
+      'Taken during development by re-running the clip measurement against each version. The last row is whatever the table above reports today; the first two are gone from the code and cannot be regenerated without reverting it. The fix costs nothing measurable and nothing visible: the transition only widens where the picture has no edge to sharpen. What it did not reach is the outline, which took its decision against a NEIGHBOUR’s rounded colour and so had no derivative to floor. That is the defect the real-picture page found, and what answered it there was a different operator rather than another floor.',
   };
 }
 
@@ -296,11 +296,11 @@ function realStability(real: unknown): Section {
   const cell = (clip: string, name: string): string =>
     num(real, ['real-clips', clip, name, 'amplification', 'p99']).toFixed(2);
   return {
-    heading: 'The comic chain holds. The poster chain does not.',
+    heading: 'The comic chain held. The poster chain had to be rebuilt.',
     prose: [
-      'Half of the original finding survives and half of it is false. The comic chain really is steadier than its input, on a photograph as on a drawing, which is the part that was surprising and the part the design leans on. The claim that every style attenuates its input is not true of a photograph at all.',
-      'The poster chain amplifies by five on a brick wall and by five on foliage, where on the synthetic scene it attenuates by two. That is not a small drift in a number. It is the opposite sign, on the measurement that says whether stylised video is worth shipping, and it was invisible for as long as the input was drawn rather than photographed.',
-      'The two rows that are not fixed cameras are read differently and are here for a different reason. An actor moving is a large honest change and it lands in the source column, so the ratio is the only thing those rows can say. What they say is that the poster chain is four times its input on real footage while the other two are near one.',
+      'Half of the original finding survived a photograph untouched. The comic chain really is steadier than its input, on a photograph as on a drawing, which is the part that was surprising and the part the design leans on.',
+      'The other half was false, and it was the poster chain. On a brick wall it amplified by 5.7 and on foliage by 4.9, where the synthetic scene reports it attenuating by two. That is not a small drift in a number: it is the opposite sign, on the measurement that says whether stylised video is worth shipping, and it was invisible for as long as the input was drawn rather than photographed. The two sections below are what it turned out to be and what replaced it. This table is taken afterwards, and the wall now reads 1.36.',
+      'The two rows that are not fixed cameras are read differently and are here for a different reason. An actor moving is a large honest change and it lands in the source column, so the ratio is the only thing those rows can say. What they said before the change was that the poster chain was four times its input on real footage while the other two were near one; what they say now is that all three sit between one and two.',
     ],
     table: {
       columns: ['styled change over source change, p99', 'comic', 'poster', 'poster, no outline', 'print'],
@@ -313,7 +313,7 @@ function realStability(real: unknown): Section {
       ]),
     },
     caveat:
-      'Twenty-four consecutive frames, in output codes, at the 99th percentile of the per-pixel change between one frame and the next. One means the style is exactly as steady as what it was given. The fourth column is the diagnostic the next section is about.',
+      'Twenty-four consecutive frames, in output codes, at the 99th percentile of the per-pixel change between one frame and the next. One means the style is exactly as steady as what it was given. The fourth column is the same chain with the outline switched off, which is the floor the third column is trying to reach and the diagnostic the next section is about.',
     command: 'node tools/style-bench/run.mjs real-clips',
   };
 }
@@ -322,11 +322,11 @@ function realOutline(real: unknown): Section {
   const p99 = (picture: string, name: string): string =>
     num(real, ['real-perturbation', picture, 'sigma 2', name, 'p99']).toFixed(0);
   return {
-    heading: 'It is the outline, and only the outline',
+    heading: 'It was the outline, and the quantiser inside it',
     prose: [
-      'With the codec, the camera and the subject all taken out, the same result appears and it has one cause. One picture is rendered twice with grain of a known size added the second time, so what is measured is the style and nothing else. On the wall a perturbation whose 99th percentile is six codes comes out the far side at seventy-eight. Turn the outline off and it comes out at eight.',
-      'The mechanism is exact, and it is this codebase’s own rule being broken in the one place it was never applied. Every hard decision in a style has a floor under its transition width. The outline compares the quantised colour here against the quantised colour a line away, and a quantised colour is what round() returns: it flips a whole band on an infinitesimal change, the flip moves the comparison by a fifth of the Oklab range, that crosses the line threshold, and an outline appears at full strength.',
-      'The scene could not show it. It was drawn with large near-flat regions, so almost no pixel in it sits near a region boundary, and the population that flickers is the population near one. A brick wall is nothing but marginal boundaries.',
+      'With the codec, the camera and the subject all taken out, the same result appeared and it had one cause. One picture is rendered twice with grain of a known size added the second time, so what is measured is the style and nothing else. On the wall a perturbation whose 99th percentile is six codes came out the far side at seventy-eight. Turned the outline off and it came out at eight.',
+      'The mechanism is exact. The outline compared the quantised colour here against the quantised colour a line away, and a quantised colour is what round() returns: it flips a whole band on an infinitesimal change, the flip moved the comparison by a fifth of the Oklab range, that crossed the line threshold, and a stroke appeared at full weight. The scene could not show it. It was drawn with large near-flat regions, so almost no pixel in it sits near a band edge, and the population that flickers is exactly that one. A brick wall is nothing but marginal boundaries.',
+      'What the quantiser was contributing was the flicker and nothing else. Two sides in different bands returned a whole band however far apart the picture had them, so which pixels along a faint boundary got a stroke was decided by where the band grid happened to fall: a faint line was drawn as a dotted one rather than as a fainter one. The outline now measures the flattened colour itself and its weight is that distance, ramped up to the threshold. The table is after that change, and the row it was written for reads fifteen against a floor of eight.',
     ],
     table: {
       columns: ['grain σ 2, p99 out', 'input', 'comic', 'poster', 'poster, no outline', 'print'],
@@ -342,18 +342,18 @@ function realOutline(real: unknown): Section {
         ]),
     },
     caveat:
-      'What this does not do is fix it. Three things were tried and the page of trials carries what each cost: softening the neighbour probe reduces the signal as much as the noise, widening the threshold one-sidedly displaces the decision instead of resolving it, and a hard probe leaves nothing for a width to resolve. The quantity being thresholded is a distance between two quantised colours, so it is discrete, and no transition width resolves a decision whose input jumps. A different outline operator is the honest fix and it is not a tuning pass.',
+      'The remainder is not the quantiser and does not look like it: the map that real-flicker writes no longer traces the ink but scatters through the texture, which is the flatten’s own edge contrast moving under the grain and being read through the ramp. Five codes above the floor on the two worst pictures in this set is where that leaves it. The section below is the four tuning passes tried before the operator was replaced, and why none of them could have worked.',
     command: 'node tools/style-bench/run.mjs real-perturbation',
   };
 }
 
 function outlineAttempts(): Section {
   return {
-    heading: 'Four shapes of fix, and why none of them is the fix',
+    heading: 'Four tuning passes, and why the answer was a different operator',
     prose: [
-      'The outline compares two quantised colours and thresholds the distance between them, so there are exactly two hard decisions in it and each can be softened independently. All four combinations were measured against the worst picture, and the useful result is the one that says none of them works.',
+      'The old outline compared two quantised colours and thresholded the distance between them, so there were exactly two hard decisions in it and each could be softened independently. All four combinations were measured against the worst picture, and the useful result is the one that says none of them works.',
       'Softening the neighbour probe buys about a fifth and costs the look, because a soft probe reduces the distance at a genuine boundary as much as it reduces the noise at a marginal one. Centring the threshold’s transition rather than opening at it is free and buys nothing on its own. The two together get within three times of the floor and no closer, and the floor is the same picture with the outline switched off.',
-      'What that pattern means is not a tuning problem. `apart` is a distance between two quantised colours and is therefore discrete: with a hard probe it takes a handful of values and a transition width has nothing to resolve, and with a soft probe there is signal and noise in the same quantity and softening moves both. A different operator has to make the outline’s strength continuous in the input without turning it back into an edge detector, which is what a difference of Gaussians is and what this design rejected for good reasons.',
+      'What that pattern means is not a tuning problem. The quantity being thresholded is a distance between two rounded colours and is therefore discrete: with a hard probe it takes a handful of values and a transition width has nothing to resolve, and with a soft probe the signal and the noise are the same quantity and softening moves both. So the probe stopped rounding. Reading the flattened colour instead makes the strength continuous in the picture by construction, and it stays a region boundary rather than becoming a difference of Gaussians because of WHICH picture it reads: the bilateral’s piecewise-constant answer, which is where smog, grain and the inside of foliage have already gone.',
     ],
     table: {
       columns: ['what was changed, grain σ 2, p99 out of 6 in', 'facade', 'foliage'],
@@ -364,11 +364,12 @@ function outlineAttempts(): Section {
         ['the threshold centred, half width 0.12', '59', '37'],
         ['both, half width 0.06', '34', '27'],
         ['both, half width 0.10', '25', '21'],
+        ['the probe unrounded, a ramp to the threshold', '15', '16'],
         ['no outline at all', '8', '7'],
       ],
     },
     caveat:
-      'Taken during development by re-running the perturbation against each version; three of the seven rows are gone from the code and cannot be regenerated without reverting it, which is the same footing the transition-floor table on the look page is on. What shipped is the centred threshold and the hard probe, on the evidence of a second measurement: against the previous render of the reference scene, the shape change moves 0.98% of pixels more than eight codes and the probe change moves 1.92%, so the one that is free is the one that costs nothing to look at.',
+      'Taken during development by re-running the perturbation against each version; five of the eight rows are gone from the code and cannot be regenerated without reverting it, which is the same footing the transition-floor table on the look page is on. The last two are what the table above reports today. Every one of them was checked against the look as well as against the number, by rendering the reference scene through both chains and differencing: the shipped operator moves 7.8% of that picture more than eight codes, and what moves is the outlines the old one drew on the quantiser’s grid rather than on the picture.',
     command: 'node tools/style-bench/run.mjs real-flicker',
   };
 }
@@ -886,7 +887,7 @@ export function entries(results: Results): readonly Entry[] {
       hero: {
         name: 'styles',
         caption:
-          'One frame through each style at full quality: 140 ms, 1.3 ms and 0.5 ms at 720p respectively.',
+          'One frame through each style at full quality: 119 ms, 1.2 ms and 0.5 ms at 720p respectively.',
       },
       sections: [
         styleCost(style),
@@ -902,11 +903,12 @@ export function entries(results: Results): readonly Entry[] {
       results: 'tools/style-bench/results-real.json',
       title: 'What survived a real picture, and what did not',
       standfirst:
-        'The three style measurements re-taken against four photographs and two shots of a film, fetched by URL and pinned by hash. One finding reversed sign.',
+        'The three style measurements re-taken against four photographs and two shots of a film, fetched by URL and pinned by hash. One finding reversed sign, and cost a style one of its operators.',
       harness: 'tools/style-bench',
       lede: [
         'Everything on the page before this was measured against a scene drawn by a script, including the finding that decided per-frame stylisation was acceptable at all. This is that page again, with the picture changed and nothing else.',
-        'Three things came back. The cost table does not depend on the content, which was expected to and was warned about. The comic chain is as steady on a photograph as it is on a drawing. And the poster chain, which the scene reports as the second steadiest of the three, amplifies its input by five on a brick wall.',
+        'Three things came back. The cost table does not depend on the content, which was expected to and was warned about. The comic chain is as steady on a photograph as it is on a drawing. And the poster chain, which the scene reports as the second steadiest of the three, amplified its input by five on a brick wall.',
+        'That third one is why the poster style’s outline is a different operator now than it was when this page was first written. The tables below are taken after that change and say so where the old number is worth keeping.',
       ],
       sections: [
         realInputs(),
