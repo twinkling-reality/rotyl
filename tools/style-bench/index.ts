@@ -13,6 +13,7 @@ import { stills } from './stills.ts';
 import { sweep } from './sweep.ts';
 import { figures } from './figures.ts';
 import { lightnessStats } from './lightness.ts';
+import { flicker } from './flicker.ts';
 
 export const MEASUREMENTS = [
   'chain',
@@ -27,6 +28,8 @@ export const MEASUREMENTS = [
   'real-perturbation',
   'real-clips',
   'real-lightness',
+  // Pictures rather than numbers: which pixels move, not how many.
+  'real-flicker',
 ] as const;
 
 export type Measurement = (typeof MEASUREMENTS)[number];
@@ -68,6 +71,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('real-perturbation', () => realPerturbation(dev));
   await step('real-clips', () => realClips(dev));
   await step('real-lightness', () => lightnessStats());
+  await step('real-flicker', () => flicker(dev));
 
   if (failures.length > 0) out['gpu-errors'] = failures;
   dev.destroy();

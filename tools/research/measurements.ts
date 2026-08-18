@@ -347,6 +347,32 @@ function realOutline(real: unknown): Section {
   };
 }
 
+function outlineAttempts(): Section {
+  return {
+    heading: 'Four shapes of fix, and why none of them is the fix',
+    prose: [
+      'The outline compares two quantised colours and thresholds the distance between them, so there are exactly two hard decisions in it and each can be softened independently. All four combinations were measured against the worst picture, and the useful result is the one that says none of them works.',
+      'Softening the neighbour probe buys about a fifth and costs the look, because a soft probe reduces the distance at a genuine boundary as much as it reduces the noise at a marginal one. Centring the threshold’s transition rather than opening at it is free and buys nothing on its own. The two together get within three times of the floor and no closer, and the floor is the same picture with the outline switched off.',
+      'What that pattern means is not a tuning problem. `apart` is a distance between two quantised colours and is therefore discrete: with a hard probe it takes a handful of values and a transition width has nothing to resolve, and with a soft probe there is signal and noise in the same quantity and softening moves both. A different operator has to make the outline’s strength continuous in the input without turning it back into an edge detector, which is what a difference of Gaussians is and what this design rejected for good reasons.',
+    ],
+    table: {
+      columns: ['what was changed, grain σ 2, p99 out of 6 in', 'facade', 'foliage'],
+      rows: [
+        ['nothing, as it was', '85', '61'],
+        ['the probe softened', '69', '46'],
+        ['the threshold centred, half width 0.02', '85', '54'],
+        ['the threshold centred, half width 0.12', '59', '37'],
+        ['both, half width 0.06', '34', '27'],
+        ['both, half width 0.10', '25', '21'],
+        ['no outline at all', '8', '7'],
+      ],
+    },
+    caveat:
+      'Taken during development by re-running the perturbation against each version; three of the seven rows are gone from the code and cannot be regenerated without reverting it, which is the same footing the transition-floor table on the look page is on. What shipped is the centred threshold and the hard probe, on the evidence of a second measurement: against the previous render of the reference scene, the shape change moves 0.98% of pixels more than eight codes and the probe change moves 1.92%, so the one that is free is the one that costs nothing to look at.',
+    command: 'node tools/style-bench/run.mjs real-flicker',
+  };
+}
+
 function realLightness(real: unknown): Section {
   const of = (picture: string, key: string): string =>
     num(real, ['real-lightness', 'pictures', picture, key]).toFixed(3);
@@ -882,7 +908,14 @@ export function entries(results: Results): readonly Entry[] {
         'Everything on the page before this was measured against a scene drawn by a script, including the finding that decided per-frame stylisation was acceptable at all. This is that page again, with the picture changed and nothing else.',
         'Three things came back. The cost table does not depend on the content, which was expected to and was warned about. The comic chain is as steady on a photograph as it is on a drawing. And the poster chain, which the scene reports as the second steadiest of the three, amplifies its input by five on a brick wall.',
       ],
-      sections: [realInputs(), realCost(real), realStability(real), realOutline(real), realLightness(real)],
+      sections: [
+        realInputs(),
+        realCost(real),
+        realStability(real),
+        realOutline(real),
+        outlineAttempts(),
+        realLightness(real),
+      ],
     },
     {
       slug: 'video',

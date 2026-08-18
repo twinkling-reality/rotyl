@@ -14,17 +14,31 @@ export interface Still {
   readonly height: number;
   /** Base64 of tightly packed 8-bit RGB. */
   readonly rgb: string;
+  /** Printed beside the filename by run.mjs, for a picture that carries a figure. */
+  readonly labels?: readonly string[];
 }
 
 const SIZE = { width: 1280, height: 720 };
 
-function toBase64(rgba: Uint8Array): string {
-  const rgb = new Uint8Array((rgba.length / 4) * 3);
-  for (let i = 0, o = 0; i < rgba.length; i += 4, o += 3) {
-    rgb[o] = rgba[i] ?? 0;
-    rgb[o + 1] = rgba[i + 1] ?? 0;
-    rgb[o + 2] = rgba[i + 2] ?? 0;
+/**
+ * Tightly packed 8-bit RGB, base64 encoded, from RGBA or from RGB already.
+ *
+ * `channels` because two callers want it: a texture read comes back with an
+ * alpha nothing here uses, and a diagnostic that composes its own picture has
+ * no reason to add one just to have it dropped again.
+ */
+export function toBase64(source: Uint8Array, channels: 3 | 4 = 4): string {
+  if (channels === 3) return encode(source);
+  const rgb = new Uint8Array((source.length / 4) * 3);
+  for (let i = 0, o = 0; i < source.length; i += 4, o += 3) {
+    rgb[o] = source[i] ?? 0;
+    rgb[o + 1] = source[i + 1] ?? 0;
+    rgb[o + 2] = source[i + 2] ?? 0;
   }
+  return encode(rgb);
+}
+
+function encode(rgb: Uint8Array): string {
   // In chunks: String.fromCharCode with a few million arguments overflows the
   // call stack, and it is the same string either way.
   let binary = '';

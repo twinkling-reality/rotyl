@@ -19,7 +19,7 @@ import { encodePng } from './png.mjs';
 const ALL = ['chain', 'perturbation', 'clips', 'stills', 'sweep', 'figures'];
 // Needs fetch-real.sh to have been run; kept out of `all` so the offline
 // benchmarks stay runnable without a network.
-const REAL = ['real-chain', 'real-perturbation', 'real-clips', 'real-lightness'];
+const REAL = ['real-chain', 'real-perturbation', 'real-clips', 'real-lightness', 'real-flicker'];
 
 const args = process.argv.slice(2);
 const which =
@@ -81,7 +81,7 @@ if (Array.isArray(figures)) {
 }
 
 // Pictures out, so the look can be judged rather than only scored.
-for (const key of ['stills', 'sweep']) {
+for (const key of ['stills', 'sweep', 'real-flicker']) {
   const images = result[key];
   delete result[key];
   if (!Array.isArray(images)) continue;

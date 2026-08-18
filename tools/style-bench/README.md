@@ -23,10 +23,10 @@ node tools/style-bench/run.mjs real        # the same three, on photographs
 ```
 
 `run.mjs` takes any subset: `chain`, `perturbation`, `clips`, `stills`, `sweep`,
-`figures`, and the four that need `fetch-real.sh` to have run: `real-chain`,
-`real-perturbation`, `real-clips`, `real-lightness`. `all` is the first six and
-`real` is the last four, which are kept apart because only one of the two groups
-needs a network. The inputs are gitignored, `results.json` and `results-real.json`
+`figures`, and the five that need `fetch-real.sh` to have run: `real-chain`,
+`real-perturbation`, `real-clips`, `real-lightness`, `real-flicker`. `all` is the
+first six and `real` is the last five, which are kept apart because only one of
+the two groups needs a network. The inputs are gitignored, `results.json` and `results-real.json`
 are not, and the pictures land in `out/`.
 
 Real Chrome and headed, for the reason `playwright.config.ts` gives: bundled
@@ -142,6 +142,14 @@ whole band on an infinitesimal change, that moves the comparison by a fifth of
 the Oklab range, and it crosses the line threshold, so an ink stroke appears at
 full strength. The scene has almost no pixel near a region boundary, and the
 population that flickers is exactly that one.
+
+**Run `real-flicker` before theorising about it.** The stability tables say how
+much moves and never which pixels, and the difference is the whole diagnosis
+here: 2% of pixels sounds like a diffuse shimmer and is not diffuse at all. It
+traces the ink, along every boundary the flatten found marginal. `out/` gets one
+picture per style per photograph, the styled frame at half brightness with
+everything that moved more than eight codes painted over it, and the pair with
+and without the outline settles the question in one look.
 
 **It is not fixed, and the trials page carries why.** Three shapes were tried.
 Softening the neighbour probe cuts the noise and the signal together, which
