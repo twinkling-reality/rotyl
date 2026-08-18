@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { defineConfig, type Plugin } from 'vite';
+import { renderResearchPage } from './tools/research/index.ts';
 
 /**
  * Strip WGSL comments, and keep every newline.
@@ -47,12 +48,39 @@ function wgslComments(): Plugin {
   };
 }
 
+/**
+ * The research page, generated rather than stored.
+ *
+ * It is a static file and not a route: the application bundle is 41 KB gzipped
+ * and this project has twice chosen a smaller dependency over a nicer one, so
+ * documentation does not go in it. Emitting it here rather than checking it in
+ * means the numbers on it cannot disagree with the results files they came
+ * from, and rendering it per request in development means re-running a
+ * benchmark shows up on a refresh.
+ */
+function researchPage(): Plugin {
+  return {
+    name: 'rotyl:research',
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        const path = request.url?.split('?')[0];
+        if (path !== '/research' && path !== '/research.html') return next();
+        response.setHeader('Content-Type', 'text/html; charset=utf-8');
+        response.end(renderResearchPage());
+      });
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'research.html', source: renderResearchPage() });
+    },
+  };
+}
+
 // No Preact plugin: the JSX transform is configured in tsconfig.json
 // ("jsx": "react-jsx", "jsxImportSource": "preact") and Vite's transformer
 // honours it. The plugin exists to add Babel-based Fast Refresh, which is not
 // worth reintroducing Babel to this build for.
 export default defineConfig({
-  plugins: [wgslComments()],
+  plugins: [wgslComments(), researchPage()],
   build: {
     target: 'es2023',
     assetsInlineLimit: 0,

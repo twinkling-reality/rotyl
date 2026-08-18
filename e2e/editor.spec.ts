@@ -138,6 +138,27 @@ test('drags a region with the box tool, and still pans with shift held', async (
   await page.keyboard.up('Shift');
 });
 
+test('offers the research page from the empty state, and generates it from the results', async ({ page }) => {
+  // The page is emitted by a Vite plugin rather than checked in, so "it still
+  // builds" is a claim only an end-to-end request can make. The figures are
+  // read out of the benchmark harnesses' results at generation time: a missing
+  // path throws rather than rendering a blank cell, which makes this a test
+  // that every number on it still has a measurement behind it.
+  await page.goto('/');
+  const link = page.getByRole('link', { name: /what was measured/i });
+  await expect(link).toBeVisible();
+
+  await link.click();
+  await expect(page).toHaveURL(/research\.html$/);
+  await expect(page.getByRole('heading', { name: 'Trials' })).toBeVisible();
+
+  // A figure that came out of style-bench's results, and one out of
+  // video-bench's, so both sources are known to have been read.
+  await expect(page.getByRole('cell', { name: '140 ms' }).first()).toBeVisible();
+  await expect(page.getByRole('cell', { name: '0.9 ms' }).first()).toBeVisible();
+  await expect(page.getByText('undefined')).toHaveCount(0);
+});
+
 test('reveals the style controls only when asked', async ({ page }) => {
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();

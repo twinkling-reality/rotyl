@@ -33,6 +33,16 @@ src/app/       Preact UI
 caught in review. The payoff is concrete: every shader is unit-tested by running
 it for real through Dawn in Node, with no browser and no mocks.
 
+Three things were tried at this layer and dropped, each with a number rather
+than a preference. **React**, at 59.5 KB gzipped against Preact's 6.1 KB, for an
+application whose interface is a canvas and eight buttons. **A WebGL2 fallback**,
+which doubles the shader surface permanently in order to serve browsers that
+will have WebGPU before it is finished. And **Web Workers for export**, which
+measured 50% slower than doing it on the main thread, because moving a
+full-resolution image across the boundary costs more than the parallelism
+returns. Every rejection this project has made is collected, with what decided
+it, on the research page the drop zone links to.
+
 ### The render path
 
 ```
@@ -365,6 +375,23 @@ at 15 KB carrying codecs whose decode has not been measured here.
 What decided all of this, and what it cost to find out, is in
 `tools/video-bench` — including the two numbers that say tracking cannot live in
 the render loop.
+
+### Everything that was measured, on one page
+
+`/research.html`, linked from the empty state. Every figure the benchmarks have
+produced, and every approach that was tried and dropped with the number that
+decided it.
+
+It is GENERATED, at build time, out of the harnesses' own `results.json` — which
+is the point of it rather than a detail of it. Every table in every README here
+is transcribed by hand, and transcription is how "the print chain has never been
+timed" survived three chapters after it stopped being true. A path that no
+longer resolves fails the build; a stale number cannot reach a reader who has no
+way of checking it.
+
+It is a static file and not a route, so it costs the application bundle nothing.
+Vite renders it per request in development and emits it at build, and nothing
+generated is checked in.
 
 ## Measured
 
