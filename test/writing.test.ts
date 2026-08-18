@@ -28,6 +28,16 @@ const BINARY = /\.(woff2|png|jpe?g|mp4|webm|webp|lock)$/;
  */
 const EM_DASH = String.fromCodePoint(0x2014);
 
+/**
+ * A heading as GitHub will link to it: lowercased, punctuation dropped, spaces
+ * to hyphens.
+ */
+const slug = (heading: string): string =>
+  heading
+    .toLowerCase()
+    .replaceAll(/[^\w\- ]/g, '')
+    .replaceAll(' ', '-');
+
 function tracked(): readonly string[] {
   return execFileSync('git', ['ls-files'], { encoding: 'utf8' })
     .split('\n')
@@ -49,6 +59,23 @@ describe('the house voice', () => {
       }
     }
     expect(offences).toEqual([]);
+  });
+
+  it('has no internal link pointing at a heading that is not there', () => {
+    // A contents block is worth having only while it is true, and a README long
+    // enough to need one is long enough that nobody notices when a section gets
+    // renamed underneath it.
+    const broken: string[] = [];
+    for (const path of tracked().filter((candidate) => candidate.endsWith('.md'))) {
+      const text = readFileSync(path, 'utf8');
+      const headings = new Set(
+        [...text.matchAll(/^#{1,6} +(.+?)\s*$/gm)].map((match) => slug(match[1] ?? '')),
+      );
+      for (const [, anchor] of text.matchAll(/\]\(#([^)]+)\)/g)) {
+        if (anchor !== undefined && !headings.has(anchor)) broken.push(`${path} -> #${anchor}`);
+      }
+    }
+    expect(broken).toEqual([]);
   });
 
   it('checks a meaningful number of files', () => {
