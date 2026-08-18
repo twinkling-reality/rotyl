@@ -271,7 +271,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'An anisotropic Kuwahara for the poster flatten',
     verdict: 'rejected',
     evidence:
-      'O(radius²) and 119 ms at 720p; a separable bilateral iterated three times is O(radius) and 1.2',
+      'O(radius²) and 119 ms at 720p; a separable bilateral iterated three times is O(radius) and 1.1',
     where: 'tools/style-bench, measurement 1',
   },
   {

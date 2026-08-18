@@ -887,7 +887,7 @@ export function entries(results: Results): readonly Entry[] {
       hero: {
         name: 'styles',
         caption:
-          'One frame through each style at full quality: 119 ms, 1.2 ms and 0.5 ms at 720p respectively.',
+          'One frame through each style at full quality: 119 ms, 1.1 ms and 0.5 ms at 720p respectively.',
       },
       sections: [
         styleCost(style),

@@ -202,15 +202,15 @@ Median milliseconds, full quality tier, default controls:
 
 | style  | 720p    | 2 MP    | 12 MP | 24 MP |
 | ------ | ------- | ------- | ----- | ----- |
-| comic  | 119.2   | 100.3   | 107.0 | 107.6 |
-| poster | **1.2** | **1.3** | 2.9   | 5.3   |
-| print  | **0.5** | **0.6** | 2.0   | 4.1   |
+| comic  | 119.4   | 100.2   | 106.9 | 107.9 |
+| poster | **1.1** | **1.3** | 2.9   | 4.9   |
+| print  | **0.5** | **0.6** | 1.9   | 3.7   |
 
 The ordering holds at every size, and an earlier version of this table said it
 did not. It reported 25.1 and 13.0 in the 24 MP column and argued from them that
 both cheap styles go superlinear past about 12 megapixels as the working set
 stops fitting anything. Re-taken on a quiet machine the growth from 12 to 24
-megapixels is 1.8 times for twice the pixels, which is sublinear rather than
+megapixels is 1.7 times for twice the pixels, which is sublinear rather than
 super. The old figure was a busy machine, and it survived because nothing
 re-took it. **Check the min against the median before believing a row**, which is
 what that field is in the results file for. Every row above a millisecond here
@@ -248,15 +248,15 @@ output's short edge. Both reproduce here.
 
 | comic, full tier | 720p  | 2 MP  | 12 MP | 24 MP |
 | ---------------- | ----- | ----- | ----- | ----- |
-| detail 0         | 43.2  | 40.7  | 41.5  | 42.5  |
-| detail 0.5       | 119.2 | 100.3 | 107.0 | 107.6 |
-| detail 1         | 49.2  | 203.4 | 349.0 | 349.7 |
+| detail 0         | 43.0  | 40.6  | 41.4  | 42.1  |
+| detail 0.5       | 119.4 | 100.2 | 106.9 | 107.9 |
+| detail 1         | 49.1  | 203.2 | 348.6 | 349.5 |
 
 At 720p and detail 1 the flatten buffer clamps to 720 and the radius falls to
-4.25, so draft, full and export are the same render. 49.3, 49.2, 49.1. At 2 MP
+4.25, so draft, full and export are the same render. 49.2, 49.1, 49.1. At 2 MP
 nothing clamps and the same setting costs four times as much.
 
-**The poster chain is a per-frame budget.** 1.2 ms at 720p against a 33 ms
+**The poster chain is a per-frame budget.** 1.1 ms at 720p against a 33 ms
 frame. Video playback stops being limited by the style.
 
 ## 2. Temporal stability: the assumption was backwards
@@ -372,7 +372,7 @@ The costed answer is the first two together, and neither is expensive:
   [measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took) is
   what that cost.
 
-Whole chain, nine passes, one at output resolution: **1.2 ms at 720p** against
+Whole chain, nine passes, one at output resolution: **1.1 ms at 720p** against
 the comic chain's 119.
 
 ### The measurement that mattered most
