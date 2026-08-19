@@ -61,6 +61,18 @@ export interface VideoSceneOptions {
   readonly through?: number;
 }
 
+/**
+ * The frames a run follows: ascending, contiguous, and starting on the anchor.
+ *
+ * Its own function because it is the one thing here that is arithmetic, and a
+ * test of it should not need a GPU. Everything else in this file is a decoder,
+ * a texture or a model.
+ */
+export function framesToFollow(from: number, through: number | undefined, frameCount: number): number[] {
+  const last = Math.min(through ?? frameCount, frameCount);
+  return Array.from({ length: Math.max(0, last - from) }, (_, index) => from + index);
+}
+
 export class VideoScene implements TrackedScene {
   readonly frames: readonly number[];
 
@@ -81,10 +93,7 @@ export class VideoScene implements TrackedScene {
     this.#provider = provider;
     this.#size = { width, height };
 
-    const last = Math.min(options.through ?? timeline.frameCount, timeline.frameCount);
-    // Ascending and starting with the anchor, which is what the seam asks for
-    // and what keeps the decoder moving forward.
-    this.frames = Array.from({ length: Math.max(0, last - from) }, (_, index) => from + index);
+    this.frames = framesToFollow(from, options.through, timeline.frameCount);
 
     this.#texture = device.createTexture({
       label: 'tracking-source',
