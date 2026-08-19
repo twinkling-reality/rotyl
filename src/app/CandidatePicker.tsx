@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'preact/hooks';
 import type { JSX } from 'preact';
-import type { CoverageMask } from '../core/document/selection-command.ts';
+import { expandCoverage, type CoverageMask } from '../core/document/coverage-mask.ts';
 import type { MaskCandidate } from '../core/perception/mask-candidates.ts';
 
 /**
@@ -81,9 +81,12 @@ function sharedCrop(masks: readonly CoverageMask[]): Crop {
   let y1 = 0;
 
   for (const mask of masks) {
+    // Unpacked here rather than read run by run: this wants the pixel at an
+    // (x, y), it happens once per set of candidates, and there are three.
+    const coverage = expandCoverage(mask);
     for (let y = 0; y < mask.height; y++) {
       for (let x = 0; x < mask.width; x++) {
-        if ((mask.coverage[y * mask.width + x] ?? 0) < SOLID) continue;
+        if ((coverage[y * mask.width + x] ?? 0) < SOLID) continue;
         x0 = Math.min(x0, x / mask.width);
         y0 = Math.min(y0, y / mask.height);
         x1 = Math.max(x1, (x + 1) / mask.width);
@@ -120,6 +123,7 @@ function drawMask(canvas: HTMLCanvasElement, mask: CoverageMask, crop: Crop): vo
 
   const { width, height } = canvas;
   const image = context.createImageData(width, height);
+  const coverage = expandCoverage(mask);
   const source = {
     left: crop.x0 * mask.width,
     top: crop.y0 * mask.height,
@@ -138,7 +142,7 @@ function drawMask(canvas: HTMLCanvasElement, mask: CoverageMask, crop: Crop): vo
       let counted = 0;
       for (let sy = top; sy < Math.min(bottom, mask.height); sy++) {
         for (let sx = left; sx < Math.min(right, mask.width); sx++) {
-          total += mask.coverage[sy * mask.width + sx] ?? 0;
+          total += coverage[sy * mask.width + sx] ?? 0;
           counted++;
         }
       }

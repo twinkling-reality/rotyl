@@ -1,4 +1,4 @@
-import type { CoverageMask } from '../document/selection-command.ts';
+import type { CoverageMask } from '../document/coverage-mask.ts';
 import type { SceneEmbedding } from './segmentation-engine.ts';
 
 /**

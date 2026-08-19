@@ -6,6 +6,7 @@ import type {
   SegmentPrompt,
 } from '../../core/perception/segmentation-engine.ts';
 import { FrameTensorEncoder } from '../../core/perception/frame-tensor.ts';
+import { packCoverage } from '../../core/document/coverage-mask.ts';
 import { edgetamVariant, fetchModel, variantBytes, type ModelVariant } from './model-store.ts';
 
 // The wasm is imported for its URL only. ONNX Runtime resolves it relative to
@@ -276,11 +277,7 @@ export async function loadEdgeTamEngine(options: EdgeTamOptions): Promise<Segmen
       const proposals: MaskProposal[] = [];
       for (let head = 0; head < scores.length; head++) {
         proposals.push({
-          mask: {
-            width: MASK_SIZE,
-            height: MASK_SIZE,
-            coverage: coverageFrom(masks, head * stride),
-          },
+          mask: packCoverage(MASK_SIZE, MASK_SIZE, coverageFrom(masks, head * stride)),
           confidence: scores[head] ?? 0,
         });
       }

@@ -2,6 +2,7 @@ import { MASK_FORMAT } from '../gpu/formats.ts';
 import { ResourcePool } from '../gpu/resource-pool.ts';
 import { FullscreenPass } from '../gpu/fullscreen-pass.ts';
 import type { BrushStroke, SelectionCommand, SelectionRect } from '../document/selection-command.ts';
+import { expandCoverage } from '../document/coverage-mask.ts';
 import type { Dimensions } from '../render/resolution.ts';
 import type { MaskRefiner } from './mask-refiner.ts';
 import colorWgsl from '../color/color.wgsl?raw';
@@ -101,6 +102,17 @@ export class SelectionMask {
   readonly #sampler: GPUSampler;
   /** Bound in the `source` slot when an operation does not use one. */
   readonly #placeholder: GPUTexture;
+
+  /**
+   * Where a packed mask is unpacked to on its way to the GPU.
+   *
+   * Kept and grown rather than allocated per command, because a tracked clip
+   * replays one applyMask per frame it followed the object to and each of them
+   * would otherwise leave 64 KB behind on every rebuild of the mask.
+   * `writeTexture` copies what it is given before it returns, so one buffer
+   * serves every command in a replay.
+   */
+  #expanded = new Uint8Array(0);
 
   constructor(device: GPUDevice, width: number, height: number, imageWidth = width, imageHeight = height) {
     this.#device = device;
@@ -437,9 +449,11 @@ export class SelectionMask {
       format: MASK_FORMAT,
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     });
+    const pixels = mask.width * mask.height;
+    if (this.#expanded.length < pixels) this.#expanded = new Uint8Array(pixels);
     this.#device.queue.writeTexture(
       { texture: staging },
-      mask.coverage,
+      expandCoverage(mask, this.#expanded),
       { bytesPerRow: mask.width, rowsPerImage: mask.height },
       { width: mask.width, height: mask.height },
     );

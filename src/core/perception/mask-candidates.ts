@@ -1,4 +1,4 @@
-import type { CoverageMask } from '../document/selection-command.ts';
+import { expandCoverage, packedArea, type CoverageMask } from '../document/coverage-mask.ts';
 import type { MaskProposal } from './segmentation-engine.ts';
 
 /**
@@ -54,12 +54,9 @@ const EMPTY_AREA = 0.0005;
  */
 const SAME_ANSWER_IOU = 0.9;
 
+/** Read off the packed mask, which is a run at a time rather than a pixel. */
 function solidArea(mask: CoverageMask): number {
-  let inside = 0;
-  for (const value of mask.coverage) {
-    if (value >= SOLID) inside++;
-  }
-  return inside / Math.max(1, mask.coverage.length);
+  return packedArea(mask, SOLID);
 }
 
 function overlap(a: CoverageMask, b: CoverageMask): number {
@@ -67,11 +64,16 @@ function overlap(a: CoverageMask, b: CoverageMask): number {
   // compared this way and are certainly not duplicates of each other.
   if (a.width !== b.width || a.height !== b.height) return 0;
 
+  // Expanded rather than walked packed: this wants the two masks in step at
+  // the same pixel, and there are three candidates a click, so the two arrays
+  // it costs are cheaper than the code that would avoid them.
+  const left = expandCoverage(a);
+  const right = expandCoverage(b);
   let intersection = 0;
   let union = 0;
-  for (let i = 0; i < a.coverage.length; i++) {
-    const inA = (a.coverage[i] ?? 0) >= SOLID;
-    const inB = (b.coverage[i] ?? 0) >= SOLID;
+  for (let i = 0; i < left.length; i++) {
+    const inA = (left[i] ?? 0) >= SOLID;
+    const inB = (right[i] ?? 0) >= SOLID;
     if (inA && inB) intersection++;
     if (inA || inB) union++;
   }

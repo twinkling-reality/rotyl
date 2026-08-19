@@ -1,5 +1,5 @@
 import { DEFAULT_REFINE_SETTINGS } from '../mask/refine-params.ts';
-import type { CoverageMask } from '../document/selection-command.ts';
+import type { CoverageMask } from '../document/coverage-mask.ts';
 import type { RefineSettings } from '../mask/refine-params.ts';
 import type { SelectionDocument } from '../document/selection-document.ts';
 import type { SceneEmbedding } from './segmentation-engine.ts';
