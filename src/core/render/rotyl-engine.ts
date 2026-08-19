@@ -8,6 +8,7 @@ import {
   type StrokePoint,
 } from '../document/selection-command.ts';
 import { SelectionMask, type MaskReplayContext } from '../mask/selection-mask.ts';
+import { packCoverage, type CoverageMask } from '../document/coverage-mask.ts';
 import { MaskRefiner } from '../mask/mask-refiner.ts';
 import {
   defaultControls,
@@ -25,6 +26,47 @@ import type { SceneFrame } from '../perception/segmentation-engine.ts';
 import type { SelectionCommand, SelectionRect } from '../document/selection-command.ts';
 
 export type BrushMode = 'paint' | 'erase';
+
+/**
+ * The square a tracker is seeded at, which is the square the model answers at.
+ *
+ * `edgetam-engine.ts` and `edgetam-tracker.ts` both work here, and every mask
+ * in the command log is this size, so a seed at any other resolution would only
+ * be resampled again on its way in.
+ */
+const SEED_SIZE = 256;
+
+/**
+ * A mask at its own resolution, averaged down to a square.
+ *
+ * Its own function because it is arithmetic over bytes and belongs nowhere near
+ * a GPU: what it does is answer "how much of this cell is selected", which is
+ * exactly what coverage means, at whatever ratio the two sizes happen to be in.
+ */
+function boxDownsample(
+  bytes: Uint8Array,
+  stride: number,
+  width: number,
+  height: number,
+  size: number,
+): Uint8Array {
+  const out = new Uint8Array(size * size);
+  for (let y = 0; y < size; y++) {
+    const top = Math.floor((y * height) / size);
+    const bottom = Math.max(top + 1, Math.floor(((y + 1) * height) / size));
+    for (let x = 0; x < size; x++) {
+      const left = Math.floor((x * width) / size);
+      const right = Math.max(left + 1, Math.floor(((x + 1) * width) / size));
+      let total = 0;
+      for (let row = top; row < bottom; row++) {
+        const at = row * stride;
+        for (let column = left; column < right; column++) total += bytes[at + column] ?? 0;
+      }
+      out[y * size + x] = Math.round(total / ((bottom - top) * (right - left)));
+    }
+  }
+  return out;
+}
 
 interface LiveStroke {
   readonly mode: BrushMode;
@@ -495,6 +537,59 @@ export class RotylEngine {
   /** Force the next frame to redraw the canvas, after a resize or a context reconfigure. */
   invalidateDisplay(): void {
     this.#displayDirty = true;
+  }
+
+  /**
+   * The selection as it stands on this frame, as something a tracker can be
+   * seeded from.
+   *
+   * READ BACK RATHER THAN REBUILT, and that is the point. What gets followed is
+   * the answer and not the question: by the time anybody presses Track they
+   * have clicked, chosen between the three readings of that click, and possibly
+   * brushed the result. Only the mask knows all of that. Rebuilding it from the
+   * command log here would be a second implementation of the one thing the log
+   * exists to have exactly one of.
+   *
+   * AT THE ENGINE'S OWN 256 PX, because the model answers there and a seed is
+   * on its way to a memory encoder rather than to a screen. Averaged down
+   * rather than sampled, so a boundary that falls between two cells lands in
+   * the right one; nearest at these ratios moves an edge by up to eight source
+   * pixels on a large photograph.
+   *
+   * The mask is brought up to date first. A run can start on a frame whose last
+   * command has not been rendered yet, and a seed one edit behind is a tracker
+   * following what the user asked for a moment ago.
+   */
+  async readSelection(size = SEED_SIZE): Promise<CoverageMask | undefined> {
+    const media = this.#media;
+    if (!media) return undefined;
+
+    const { width, height } = media.mask;
+    // copyTextureToBuffer insists on 256-byte rows, so a mask of any width
+    // arrives padded and has to be read a row at a time.
+    const stride = Math.ceil(width / 256) * 256;
+    const readback = this.#device.createBuffer({
+      label: 'selection-readback',
+      size: stride * height,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
+
+    const encoder = this.#device.createCommandEncoder({ label: 'read-selection' });
+    this.#updateMask(encoder, media);
+    encoder.copyTextureToBuffer(
+      { texture: media.mask.texture },
+      { buffer: readback, bytesPerRow: stride },
+      { width, height },
+    );
+    this.#device.queue.submit([encoder.finish()]);
+
+    try {
+      await readback.mapAsync(GPUMapMode.READ);
+      const bytes = new Uint8Array(readback.getMappedRange());
+      return packCoverage(size, size, boxDownsample(bytes, stride, width, height, size));
+    } finally {
+      readback.destroy();
+    }
   }
 
   /**
