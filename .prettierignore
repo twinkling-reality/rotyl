@@ -14,3 +14,9 @@ tools/style-bench/real
 # Committed, but written by the harness rather than by a person.
 tools/style-bench/figures
 tools/video-bench/results.json
+# The stage table, and the probes test/memory-bank.test.ts drives the
+# TypeScript over. The fixture is written on one line on purpose: it is forty
+# thousand numbers, and a formatter would make every re-take a forty-thousand
+# line diff of values nobody reads by eye.
+tools/edgetam-export/host.json
+tools/edgetam-export/host-fixture.json

@@ -1,0 +1,2580 @@
+{
+  "crossing": {
+    "stages": {
+      "vision position encoding": 6.854534149169922e-07,
+      "the published encoder's own no-memory embedding": 1.6570091247558594e-05,
+      "the frame's features, token-major, no-memory off": 1.6570091247558594e-05,
+      "the bank, laid out against the reference's own": 0.0,
+      "the bank's positions, with the temporal row on": 0.0,
+      "the conditioned features, off a laid-out bank": 1.049041748046875e-05,
+      "the mask a memory is encoded from": 3.814697265625e-06,
+      "the same, resampled nearest instead of bilinear": 18.72307014465332,
+      "the published decoder, one point labelled -1": 4.1961669921875e-05,
+      "the same, with no prompt tensors at all": 1.4556045532226562
+    },
+    "differences": {
+      "as it is built": {
+        "worst_agreement": 0.9832,
+        "mean_agreement": 0.9954,
+        "worst_iou": 0.9857,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9897,
+            "distractor": 0.0,
+            "area": 6674,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9907,
+            "distractor": 0.0,
+            "area": 6677,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9929,
+            "distractor": 0.0,
+            "area": 6650,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9857,
+            "distractor": 0.0,
+            "area": 6717,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.987,
+            "distractor": 0.0,
+            "area": 6704,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9916,
+            "distractor": 0.0,
+            "area": 6669,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9861,
+            "distractor": 0.0,
+            "area": 6694,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9934,
+            "distractor": 0.0,
+            "area": 6605,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9922,
+            "distractor": 0.0,
+            "area": 6667,
+            "present": true
+          }
+        ]
+      },
+      "no padding point": {
+        "worst_agreement": 0.9832,
+        "mean_agreement": 0.9936,
+        "worst_iou": 0.9777,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9906,
+            "distractor": 0.0,
+            "area": 6668,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9903,
+            "distractor": 0.0,
+            "area": 6682,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9925,
+            "distractor": 0.0,
+            "area": 6655,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9847,
+            "distractor": 0.0,
+            "area": 6722,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9862,
+            "distractor": 0.0,
+            "area": 6712,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9907,
+            "distractor": 0.0,
+            "area": 6673,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9858,
+            "distractor": 0.0,
+            "area": 6694,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9867,
+            "distractor": 0.0,
+            "area": 6684,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9777,
+            "distractor": 0.0,
+            "area": 6774,
+            "present": true
+          }
+        ]
+      },
+      "nearest, not bilinear": {
+        "worst_agreement": 0.9841,
+        "mean_agreement": 0.9935,
+        "worst_iou": 0.9812,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.991,
+            "distractor": 0.0,
+            "area": 6665,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9924,
+            "distractor": 0.0,
+            "area": 6668,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9922,
+            "distractor": 0.0,
+            "area": 6643,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9857,
+            "distractor": 0.0,
+            "area": 6713,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9876,
+            "distractor": 0.0,
+            "area": 6702,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9918,
+            "distractor": 0.0,
+            "area": 6660,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.986,
+            "distractor": 0.0,
+            "area": 6673,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9928,
+            "distractor": 0.0,
+            "area": 6605,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9812,
+            "distractor": 0.0,
+            "area": 6750,
+            "present": true
+          }
+        ]
+      },
+      "a sliding bank, no anchor": {
+        "worst_agreement": 0.9841,
+        "mean_agreement": 0.9964,
+        "worst_iou": 0.9835,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9892,
+            "distractor": 0.0,
+            "area": 6675,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9898,
+            "distractor": 0.0,
+            "area": 6687,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9922,
+            "distractor": 0.0,
+            "area": 6651,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9835,
+            "distractor": 0.0,
+            "area": 6728,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9859,
+            "distractor": 0.0,
+            "area": 6716,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9882,
+            "distractor": 0.0,
+            "area": 6698,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9861,
+            "distractor": 0.0,
+            "area": 6696,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9934,
+            "distractor": 0.0,
+            "area": 6609,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9921,
+            "distractor": 0.0,
+            "area": 6666,
+            "present": true
+          }
+        ]
+      },
+      "no absent gate": {
+        "worst_agreement": 0.9832,
+        "mean_agreement": 0.9954,
+        "worst_iou": 0.9857,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9897,
+            "distractor": 0.0,
+            "area": 6674,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9907,
+            "distractor": 0.0,
+            "area": 6677,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9929,
+            "distractor": 0.0,
+            "area": 6650,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9857,
+            "distractor": 0.0,
+            "area": 6717,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.987,
+            "distractor": 0.0,
+            "area": 6704,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9916,
+            "distractor": 0.0,
+            "area": 6669,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9861,
+            "distractor": 0.0,
+            "area": 6694,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9934,
+            "distractor": 0.0,
+            "area": 6605,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9922,
+            "distractor": 0.0,
+            "area": 6667,
+            "present": true
+          }
+        ]
+      },
+      "the seed as raw logits": {
+        "worst_agreement": 1.0,
+        "mean_agreement": 1.0,
+        "worst_iou": 0.9819,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9885,
+            "distractor": 0.0,
+            "area": 6692,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9853,
+            "distractor": 0.0,
+            "area": 6720,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9927,
+            "distractor": 0.0,
+            "area": 6666,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9819,
+            "distractor": 0.0,
+            "area": 6743,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9935,
+            "distractor": 0.0,
+            "area": 6650,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9937,
+            "distractor": 0.0,
+            "area": 6595,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9851,
+            "distractor": 0.0,
+            "area": 6705,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9937,
+            "distractor": 0.0,
+            "area": 6607,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9921,
+            "distractor": 0.0,
+            "area": 6672,
+            "present": true
+          }
+        ]
+      }
+    }
+  },
+  "occlusion": {
+    "stages": {
+      "vision position encoding": 6.854534149169922e-07,
+      "the published encoder's own no-memory embedding": 2.110004425048828e-05,
+      "the frame's features, token-major, no-memory off": 2.110004425048828e-05,
+      "the bank, laid out against the reference's own": 0.0,
+      "the bank's positions, with the temporal row on": 0.0,
+      "the conditioned features, off a laid-out bank": 2.205371856689453e-05,
+      "the mask a memory is encoded from": 3.814697265625e-06,
+      "the same, resampled nearest instead of bilinear": 19.956195831298828,
+      "the published decoder, one point labelled -1": 0.000125885009765625,
+      "the same, with no prompt tensors at all": 4.090457916259766
+    },
+    "differences": {
+      "as it is built": {
+        "worst_agreement": 0.9125,
+        "mean_agreement": 0.9925,
+        "worst_iou": 0.9819,
+        "swapped": [],
+        "absent": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9828,
+            "distractor": 0.0,
+            "area": 6733,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9874,
+            "distractor": 0.0,
+            "area": 6677,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9819,
+            "distractor": 0.0,
+            "area": 6745,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9838,
+            "distractor": 0.0,
+            "area": 6732,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": false,
+            "target": 0.9518,
+            "distractor": 0.0,
+            "area": 6534,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": false,
+            "target": 0.5646,
+            "distractor": 0.0,
+            "area": 3941,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": false,
+            "target": 0.1306,
+            "distractor": 0.0,
+            "area": 969,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 9,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 10,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 11,
+            "visible": true,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 12,
+            "visible": true,
+            "whole": false,
+            "target": 0.5324,
+            "distractor": 0.0,
+            "area": 3529,
+            "present": true
+          },
+          {
+            "frame": 13,
+            "visible": true,
+            "whole": false,
+            "target": 0.952,
+            "distractor": 0.0,
+            "area": 6399,
+            "present": true
+          },
+          {
+            "frame": 14,
+            "visible": true,
+            "whole": true,
+            "target": 0.9905,
+            "distractor": 0.0,
+            "area": 6626,
+            "present": true
+          },
+          {
+            "frame": 15,
+            "visible": true,
+            "whole": true,
+            "target": 0.9904,
+            "distractor": 0.0,
+            "area": 6645,
+            "present": true
+          }
+        ]
+      },
+      "no padding point": {
+        "worst_agreement": 0.9916,
+        "mean_agreement": 0.9982,
+        "worst_iou": 0.9809,
+        "swapped": [],
+        "absent": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9825,
+            "distractor": 0.0,
+            "area": 6737,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9876,
+            "distractor": 0.0,
+            "area": 6678,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9809,
+            "distractor": 0.0,
+            "area": 6752,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9831,
+            "distractor": 0.0,
+            "area": 6737,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": false,
+            "target": 0.9512,
+            "distractor": 0.0,
+            "area": 6540,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": false,
+            "target": 0.5644,
+            "distractor": 0.0,
+            "area": 3947,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": false,
+            "target": 0.1308,
+            "distractor": 0.0,
+            "area": 906,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 9,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 10,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 11,
+            "visible": true,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 12,
+            "visible": true,
+            "whole": false,
+            "target": 0.5397,
+            "distractor": 0.0,
+            "area": 3582,
+            "present": true
+          },
+          {
+            "frame": 13,
+            "visible": true,
+            "whole": false,
+            "target": 0.9533,
+            "distractor": 0.0,
+            "area": 6390,
+            "present": true
+          },
+          {
+            "frame": 14,
+            "visible": true,
+            "whole": true,
+            "target": 0.9911,
+            "distractor": 0.0,
+            "area": 6630,
+            "present": true
+          },
+          {
+            "frame": 15,
+            "visible": true,
+            "whole": true,
+            "target": 0.991,
+            "distractor": 0.0,
+            "area": 6651,
+            "present": true
+          }
+        ]
+      },
+      "nearest, not bilinear": {
+        "worst_agreement": 0.9592,
+        "mean_agreement": 0.9922,
+        "worst_iou": 0.9851,
+        "swapped": [],
+        "absent": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9851,
+            "distractor": 0.0,
+            "area": 6719,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9894,
+            "distractor": 0.0,
+            "area": 6670,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9851,
+            "distractor": 0.0,
+            "area": 6723,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9864,
+            "distractor": 0.0,
+            "area": 6712,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": false,
+            "target": 0.9585,
+            "distractor": 0.0,
+            "area": 6489,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": false,
+            "target": 0.5671,
+            "distractor": 0.0,
+            "area": 3912,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": false,
+            "target": 0.131,
+            "distractor": 0.0,
+            "area": 894,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 9,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 10,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 11,
+            "visible": true,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 12,
+            "visible": true,
+            "whole": false,
+            "target": 0.5475,
+            "distractor": 0.0001,
+            "area": 3655,
+            "present": true
+          },
+          {
+            "frame": 13,
+            "visible": true,
+            "whole": false,
+            "target": 0.9493,
+            "distractor": 0.0,
+            "area": 6365,
+            "present": true
+          },
+          {
+            "frame": 14,
+            "visible": true,
+            "whole": true,
+            "target": 0.9862,
+            "distractor": 0.0,
+            "area": 6583,
+            "present": true
+          },
+          {
+            "frame": 15,
+            "visible": true,
+            "whole": true,
+            "target": 0.9892,
+            "distractor": 0.0,
+            "area": 6615,
+            "present": true
+          }
+        ]
+      },
+      "a sliding bank, no anchor": {
+        "worst_agreement": 0.9935,
+        "mean_agreement": 0.9978,
+        "worst_iou": 0.9822,
+        "swapped": [],
+        "absent": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9822,
+            "distractor": 0.0,
+            "area": 6735,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9869,
+            "distractor": 0.0,
+            "area": 6691,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9922,
+            "distractor": 0.0,
+            "area": 6673,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9823,
+            "distractor": 0.0,
+            "area": 6740,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": false,
+            "target": 0.9517,
+            "distractor": 0.0,
+            "area": 6537,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": false,
+            "target": 0.5645,
+            "distractor": 0.0,
+            "area": 3946,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": false,
+            "target": 0.1308,
+            "distractor": 0.0,
+            "area": 905,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 9,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 10,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 11,
+            "visible": true,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 12,
+            "visible": true,
+            "whole": false,
+            "target": 0.5329,
+            "distractor": 0.0,
+            "area": 3532,
+            "present": true
+          },
+          {
+            "frame": 13,
+            "visible": true,
+            "whole": false,
+            "target": 0.9522,
+            "distractor": 0.0,
+            "area": 6400,
+            "present": true
+          },
+          {
+            "frame": 14,
+            "visible": true,
+            "whole": true,
+            "target": 0.9907,
+            "distractor": 0.0,
+            "area": 6627,
+            "present": true
+          },
+          {
+            "frame": 15,
+            "visible": true,
+            "whole": true,
+            "target": 0.9903,
+            "distractor": 0.0,
+            "area": 6646,
+            "present": true
+          }
+        ]
+      },
+      "no absent gate": {
+        "worst_agreement": 0.9125,
+        "mean_agreement": 0.9886,
+        "worst_iou": 0.9793,
+        "swapped": [],
+        "absent": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9828,
+            "distractor": 0.0,
+            "area": 6733,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9874,
+            "distractor": 0.0,
+            "area": 6677,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9819,
+            "distractor": 0.0,
+            "area": 6745,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9838,
+            "distractor": 0.0,
+            "area": 6732,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": false,
+            "target": 0.9518,
+            "distractor": 0.0,
+            "area": 6534,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": false,
+            "target": 0.5646,
+            "distractor": 0.0,
+            "area": 3941,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": false,
+            "target": 0.1306,
+            "distractor": 0.0,
+            "area": 969,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 9,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 10,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 11,
+            "visible": true,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 12,
+            "visible": true,
+            "whole": false,
+            "target": 0.5573,
+            "distractor": 0.0,
+            "area": 3728,
+            "present": true
+          },
+          {
+            "frame": 13,
+            "visible": true,
+            "whole": false,
+            "target": 0.9459,
+            "distractor": 0.0,
+            "area": 6428,
+            "present": true
+          },
+          {
+            "frame": 14,
+            "visible": true,
+            "whole": true,
+            "target": 0.9793,
+            "distractor": 0.0,
+            "area": 6696,
+            "present": true
+          },
+          {
+            "frame": 15,
+            "visible": true,
+            "whole": true,
+            "target": 0.9852,
+            "distractor": 0.0,
+            "area": 6688,
+            "present": true
+          }
+        ]
+      },
+      "the seed as raw logits": {
+        "worst_agreement": 1.0,
+        "mean_agreement": 1.0,
+        "worst_iou": 0.9821,
+        "swapped": [],
+        "absent": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9831,
+            "distractor": 0.0,
+            "area": 6733,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.988,
+            "distractor": 0.0,
+            "area": 6677,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9821,
+            "distractor": 0.0,
+            "area": 6744,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9841,
+            "distractor": 0.0,
+            "area": 6728,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": false,
+            "target": 0.9528,
+            "distractor": 0.0,
+            "area": 6527,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": false,
+            "target": 0.5636,
+            "distractor": 0.0,
+            "area": 3954,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": false,
+            "target": 0.1308,
+            "distractor": 0.0,
+            "area": 906,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 9,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 10,
+            "visible": false,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 11,
+            "visible": true,
+            "whole": false,
+            "target": 0.0,
+            "distractor": 0.0,
+            "area": 0,
+            "present": false
+          },
+          {
+            "frame": 12,
+            "visible": true,
+            "whole": false,
+            "target": 0.5349,
+            "distractor": 0.0,
+            "area": 3545,
+            "present": true
+          },
+          {
+            "frame": 13,
+            "visible": true,
+            "whole": false,
+            "target": 0.9528,
+            "distractor": 0.0,
+            "area": 6396,
+            "present": true
+          },
+          {
+            "frame": 14,
+            "visible": true,
+            "whole": true,
+            "target": 0.9892,
+            "distractor": 0.0,
+            "area": 6639,
+            "present": true
+          },
+          {
+            "frame": 15,
+            "visible": true,
+            "whole": true,
+            "target": 0.9906,
+            "distractor": 0.0,
+            "area": 6648,
+            "present": true
+          }
+        ]
+      }
+    }
+  },
+  "blur": {
+    "stages": {
+      "vision position encoding": 6.854534149169922e-07,
+      "the published encoder's own no-memory embedding": 1.7821788787841797e-05,
+      "the frame's features, token-major, no-memory off": 1.7821788787841797e-05,
+      "the bank, laid out against the reference's own": 0.0,
+      "the bank's positions, with the temporal row on": 0.0,
+      "the conditioned features, off a laid-out bank": 1.0311603546142578e-05,
+      "the mask a memory is encoded from": 3.814697265625e-06,
+      "the same, resampled nearest instead of bilinear": 14.448577880859375,
+      "the published decoder, one point labelled -1": 3.24249267578125e-05,
+      "the same, with no prompt tensors at all": 1.6582202911376953
+    },
+    "differences": {
+      "as it is built": {
+        "worst_agreement": 0.9793,
+        "mean_agreement": 0.9844,
+        "worst_iou": 0.9076,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9343,
+            "distractor": 0.0,
+            "area": 7062,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9192,
+            "distractor": 0.0,
+            "area": 7203,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9275,
+            "distractor": 0.0,
+            "area": 7143,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9153,
+            "distractor": 0.0,
+            "area": 7238,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9076,
+            "distractor": 0.0,
+            "area": 7295,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9656,
+            "distractor": 0.0,
+            "area": 6810,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9572,
+            "distractor": 0.0,
+            "area": 6880,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9287,
+            "distractor": 0.0,
+            "area": 7134,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.908,
+            "distractor": 0.0,
+            "area": 7296,
+            "present": true
+          }
+        ]
+      },
+      "no padding point": {
+        "worst_agreement": 0.968,
+        "mean_agreement": 0.9824,
+        "worst_iou": 0.906,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9348,
+            "distractor": 0.0,
+            "area": 7060,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9182,
+            "distractor": 0.0,
+            "area": 7211,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.928,
+            "distractor": 0.0,
+            "area": 7139,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.914,
+            "distractor": 0.0,
+            "area": 7248,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9065,
+            "distractor": 0.0,
+            "area": 7304,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9285,
+            "distractor": 0.0,
+            "area": 7125,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9167,
+            "distractor": 0.0,
+            "area": 7221,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9261,
+            "distractor": 0.0,
+            "area": 7154,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.906,
+            "distractor": 0.0,
+            "area": 7312,
+            "present": true
+          }
+        ]
+      },
+      "nearest, not bilinear": {
+        "worst_agreement": 0.9741,
+        "mean_agreement": 0.9824,
+        "worst_iou": 0.9114,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9353,
+            "distractor": 0.0,
+            "area": 7048,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9191,
+            "distractor": 0.0,
+            "area": 7204,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9267,
+            "distractor": 0.0,
+            "area": 7149,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9138,
+            "distractor": 0.0,
+            "area": 7250,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9383,
+            "distractor": 0.0,
+            "area": 7048,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9647,
+            "distractor": 0.0,
+            "area": 6794,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9552,
+            "distractor": 0.0,
+            "area": 6868,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9298,
+            "distractor": 0.0,
+            "area": 7123,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9114,
+            "distractor": 0.0,
+            "area": 7269,
+            "present": true
+          }
+        ]
+      },
+      "a sliding bank, no anchor": {
+        "worst_agreement": 0.9493,
+        "mean_agreement": 0.9784,
+        "worst_iou": 0.9107,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9326,
+            "distractor": 0.0,
+            "area": 7075,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9161,
+            "distractor": 0.0,
+            "area": 7230,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9597,
+            "distractor": 0.0,
+            "area": 6893,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9137,
+            "distractor": 0.0,
+            "area": 7242,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9371,
+            "distractor": 0.0,
+            "area": 7055,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9642,
+            "distractor": 0.0,
+            "area": 6812,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.959,
+            "distractor": 0.0,
+            "area": 6853,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9328,
+            "distractor": 0.0,
+            "area": 7100,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9107,
+            "distractor": 0.0,
+            "area": 7275,
+            "present": true
+          }
+        ]
+      },
+      "no absent gate": {
+        "worst_agreement": 0.9793,
+        "mean_agreement": 0.9844,
+        "worst_iou": 0.9076,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9343,
+            "distractor": 0.0,
+            "area": 7062,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9192,
+            "distractor": 0.0,
+            "area": 7203,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9275,
+            "distractor": 0.0,
+            "area": 7143,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9153,
+            "distractor": 0.0,
+            "area": 7238,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9076,
+            "distractor": 0.0,
+            "area": 7295,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9656,
+            "distractor": 0.0,
+            "area": 6810,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9572,
+            "distractor": 0.0,
+            "area": 6880,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9287,
+            "distractor": 0.0,
+            "area": 7134,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.908,
+            "distractor": 0.0,
+            "area": 7296,
+            "present": true
+          }
+        ]
+      },
+      "the seed as raw logits": {
+        "worst_agreement": 1.0,
+        "mean_agreement": 1.0,
+        "worst_iou": 0.8926,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9188,
+            "distractor": 0.0,
+            "area": 7192,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9058,
+            "distractor": 0.0,
+            "area": 7312,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9099,
+            "distractor": 0.0,
+            "area": 7281,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.8983,
+            "distractor": 0.0,
+            "area": 7375,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9219,
+            "distractor": 0.0,
+            "area": 7174,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9508,
+            "distractor": 0.0,
+            "area": 6941,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9459,
+            "distractor": 0.0,
+            "area": 6971,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9182,
+            "distractor": 0.0,
+            "area": 7215,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.8926,
+            "distractor": 0.0,
+            "area": 7422,
+            "present": true
+          }
+        ]
+      }
+    }
+  },
+  "lighting": {
+    "stages": {
+      "vision position encoding": 6.854534149169922e-07,
+      "the published encoder's own no-memory embedding": 1.7896294593811035e-05,
+      "the frame's features, token-major, no-memory off": 1.7896294593811035e-05,
+      "the bank, laid out against the reference's own": 0.0,
+      "the bank's positions, with the temporal row on": 0.0,
+      "the conditioned features, off a laid-out bank": 9.655952453613281e-06,
+      "the mask a memory is encoded from": 3.814697265625e-06,
+      "the same, resampled nearest instead of bilinear": 19.494887351989746,
+      "the published decoder, one point labelled -1": 4.38690185546875e-05,
+      "the same, with no prompt tensors at all": 2.1429386138916016
+    },
+    "differences": {
+      "as it is built": {
+        "worst_agreement": 0.9889,
+        "mean_agreement": 0.9948,
+        "worst_iou": 0.9845,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9897,
+            "distractor": 0.0,
+            "area": 6676,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9909,
+            "distractor": 0.0,
+            "area": 6676,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9928,
+            "distractor": 0.0,
+            "area": 6653,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9845,
+            "distractor": 0.0,
+            "area": 6723,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9875,
+            "distractor": 0.0,
+            "area": 6701,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9919,
+            "distractor": 0.0,
+            "area": 6669,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9889,
+            "distractor": 0.0,
+            "area": 6679,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.985,
+            "distractor": 0.0,
+            "area": 6706,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9875,
+            "distractor": 0.0,
+            "area": 6707,
+            "present": true
+          }
+        ]
+      },
+      "no padding point": {
+        "worst_agreement": 0.9906,
+        "mean_agreement": 0.9951,
+        "worst_iou": 0.9835,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.99,
+            "distractor": 0.0,
+            "area": 6670,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.99,
+            "distractor": 0.0,
+            "area": 6682,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9923,
+            "distractor": 0.0,
+            "area": 6656,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9835,
+            "distractor": 0.0,
+            "area": 6730,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9875,
+            "distractor": 0.0,
+            "area": 6701,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9916,
+            "distractor": 0.0,
+            "area": 6671,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9892,
+            "distractor": 0.0,
+            "area": 6679,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9854,
+            "distractor": 0.0,
+            "area": 6705,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9878,
+            "distractor": 0.0,
+            "area": 6705,
+            "present": true
+          }
+        ]
+      },
+      "nearest, not bilinear": {
+        "worst_agreement": 0.9879,
+        "mean_agreement": 0.9939,
+        "worst_iou": 0.985,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9907,
+            "distractor": 0.0,
+            "area": 6663,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9922,
+            "distractor": 0.0,
+            "area": 6665,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9929,
+            "distractor": 0.0,
+            "area": 6646,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9851,
+            "distractor": 0.0,
+            "area": 6717,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9881,
+            "distractor": 0.0,
+            "area": 6695,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9928,
+            "distractor": 0.0,
+            "area": 6661,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.99,
+            "distractor": 0.0,
+            "area": 6668,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.985,
+            "distractor": 0.0,
+            "area": 6700,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9878,
+            "distractor": 0.0,
+            "area": 6705,
+            "present": true
+          }
+        ]
+      },
+      "a sliding bank, no anchor": {
+        "worst_agreement": 0.9916,
+        "mean_agreement": 0.9964,
+        "worst_iou": 0.9812,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9892,
+            "distractor": 0.0,
+            "area": 6675,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9904,
+            "distractor": 0.0,
+            "area": 6681,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9926,
+            "distractor": 0.0,
+            "area": 6652,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9812,
+            "distractor": 0.0,
+            "area": 6744,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.986,
+            "distractor": 0.0,
+            "area": 6713,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9895,
+            "distractor": 0.0,
+            "area": 6685,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9885,
+            "distractor": 0.0,
+            "area": 6682,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.985,
+            "distractor": 0.0,
+            "area": 6706,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.987,
+            "distractor": 0.0,
+            "area": 6710,
+            "present": true
+          }
+        ]
+      },
+      "no absent gate": {
+        "worst_agreement": 0.9889,
+        "mean_agreement": 0.9948,
+        "worst_iou": 0.9845,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9897,
+            "distractor": 0.0,
+            "area": 6676,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9909,
+            "distractor": 0.0,
+            "area": 6676,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9928,
+            "distractor": 0.0,
+            "area": 6653,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9845,
+            "distractor": 0.0,
+            "area": 6723,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9875,
+            "distractor": 0.0,
+            "area": 6701,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9919,
+            "distractor": 0.0,
+            "area": 6669,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9889,
+            "distractor": 0.0,
+            "area": 6679,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.985,
+            "distractor": 0.0,
+            "area": 6706,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9875,
+            "distractor": 0.0,
+            "area": 6707,
+            "present": true
+          }
+        ]
+      },
+      "the seed as raw logits": {
+        "worst_agreement": 1.0,
+        "mean_agreement": 1.0,
+        "worst_iou": 0.9794,
+        "swapped": [],
+        "absent": [],
+        "frames": [
+          {
+            "frame": 1,
+            "visible": true,
+            "whole": true,
+            "target": 0.9885,
+            "distractor": 0.0,
+            "area": 6690,
+            "present": true
+          },
+          {
+            "frame": 2,
+            "visible": true,
+            "whole": true,
+            "target": 0.9862,
+            "distractor": 0.0,
+            "area": 6714,
+            "present": true
+          },
+          {
+            "frame": 3,
+            "visible": true,
+            "whole": true,
+            "target": 0.9915,
+            "distractor": 0.0,
+            "area": 6666,
+            "present": true
+          },
+          {
+            "frame": 4,
+            "visible": true,
+            "whole": true,
+            "target": 0.9794,
+            "distractor": 0.0,
+            "area": 6758,
+            "present": true
+          },
+          {
+            "frame": 5,
+            "visible": true,
+            "whole": true,
+            "target": 0.9828,
+            "distractor": 0.0,
+            "area": 6737,
+            "present": true
+          },
+          {
+            "frame": 6,
+            "visible": true,
+            "whole": true,
+            "target": 0.9952,
+            "distractor": 0.0,
+            "area": 6629,
+            "present": true
+          },
+          {
+            "frame": 7,
+            "visible": true,
+            "whole": true,
+            "target": 0.9869,
+            "distractor": 0.0,
+            "area": 6701,
+            "present": true
+          },
+          {
+            "frame": 8,
+            "visible": true,
+            "whole": true,
+            "target": 0.9838,
+            "distractor": 0.0,
+            "area": 6712,
+            "present": true
+          },
+          {
+            "frame": 9,
+            "visible": true,
+            "whole": true,
+            "target": 0.9929,
+            "distractor": 0.0,
+            "area": 6656,
+            "present": true
+          }
+        ]
+      }
+    }
+  }
+}
