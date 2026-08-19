@@ -510,7 +510,14 @@ test('offers no tracking when there is nowhere to fetch a tracker from', async (
   await page.locator('input[type=file]').setInputFiles(clip);
   await expect(page.getByRole('slider', { name: 'Frame' })).toBeVisible();
 
-  await expect(page.getByRole('button', { name: 'Track' })).toHaveCount(0);
+  // The pair to the run below, and the two are mutually exclusive by
+  // configuration on purpose: one of them asserts the feature is there and the
+  // other that it is honestly absent, and which applies is decided by the same
+  // build-time string rather than by a flag either of them invents.
+  const track = page.getByRole('button', { name: 'Track' });
+  test.skip((await track.count()) > 0, 'VITE_TRACKING_HOST is set: there is a tracker to offer');
+
+  await expect(track).toHaveCount(0);
   // Everything else in the toolbar is still there, so this is a missing button
   // rather than a missing toolbar.
   await expect(page.getByRole('button', { name: 'Invert' })).toBeVisible();
@@ -578,6 +585,72 @@ test('carries a selection forward through the clip', async ({ page }) => {
   await expect(async () => {
     expect(Buffer.compare(await canvas.screenshot(), clean10)).toBe(0);
   }).toPass();
+});
+
+test('follows a selection forward through the clip, and stops where it is told', async ({ page }) => {
+  // THE ONE TEST HERE THAT NEEDS WEIGHTS, and it skips itself rather than
+  // asking to be remembered. Tracking fetches nineteen megabytes of graph from
+  // wherever a build was told they are, plus the thirty-six the object model
+  // costs, which is the wrong thing to put in a loop that has to be reliable.
+  // So it runs when VITE_TRACKING_HOST is set and not otherwise, and the way it
+  // asks is by looking for the button that only exists when it is.
+  //
+  //     cp tools/edgetam-export/onnx/{memory_attention_shared_fp16,memory_encoder}.onnx \
+  //        tools/edgetam-export/onnx/parameters.json public/edgetam/
+  //     echo VITE_TRACKING_HOST=/edgetam > .env.local
+  //     pnpm e2e
+  test.setTimeout(180_000);
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const track = page.getByRole('button', { name: 'Track' });
+  test.skip((await track.count()) === 0, 'no VITE_TRACKING_HOST: nothing to fetch a tracker from');
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  const timeline = page.getByRole('slider', { name: 'Frame' });
+  await timeline.fill('10');
+  await expect(page.getByText('11 / 60')).toBeVisible();
+
+  // Seeded from the Area tool rather than from a click, so what is being tested
+  // is the tracker rather than the object model's opinion of this clip. The
+  // seed is read back off the mask either way.
+  await page.keyboard.press('a');
+  await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.35);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.65, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.locator('.timeline__mark')).toHaveCount(1);
+  await expect(track).toBeEnabled();
+
+  await track.click();
+  // The download, then the run. Both go through the one status line everything
+  // else in the product uses.
+  const stop = page.getByRole('button', { name: 'Stop' });
+  await expect(stop).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/Tracking, frame \d+ of 49/)).toBeVisible({ timeout: 120_000 });
+
+  // A tracked frame is about 135 milliseconds, so a handful of them is a
+  // second or two. What is being waited for is marks on the timeline: one per
+  // frame the run has written a command for, which is the visible proof that a
+  // mask came back for a frame nobody selected on.
+  await expect(page.locator('.timeline__mark')).toHaveCount(6, { timeout: 120_000 });
+
+  await stop.click();
+  await expect(track).toBeVisible();
+  // Stopping keeps what it found. There is already a button for taking it back.
+  const marks = await page.locator('.timeline__mark').count();
+  expect(marks).toBeGreaterThanOrEqual(6);
+
+  // And it is one gesture: one press of undo takes the whole run, and lands the
+  // playhead on the frame after the one the selection was made on.
+  const undo = page.getByRole('button', { name: 'Undo' });
+  await undo.click();
+  await expect(page.locator('.timeline__mark')).toHaveCount(1);
+  await expect(page.getByText('12 / 60')).toBeVisible();
 });
 
 test('plays, and stops where it was asked to', async ({ page }) => {

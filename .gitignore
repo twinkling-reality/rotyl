@@ -6,3 +6,7 @@ playwright-report/
 *.local
 .DS_Store
 tsconfig.tsbuildinfo
+
+# A local tracking host, for the one end-to-end run that needs weights.
+# See tools/edgetam-export and the test guarded on the Track button.
+public/edgetam/
