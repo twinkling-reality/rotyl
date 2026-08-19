@@ -18,11 +18,30 @@
  * softmax without it.
  *
  * WHERE AN ENTRY GOES IS NOT WHERE IT ARRIVED. Real entries take the first
- * slots so their rotary frequencies are the ones the reference would have given
- * them, and the pointer block sits at the end, where the graph's
+ * slots and the pointer block sits at the end, where the graph's
  * `num_k_exclude_rope` expects it. Anything else lands in the right shape and
  * the wrong positions, which produces a mask rather than an error.
+ *
+ * AND THE BANK IS NOT A SLIDING WINDOW, which is the correction this file cost.
+ * The reference holds the frame the object was pointed at plus the six frames
+ * before this one, and it never lets go of the first: it is the only entry in
+ * the bank that is a decision somebody made rather than the tracker's own
+ * opinion of its own previous opinion. Keeping the last seven instead drops it
+ * on the eighth frame of a run and quietly turns a tracker into a thing that
+ * follows whatever it followed last. `tools/edgetam-export/host.py` reproduces
+ * the reference's own bank exactly, to the last bit of every one of its 233,472
+ * floats, and does so only with the anchor kept.
  */
+
+/** The feature grid memory attention works over, from the checkpoint. */
+export const FEATURE_GRID = 64;
+export const FEATURE_TOKENS = FEATURE_GRID * FEATURE_GRID;
+/** Dimensions of a vision token, from the checkpoint's `hidden_dim`. */
+export const FEATURE_DIM = 256;
+/** Resolution the mask decoder answers at, whatever the photograph is. */
+export const MASK_SIZE = 256;
+/** Resolution the memory encoder declares for the mask it is given. */
+export const MEMORY_MASK = 1024;
 
 /** Tokens one memory entry occupies after the spatial perceiver. */
 export const TOKENS_PER_MEMORY = 512;
@@ -60,39 +79,51 @@ export interface BankInput {
   readonly keyMask: Float32Array;
 }
 
+/** How many tracked frames the bank holds beside the anchor. */
+export const RECENT_ENTRIES = MEMORY_ENTRIES - 1;
+
 /**
- * Lay a bank of entries out at the one shape the graph accepts.
+ * Lay a bank out at the one shape the graph accepts.
  *
- * `entries` is newest LAST, which is the order a run produces them in and the
- * order the temporal encoding below assumes.
+ * TWO ARGUMENTS RATHER THAN A LIST, because the reference has two kinds of
+ * entry and gives them different times. `anchor` is the frame the object was
+ * pointed at, which the reference calls a conditioning frame and never drops;
+ * `recent` is the tracked frames since, newest LAST, at most `RECENT_ENTRIES`
+ * of them. Handing this one list and letting it work out which is which is what
+ * it did first, and it was wrong on the first frame of every run.
  *
- * The temporal row an entry gets is how many frames back it is, and that is the
+ * The temporal row an entry gets is how long ago it is, and that is the
  * parameter this codebase went looking for and did not find written down: the
  * encoder returns where a token is in the picture, and the checkpoint's
  * `memory_temporal_positional_encoding` says when. Added to the spatial
  * position rather than concatenated, which is what the reference does and what
  * makes the two commensurate.
+ *
+ * THE ANCHOR IS ALWAYS THE OLDEST ROW, whatever else the bank holds. The
+ * reference asks for row `relative_temporal_offset - 1` and a conditioning
+ * frame's offset is zero, so it indexes from the end and lands on the last row.
+ * A run three frames old therefore has its anchor at row six and its two
+ * tracked frames at rows one and zero, with the four rows between them unused.
+ * Numbering the anchor by its position in a short list gives it row two, which
+ * is a bank claiming the user's own frame is more recent than it is.
  */
 export function layOutBank(
-  entries: readonly MemoryEntry[],
+  anchor: MemoryEntry,
+  recent: readonly MemoryEntry[],
   temporal: Float32Array,
-  keep = MEMORY_ENTRIES,
 ): BankInput {
   const memory = new Float32Array(MEMORY_TOKENS * MEMORY_DIM);
   const positions = new Float32Array(MEMORY_TOKENS * MEMORY_DIM);
   const keyMask = new Float32Array(MEMORY_TOKENS).fill(MASKED);
 
-  // Oldest first into the low slots, keeping the most recent `keep` of them,
-  // which is what the reference's window comes to once a run only ever moves
-  // forward and every frame is a tracked one.
-  const held = entries.slice(-keep);
-  held.forEach((entry, index) => {
-    const at = index * TOKENS_PER_MEMORY * MEMORY_DIM;
+  const held = [anchor, ...recent.slice(-RECENT_ENTRIES)];
+  held.forEach((entry, slot) => {
+    const at = slot * TOKENS_PER_MEMORY * MEMORY_DIM;
     memory.set(entry.features, at);
 
-    // How many frames back this entry is, counting the newest as one, which is
-    // the row the reference indexes with `relative_temporal_offset - 1`.
-    const age = held.length - index - 1;
+    // The anchor's own row, then the tracked frames counting back from the one
+    // before this: the newest takes row zero.
+    const age = slot === 0 ? MEMORY_ENTRIES - 1 : held.length - slot - 1;
     const row = Math.min(age, MEMORY_ENTRIES - 1) * MEMORY_DIM;
     for (let token = 0; token < TOKENS_PER_MEMORY; token++) {
       const into = at + token * MEMORY_DIM;
@@ -101,13 +132,115 @@ export function layOutBank(
           (entry.positions[token * MEMORY_DIM + channel] ?? 0) + (temporal[row + channel] ?? 0);
       }
     }
-    keyMask.fill(0, index * TOKENS_PER_MEMORY, (index + 1) * TOKENS_PER_MEMORY);
+    keyMask.fill(0, slot * TOKENS_PER_MEMORY, (slot + 1) * TOKENS_PER_MEMORY);
   });
 
   // The pointer block stays masked. The published mask decoder does not expose
   // `object_pointer`, so there is nothing to put in it; what that costs is one
   // frame on the way back from an occlusion, measured, in tools/edgetam-export.
   return { memory, positions, keyMask };
+}
+
+/**
+ * The vision encoder's feature map, with the no-memory embedding taken back
+ * off, in the layout memory attention wants.
+ *
+ * TWO THINGS AT ONCE because they are one pass over four megabytes. The map
+ * arrives channel-major as (1, 256, 64, 64) and attention takes it token-major
+ * as (4096, 1, 256), and doing the transpose twice to keep the subtraction
+ * separate would cost more than the subtraction does.
+ *
+ * THE SUBTRACTION IS THE ONE THAT IS NOT OBVIOUS. The published vision encoder
+ * ADDS `no_memory_embedding` to its last feature map, which is right for a
+ * single image, where there is no memory and the model is told so. On a tracked
+ * frame memory attention replaces that, so it has to come off again first.
+ * Leaving it on produces a mask, of roughly the right object, drifting for no
+ * visible reason. `host.py` puts the published encoder's output against the
+ * reference's own features at 1.7e-5 with it off, and 0.07 with it on.
+ */
+export function toTokenMajor(features: Float32Array, noMemory: readonly number[]): Float32Array {
+  const out = new Float32Array(FEATURE_TOKENS * FEATURE_DIM);
+  for (let channel = 0; channel < FEATURE_DIM; channel++) {
+    const offset = channel * FEATURE_TOKENS;
+    const bias = noMemory[channel] ?? 0;
+    for (let token = 0; token < FEATURE_TOKENS; token++) {
+      out[token * FEATURE_DIM + channel] = (features[offset + token] ?? 0) - bias;
+    }
+  }
+  return out;
+}
+
+/**
+ * Token-major back to channel-major, which is what the mask decoder takes.
+ *
+ * Memory attention answers at (1, 1, 4096, 256), so its buffer is the same
+ * token-major order it was given, and the decoder wants (1, 256, 64, 64) again.
+ * A field transposed here is a plausible mask of roughly the right object and
+ * no error anywhere, which is why it is checked against the reference's own two
+ * tensors rather than against this file's reading of a permute.
+ */
+export function toChannelMajor(tokens: Float32Array): Float32Array {
+  const out = new Float32Array(FEATURE_TOKENS * FEATURE_DIM);
+  for (let token = 0; token < FEATURE_TOKENS; token++) {
+    const offset = token * FEATURE_DIM;
+    for (let channel = 0; channel < FEATURE_DIM; channel++) {
+      out[channel * FEATURE_TOKENS + token] = tokens[offset + channel] ?? 0;
+    }
+  }
+  return out;
+}
+
+/**
+ * The 256 px field the decoder answered at, at the 1024 px the memory encoder
+ * declares.
+ *
+ * BILINEAR, AND THAT WAS A CORRECTION. This was nearest first, on the reasoning
+ * that the reference upsamples a high-resolution mask it already holds while
+ * this reconstructs a decision, so a bilinear ramp four texels wide would feed
+ * the bank a softer object than the decoder found. The reference holds no such
+ * mask: its `pred_masks_high_res` is a bilinear interpolation of exactly these
+ * logits and nothing else. Measured against what the reference hands the
+ * encoder, nearest is out by 18.7 on a field that spans 20, which is the whole
+ * of it, along every edge. Feeding the 256 px field in unscaled is a shape
+ * error and says so; feeding it in wrongly resampled says nothing at all.
+ *
+ * Weights along one axis, applied twice, because they are the same 1024 of them
+ * for every row and every column.
+ */
+export function atMemoryResolution(field: Float32Array): Float32Array {
+  const out = new Float32Array(MEMORY_MASK * MEMORY_MASK);
+  const scale = MASK_SIZE / MEMORY_MASK;
+
+  const low = new Int32Array(MEMORY_MASK);
+  const high = new Int32Array(MEMORY_MASK);
+  const fraction = new Float32Array(MEMORY_MASK);
+  for (let out1 = 0; out1 < MEMORY_MASK; out1++) {
+    // The reference's own mapping, which clamps the COORDINATE at zero rather
+    // than the index, so the first half-texel is flat instead of extrapolated.
+    const source = Math.max(0, scale * (out1 + 0.5) - 0.5);
+    const floor = Math.floor(source);
+    low[out1] = floor;
+    high[out1] = Math.min(floor + 1, MASK_SIZE - 1);
+    fraction[out1] = source - floor;
+  }
+
+  for (let y = 0; y < MEMORY_MASK; y++) {
+    const top = (low[y] ?? 0) * MASK_SIZE;
+    const bottom = (high[y] ?? 0) * MASK_SIZE;
+    const down = fraction[y] ?? 0;
+    const into = y * MEMORY_MASK;
+    for (let x = 0; x < MEMORY_MASK; x++) {
+      const left = low[x] ?? 0;
+      const right = high[x] ?? 0;
+      const across = fraction[x] ?? 0;
+      const upper =
+        (field[top + left] ?? 0) + ((field[top + right] ?? 0) - (field[top + left] ?? 0)) * across;
+      const lower =
+        (field[bottom + left] ?? 0) + ((field[bottom + right] ?? 0) - (field[bottom + left] ?? 0)) * across;
+      out[into + x] = upper + (lower - upper) * down;
+    }
+  }
+  return out;
 }
 
 /**

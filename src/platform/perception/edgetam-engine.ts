@@ -269,10 +269,22 @@ export async function loadEdgeTamEngine(options: EdgeTamOptions): Promise<Segmen
             // The conditioned map replaces the top embedding and nothing else:
             // the two finer levels are the same picture either way.
             'image_embeddings.2': new ort.Tensor('float32', top, [1, 256, 64, 64]),
-            // Empty, which is how this graph already expresses "none of these"
-            // for a box-only prompt. A tracked frame has the bank instead.
-            input_points: new ort.Tensor('float32', new Float32Array(0), [1, 1, 0, 2]),
-            input_labels: new ort.Tensor('int64', new BigInt64Array(0), [1, 1, 0]),
+            // ONE POINT LABELLED -1, NOT NONE AT ALL, and the difference is
+            // silent. A label of -1 means "not a point": the coordinates are
+            // discarded and the embedding is replaced wholesale, so what this
+            // sends is a prompt made of nothing, which is what a tracked frame
+            // has instead of a click. Sending zero points is not the same
+            // thing, because the published graph was traced with the
+            // reference's trailing pad baked in, so it appends one of these
+            // itself and the reference ends up with two where an empty prompt
+            // gives one. It answers either way. Measured against the
+            // reference's own decoder on a conditioned map, one point labelled
+            // -1 is right to 4e-5 and no points at all is out by 1.5 on mask
+            // logits and 0.39 on the object score, which is enough to move a
+            // boundary and to flip whether the object is there at all. See
+            // tools/edgetam-export/host.py.
+            input_points: new ort.Tensor('float32', new Float32Array(2), [1, 1, 1, 2]),
+            input_labels: new ort.Tensor('int64', BigInt64Array.from([-1n]), [1, 1, 1]),
             input_boxes: new ort.Tensor('float32', new Float32Array(0), [1, 0, 4]),
           });
 

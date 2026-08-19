@@ -1,10 +1,19 @@
 import { packCoverage, type CoverageMask } from '../../core/document/coverage-mask.ts';
 import { expandCoverage } from '../../core/document/coverage-mask.ts';
 import {
+  atMemoryResolution,
+  FEATURE_DIM,
+  FEATURE_GRID,
+  FEATURE_TOKENS,
   layOutBank,
+  MASK_SIZE,
   maskForMemory,
   MEMORY_DIM,
+  MEMORY_MASK,
   MEMORY_TOKENS,
+  RECENT_ENTRIES,
+  toChannelMajor,
+  toTokenMajor,
   visionPositionEncoding,
   type MemoryEntry,
 } from '../../core/perception/memory-bank.ts';
@@ -38,24 +47,23 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
  * frame on the way back: the tracker produces no mask on the frame the object
  * reappears and picks it up on the next. Re-exporting the decoder buys it back.
  *
- * THE ONE SUBTRACTION THAT IS NOT OBVIOUS. The published vision encoder adds
- * `no_memory_embedding` to its last feature map, which is correct for a single
- * image, where there is no memory and the model is told so. On a tracked frame
- * memory attention replaces that, so it has to come off again first. Leaving it
- * on produces a mask, of roughly the right object, drifting for no visible
- * reason.
+ * WHAT IS ARITHMETIC IS NOT HERE. The transposes between the four sessions,
+ * the bank's layout, the resampling into the memory encoder and the vision
+ * position encoding are all in `src/core/perception/memory-bank.ts`, because
+ * none of them needs a GPU or a runtime and every one of them can be wrong
+ * silently. `tools/edgetam-export/host.py` drives the reference and this same
+ * arithmetic over one clip and puts every stage of it against what the
+ * reference hands the same graphs; the fixture it writes is what
+ * `test/memory-bank.test.ts` asserts against.
+ *
+ * WHAT IS LEFT HERE IS THE FOUR SESSIONS AND THE ORDER THEY RUN IN, plus the
+ * two ends nobody else owns: a seed arriving as a coverage mask, and a mask
+ * leaving as one.
  */
 
 type Ort = typeof OrtNamespace;
 type Session = Awaited<ReturnType<Ort['InferenceSession']['create']>>;
 
-/** The feature grid memory attention works over, from the checkpoint. */
-const FEATURE = 64;
-const TOKENS = FEATURE * FEATURE;
-const CHANNELS = 256;
-/** Resolution the mask decoder answers at, and the one the memory encoder wants. */
-const MASK_SIZE = 256;
-const MEMORY_MASK = 1024;
 /** The conditioned map, which is `image_embeddings.2` by another name. */
 const TOP_EMBEDDING = 'image_embeddings.2';
 
@@ -94,62 +102,6 @@ function floatsOf(tensor: EdgeTamTensor | undefined, name: string): Float32Array
 }
 
 /**
- * The encoder's feature map, with the no-memory embedding taken back off, in
- * the layout attention wants.
- *
- * Two things at once because they are one pass over four megabytes: the map
- * arrives channel-major as (1, 256, 64, 64) and attention takes it token-major
- * as (4096, 1, 256). Doing the transpose twice to keep them separate would cost
- * more than the subtraction does.
- */
-function rawTokens(features: Float32Array, noMemory: readonly number[]): Float32Array {
-  const out = new Float32Array(TOKENS * CHANNELS);
-  for (let channel = 0; channel < CHANNELS; channel++) {
-    const offset = channel * TOKENS;
-    const bias = noMemory[channel] ?? 0;
-    for (let token = 0; token < TOKENS; token++) {
-      out[token * CHANNELS + channel] = (features[offset + token] ?? 0) - bias;
-    }
-  }
-  return out;
-}
-
-/** Token-major back to channel-major, which is what the mask decoder takes. */
-function toChannelMajor(tokens: Float32Array): Float32Array {
-  const out = new Float32Array(TOKENS * CHANNELS);
-  for (let token = 0; token < TOKENS; token++) {
-    const offset = token * CHANNELS;
-    for (let channel = 0; channel < CHANNELS; channel++) {
-      out[channel * TOKENS + token] = tokens[offset + channel] ?? 0;
-    }
-  }
-  return out;
-}
-
-/**
- * A 256 px field at the 1024 px the memory encoder declares.
- *
- * Nearest, and deliberately: the reference upsamples the high-resolution mask
- * it already has, which this does not, so what is being reconstructed is a
- * decision rather than a boundary. Bilinear here would invent a ramp four
- * texels wide around every edge and feed the bank a softer object than the one
- * the decoder found. Feeding the 256 px field in unscaled is a shape error and
- * says so; feeding it in wrongly scaled says nothing at all.
- */
-function atMemoryResolution(field: Float32Array): Float32Array {
-  const out = new Float32Array(MEMORY_MASK * MEMORY_MASK);
-  const step = MEMORY_MASK / MASK_SIZE;
-  for (let y = 0; y < MEMORY_MASK; y++) {
-    const row = Math.floor(y / step) * MASK_SIZE;
-    const into = y * MEMORY_MASK;
-    for (let x = 0; x < MEMORY_MASK; x++) {
-      out[into + x] = field[row + Math.floor(x / step)] ?? 0;
-    }
-  }
-  return out;
-}
-
-/**
  * Where the coverage ramp sits, in logits.
  *
  * The same constant `edgetam-engine.ts` uses and for the same reason: zero is
@@ -165,6 +117,25 @@ function coverageFrom(logits: Float32Array, offset: number): CoverageMask {
     coverage[i] = Math.round(255 * t * t * (3 - 2 * t));
   }
   return packCoverage(MASK_SIZE, MASK_SIZE, coverage);
+}
+
+/**
+ * The reference's placeholder for a frame the object is not in.
+ *
+ * Large and negative rather than merely negative: it passes through a sigmoid
+ * on its way into the memory encoder, and what the bank has to be told is
+ * "nothing here" rather than "probably not".
+ */
+const NO_OBJECT = -1024;
+
+/** An empty mask, for a frame the model says the object is not in. */
+function absent(): Float32Array {
+  return new Float32Array(MASK_SIZE * MASK_SIZE).fill(NO_OBJECT);
+}
+
+/** The same thing as coverage, which is what a run writes into the log. */
+function emptyMask(): CoverageMask {
+  return packCoverage(MASK_SIZE, MASK_SIZE, new Uint8Array(MASK_SIZE * MASK_SIZE));
 }
 
 /** A seed's coverage read back as the logits the rest of this works in. */
@@ -214,7 +185,7 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
 
   // The same on every frame of every clip, so it is built once rather than
   // served: four megabytes that a loop produces in a millisecond.
-  const visionPositions = visionPositionEncoding(FEATURE, FEATURE, CHANNELS);
+  const visionPositions = visionPositionEncoding(FEATURE_GRID, FEATURE_GRID, FEATURE_DIM);
 
   const featuresOf = (scene: SceneEmbedding): Float32Array => {
     const tensors = embeddingTensors(scene);
@@ -229,7 +200,12 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
     fromPrompt: boolean,
   ): Promise<MemoryEntry> => {
     const outputs = await encoder.run({
-      vision_features: new ort.Tensor('float32', toChannelMajor(raw), [1, CHANNELS, FEATURE, FEATURE]),
+      vision_features: new ort.Tensor('float32', toChannelMajor(raw), [
+        1,
+        FEATURE_DIM,
+        FEATURE_GRID,
+        FEATURE_GRID,
+      ]),
       mask_for_memory: new ort.Tensor(
         'float32',
         maskForMemory(atMemoryResolution(mask), fromPrompt, scale, bias),
@@ -244,20 +220,32 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
 
   return {
     async begin(scene: SceneEmbedding, seed: CoverageMask): Promise<ObjectTrack> {
-      const entries: MemoryEntry[] = [];
       // The seed is what the user already decided, so it goes into the bank
       // thresholded rather than softened, and the frame it came from is never
       // written back as a command: their own click is already there.
-      entries.push(await remember(rawTokens(featuresOf(scene), noMemory), seedLogits(seed), true));
+      let anchor: MemoryEntry | undefined = await remember(
+        toTokenMajor(featuresOf(scene), noMemory),
+        seedLogits(seed),
+        true,
+      );
+      // Bounded, and that is what the anchor being separate buys as well as
+      // correctness: a run holds seven entries at a quarter of a megabyte each
+      // however long the clip is.
+      const recent: MemoryEntry[] = [];
 
       return {
         async advance(next: SceneEmbedding): Promise<TrackedMask> {
-          const raw = rawTokens(featuresOf(next), noMemory);
-          const bank = layOutBank(entries, temporal);
+          if (!anchor) throw new Error('EdgeTAM tracking: this track has been disposed');
+          const raw = toTokenMajor(featuresOf(next), noMemory);
+          const bank = layOutBank(anchor, recent, temporal);
 
           const conditioned = await attention.run({
-            vision_features: new ort.Tensor('float32', raw, [TOKENS, 1, CHANNELS]),
-            vision_position_embeddings: new ort.Tensor('float32', visionPositions, [TOKENS, 1, CHANNELS]),
+            vision_features: new ort.Tensor('float32', raw, [FEATURE_TOKENS, 1, FEATURE_DIM]),
+            vision_position_embeddings: new ort.Tensor('float32', visionPositions, [
+              FEATURE_TOKENS,
+              1,
+              FEATURE_DIM,
+            ]),
             memory: new ort.Tensor('float32', bank.memory, [MEMORY_TOKENS, 1, MEMORY_DIM]),
             memory_position_embeddings: new ort.Tensor('float32', bank.positions, [
               MEMORY_TOKENS,
@@ -274,11 +262,21 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
           // rather than a count of pixels: an object behind something is not an
           // object that got smaller.
           const present = (decoded.objectScore ?? 0) > 0;
-          entries.push(await remember(raw, decoded.logits, false));
-          return { mask: decoded.mask, present };
+          // AND SAYING SO REACHES THE MASK, not just the flag. A decoder told
+          // there is nothing there still draws something, and a run that wrote
+          // it would replace the held-forward selection with a shape belonging
+          // to whatever the model half-recognised behind the occluder. The
+          // reference replaces that mask outright, before it upsamples it and
+          // before it encodes a memory from it, which is also what stops an
+          // occlusion teaching the tracker the wrong appearance.
+          const logits = present ? decoded.logits : absent();
+          recent.push(await remember(raw, logits, false));
+          if (recent.length > RECENT_ENTRIES) recent.shift();
+          return { mask: present ? decoded.mask : emptyMask(), present };
         },
         dispose(): void {
-          entries.length = 0;
+          anchor = undefined;
+          recent.length = 0;
         },
       };
     },
@@ -290,7 +288,7 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
   };
 
   /**
-   * The mask decoder, run against conditioned features and no prompt at all.
+   * The mask decoder, run against conditioned features and no click.
    *
    * Asked of the embedding rather than held here: the decoder is the
    * segmentation engine's session, and two owners for one graph is how a
