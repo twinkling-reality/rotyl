@@ -156,18 +156,29 @@ frame is four sessions and a memory bank, and the parts that are neither are
 listed here because rediscovering them costs a day each and every one of them
 fails silently.
 
-**Three parameters that are in the checkpoint and in no graph.** All are tiny
+**Four parameters that are in the checkpoint and in no graph.** All are tiny
 and all can be dumped to a few kilobytes beside the weights:
 
-| parameter                       | shape   | what it is for                                 |
-| ------------------------------- | ------- | ---------------------------------------------- |
-| `no_memory_embedding`           | 1×1×256 | subtract from the encoder's last feature map   |
-| `no_memory_positional_encoding` | 1×1×256 | the position that goes with it                 |
-| `no_object_pointer`             | 1×256   | what stands in for an object that is not there |
+| parameter                             | shape    | what it is for                                 |
+| ------------------------------------- | -------- | ---------------------------------------------- |
+| `no_memory_embedding`                 | 1×1×256  | subtract from the encoder's last feature map   |
+| `no_memory_positional_encoding`       | 1×1×256  | the position that goes with it                 |
+| `no_object_pointer`                   | 1×256    | what stands in for an object that is not there |
+| `memory_temporal_positional_encoding` | 7×1×1×64 | how long ago an entry in the bank is from      |
 
 The first is the trap the section below describes. The published vision encoder
 ADDS it, which is right for a single image and wrong for a tracked frame, where
 memory attention replaces it.
+
+**The fourth was missing from this list until somebody went to write the host**,
+which is the omission this file exists to prevent, so it is worth saying what it
+does. `memory_attention` takes `memory_position_embeddings` as an input, and
+what belongs there is not what `memory_encoder` returned. The encoder gives the
+SPATIAL position of each token; the reference then adds one of these seven rows
+to it, chosen by how many frames back that entry is, which is what orders the
+bank in time. Leave it out and every entry claims to be from the same moment. It
+is 448 floats, and all four of these are nonzero in this checkpoint, so none of
+them is a placeholder a host could skip.
 
 **The vision position embeddings, which are 4 MB and should not be shipped.**
 `memory_attention` takes `vision_position_embeddings` at 4096×1×256, one per
@@ -187,7 +198,8 @@ nearest rather than bilinear will not say anything at all.
 **And the arithmetic either side of the encoder, which is deliberately not in
 the graph.** A mask from a click is thresholded and a mask from a previous
 frame's prediction is passed through a sigmoid, then both are scaled and shifted
-by `sigmoid_scale_for_mem_enc` and `sigmoid_bias_for_mem_enc`. `verify.py` does
+by `sigmoid_scale_for_mem_enc` and `sigmoid_bias_for_mem_enc`, which are 20.0
+and -10.0 here and belong to the config rather than to anyone's memory. `verify.py` does
 it in `encode_new_memory` and it is fifteen lines. It is outside the graph so
 the graph has one meaning rather than a mode.
 
