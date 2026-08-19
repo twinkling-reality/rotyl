@@ -20,7 +20,7 @@ import {
 import type { SceneEmbedding } from '../../core/perception/segmentation-engine.ts';
 import type { ObjectTrack, TrackedMask, TrackingEngine } from '../../core/perception/tracking-engine.ts';
 import { conditionedDecoder, embeddingTensors, type EdgeTamTensor } from './edgetam-engine.ts';
-import { fetchModel } from './model-store.ts';
+import { fetchGraph } from './model-store.ts';
 import type * as OrtNamespace from 'onnxruntime-web/webgpu';
 
 /**
@@ -46,6 +46,12 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
  * Measured on a fixture with a three-frame occlusion, that costs exactly one
  * frame on the way back: the tracker produces no mask on the frame the object
  * reappears and picks it up on the next. Re-exporting the decoder buys it back.
+ *
+ * A TRACKED FRAME IS 135 MS, of which 44 is reading it and 91 is advancing one
+ * track against what was read. Two objects is 226 rather than 270, because the
+ * reading is shared, which is what makes a second track a second `ObjectTrack`
+ * rather than a second run. Measured end to end through this file by
+ * `tools/video-bench/run.mjs tracked-frame`.
  *
  * WHAT IS ARITHMETIC IS NOT HERE. The transposes between the four sessions,
  * the bank's layout, the resampling into the memory encoder and the vision
@@ -91,12 +97,43 @@ export interface EdgeTamTrackerOptions {
   readonly onProgress: (progress: number) => void;
 }
 
-const ATTENTION = { graph: 'memory_attention_shared_fp16.onnx', weights: '', bytes: 12_000_000 };
-const ENCODER = { graph: 'memory_encoder.onnx', weights: '', bytes: 6_700_000 };
+/**
+ * The two graphs, and what they weigh, for the progress figure that has to
+ * exist before the first byte arrives.
+ *
+ * Attention ships at half precision with its rotary tables shared, which is
+ * 12 MB against the 69.6 it exports at; the encoder ships whole, because half
+ * precision moves its worst output element by half the signal and that output
+ * conditions every later frame. Both carry their weights inside them, so each
+ * is one request.
+ */
+const ATTENTION = { graph: 'memory_attention_shared_fp16.onnx', bytes: 12_000_000 };
+const ENCODER = { graph: 'memory_encoder.onnx', bytes: 6_700_000 };
 
 /** A model output, checked rather than assumed to be float data. */
 function floatsOf(tensor: EdgeTamTensor | undefined, name: string): Float32Array {
   const data = tensor?.data;
+  if (!(data instanceof Float32Array)) throw new Error(`EdgeTAM tracking: ${name} was not float data`);
+  return data;
+}
+
+/**
+ * The same, for a tensor that may still be on the GPU.
+ *
+ * The segmentation engine asks for `gpu-buffer` outputs, which is what keeps a
+ * click at fifteen milliseconds: seventeen megabytes of embeddings pass from
+ * the encoder to the decoder without crossing back. A tracked frame is the one
+ * consumer that has to read one of them, because the transposes and the
+ * subtraction happen here rather than in a graph, so this asks for it rather
+ * than reading `.data` and being told it is not on the CPU.
+ *
+ * Four megabytes a frame, measured at about 2 ms and not the bottleneck against
+ * ninety. `releaseData` is deliberately not set: the same embedding is handed
+ * back to the mask decoder afterwards.
+ */
+async function floatsFrom(tensor: EdgeTamTensor | undefined, name: string): Promise<Float32Array> {
+  if (!tensor) throw new Error(`EdgeTAM tracking: there was no ${name}`);
+  const data = tensor.location === 'cpu' ? tensor.data : await tensor.getData();
   if (!(data instanceof Float32Array)) throw new Error(`EdgeTAM tracking: ${name} was not float data`);
   return data;
 }
@@ -163,8 +200,8 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
   const total = ATTENTION.bytes + ENCODER.bytes;
   let fetched = 0;
   const graphOf = async (file: typeof ATTENTION): Promise<Uint8Array<ArrayBuffer>> => {
-    const { graph } = await fetchModel(
-      { ...file, weights: file.graph },
+    const graph = await fetchGraph(
+      file.graph,
       (received) => {
         onProgress(Math.min(1, (fetched + received) / total));
       },
@@ -187,10 +224,10 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
   // served: four megabytes that a loop produces in a millisecond.
   const visionPositions = visionPositionEncoding(FEATURE_GRID, FEATURE_GRID, FEATURE_DIM);
 
-  const featuresOf = (scene: SceneEmbedding): Float32Array => {
+  const featuresOf = async (scene: SceneEmbedding): Promise<Float32Array> => {
     const tensors = embeddingTensors(scene);
     if (!tensors) throw new Error('EdgeTAM tracking: that embedding was not produced here');
-    return floatsOf(tensors[TOP_EMBEDDING], TOP_EMBEDDING);
+    return floatsFrom(tensors[TOP_EMBEDDING], TOP_EMBEDDING);
   };
 
   /** One memory entry, from this frame's raw features and this frame's answer. */
@@ -224,7 +261,7 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
       // thresholded rather than softened, and the frame it came from is never
       // written back as a command: their own click is already there.
       let anchor: MemoryEntry | undefined = await remember(
-        toTokenMajor(featuresOf(scene), noMemory),
+        toTokenMajor(await featuresOf(scene), noMemory),
         seedLogits(seed),
         true,
       );
@@ -236,7 +273,7 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
       return {
         async advance(next: SceneEmbedding): Promise<TrackedMask> {
           if (!anchor) throw new Error('EdgeTAM tracking: this track has been disposed');
-          const raw = toTokenMajor(featuresOf(next), noMemory);
+          const raw = toTokenMajor(await featuresOf(next), noMemory);
           const bank = layOutBank(anchor, recent, temporal);
 
           const conditioned = await attention.run({

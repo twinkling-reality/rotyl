@@ -146,7 +146,7 @@ async function fetchFile(
 
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Could not download the object-selection model (${String(response.status)}).`);
+    throw new Error(`Could not download ${name} (${String(response.status)}).`);
   }
   const bytes = await readWithProgress(response, onBytes);
   // Stored after the fact rather than by cloning the response: a clone has to
@@ -154,6 +154,35 @@ async function fetchFile(
   // truncated entry behind.
   await cache?.put(url, new Response(bytes)).catch(() => undefined);
   return bytes;
+}
+
+/**
+ * Fetch one whole graph, weights and all.
+ *
+ * The tracking graphs are exported with their weights inside them rather than
+ * beside them, so there is no sidecar to ask for and no second request to make.
+ * Asking for one through `fetchModel` and naming the graph as its own weights
+ * fetched it twice, which the cache made cheap and the progress bar made
+ * confusing.
+ *
+ * @param base where to fetch from, for the one caller that is not the published
+ * release: the tracking graphs are produced by `tools/edgetam-export` and hosted
+ * by whoever is running this, so they cannot be a constant here.
+ */
+export async function fetchGraph(
+  name: string,
+  onProgress: (received: number) => void,
+  base?: string,
+): Promise<Uint8Array<ArrayBuffer>> {
+  let received = 0;
+  return fetchFile(
+    name,
+    (delta) => {
+      received += delta;
+      onProgress(received);
+    },
+    base,
+  );
 }
 
 /**
@@ -166,12 +195,6 @@ async function fetchFile(
 export async function fetchModel(
   file: ModelFile,
   onProgress: (received: number) => void,
-  /**
-   * Where to fetch from, for the one caller that is not the published release.
-   * The tracking graphs are produced by `tools/edgetam-export` and hosted by
-   * whoever is running this, so they cannot be a constant here.
-   */
-  base?: string,
 ): Promise<ModelBytes> {
   let received = 0;
   const count = (delta: number): void => {
@@ -181,7 +204,7 @@ export async function fetchModel(
 
   // Sequential, not parallel: two large streams over one connection interleave
   // into a progress bar that stalls near the end while both finish at once.
-  const graph = await fetchFile(file.graph, count, base);
-  const weights = await fetchFile(file.weights, count, base);
+  const graph = await fetchFile(file.graph, count);
+  const weights = await fetchFile(file.weights, count);
   return { graph, weights };
 }

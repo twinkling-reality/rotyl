@@ -100,7 +100,12 @@ export class VideoScene implements TrackedScene {
       size: { width, height },
       format: SOURCE_FORMAT,
       viewFormats: [SOURCE_VIEW_FORMAT],
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      // RENDER_ATTACHMENT is not optional and not obvious:
+      // `copyExternalImageToTexture` requires it alongside COPY_DST, and
+      // without it Dawn refuses the upload with a validation error rather than
+      // at texture creation, so the first frame of the first run is where it
+      // shows up.
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     });
     // Through an sRGB view, so the hardware does the decode and this frame
     // arrives in the same colour the encoder was given for a photograph.
