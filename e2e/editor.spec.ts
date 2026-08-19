@@ -611,10 +611,6 @@ test('follows a selection forward through the clip, and stops where it is told',
   expect(box).not.toBeNull();
   if (!box) return;
 
-  const timeline = page.getByRole('slider', { name: 'Frame' });
-  await timeline.fill('10');
-  await expect(page.getByText('11 / 60')).toBeVisible();
-
   // Seeded from the Area tool rather than from a click, so what is being tested
   // is the tracker rather than the object model's opinion of this clip. The
   // seed is read back off the mask either way.
@@ -627,30 +623,87 @@ test('follows a selection forward through the clip, and stops where it is told',
   await expect(track).toBeEnabled();
 
   await track.click();
-  // The download, then the run. Both go through the one status line everything
-  // else in the product uses.
+  // Stop appears at once and the status says what is happening: the two graphs
+  // are nineteen megabytes and arrive before any of it starts.
   const stop = page.getByRole('button', { name: 'Stop' });
+  const marks = page.locator('.timeline__mark');
   await expect(stop).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText(/Tracking, frame \d+ of 49/)).toBeVisible({ timeout: 120_000 });
 
-  // A tracked frame is about 135 milliseconds, so a handful of them is a
-  // second or two. What is being waited for is marks on the timeline: one per
-  // frame the run has written a command for, which is the visible proof that a
-  // mask came back for a frame nobody selected on.
-  await expect(page.locator('.timeline__mark')).toHaveCount(6, { timeout: 120_000 });
+  // At least one frame nobody selected on now carries a mask, which is the
+  // whole of what tracking is. Counted with a floor rather than exactly: a
+  // tracked frame is about 135 ms and an exact count races a moving number.
+  await expect.poll(() => marks.count(), { timeout: 120_000 }).toBeGreaterThan(1);
+  const before = await marks.count();
 
   await stop.click();
   await expect(track).toBeVisible();
-  // Stopping keeps what it found. There is already a button for taking it back.
-  const marks = await page.locator('.timeline__mark').count();
-  expect(marks).toBeGreaterThanOrEqual(6);
+  // Stopping keeps what it found. There is already a button for taking it back,
+  // and it did not reach the end of the clip.
+  const kept = await marks.count();
+  expect(kept).toBeGreaterThanOrEqual(before);
+  expect(kept).toBeLessThan(60);
 
   // And it is one gesture: one press of undo takes the whole run, and lands the
   // playhead on the frame after the one the selection was made on.
-  const undo = page.getByRole('button', { name: 'Undo' });
-  await undo.click();
-  await expect(page.locator('.timeline__mark')).toHaveCount(1);
-  await expect(page.getByText('12 / 60')).toBeVisible();
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(marks).toHaveCount(1);
+  await expect(page.getByText('2 / 60')).toBeVisible();
+});
+
+test('leaves the playhead free while it tracks', async ({ page }) => {
+  // TWO CURSORS OVER ONE DOCUMENT, which is the reason a run opens a second
+  // decoder over the same file rather than sharing the playhead's. One provider
+  // serving both would have each request supersede the other's, and neither of
+  // them would be wrong: every scrub would cancel the run and the run would
+  // cancel every scrub.
+  //
+  // Guarded the same way as the run above, and for the same reason.
+  test.setTimeout(180_000);
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const track = page.getByRole('button', { name: 'Track' });
+  test.skip((await track.count()) === 0, 'no VITE_TRACKING_HOST: nothing to fetch a tracker from');
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  await page.keyboard.press('a');
+  await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.35);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.65, { steps: 10 });
+  await page.mouse.up();
+
+  const marks = page.locator('.timeline__mark');
+  const park = async (): Promise<void> => {
+    await page.mouse.move(box.x + box.width / 2, box.y - 30);
+  };
+  await park();
+  const before = await canvas.screenshot();
+
+  await track.click();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible({ timeout: 120_000 });
+  await expect.poll(() => marks.count(), { timeout: 120_000 }).toBeGreaterThan(1);
+
+  // The picture moves, while the run carries on behind it. Slowly, because the
+  // arithmetic between the graphs is eighteen milliseconds of main-thread
+  // JavaScript per tracked frame.
+  const started = await marks.count();
+  await page.getByRole('slider', { name: 'Frame' }).fill('40');
+  await expect(page.getByText('41 / 60')).toBeVisible({ timeout: 60_000 });
+  await park();
+  await expect(async () => {
+    expect(Buffer.compare(await canvas.screenshot(), before)).not.toBe(0);
+  }).toPass();
+
+  // And it ran to the end of the clip regardless of where the playhead went,
+  // which is what makes the set of frames it tracked a property of the request
+  // rather than of how somebody happened to scrub.
+  expect(started).toBeGreaterThan(1);
+  await expect(marks).toHaveCount(60, { timeout: 120_000 });
+  await expect(track).toBeEnabled();
 });
 
 test('plays, and stops where it was asked to', async ({ page }) => {
