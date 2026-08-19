@@ -5,3 +5,7 @@ clips/
 # browser, and which the research page reads at build time like everything else.
 results-*.json
 !results-bundle.json
+# And the command log, for the same reason: it is arithmetic over a data
+# structure, so it needs no GPU and no clips, and re-taking it should not
+# re-date the measurements that need both.
+!results-log.json

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { packCoverage } from '../src/core/document/coverage-mask.ts';
 import { orderCandidates } from '../src/core/perception/mask-candidates.ts';
 import type { MaskProposal } from '../src/core/perception/segmentation-engine.ts';
 
@@ -22,7 +23,7 @@ function stripe(confidence: number, columns: number, soft = false): MaskProposal
       coverage[y * SIZE + x] = soft ? 100 : 255;
     }
   }
-  return { mask: { width: SIZE, height: SIZE, coverage }, confidence };
+  return { mask: packCoverage(SIZE, SIZE, coverage), confidence };
 }
 
 describe('ordering', () => {

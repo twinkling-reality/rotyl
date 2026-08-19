@@ -4,6 +4,7 @@ import { SelectionMask } from '../src/core/mask/selection-mask.ts';
 import { MaskRefiner } from '../src/core/mask/mask-refiner.ts';
 import { DEFAULT_REFINE_SETTINGS, resolveRefineParams } from '../src/core/mask/refine-params.ts';
 import { SOURCE_FORMAT, SOURCE_VIEW_FORMAT } from '../src/core/gpu/formats.ts';
+import { packCoverage, type CoverageMask } from '../src/core/document/coverage-mask.ts';
 import { linearToSrgb } from '../src/core/color/srgb.ts';
 import { linearToOklab } from '../src/core/color/oklab.ts';
 
@@ -87,7 +88,7 @@ function twoToneImage(left: Rgb, right: Rgb): Uint8Array {
 }
 
 /** An engine mask covering the left region, with its boundary in the wrong place. */
-function coarseMask(): { width: number; height: number; coverage: Uint8Array } {
+function coarseMask(): CoverageMask {
   const coverage = new Uint8Array(COARSE_SIZE * COARSE_SIZE);
   const scale = SIZE / COARSE_SIZE;
   for (let y = 0; y < COARSE_SIZE; y++) {
@@ -95,7 +96,7 @@ function coarseMask(): { width: number; height: number; coverage: Uint8Array } {
       coverage[y * COARSE_SIZE + x] = (x + 0.5) * scale < COARSE_EDGE ? 255 : 0;
     }
   }
-  return { width: COARSE_SIZE, height: COARSE_SIZE, coverage };
+  return packCoverage(COARSE_SIZE, COARSE_SIZE, coverage);
 }
 
 /**

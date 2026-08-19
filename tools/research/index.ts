@@ -111,10 +111,15 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // Its own file because its own command writes it: bundle sizes need a build
   // and no browser, so they are not part of the run the other numbers come from.
   const bundle = read('tools/video-bench/results-bundle.json');
+  // And the same for the command log, which is arithmetic over a data
+  // structure: no GPU, no clips, nothing to fetch. Re-taking it inside the run
+  // the decode and encode figures come from would re-date every one of them for
+  // a measurement that shares nothing with any of them.
+  const log = read('tools/video-bench/results-log.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
-    ...entries({ style, real, video, tracking, shrink, bundle }),
+    ...entries({ style, real, video, tracking, shrink, bundle, log }),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',

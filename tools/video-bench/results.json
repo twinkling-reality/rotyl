@@ -7,125 +7,6 @@
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
     "hardwareConcurrency": 12
   },
-  "log": {
-    "compression": {
-      "roughness 0": {
-        "raw_bytes": 65536,
-        "run_length_bytes": 3502,
-        "runs": 1751,
-        "ratio": 18.7
-      },
-      "roughness 0.5": {
-        "raw_bytes": 65536,
-        "run_length_bytes": 3964,
-        "runs": 1982,
-        "ratio": 16.5
-      },
-      "roughness 1": {
-        "raw_bytes": 65536,
-        "run_length_bytes": 4782,
-        "runs": 2391,
-        "ratio": 13.7
-      }
-    },
-    "fold": {
-      "30 frames": {
-        "at_the_end": {
-          "n": 15,
-          "median": 0,
-          "min": 0,
-          "max": 0.1
-        },
-        "at_the_middle": {
-          "n": 15,
-          "median": 0,
-          "min": 0,
-          "max": 0.1
-        },
-        "folded": 16,
-        "mask_megabytes": 2
-      },
-      "300 frames": {
-        "at_the_end": {
-          "n": 15,
-          "median": 0,
-          "min": 0,
-          "max": 0.1
-        },
-        "at_the_middle": {
-          "n": 15,
-          "median": 0,
-          "min": 0,
-          "max": 0
-        },
-        "folded": 151,
-        "mask_megabytes": 19.7
-      },
-      "3000 frames": {
-        "at_the_end": {
-          "n": 15,
-          "median": 0,
-          "min": 0,
-          "max": 0.1
-        },
-        "at_the_middle": {
-          "n": 15,
-          "median": 0,
-          "min": 0,
-          "max": 0.1
-        },
-        "folded": 1501,
-        "mask_megabytes": 196.6
-      },
-      "18000 frames": {
-        "at_the_end": {
-          "n": 15,
-          "median": 0.2,
-          "min": 0.1,
-          "max": 0.5
-        },
-        "at_the_middle": {
-          "n": 15,
-          "median": 0.2,
-          "min": 0,
-          "max": 0.2
-        },
-        "folded": 9001,
-        "mask_megabytes": 1179.6
-      }
-    },
-    "one_in_thirty": {
-      "3000 frames": {
-        "commands": 100,
-        "at_the_end": {
-          "n": 15,
-          "median": 0,
-          "min": 0,
-          "max": 0.1
-        },
-        "folded": 100,
-        "mask_megabytes": 6.6
-      },
-      "18000 frames": {
-        "commands": 600,
-        "at_the_end": {
-          "n": 15,
-          "median": 0,
-          "min": 0,
-          "max": 0.1
-        },
-        "folded": 600,
-        "mask_megabytes": 39.3
-      }
-    },
-    "allocating_300_masks_ms": {
-      "n": 5,
-      "median": 2.4,
-      "min": 1.7,
-      "max": 8.6
-    }
-  },
-  "log:wall-seconds": 0,
   "readback": {
     "what": "1024x1024x3 float32 = 12.58 MB, the EdgeTAM input tensor",
     "fence": "queue.onSubmittedWorkDone() before every read; mapAsync awaited",
@@ -451,7 +332,7 @@
           },
           "memory_positions": {
             "max_abs_diff": 0.00329,
-            "mean_abs_diff": 0.000072,
+            "mean_abs_diff": 7.2e-05,
             "max_abs_value": 1
           }
         }
@@ -495,7 +376,7 @@
           },
           "memory_positions": {
             "max_abs_diff": 0.00329,
-            "mean_abs_diff": 0.000072,
+            "mean_abs_diff": 7.2e-05,
             "max_abs_value": 1
           }
         }

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SelectionDocument } from '../src/core/document/selection-document.ts';
+import { packCoverage } from '../src/core/document/coverage-mask.ts';
 import {
   commandsForFrame,
   editedFrames,
@@ -89,7 +90,7 @@ describe('coverage detection', () => {
           kind: 'applyMask',
           frame: 0,
           op: 'replace',
-          mask: { width: 1, height: 1, coverage: new Uint8Array([255]) },
+          mask: packCoverage(1, 1, new Uint8Array([255])),
         },
       ]),
     ).toBe(true);
@@ -108,6 +109,13 @@ describe('coverage detection', () => {
  * undo says which command it moved past, so a host can follow it there; a test
  * for the returned value is a test for the whole undo model.
  */
+const replace = (frame: number): SelectionCommand => ({
+  kind: 'applyMask',
+  mask: packCoverage(1, 1, new Uint8Array([255])),
+  op: 'replace',
+  frame,
+});
+
 describe('a log spanning frames', () => {
   const at = (frame: number): SelectionCommand => ({ kind: 'paint', stroke, frame });
 
@@ -129,6 +137,24 @@ describe('a log spanning frames', () => {
     expect(commandsForFrame(commands, 100).map((command) => command.frame)).toEqual([20, 100]);
     expect(hasAnyCoverage(commandsForFrame(commands, 100))).toBe(true);
     expect(hasAnyCoverage(commandsForFrame(commands, 50))).toBe(false);
+  });
+
+  it('cuts the fold at the last command that decides the frame by itself', () => {
+    // A replace discards everything before it, so replaying what it discarded
+    // is a texture upload and a refinement for a result nobody sees. On a
+    // tracked clip that is one command per frame followed rather than one.
+    expect(commandsForFrame([at(0), replace(1), at(2), replace(3), at(4)], 9)).toHaveLength(2);
+    // An `add` decides nothing on its own, so what came before it stays.
+    const add: SelectionCommand = {
+      kind: 'applyMask',
+      mask: packCoverage(1, 1, new Uint8Array([255])),
+      op: 'add',
+      frame: 3,
+    };
+    expect(commandsForFrame([at(0), replace(1), at(2), add, at(4)], 9)).toHaveLength(4);
+    // A clear is absolute in the same way, and is kept rather than skipped
+    // past, because what follows it may only add to what it left.
+    expect(commandsForFrame([at(0), { kind: 'clear', frame: 1 }, at(2)], 9)).toHaveLength(2);
   });
 
   it('reports which frames carry an edit, in order and without repeats', () => {

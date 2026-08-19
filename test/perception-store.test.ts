@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SelectionDocument } from '../src/core/document/selection-document.ts';
 import type { SelectionCommand } from '../src/core/document/selection-command.ts';
+import { expandCoverage, packCoverage, type CoverageMask } from '../src/core/document/coverage-mask.ts';
 import { PerceptionStore } from '../src/core/perception/perception-store.ts';
 import type {
   MaskProposal,
@@ -37,11 +38,11 @@ interface Recorded {
 function proposal(confidence: number, cells: number): MaskProposal {
   const coverage = new Uint8Array(16);
   coverage.fill(255, 0, cells);
-  return { mask: { width: 4, height: 4, coverage }, confidence };
+  return { mask: packCoverage(4, 4, coverage), confidence };
 }
 
-function cellsOf(mask: { coverage: Uint8Array } | undefined): number {
-  return mask ? mask.coverage.reduce((count, value) => count + (value >= 128 ? 1 : 0), 0) : 0;
+function cellsOf(mask: CoverageMask | undefined): number {
+  return mask ? expandCoverage(mask).reduce((count, value) => count + (value >= 128 ? 1 : 0), 0) : 0;
 }
 
 interface FakeOptions {

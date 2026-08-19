@@ -1,0 +1,177 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "log": {
+    "compression": {
+      "roughness 0": {
+        "raw_bytes": 65536,
+        "packed_bytes": 2764,
+        "ratio": 23.7,
+        "unpacking_300_ms": {
+          "n": 15,
+          "median": 6.9,
+          "min": 6.7,
+          "max": 7.1
+        },
+        "last_byte": 0
+      },
+      "roughness 0.5": {
+        "raw_bytes": 65536,
+        "packed_bytes": 3448,
+        "ratio": 19,
+        "unpacking_300_ms": {
+          "n": 15,
+          "median": 10.5,
+          "min": 10.3,
+          "max": 10.7
+        },
+        "last_byte": 0
+      },
+      "roughness 1": {
+        "raw_bytes": 65536,
+        "packed_bytes": 4258,
+        "ratio": 15.4,
+        "unpacking_300_ms": {
+          "n": 15,
+          "median": 13.7,
+          "min": 13.3,
+          "max": 13.8
+        },
+        "last_byte": 0
+      },
+      "a boundary 6 texels wide": {
+        "raw_bytes": 65536,
+        "packed_bytes": 5554,
+        "ratio": 11.8,
+        "unpacking_300_ms": {
+          "n": 15,
+          "median": 10.6,
+          "min": 10.4,
+          "max": 11
+        },
+        "last_byte": 0
+      },
+      "a boundary 16 texels wide": {
+        "raw_bytes": 65536,
+        "packed_bytes": 10200,
+        "ratio": 6.4,
+        "unpacking_300_ms": {
+          "n": 15,
+          "median": 10.1,
+          "min": 10,
+          "max": 10.5
+        },
+        "last_byte": 0
+      }
+    },
+    "fold": {
+      "30 frames": {
+        "at_the_end": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "at_the_middle": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "folded": 1,
+        "raw_megabytes": 2,
+        "packed_megabytes": 0.1
+      },
+      "300 frames": {
+        "at_the_end": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "at_the_middle": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "folded": 1,
+        "raw_megabytes": 19.7,
+        "packed_megabytes": 1
+      },
+      "3000 frames": {
+        "at_the_end": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "at_the_middle": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "folded": 1,
+        "raw_megabytes": 196.6,
+        "packed_megabytes": 10.3
+      },
+      "18000 frames": {
+        "at_the_end": {
+          "n": 15,
+          "median": 0.2,
+          "min": 0.1,
+          "max": 0.3
+        },
+        "at_the_middle": {
+          "n": 15,
+          "median": 0.2,
+          "min": 0,
+          "max": 0.2
+        },
+        "folded": 1,
+        "raw_megabytes": 1179.6,
+        "packed_megabytes": 62.1
+      }
+    },
+    "one_in_thirty": {
+      "3000 frames": {
+        "commands": 100,
+        "at_the_end": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "folded": 1,
+        "raw_megabytes": 6.6,
+        "packed_megabytes": 0.3
+      },
+      "18000 frames": {
+        "commands": 600,
+        "at_the_end": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "folded": 1,
+        "raw_megabytes": 39.3,
+        "packed_megabytes": 2.1
+      }
+    },
+    "allocating_300_masks_ms": {
+      "n": 5,
+      "median": 0.2,
+      "min": 0.1,
+      "max": 0.2
+    }
+  },
+  "log:wall-seconds": 1
+}

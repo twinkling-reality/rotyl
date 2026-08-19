@@ -677,40 +677,54 @@ function commandLog(video: unknown): Section {
   const fold = (frames: string): string =>
     `${num(video, ['log', 'fold', `${frames} frames`, 'at_the_end', 'median']).toFixed(1)} ms`;
   const megabytes = (frames: string): string =>
-    `${num(video, ['log', 'fold', `${frames} frames`, 'mask_megabytes']).toFixed(0)} MB`;
-  const rle = (roughness: string): string =>
-    `${(num(video, ['log', 'compression', `roughness ${roughness}`, 'run_length_bytes']) / 1024).toFixed(1)} KB`;
-  const ratio = (roughness: string): string =>
-    `${num(video, ['log', 'compression', `roughness ${roughness}`, 'ratio']).toFixed(0)} times`;
+    `${num(video, ['log', 'fold', `${frames} frames`, 'raw_megabytes']).toFixed(0)} MB`;
+  const packed = (frames: string): string =>
+    `${num(video, ['log', 'fold', `${frames} frames`, 'packed_megabytes']).toFixed(0)} MB`;
+  const size = (mask: string): string =>
+    `${(num(video, ['log', 'compression', mask, 'packed_bytes']) / 1024).toFixed(1)} KB`;
+  const ratio = (mask: string): string =>
+    `${num(video, ['log', 'compression', mask, 'ratio']).toFixed(0)} times`;
+  const unpacking = (mask: string): string =>
+    `${num(video, ['log', 'compression', mask, 'unpacking_300_ms', 'median']).toFixed(1)} ms`;
   const sparse = (frames: string): string =>
-    `${num(video, ['log', 'one_in_thirty', `${frames} frames`, 'mask_megabytes']).toFixed(0)} MB`;
+    `${num(video, ['log', 'one_in_thirty', `${frames} frames`, 'packed_megabytes']).toFixed(1)} MB`;
   return {
-    heading: 'A tracked clip belongs in the command log, and the mask does not fit in it',
+    heading: 'A tracked clip belongs in the command log, and the mask had to change shape to fit',
     prose: [
       'Tracking contributes one applyMask command per frame it has followed the object to, which is the mechanism the document already has and needs no new command type. Whether that scales is a different question from whether it fits, and the log is what makes undo and device-loss recovery cheap enough to be free.',
       `The objection that looked most likely turns out not to be one. Folding a frame's commands filters and sorts the whole log, which is nothing at ten commands and could have been a per-frame cost at ten thousand. It is not: ${fold(
         '18000',
       )} for a ten-minute clip with a mask on every frame, against a 33 ms frame.`,
-      `What does not fit is the bytes. A mask at the engine's own 256 px square is 64 KB, so ten seconds is ${megabytes(
+      `What did not fit is the bytes. A mask at the engine's own 256 px square is 64 KB held plainly, so ten seconds was ${megabytes(
         '300',
-      )} and ten minutes is ${megabytes('18000')}. That is the same wall a clip export already meets and it arrives sooner.`,
-      `Coverage is nearly binary, so it compresses like it: a run-length encoding by row is ${rle(
-        '0.5',
-      )}, ${ratio(
-        '0.5',
-      )} smaller, and the ragged end of the sweep is barely worse because the cost is the perimeter rather than the area. That is a change to how a CoverageMask is stored and not to what the log is, so the answer is that the log is the right place and the mask is the wrong shape.`,
+      )} and ten minutes ${megabytes(
+        '18000',
+      )}, which is the same wall a clip export already meets arriving sooner. Coverage is nearly binary and packs like it: ${size(
+        'roughness 0.5',
+      )} for a mask this shape, ${ratio(
+        'roughness 0.5',
+      )} smaller, and the ragged end of the sweep is barely worse because the cost is the perimeter rather than the area. Ten minutes is ${packed(
+        '18000',
+      )}.`,
+      `What the packing does not pay for by itself is the replay. Unpacking is cheap once and is not once: a rebuild of the mask walks every command the frame folded to, and ${unpacking(
+        'roughness 0.5',
+      )} of a 33 ms frame goes on three hundred masks before any of them reaches the GPU. So the fold cuts at the last command that decides the frame by itself, which a run of replaces makes the last one. Three hundred commands become one, and so does eighteen thousand.`,
     ],
     table: {
-      columns: ['a mask on every frame', 'masks held', 'folding one frame'],
+      columns: ['a mask on every frame', 'held plainly', 'packed', 'folding one frame'],
       rows: [
-        ['10 seconds', megabytes('300'), fold('300')],
-        ['100 seconds', megabytes('3000'), fold('3000')],
-        ['10 minutes', megabytes('18000'), fold('18000')],
+        ['10 seconds', megabytes('300'), packed('300'), fold('300')],
+        ['100 seconds', megabytes('3000'), packed('3000'), fold('3000')],
+        ['10 minutes', megabytes('18000'), packed('18000'), fold('18000')],
       ],
     },
-    caveat: `The cheap alternative is one command a second rather than one a frame, letting the hold-forward rule cover the gap, which is ${sparse(
+    caveat: `A wide boundary is what costs the packing, not a ragged one, because the engine maps its decision boundary across the whole range and an answer it is unsure about never leaves the ramp: ${ratio(
+      'a boundary 6 texels wide',
+    )} on one six texels across against ${ratio(
+      'roughness 0.5',
+    )} on a crisp one. The cheap alternative to all of it was one command a second rather than one a frame, letting the hold-forward rule cover the gap, which is ${sparse(
       '18000',
-    )} for ten minutes and no compression at all. It is the wrong trade and worth stating as one: the gap it leaves holding is exactly the drift tracking exists to remove, so it buys memory back from the feature rather than from its representation.`,
+    )} for ten minutes. It is the wrong trade and worth stating as one: the gap it leaves holding is exactly the drift tracking exists to remove, so it buys memory back from the feature rather than from its representation.`,
     command: 'node tools/video-bench/run.mjs log',
   };
 }
@@ -868,10 +882,11 @@ export interface Results {
   readonly tracking: unknown;
   readonly shrink: unknown;
   readonly bundle: unknown;
+  readonly log: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
-  const { style, real, video, tracking, shrink, bundle } = results;
+  const { style, real, video, tracking, shrink, bundle, log } = results;
   return [
     {
       slug: 'the-look',
@@ -965,7 +980,7 @@ export function entries(results: Results): readonly Entry[] {
         tracksWhat(tracking),
         pointers(tracking),
         download(video, shrink),
-        commandLog(video),
+        commandLog(log),
         readback(video),
       ],
     },

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SelectionDocument } from '../src/core/document/selection-document.ts';
-import { commandsForFrame, type CoverageMask } from '../src/core/document/selection-command.ts';
+import { commandsForFrame, hasAnyCoverage } from '../src/core/document/selection-command.ts';
+import { expandCoverage, packCoverage, type CoverageMask } from '../src/core/document/coverage-mask.ts';
 import { runTracking, TrackingCancelled, type TrackedScene } from '../src/core/perception/tracking-job.ts';
 import type { SceneEmbedding } from '../src/core/perception/segmentation-engine.ts';
 import type { ObjectTrack, TrackingEngine } from '../src/core/perception/tracking-engine.ts';
@@ -16,11 +17,8 @@ import type { ObjectTrack, TrackingEngine } from '../src/core/perception/trackin
  * for `tools/edgetam-export`, which answers it against ground truth.
  */
 
-const mask = (fill: number, size = 4): CoverageMask => ({
-  width: size,
-  height: size,
-  coverage: new Uint8Array(size * size).fill(fill),
-});
+const mask = (fill: number, size = 4): CoverageMask =>
+  packCoverage(size, size, new Uint8Array(size * size).fill(fill));
 
 /** Records what it was asked and hands back a mask that says which frame it is. */
 class FakeEngine implements TrackingEngine {
@@ -135,7 +133,7 @@ describe('a tracking run', () => {
     });
 
     // Two tracks, seeded with what they were given, in order.
-    expect(engine.begun.map((seed) => seed.coverage[0])).toEqual([255, 128]);
+    expect(engine.begun.map((seed) => expandCoverage(seed)[0])).toEqual([255, 128]);
     // Two commands per frame, and the frame was read once for both of them:
     // reading is the expensive half and it does not scale with objects.
     const onFrameOne = document.appliedCommands.filter((command) => command.frame === 1);
@@ -234,8 +232,14 @@ describe('a tracking run', () => {
     });
 
     const beyond = commandsForFrame(document.appliedCommands, 50);
+    // What decides the mask is the tracker's own command on the last frame it
+    // reached, and it is still what decides it fifty frames later.
     expect(beyond.at(-1)?.frame).toBe(2);
-    expect(beyond).toHaveLength(3);
+    expect(hasAnyCoverage(beyond)).toBe(true);
+    // One command and not four: a run writes `replace` on every frame it
+    // reached, so the fold cuts at the last of them rather than handing a
+    // replay three uploads whose results the next one discards.
+    expect(beyond).toHaveLength(1);
   });
 
   it('refuses a run with nothing to follow', async () => {

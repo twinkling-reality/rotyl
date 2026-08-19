@@ -2,6 +2,7 @@
 //
 //   node tools/video-bench/run.mjs decode colour
 //   node tools/video-bench/run.mjs all
+//   node tools/video-bench/run.mjs log     # its own file; see APART below
 //
 // Headed, and channel:'chrome', for the same reason playwright.config.ts uses
 // them: bundled Chromium falls back to SwiftShader, which reports success while
@@ -14,6 +15,15 @@
 import { chromium } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 
+/**
+ * Kept out of `all`, and out of the file `all` writes, because it shares
+ * nothing with the rest: no GPU, no clips, nothing to fetch. Running it inside
+ * the same run would re-date every decode and encode figure beside it for a
+ * measurement about a data structure. Its own command, its own results file,
+ * the same as the bundle sizes.
+ */
+const APART = ['log'];
+
 const ALL = [
   'readback',
   'ort-device',
@@ -25,13 +35,12 @@ const ALL = [
   'encode',
   'encode-colour',
   'shared-device',
-  'log',
 ];
 
 const args = process.argv.slice(2);
 const which = args.length === 1 && args[0] === 'all' ? ALL : args;
 if (which.length === 0) {
-  console.error(`usage: node tools/video-bench/run.mjs <all|${ALL.join('|')}>...`);
+  console.error(`usage: node tools/video-bench/run.mjs <all|${[...ALL, ...APART].join('|')}>...`);
   process.exit(1);
 }
 

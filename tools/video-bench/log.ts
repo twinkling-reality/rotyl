@@ -11,8 +11,10 @@
 //   THE BYTES are arithmetic. A mask at the engine's own 256 px square is
 //   65,536 bytes, so three hundred frames is 19 MB and ten minutes at 30 fps is
 //   1.2 GB. Nothing needs measuring there; what needs measuring is what a real
-//   mask compresses to, because coverage is nearly binary and a run-length
-//   encoding of it is a different order of magnitude.
+//   mask compresses to, because coverage is nearly binary and a packing of it
+//   is a different order of magnitude. This runs the packing the document
+//   actually uses rather than a sketch of one, so the ratio below is the ratio
+//   a log gets and not an argument for building it.
 //
 //   THE FOLD is not arithmetic and is the one that can force a different
 //   design. `commandsForFrame` filters and sorts the whole log on every frame,
@@ -23,11 +25,8 @@
 // Deliberately no GPU here. This is a measurement about a data structure, and
 // the data structure is DOM-free core code that runs anywhere.
 
-import {
-  commandsForFrame,
-  type CoverageMask,
-  type SelectionCommand,
-} from '../../src/core/document/selection-command.ts';
+import { commandsForFrame, type SelectionCommand } from '../../src/core/document/selection-command.ts';
+import { expandCoverage, packCoverage, type CoverageMask } from '../../src/core/document/coverage-mask.ts';
 import { DEFAULT_REFINE_SETTINGS } from '../../src/core/mask/refine-params.ts';
 import { sample, stats, type Stat } from './util.ts';
 
@@ -37,12 +36,18 @@ const MASK = 256;
 /**
  * A mask shaped like something a tracker returns.
  *
- * `roughness` moves the boundary between a circle and a coastline, which is the
- * only property a run-length encoding cares about: its cost is the perimeter,
- * not the area. A real object's silhouette sits somewhere between the two and
- * the point of the sweep is to bracket it rather than to pick one.
+ * `roughness` moves the boundary between a circle and a coastline, and `ramp`
+ * moves how wide the boundary itself is. Those are the two properties a packing
+ * cares about, because its cost is the perimeter rather than the area and a
+ * soft perimeter is a wider one. A real silhouette sits inside both sweeps and
+ * the point of them is to bracket it rather than to pick one.
+ *
+ * The ramp matters more than it looks. `edgetam-engine.ts` maps the decision
+ * boundary to clearly-decided across the whole 0 to 255 range on purpose, so a
+ * confident edge crosses it inside a texel and a region the model is unsure
+ * about never leaves it. The second sweep is what an unsure answer costs.
  */
-function coverage(roughness: number): CoverageMask {
+function coverage(roughness: number, ramp = 2): CoverageMask {
   const data = new Uint8Array(MASK * MASK);
   const centre = MASK / 2;
   for (let y = 0; y < MASK; y++) {
@@ -57,43 +62,16 @@ function coverage(roughness: number): CoverageMask {
         roughness * (0.25 * Math.sin(angle * 7) + 0.15 * Math.sin(angle * 19) + 0.08 * Math.sin(angle * 41));
       const radius = MASK * 0.34 * wobble;
       const distance = Math.hypot(dx, dy);
-      // A soft edge over two texels, which is what the engine's own answer has
-      // and what makes this more than a bitmap.
-      const t = Math.min(1, Math.max(0, (radius - distance) / 2));
+      // A soft edge, which is what the engine's own answer has and what makes
+      // this more than a bitmap.
+      const t = Math.min(1, Math.max(0, (radius - distance) / ramp));
       data[y * MASK + x] = Math.round(t * 255);
     }
   }
-  return { width: MASK, height: MASK, coverage: data };
+  return packCoverage(MASK, MASK, data);
 }
 
-/**
- * Run-length encode by row, and return the bytes it would take.
- *
- * Two bytes a run: a value and a length, with a run capped at 255. Not a real
- * format, and deliberately the dumbest one that could work, because the
- * question is whether the order of magnitude changes rather than which codec
- * wins.
- */
-function runLengthBytes(mask: CoverageMask): { bytes: number; runs: number } {
-  let runs = 0;
-  for (let y = 0; y < mask.height; y++) {
-    let x = 0;
-    while (x < mask.width) {
-      const value = mask.coverage[y * mask.width + x];
-      let length = 1;
-      while (
-        x + length < mask.width &&
-        length < 255 &&
-        mask.coverage[y * mask.width + x + length] === value
-      ) {
-        length++;
-      }
-      runs++;
-      x += length;
-    }
-  }
-  return { bytes: runs * 2, runs };
-}
+const RAW_BYTES = MASK * MASK;
 
 function trackedLog(frames: number, mask: CoverageMask): SelectionCommand[] {
   const commands: SelectionCommand[] = [];
@@ -109,16 +87,32 @@ function trackedLog(frames: number, mask: CoverageMask): SelectionCommand[] {
 export async function log(): Promise<unknown> {
   const out: Record<string, unknown> = {};
 
-  // What a mask costs, and what it would cost compressed.
+  // What a mask costs packed, and what it costs to get the bytes back, which
+  // is the price the packing charges: a replay unpacks one of these per
+  // applyMask command before it can upload it.
   const compression: Record<string, unknown> = {};
-  for (const roughness of [0, 0.5, 1]) {
-    const mask = coverage(roughness);
-    const { bytes, runs } = runLengthBytes(mask);
-    compression[`roughness ${String(roughness)}`] = {
-      raw_bytes: mask.coverage.length,
-      run_length_bytes: bytes,
-      runs,
-      ratio: Math.round((mask.coverage.length / bytes) * 10) / 10,
+  const cases: readonly (readonly [string, CoverageMask])[] = [
+    ['roughness 0', coverage(0)],
+    ['roughness 0.5', coverage(0.5)],
+    ['roughness 1', coverage(1)],
+    ['a boundary 6 texels wide', coverage(0.5, 6)],
+    ['a boundary 16 texels wide', coverage(0.5, 16)],
+  ];
+  const into = new Uint8Array(RAW_BYTES);
+  for (const [name, mask] of cases) {
+    let held = 0;
+    compression[name] = {
+      raw_bytes: RAW_BYTES,
+      packed_bytes: mask.packed.length,
+      ratio: Math.round((RAW_BYTES / mask.packed.length) * 10) / 10,
+      // Three hundred of them, which is a replay of a ten-second tracked run
+      // rather than one command: a single mask unpacks below what a timer here
+      // can see, and the question is what a whole rebuild of the mask pays.
+      unpacking_300_ms: await sample(15, 3, () => {
+        for (let i = 0; i < 300; i++) held = expandCoverage(mask, into)[i] ?? 0;
+      }),
+      // Held so the unpacking cannot be optimised away.
+      last_byte: held,
     };
   }
   out.compression = compression;
@@ -144,7 +138,8 @@ export async function log(): Promise<unknown> {
       // Held so the fold cannot be optimised away, and reported so it is
       // obvious that it was not.
       folded: Array.isArray(held) ? held.length : 0,
-      mask_megabytes: Math.round(((frames * mask.coverage.length) / 1e6) * 10) / 10,
+      raw_megabytes: Math.round(((frames * RAW_BYTES) / 1e6) * 10) / 10,
+      packed_megabytes: Math.round(((frames * mask.packed.length) / 1e6) * 10) / 10,
     };
   }
   out.fold = fold;
@@ -165,7 +160,8 @@ export async function log(): Promise<unknown> {
         held = commandsForFrame(commands, frames - 1);
       }),
       folded: Array.isArray(held) ? held.length : 0,
-      mask_megabytes: Math.round(((commands.length * mask.coverage.length) / 1e6) * 10) / 10,
+      raw_megabytes: Math.round(((commands.length * RAW_BYTES) / 1e6) * 10) / 10,
+      packed_megabytes: Math.round(((commands.length * mask.packed.length) / 1e6) * 10) / 10,
     };
   }
   out.one_in_thirty = sparse;
@@ -178,7 +174,7 @@ export async function log(): Promise<unknown> {
     const t0 = performance.now();
     const held: Uint8Array[] = [];
     for (let i = 0; i < 300; i++) {
-      const copy = new Uint8Array(mask.coverage);
+      const copy = new Uint8Array(mask.packed);
       copy[0] = i & 0xff;
       held.push(copy);
     }

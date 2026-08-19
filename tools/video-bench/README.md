@@ -16,12 +16,17 @@ pnpm dev --port 5180                       # in another shell
 node tools/video-bench/run.mjs all         # real Chrome, headed
 ```
 
-`run.mjs` takes any subset: `readback`, `ort-device`, `attention`,
-`bank-rampup`, `half-precision`, `decode`, `colour`, `encode`, `encode-colour`,
-`shared-device`, `log`. The bundle sizes are separate and need no browser:
-`node tools/video-bench/bundle-size.mjs`. The clips are gitignored,
-`results.json` is not, and the graphs come from `tools/edgetam-export`.
-`export.py` for the pair, then `half_precision.py`.
+`run.mjs all` takes the nine that need a GPU and a clip, and it takes any
+subset of them: `readback`, `ort-device`, `attention`, `bank-rampup`,
+`half-precision`, `decode`, `colour`, `encode`, `encode-colour`,
+`shared-device`. Two measurements sit outside that run and write their own
+files, because they share nothing with it and re-taking one of them should not
+re-date every figure it would otherwise have landed beside. The bundle sizes
+need a build and no browser: `node tools/video-bench/bundle-size.mjs`. The
+command log needs neither, since it is arithmetic over a data structure:
+`node tools/video-bench/run.mjs log`. The clips are gitignored, `results.json`,
+`results-bundle.json` and `results-log.json` are not, and the graphs come from
+`tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
 
 Real Chrome and headed, for the reason `playwright.config.ts` gives: bundled
 Chromium falls back to SwiftShader, which reports success while producing
@@ -503,22 +508,50 @@ log on every frame, which is free at ten commands and could plausibly have been
 a per-frame cost at ten thousand. Measured: 0.3 ms for eighteen thousand
 commands, against a 33 ms frame. That objection is dead.
 
-**The bytes are.** A mask at the engine's own 256 px square is 64 KB, so ten
-seconds is 20 MB and ten minutes is 1.2 GB. That is the wall a clip export
-already meets, arriving sooner.
+**The bytes were.** A mask at the engine's own 256 px square is 64 KB held
+plainly, so ten seconds was 20 MB and ten minutes 1.2 GB. That is the wall a
+clip export already meets, arriving sooner.
 
-**Coverage is nearly binary and compresses like it.** A run-length encoding by
-row takes a mask from 64 KB to about 4 KB, and the ragged end of the sweep is
-barely worse than the smooth end, because the cost is the perimeter and not the
-area. Ten minutes becomes about eighty megabytes.
+**Coverage is nearly binary and packs like it.** So the log stays the source of
+truth and the mask changed shape, which is a change to one interface rather than
+to the document model. Ten minutes is 62 MB.
 
-So the log stays the source of truth and the mask changes shape, which is a
-change to one interface rather than to the document model. The cheap alternative,
-one command a second with the hold-forward rule covering the gap, is 39 MB with
-no compression and is the wrong trade: the gap it leaves held is exactly the
-drift tracking exists to remove.
+| a mask 256 px square      | packed  | against 64 KB |
+| ------------------------- | ------- | ------------- |
+| a smooth silhouette       | 2.7 KB  | 23.7×         |
+| a ragged one              | 4.2 KB  | 15.4×         |
+| a boundary 6 texels wide  | 5.4 KB  | 11.8×         |
+| a boundary 16 texels wide | 10.0 KB | 6.4×          |
 
-The numbers are on `/research/tracking.html`.
+**What costs it is a wide boundary, not a ragged one**, and that is the sweep
+worth having rather than the one this file started with. The cost is the
+perimeter and not the area, so a coastline is barely dearer than a circle. A
+SOFT perimeter is a wider one, and `edgetam-engine.ts` maps its decision
+boundary to clearly-decided across the whole range on purpose, so a confident
+edge crosses it inside a texel and a region the model is unsure about never
+leaves it.
+
+**Which is what decided the encoding.** PackBits, a control byte and then either
+a repeat or a run of literals, against the obvious alternative of pairs of a
+value and a length. On a crisp boundary the two are the same size to within a
+tenth of a per cent, so the realistic case does not choose between them. The
+soft one does, 11.8 times against 9.2, and so does the bad case: pairs double a
+mask that alternates every pixel where PackBits cannot add more than one byte in 128. An unbounded bad case is a poor thing to put in the one structure the
+document cannot rebuild.
+
+**And packing has a price on the way out, which is where the second change came
+from.** A replay unpacks every mask the frame folded to, and 10.5 ms of a 33 ms
+frame goes on three hundred of them before any reaches the GPU. So the fold now
+cuts at the last command that decides the frame by itself, a clear or a mask
+applied with `replace`, since everything before one of those is discarded by it.
+A tracked run writes `replace` on every frame it reached, so three hundred
+commands fold to one, and so do eighteen thousand.
+
+The cheap alternative to all of it, one command a second with the hold-forward
+rule covering the gap, is 2.1 MB packed and is still the wrong trade: the gap it
+leaves held is exactly the drift tracking exists to remove.
+
+The numbers are on `/research/tracking.html`, out of `results-log.json`.
 
 ---
 

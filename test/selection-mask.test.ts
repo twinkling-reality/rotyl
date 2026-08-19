@@ -3,6 +3,7 @@ import { testDevice } from './gpu-harness.ts';
 import { at, MASK_SIZE as SIZE, readMask } from './mask-harness.ts';
 import { SelectionMask } from '../src/core/mask/selection-mask.ts';
 import type { SelectionCommand } from '../src/core/document/selection-command.ts';
+import { packCoverage } from '../src/core/document/coverage-mask.ts';
 
 async function replayed(commands: readonly SelectionCommand[]): Promise<Uint8Array> {
   const { device } = await testDevice();
@@ -121,11 +122,12 @@ describe('mask operations', () => {
   it('applies an externally produced mask through the one permitted bridge', async () => {
     // Stands in for a segmentation engine: a small, low-resolution mask that
     // has to be magnified into the full-resolution render mask.
-    const engineMask = { width: 4, height: 4, coverage: new Uint8Array(16).fill(0) };
-    engineMask.coverage[5] = 255;
-    engineMask.coverage[6] = 255;
-    engineMask.coverage[9] = 255;
-    engineMask.coverage[10] = 255;
+    const cells = new Uint8Array(16);
+    cells[5] = 255;
+    cells[6] = 255;
+    cells[9] = 255;
+    cells[10] = 255;
+    const engineMask = packCoverage(4, 4, cells);
 
     const coverage = await replayed([{ kind: 'applyMask', mask: engineMask, op: 'replace', frame: 0 }]);
     expect(at(coverage, 64, 64)).toBeGreaterThan(200);

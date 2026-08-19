@@ -63,6 +63,20 @@ export const TRIALS: readonly Trial[] = [
     where: 'docs/limits.md',
   },
   {
+    what: 'Pairs of a value and a length for the masks a tracked run leaves in the log',
+    verdict: 'rejected',
+    evidence:
+      'The same size as PackBits to within a tenth of a per cent on a crisp boundary, 9.2 times against 11.8 on one six texels across, which is what an engine produces where it is unsure, and twice the size of what it encodes in the bad case rather than one byte in 128',
+    where: 'src/core/document/coverage-mask.ts',
+  },
+  {
+    what: 'Cutting a frame’s fold at the last command that decides it by itself',
+    verdict: 'adopted',
+    evidence:
+      'Unpacking alone was 10.5 ms of a 33 ms frame across the three hundred masks a ten-second tracked run folds to, all but the last of them discarded by the next. Three hundred commands become one, and eighteen thousand become one',
+    where: 'src/core/document/selection-command.ts',
+  },
+  {
     what: 'A guided filter against the photograph, for the model’s mask boundary',
     verdict: 'adopted',
     evidence:
