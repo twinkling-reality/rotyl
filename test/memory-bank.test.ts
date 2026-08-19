@@ -14,6 +14,13 @@ import {
 /**
  * The half of a tracker that can be checked without a tracker.
  *
+ * WRITTEN TO ALLOCATE ALMOST NOTHING, which is not a style preference here. The
+ * suite keeps a Dawn device alive across files and the garbage a test makes
+ * while it is alive aborts the worker outright, with every assertion already
+ * passed. Spreading a 3648-element mask into a JS array to count it did exactly
+ * that: `mask-refine` went from failing one run in three to failing every run.
+ * So the counting below is loops over typed arrays.
+ *
  * Everything here is arithmetic the reference also does, so it can be wrong in
  * exactly one way: agreeing with its author and not with the model. The
  * position encoding is therefore checked against values `parameters.py` read
@@ -27,6 +34,13 @@ interface Fixture {
   readonly tokens: readonly number[];
   readonly at: readonly number[];
   readonly values: readonly (readonly number[])[];
+}
+
+/** Counted rather than filtered: see the note above about garbage. */
+function openTokens(keyMask: Float32Array): number {
+  let open = 0;
+  for (const value of keyMask) if (value === 0) open++;
+  return open;
 }
 
 const entry = (fill: number): MemoryEntry => ({
@@ -77,8 +91,7 @@ describe('laying out a memory bank', () => {
 
   it('masks every token it did not fill, including the pointer block', () => {
     const bank = layOutBank([entry(1), entry(2)], temporal);
-    const open = [...bank.keyMask].filter((value) => value === 0).length;
-    expect(open).toBe(2 * TOKENS_PER_MEMORY);
+    expect(openTokens(bank.keyMask)).toBe(2 * TOKENS_PER_MEMORY);
     // The pointers are the last block and there are none: the published mask
     // decoder does not expose `object_pointer`.
     expect(bank.keyMask.at(-1)).toBeLessThan(0);
@@ -115,7 +128,7 @@ describe('laying out a memory bank', () => {
     // remainder still run oldest first.
     expect(bank.memory[0]).toBe(4);
     expect(bank.memory[6 * TOKENS_PER_MEMORY * MEMORY_DIM]).toBe(10);
-    expect([...bank.keyMask].filter((value) => value === 0).length).toBe(MEMORY_ENTRIES * TOKENS_PER_MEMORY);
+    expect(openTokens(bank.keyMask)).toBe(MEMORY_ENTRIES * TOKENS_PER_MEMORY);
   });
 });
 
@@ -132,6 +145,8 @@ describe('the mask a memory entry is encoded from', () => {
     expect(soft[0]).toBeLessThan(-9);
     expect(soft[4]).toBeGreaterThan(9);
     // Monotonic, which is the property the encoder is entitled to assume.
-    expect([...soft].every((value, i, all) => i === 0 || value > (all[i - 1] ?? 0))).toBe(true);
+    let rising = true;
+    for (let i = 1; i < soft.length; i++) rising &&= (soft[i] ?? 0) > (soft[i - 1] ?? 0);
+    expect(rising).toBe(true);
   });
 });
