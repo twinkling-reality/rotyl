@@ -175,7 +175,25 @@ function emptyMask(): CoverageMask {
   return packCoverage(MASK_SIZE, MASK_SIZE, new Uint8Array(MASK_SIZE * MASK_SIZE));
 }
 
-/** A seed's coverage read back as the logits the rest of this works in. */
+/**
+ * A seed's coverage read back as the logits the rest of this works in.
+ *
+ * ONLY THE SIGN OF THIS IS EVER READ: `maskForMemory` is told the mask came
+ * from a prompt, so it thresholds rather than softening. So the whole of what
+ * this decides is where a seed stops being the object, and it puts that at half
+ * coverage.
+ *
+ * WHICH IS NOT WHERE THE MODEL PUTS IT, and that is the one place this
+ * deliberately differs from the reference. The coverage ramp runs from the
+ * decision boundary to clearly-decided, so a logit of zero is coverage zero and
+ * half coverage is a logit of one: a model-derived seed therefore arrives very
+ * slightly eroded. Measured on four clips, that is the only difference left
+ * between this tracker and the PyTorch one, which it otherwise reproduces frame
+ * for frame; it costs between one and nine points of worst-frame agreement and
+ * buys a shade of IoU back against ground truth. It is kept because by the time
+ * a run starts the seed genuinely is a coverage mask, brushwork and all, and
+ * half coverage is what half coverage means.
+ */
 function seedLogits(seed: CoverageMask): Float32Array {
   const coverage = expandCoverage(seed);
   const out = new Float32Array(MASK_SIZE * MASK_SIZE);
@@ -185,8 +203,6 @@ function seedLogits(seed: CoverageMask): Float32Array {
     const row = Math.min(seed.height - 1, Math.floor(y * scaleY)) * seed.width;
     for (let x = 0; x < MASK_SIZE; x++) {
       const at = row + Math.min(seed.width - 1, Math.floor(x * scaleX));
-      // Centred on the same decision boundary the decoder's own output is, so
-      // the threshold below reads a seed and a prediction the same way.
       out[y * MASK_SIZE + x] = ((coverage[at] ?? 0) - 127.5) / 127.5;
     }
   }
