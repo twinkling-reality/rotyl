@@ -133,8 +133,12 @@ async function readWithProgress(
   return bytes;
 }
 
-async function fetchFile(name: string, onBytes: (delta: number) => void): Promise<Uint8Array<ArrayBuffer>> {
-  const url = `${BASE}/${name}`;
+async function fetchFile(
+  name: string,
+  onBytes: (delta: number) => void,
+  base = BASE,
+): Promise<Uint8Array<ArrayBuffer>> {
+  const url = `${base}/${name}`;
   const cache = await openCache();
 
   const cached = await cache?.match(url);
@@ -162,6 +166,12 @@ async function fetchFile(name: string, onBytes: (delta: number) => void): Promis
 export async function fetchModel(
   file: ModelFile,
   onProgress: (received: number) => void,
+  /**
+   * Where to fetch from, for the one caller that is not the published release.
+   * The tracking graphs are produced by `tools/edgetam-export` and hosted by
+   * whoever is running this, so they cannot be a constant here.
+   */
+  base?: string,
 ): Promise<ModelBytes> {
   let received = 0;
   const count = (delta: number): void => {
@@ -171,7 +181,7 @@ export async function fetchModel(
 
   // Sequential, not parallel: two large streams over one connection interleave
   // into a progress bar that stalls near the end while both finish at once.
-  const graph = await fetchFile(file.graph, count);
-  const weights = await fetchFile(file.weights, count);
+  const graph = await fetchFile(file.graph, count, base);
+  const weights = await fetchFile(file.weights, count, base);
   return { graph, weights };
 }

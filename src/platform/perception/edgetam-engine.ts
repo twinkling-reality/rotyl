@@ -67,8 +67,26 @@ type OrtTensor = InstanceType<Ort['Tensor']>;
 
 const EMBEDDING_NAMES = ['image_embeddings.0', 'image_embeddings.1', 'image_embeddings.2'] as const;
 
+/** What a tracked frame gets back from the mask decoder. */
+export interface ConditionedDecode {
+  /** Mask logits at MASK_SIZE square, best head first. */
+  readonly logits: Float32Array;
+  /** The model's own account of whether the object is in this frame at all. */
+  readonly objectScore: number;
+}
+
 interface EmbeddingState {
   readonly tensors: Record<string, OrtTensor>;
+  /**
+   * The mask decoder, run against features memory attention has conditioned
+   * and against no prompt at all.
+   *
+   * Here rather than on the engine because the embedding is what knows which
+   * sessions produced it, and here rather than in the tracker because the
+   * decoder is this engine's: a tracker reaching into another module's session
+   * would be two owners for one graph.
+   */
+  readonly decodeConditioned: (top: Float32Array) => Promise<ConditionedDecode>;
   /**
    * The frame this describes.
    *
@@ -89,6 +107,28 @@ interface EmbeddingState {
  * reads whatever happens to be there.
  */
 const embeddingState = new WeakMap<SceneEmbedding, EmbeddingState>();
+
+/**
+ * The tensors behind an embedding, for the tracker that shares them.
+ *
+ * The handle stays opaque to everything above `src/platform`: this is how the
+ * one other module that legitimately needs what is inside gets at it, rather
+ * than by a cast that reads whatever happens to be there. An embedding from
+ * somewhere else is simply not in the map.
+ */
+export function embeddingTensors(scene: SceneEmbedding): Record<string, OrtTensor> | undefined {
+  return embeddingState.get(scene)?.tensors;
+}
+
+/** The conditioned decode this embedding's engine offers, for the tracker. */
+export function conditionedDecoder(
+  scene: SceneEmbedding,
+): ((top: Float32Array) => Promise<ConditionedDecode>) | undefined {
+  return embeddingState.get(scene)?.decodeConditioned;
+}
+
+/** The runtime's tensor type, so a sibling can name what it was handed. */
+export type EdgeTamTensor = OrtTensor;
 
 /**
  * Two sessions on the runtime's own device.
@@ -220,7 +260,39 @@ export async function loadEdgeTamEngine(options: EdgeTamOptions): Promise<Segmen
           for (const tensor of Object.values(held)) tensor.dispose();
         },
       };
-      embeddingState.set(embedding, { tensors: held, frameSize: frame.size });
+      embeddingState.set(embedding, {
+        tensors: held,
+        frameSize: frame.size,
+        async decodeConditioned(top: Float32Array): Promise<ConditionedDecode> {
+          const tracked = await decoder.run({
+            ...held,
+            // The conditioned map replaces the top embedding and nothing else:
+            // the two finer levels are the same picture either way.
+            'image_embeddings.2': new ort.Tensor('float32', top, [1, 256, 64, 64]),
+            // Empty, which is how this graph already expresses "none of these"
+            // for a box-only prompt. A tracked frame has the bank instead.
+            input_points: new ort.Tensor('float32', new Float32Array(0), [1, 1, 0, 2]),
+            input_labels: new ort.Tensor('int64', new BigInt64Array(0), [1, 1, 0]),
+            input_boxes: new ort.Tensor('float32', new Float32Array(0), [1, 0, 4]),
+          });
+
+          const masks = floatsOf(tracked.pred_masks, 'pred_masks');
+          const scores = floatsOf(tracked.iou_scores, 'iou_scores');
+          // The best of the three heads by the model's own estimate, which is
+          // the right axis here: unlike a click, nobody is being offered a
+          // choice between a part, an object and a group.
+          let best = 0;
+          for (let head = 1; head < scores.length; head++) {
+            if ((scores[head] ?? 0) > (scores[best] ?? 0)) best = head;
+          }
+          const stride = MASK_SIZE * MASK_SIZE;
+          const objectLogits = tracked.object_score_logits?.data;
+          return {
+            logits: masks.slice(best * stride, (best + 1) * stride),
+            objectScore: objectLogits instanceof Float32Array ? (objectLogits[0] ?? 0) : (scores[best] ?? 0),
+          };
+        },
+      });
       return embedding;
     },
 
