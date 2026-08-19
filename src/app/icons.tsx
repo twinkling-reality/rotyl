@@ -1,5 +1,5 @@
 /**
- * The thirteen icons the interface uses.
+ * The sixteen icons the interface uses.
  *
  * Path data from Lucide (ISC licence, © Lucide Contributors), copied rather
  * than depended on: this is about a kilobyte of geometry, and a package plus a
@@ -170,6 +170,30 @@ export function PauseIcon(props: IconProps): JSX.Element {
     <Icon {...props}>
       <rect x="14" y="4" width="4" height="16" rx="1" />
       <rect x="6" y="4" width="4" height="16" rx="1" />
+    </Icon>
+  );
+}
+
+/**
+ * `route` for tracking: a path from one point to another, which is what a run
+ * produces. Not a crosshair, which says aiming, and not a target, which says
+ * the thing rather than its journey.
+ */
+export function RouteIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <circle cx="6" cy="19" r="3" />
+      <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+      <circle cx="18" cy="5" r="3" />
+    </Icon>
+  );
+}
+
+/** A filled square, for stopping a run. The universal one, and unmistakable. */
+export function StopIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <rect x="5" y="5" width="14" height="14" rx="2" />
     </Icon>
   );
 }

@@ -6,8 +6,10 @@ import {
   ContrastIcon,
   EraserIcon,
   PointerClickIcon,
+  RouteIcon,
   SlidersIcon,
   SquareIcon,
+  StopIcon,
   TrashIcon,
 } from './icons.tsx';
 
@@ -18,6 +20,21 @@ export interface ToolbarProps {
   readonly onInvert: () => void;
   readonly stylePanelOpen: boolean;
   readonly onToggleStylePanel: () => void;
+  /**
+   * Following the selection forward, when there is a clip to follow it through
+   * and somewhere to fetch the tracker from.
+   *
+   * ABSENT RATHER THAN DISABLED where either is missing. A photograph has no
+   * later frames, and a build with no host configured has nowhere to fetch
+   * nineteen megabytes of graph from; in both cases a greyed button would
+   * promise something that is not there.
+   */
+  readonly tracking?: {
+    readonly running: boolean;
+    readonly disabled: boolean;
+    readonly onTrack: () => void;
+    readonly onStop: () => void;
+  };
 }
 
 interface ToolButtonProps {
@@ -27,6 +44,7 @@ interface ToolButtonProps {
   readonly className?: string;
   readonly pressed?: boolean;
   readonly expanded?: boolean;
+  readonly disabled?: boolean;
 }
 
 /**
@@ -34,7 +52,15 @@ interface ToolButtonProps {
  * the viewport is too narrow for the full toolbar. `aria-label` carries the
  * name regardless, so collapsing to icons costs nothing to a screen reader.
  */
-function ToolButton({ label, icon, onClick, className, pressed, expanded }: ToolButtonProps): JSX.Element {
+function ToolButton({
+  label,
+  icon,
+  onClick,
+  className,
+  pressed,
+  expanded,
+  disabled,
+}: ToolButtonProps): JSX.Element {
   return (
     <button
       type="button"
@@ -42,6 +68,7 @@ function ToolButton({ label, icon, onClick, className, pressed, expanded }: Tool
       onClick={onClick}
       aria-label={label}
       title={label}
+      {...(disabled === undefined ? {} : { disabled })}
       {...(pressed === undefined ? {} : { 'aria-pressed': pressed })}
       {...(expanded === undefined ? {} : { 'aria-expanded': expanded })}
     >
@@ -58,6 +85,7 @@ export function Toolbar({
   onInvert,
   stylePanelOpen,
   onToggleStylePanel,
+  tracking,
 }: ToolbarProps): JSX.Element {
   return (
     <div class="toolbar" role="toolbar" aria-label="Selection and style">
@@ -118,6 +146,25 @@ export function Toolbar({
 
       <ToolButton label="Clear" icon={<TrashIcon />} onClick={onClear} />
       <ToolButton label="Invert" icon={<ContrastIcon />} onClick={onInvert} />
+      {/*
+        One button, and Stop replaces it rather than sitting beside it, which is
+        what the clip export does and for the same reason: while a run is going
+        there is exactly one thing to do to it. What it found so far is kept,
+        because a run abandoned half way has followed the object as far as it
+        got and there is already a button for taking that back.
+      */}
+      {tracking ? (
+        tracking.running ? (
+          <ToolButton label="Stop" icon={<StopIcon />} className="tool--running" onClick={tracking.onStop} />
+        ) : (
+          <ToolButton
+            label="Track"
+            icon={<RouteIcon />}
+            disabled={tracking.disabled}
+            onClick={tracking.onTrack}
+          />
+        )
+      ) : null}
 
       <span class="toolbar__divider" aria-hidden="true" />
 

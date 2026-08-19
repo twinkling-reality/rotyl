@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { useRotyl, type RotylRuntime } from './use-rotyl.ts';
+import { useTracking } from './use-tracking.ts';
 import { DropZone } from './DropZone.tsx';
 import { TopBar } from './TopBar.tsx';
 import { Toolbar } from './Toolbar.tsx';
@@ -29,6 +30,8 @@ import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
 import { isPrompt, type Tool } from './tool.ts';
 import type { PerceptionStatus, SelectIntent } from '../core/perception/perception-store.ts';
 import type { MaskCandidate } from '../core/perception/mask-candidates.ts';
+import type { TrackingStatus } from '../core/perception/tracking-store.ts';
+import { hasAnyCoverage } from '../core/document/selection-command.ts';
 
 interface LoadedFile {
   readonly file: File;
@@ -62,13 +65,39 @@ const FRAMES_BEFORE_JUDGING = 20;
 const TOLERATED_SKIP = 0.6;
 
 /**
+ * What a tracking run is doing, in the same status line everything else uses.
+ *
+ * Two fractions, and they mean different things. The download is nineteen
+ * megabytes and happens once; the run is one frame per ninety milliseconds and
+ * is the only place in the product where a progress figure counts something a
+ * person can see arriving on the timeline behind it.
+ */
+function describeTracking(
+  status: TrackingStatus,
+): { label: string; progress?: number | undefined } | undefined {
+  switch (status.kind) {
+    case 'loading':
+      return { label: 'Downloading the tracker', progress: status.progress };
+    case 'running':
+      return {
+        label: `Tracking, frame ${String(status.tracked)} of ${String(status.total)}`,
+        progress: status.total > 0 ? status.tracked / status.total : undefined,
+      };
+    default:
+      return undefined;
+  }
+}
+
+/**
  * What the perception layer is doing, in the status line.
  *
  * The download is the only one worth a percentage: it is tens of megabytes and
  * happens once, so a bare "Loading" would look indistinguishable from a hang.
  * The other two are hundreds of milliseconds and a number would just flicker.
  */
-function describePerception(status: PerceptionStatus): { label: string; progress?: number } | undefined {
+function describePerception(
+  status: PerceptionStatus,
+): { label: string; progress?: number | undefined } | undefined {
   switch (status.kind) {
     case 'loading':
       return { label: 'Downloading the object model', progress: status.progress };
@@ -137,6 +166,14 @@ export function App(): JSX.Element {
   const sourceRef = useRef<{ texture: GPUTexture; generation: number } | undefined>(undefined);
 
   const runtime: RotylRuntime | undefined = state.status === 'ready' ? state.runtime : undefined;
+
+  // A run of its own, over a decoder of its own, and only for a clip. The
+  // playhead and the tracker are two independent cursors over one document, so
+  // this deliberately does not participate in `busy`.
+  const tracking = useTracking({
+    runtime,
+    ...(loaded?.video ? { file: loaded.file } : { file: undefined }),
+  });
 
   // A lost device takes the source texture with it. The command log survives in
   // ordinary memory, so putting the image back is the whole of recovery here.
@@ -747,10 +784,19 @@ export function App(): JSX.Element {
   }
 
   const selection = runtime?.engine.document;
-  const status = activity ? { label: activity, progress: exportProgress } : describePerception(perception);
+  // Tracking runs while the user carries on scrubbing, so it goes in the status
+  // line but never into `busy`, which is what disables the interface. The
+  // playhead and the tracker are two cursors over one document, and an editor
+  // that froze for half a minute would be a third claim nobody made.
+  const status = activity
+    ? { label: activity, progress: exportProgress }
+    : (describeTracking(tracking.status) ?? describePerception(perception));
   // Object selection can fail on its own, a download that will not complete,
   // a runtime the browser will not start, and it has no other surface.
-  const notice = error ?? (perception.kind === 'failed' ? perception.message : undefined);
+  const notice =
+    error ??
+    (tracking.status.kind === 'failed' ? tracking.status.message : undefined) ??
+    (perception.kind === 'failed' ? perception.message : undefined);
   // historyRevision is read so that undo and redo re-evaluate when the log moves.
   void historyRevision;
   // Which frames carry an edit. A per-frame selection that leaves no trace on
@@ -758,6 +804,12 @@ export function App(): JSX.Element {
   const edited = selection ? editedFrames(selection.appliedCommands) : [];
   // Closing is only worth asking about when there is something to lose.
   const hasEdits = (selection?.appliedCommands.length ?? 0) > 0;
+  // And tracking needs something on THIS frame to follow, which is the fold's
+  // question rather than the log's.
+  // Only asked where there is a Track button to disable, so a build with no
+  // tracker configured folds no commands per render for a button it does not
+  // draw.
+  const hasSelection = tracking.available && runtime ? hasAnyCoverage(runtime.engine.frameCommands) : false;
 
   return (
     <div class="app">
@@ -841,6 +893,22 @@ export function App(): JSX.Element {
                 onToggleStylePanel={() => {
                   setStylePanelOpen((open) => !open);
                 }}
+                {...(tracking.available
+                  ? {
+                      tracking: {
+                        running: tracking.running,
+                        // There has to be something to follow. Coverage is
+                        // inferred from the log rather than read back from the
+                        // GPU, which is the same thing the overlay does.
+                        disabled: !hasSelection || activity !== undefined,
+                        onTrack: () => {
+                          if (playingRef.current) pause();
+                          tracking.track(runtime.engine.frame);
+                        },
+                        onStop: tracking.stop,
+                      },
+                    }
+                  : {})}
               />
             </Viewport>
             {loaded.video ? (

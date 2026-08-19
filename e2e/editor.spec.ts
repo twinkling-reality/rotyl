@@ -501,6 +501,21 @@ test('opens a video, scrubs it, and selects on a frame', async ({ page }) => {
   await expect(undo).toBeEnabled();
 });
 
+test('offers no tracking when there is nowhere to fetch a tracker from', async ({ page }) => {
+  // The graphs a tracker needs are in no published release, so a build says
+  // where they are or the feature is not there. This build says nothing, which
+  // is the state this suite runs in and the one worth pinning: a Track button
+  // that could only 404 after a nineteen-megabyte download is worse than an
+  // absent feature, and a default host would be exactly that button.
+  await page.locator('input[type=file]').setInputFiles(clip);
+  await expect(page.getByRole('slider', { name: 'Frame' })).toBeVisible();
+
+  await expect(page.getByRole('button', { name: 'Track' })).toHaveCount(0);
+  // Everything else in the toolbar is still there, so this is a missing button
+  // rather than a missing toolbar.
+  await expect(page.getByRole('button', { name: 'Invert' })).toBeVisible();
+});
+
 test('refuses a video it cannot decode, by name', async ({ page }) => {
   await page.locator('input[type=file]').setInputFiles(webm);
   await expect(page.getByText('WebM and Matroska are not supported yet. MP4 and MOV work.')).toBeVisible();
