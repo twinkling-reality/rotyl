@@ -13,12 +13,13 @@ one, and the measurement behind it is on `/research.html`.
   encoding a host has to supply alongside. Until they are hosted, a selection
   held across a moving subject still drifts off it and has to be corrected by
   selecting again further along.
-- A tracked run holds one mask per frame in the command log, at 64 KB each: 20 MB
-  for ten seconds and 1.2 GB for ten minutes. Folding them is free, measured at
-  0.2 ms for eighteen thousand commands, so the log is the right place for them.
-  The masks are not compressed, and coverage is nearly binary, so a run-length
-  encoding by row would take each one to about 4 KB. That is the fix when clips
-  get longer than the clip export already fails on.
+- A tracked run holds one mask per frame in the command log. Held plainly that
+  is 64 KB each, 20 MB for ten seconds and 1.2 GB for ten minutes; packed, which
+  is how they are held, it is 3.4 KB each and 62 MB for ten minutes. Folding
+  them is free, measured at 0.2 ms for eighteen thousand commands, and the fold
+  cuts at the last command that decides the frame by itself, so a replay unpacks
+  one mask rather than all of them. What is left is a clip long enough that
+  62 MB matters, which is longer than the clip export already fails on.
 - What is known about building tracking is measured.
   `tools/video-bench` puts memory attention at 60 ms a frame on WebGPU and 38 at
   half precision, which with the encoder and the decoder makes a tracked frame

@@ -211,6 +211,16 @@ gesture, so commands carry the id of the gesture that made them and undo takes
 the whole run. It is one optional field and two loops, and it is the only thing
 in the log that knows more than one command can belong together.
 
+**And it made the mask's shape matter.** One a frame at 64 KB is a gigabyte for
+ten minutes, so a mask is packed rather than held plainly, which takes it to
+about 3 KB without changing anything else about the log: it is still a
+resolution-independent statement about the image and replaying it still
+reconstructs a boundary. Unpacking is what that costs, and unpacking is not once
+per frame but once per command the frame folded to, so the fold cuts at the last
+command that decides the frame by itself. A run of masks applied with `replace`
+therefore folds to the last of them, whether it is three hundred or eighteen
+thousand, and the replay does one upload.
+
 It is also what makes a lost graphics device survivable. Everything the renderer
 owns belongs to one `GPUDevice` and dies with it; the log belongs to the work
 and does not, so the document is created outside the engine and handed to each
