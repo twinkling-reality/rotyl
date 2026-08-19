@@ -19,6 +19,7 @@ order to avoid a directory of Python would be a much worse trade.
 python3.12 -m venv venv && ./venv/bin/pip install -r requirements.txt
 ./venv/bin/python make_fixture.py       # four clips, analytic ground truth
 ./venv/bin/python export.py
+./venv/bin/python parameters.py         # the four tensors no graph carries
 ./venv/bin/python verify.py --sweep     # every clip, with and without pointers
 ```
 
@@ -156,8 +157,9 @@ frame is four sessions and a memory bank, and the parts that are neither are
 listed here because rediscovering them costs a day each and every one of them
 fails silently.
 
-**Four parameters that are in the checkpoint and in no graph.** All are tiny
-and all can be dumped to a few kilobytes beside the weights:
+**Four parameters that are in the checkpoint and in no graph.** All are tiny,
+and `parameters.py` writes all four to `onnx/parameters.json` along with the
+constants below, so a host serves one small file beside the graphs:
 
 | parameter                             | shape    | what it is for                                 |
 | ------------------------------------- | -------- | ---------------------------------------------- |
