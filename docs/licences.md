@@ -13,7 +13,7 @@ so it is written down here rather than left to whoever reads a lockfile:
 | onnxruntime-web      | MIT         | bundled, code-split                               |
 | mediabunny 1.55.1    | MPL-2.0     | bundled unmodified, code-split                    |
 | Geist and Geist Mono | SIL OFL 1.1 | subset and served, see `public/fonts/LICENSE.txt` |
-| eight Lucide paths   | ISC         | inlined into `src/app/icons.tsx`                  |
+| sixteen Lucide paths | ISC         | inlined into `src/app/icons.tsx`                  |
 
 **mediabunny is the one that asks for something.** MPL-2.0 is file-level
 copyleft: it reaches the files it covers and no further, so it does not touch

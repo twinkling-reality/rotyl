@@ -42,8 +42,9 @@ directory and a line in a table.
 See [how it is put together](docs/architecture.md).
 
 **Video.** Open an MP4 or a MOV, play it, scrub it, and select on any frame. An
-edit holds from the frame it was made on until something later changes it.
-See [video](docs/video.md).
+edit holds from the frame it was made on until something later changes it, and
+Track follows what is selected forward through the clip as a job the playhead is
+free to ignore. See [video](docs/video.md).
 
 **Exporting.** The frame on screen as a picture, or the whole clip as an MP4.
 Both are the preview's renderer at the preview's parameters stopping at the same
@@ -69,7 +70,7 @@ compiles it with no `dom` library, so a stray `window` fails the build rather
 than being caught in review. The payoff is concrete: every shader is unit-tested
 by running it for real through Dawn in Node, with no browser and no mocks.
 
-It ships as 139 KB of JavaScript, 42.5 KB gzipped, plus 31 KB of subset fonts.
+It ships as 144 KB of JavaScript, 44.1 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches neither the inference runtime, nor the demuxer, nor the container writer.
 
@@ -93,8 +94,9 @@ the code that produced it.
 
 ## Known limits, in short
 
-Tracking has an engine and no hosted weights, so a selection held across a
-moving subject still drifts off it. A clip is re-encoded, so outside the
+Tracking needs two graphs that no published release contains, so a build says
+where they are hosted or there is no Track button; without one, a selection held
+across a moving subject still drifts off it. A clip is re-encoded, so outside the
 selection it is the source pixels written again rather than the source bytes. Object selection needs the network
 once, for about 36 MB of model. The full list, which is longer and does not
 flatter the project, is in [known limits](docs/limits.md).

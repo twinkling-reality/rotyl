@@ -3,10 +3,14 @@
 Produces the two ONNX graphs that video tracking needs and the published EdgeTAM
 release does not contain.
 
-**Nothing in Rotyl uses these yet.** No video pipeline exists. This is here
-because it settled the question of whether one could be built, and because when
-one is, these graphs are a build input rather than something to rediscover. It
-is the same reason the font subsetting command is written down in the root
+**Rotyl fetches these at runtime, from wherever whoever built it put them.**
+There is no default host, because the failure mode of a wrong one is nineteen
+megabytes fetched and then a 404 at the moment somebody presses Track; a build
+sets `VITE_TRACKING_HOST` or there is no Track button. What a host serves is the
+two graphs and `parameters.json`, and what it owes anyone it serves them to is
+below.
+
+It is the same reason the font subsetting command is written down in the root
 README: a binary artefact nobody can regenerate is a liability.
 
 Python, and deliberately so. The reference implementation is PyTorch and the
@@ -21,7 +25,13 @@ python3.12 -m venv venv && ./venv/bin/pip install -r requirements.txt
 ./venv/bin/python export.py
 ./venv/bin/python parameters.py         # the four tensors no graph carries
 ./venv/bin/python verify.py --sweep     # every clip, with and without pointers
+./venv/bin/python host.py --sweep       # everything that is NOT in a graph
 ```
+
+`host.py` is the one that checks the product rather than the export, and it is
+the subject of [what is not in a graph](#what-is-not-in-a-graph-and-what-that-cost).
+It fetches the two published graphs on first use, at the revision
+`src/platform/perception/model-store.ts` pins.
 
 `verify.py` alone takes `--scene crossing|occlusion|blur|lighting` and
 `--no-pointers` and prints a frame by frame trace, which is what to run when
@@ -73,6 +83,83 @@ pointers, because a run that skips the hardest frame is not scored on it. So a
 first implementation is still not blocked on re-exporting the decoder, and
 re-exporting it buys back the one frame that a person watching a clip would
 see.
+
+## What is not in a graph, and what that cost
+
+`verify.py` proves the two exported graphs are the modules they came from. That
+is half of a tracked frame. The other half is host code, and none of it is
+checkable by looking at a mask:
+
+- the published vision encoder either side of the subtraction above, and the
+  published mask decoder at the end
+- four transposes between four sessions, since the encoder answers channel-major
+  and attention takes token-major and the decoder wants channel-major again
+- the memory bank's layout, its temporal rows, and its key mask
+- resampling the decoder's 256 px answer to the 1024 px the memory encoder
+  declares, and the sigmoid, scale and bias either side of it
+- the prompt a frame with no click sends
+
+`host.py` runs each of those against the reference's own inputs and compares its
+answer with the reference's own. **Three of the five were wrong the first time it
+was run, and not one of them produced an error.** The tables are on
+`/research/the-host.html`, out of `host.json`.
+
+**The mask decoder accepts an empty prompt and gives a different answer from the
+reference's.** It accepts empty `input_points` and empty `input_boxes` together,
+which nothing had ever sent it, because the object-selection path returns early
+when a prompt has neither. It runs. It is out by 1.5 to 4.1 on mask logits and
+by up to 0.39 on the object score, which is enough to move a boundary and to
+flip whether the object is there at all.
+
+The cause is one line in the reference and it is worth writing down. A prompt
+made of points is padded with a trailing "not a point", and the published graph
+was traced with `pad=True` baked in, so a graph handed zero points appends one
+and produces ONE such token where the reference has two. What a tracked frame
+has to send is **one point with a label of -1**, whose coordinates are discarded
+and whose embedding is replaced wholesale. With that, the published decoder is
+the reference's decoder to 1e-4.
+
+**The mask into the memory encoder is upsampled bilinearly, not nearest.** This
+was nearest first, on the reasoning that the reference upsamples a
+high-resolution mask it already holds while a host reconstructs a decision. The
+reference holds no such mask: `pred_masks_high_res` is
+`F.interpolate(low_res_logits, 1024, mode="bilinear")` and nothing else. Nearest
+is out by 18.7 on a field the encoder receives in the range −10 to 10, along
+every edge of every mask.
+
+**And the bank is not a sliding window.** The reference holds the conditioning
+frame plus the six frames before this one, gives the conditioning frame the
+OLDEST temporal row whatever else is in the bank, and never drops it: it indexes
+`memory_temporal_positional_encoding[relative_temporal_offset - 1]` and a
+conditioning frame's offset is zero, so it lands on the last row. Keeping the
+most recent seven instead gets the first frame of every run wrong and throws the
+seed away on the eighth. Laid out the reference's way, `layOutBank` reproduces
+the reference's own bank to the bit, all 233,472 floats of it, on every frame of
+every clip.
+
+**The fixtures cannot separate any of this end to end, and that is the honest
+half of the finding.** Running the whole tracker with and without each mistake
+puts every configuration between 0.91 and 0.99 against the reference, with an
+ordering that is not consistent between clips. Ten to sixteen frames of one
+large object on a clean background is not a clip where a tracker has to decide
+anything, and an anchored bank and a sliding one hold the same seven entries
+until the eighth tracked frame. So the stage table is the evidence and the
+end-to-end table is reported because leaving it out would be quoting the half
+that agreed. What is missing is a longer fixture.
+
+**One row does separate.** Seeded with the reference's own mask rather than with
+the coverage Rotyl's command log holds, this host reproduces the PyTorch tracker
+exactly, frame for frame, on all four clips. The coverage round trip is the only
+remaining difference, it costs between one and nine points of worst-frame
+agreement, and against the fixtures' ground truth it is a shade better rather
+than worse, because a slightly eroded seed sits better inside a hard-edged disc.
+
+**What `host.py` also writes is `host-fixture.json`**, which is what
+`test/memory-bank.test.ts` drives the TypeScript over: for three frames, the
+reference's own values at a few dozen spread indices per stage. Not the tensors,
+which are four megabytes each; every stage there is a permutation or an
+elementwise map, so a test can set exactly the probed inputs, run the real
+function at the real size, and read exactly the probed outputs.
 
 ## The memory bank is fixed-size
 

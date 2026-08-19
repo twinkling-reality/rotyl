@@ -68,5 +68,5 @@ pyftsubset _geist.ttf --output-file=public/fonts/geist-latin-300-500.woff2 \
   --layout-features="kern,liga,tnum,case,frac,ss03" --no-hinting --desubroutinize
 ```
 
-Icons are eight Lucide paths inlined into `src/app/icons.tsx` (ISC). A kilobyte
+Icons are sixteen Lucide paths inlined into `src/app/icons.tsx` (ISC). A kilobyte
 of geometry did not justify a dependency.

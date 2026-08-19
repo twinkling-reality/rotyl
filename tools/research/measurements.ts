@@ -638,6 +638,122 @@ function pointers(tracking: unknown): Section {
   };
 }
 
+// --- the host, against the reference ----------------------------------------
+
+const SCENES_MEASURED = ['crossing', 'occlusion', 'blur', 'lighting'] as const;
+
+/**
+ * The worst a stage was over the four clips.
+ *
+ * Worst rather than mean, and over every clip rather than the one the export
+ * was verified against, because what these say is "this piece of arithmetic
+ * agrees with the reference", and one clip where it does not is the whole
+ * finding.
+ */
+function worstStage(host: unknown, stage: string): number {
+  return Math.max(...SCENES_MEASURED.map((scene) => num(host, [scene, 'stages', stage])));
+}
+
+/** A difference measured as an absolute error, at the scale it lives on. */
+const absoluteError = (value: number): string => (value === 0 ? 'exact' : value.toExponential(1));
+
+function hostArithmetic(host: unknown): Section {
+  const row = (label: string, stage: string): readonly string[] => [
+    label,
+    absoluteError(worstStage(host, stage)),
+  ];
+  return {
+    heading: 'The tracker is the reference, and three of the pieces were not',
+    prose: [
+      'Two graphs of a tracked frame were exported here and verified against the modules they came from. The other half of a tracked frame is not in any graph: it is two published graphs either side of them, four transposes between four sessions, the layout of the memory bank and the arithmetic the memory encoder is fed. All of it is host code, and every one of those fails by producing a plausible mask of roughly the right object rather than by producing an error.',
+      'So each piece is run against the reference’s own inputs and its answer compared with the reference’s own. Teacher-forced on purpose: a free-running tracker diverges a little on every frame, and then every later stage is being compared against a slightly different frame, which turns several sharp answers into one blurred one.',
+      'Three of them were wrong when this was taken, and two of the three are in the table below this one. The bank was the third, and it is the one that is now exact: laid out from the entries the memory encoder produced, it reproduces the reference’s own bank to the bit, all 233,472 floats of it, on every frame of every clip.',
+    ],
+    table: {
+      columns: ['what the host computes', 'worst against the reference'],
+      rows: [
+        row(
+          'the frame’s features, token-major, no-memory embedding off',
+          "the frame's features, token-major, no-memory off",
+        ),
+        row('the vision position encoding, computed rather than served', 'vision position encoding'),
+        row('the memory bank', "the bank, laid out against the reference's own"),
+        row(
+          'the bank’s positions, with the temporal row added',
+          "the bank's positions, with the temporal row on",
+        ),
+        row('the conditioned features, off that bank', 'the conditioned features, off a laid-out bank'),
+        row('the mask a memory is encoded from', 'the mask a memory is encoded from'),
+        row('the mask decoder, given one point labelled -1', 'the published decoder, one point labelled -1'),
+      ],
+    },
+    caveat:
+      'Everything above the mask decoder is a graph’s own numerical error rather than the arithmetic’s: the published vision encoder and the reference agree to about 2e-5 on features whose values run to 2.5, and the two exact rows are exact because a permutation of floats either is or is not the same permutation.',
+    command: 'python tools/edgetam-export/host.py --sweep',
+  };
+}
+
+function hostMistakes(host: unknown): Section {
+  const row = (label: string, stage: string): readonly string[] => [
+    label,
+    absoluteError(worstStage(host, stage)),
+  ];
+  return {
+    heading: 'The two that answered, answered plausibly, and answered wrongly',
+    prose: [
+      'The mask decoder accepts empty `input_points` and empty `input_boxes` together. It was never sent them, because the object-selection path returns early when a prompt has neither, so the tracked-frame path was unexercised. It turns out to run, and to give a different answer from the reference’s.',
+      'The reason is one line in the reference: a prompt made of points is padded with a trailing "not a point" token, and the published graph was traced with that padding baked in. So a graph handed zero points appends one and produces ONE such token where the reference has two. What a tracked frame has to send is one point with a label of -1, whose coordinates are then discarded and whose embedding is replaced wholesale. With that, the published decoder is the reference’s decoder to 1e-4.',
+      'The second was the mask on its way into the memory encoder, which is 256 px from the decoder and 1024 px in the graph. This resampled it nearest, on the reasoning that the reference upsamples a high-resolution mask it already holds while a host reconstructs a decision. The reference holds no such mask: `pred_masks_high_res` is a bilinear interpolation of exactly these logits and nothing else.',
+    ],
+    table: {
+      columns: ['the same stage, done the way it was written first', 'worst against the reference'],
+      rows: [
+        row('the mask decoder, given no prompt tensors at all', 'the same, with no prompt tensors at all'),
+        row(
+          'the mask resampled nearest rather than bilinear',
+          'the same, resampled nearest instead of bilinear',
+        ),
+      ],
+    },
+    caveat:
+      'The second number is on a field the memory encoder receives in the range −10 to 10, so being out by twenty is being out by the whole of it, along every edge of every mask. Neither of these produces an error, a warning or an obviously wrong picture, which is the reason this page exists rather than a screenshot.',
+    command: 'python tools/edgetam-export/host.py --sweep',
+  };
+}
+
+function hostEndToEnd(host: unknown): Section {
+  const agreement = (which: string): string =>
+    Math.min(
+      ...SCENES_MEASURED.map((scene) => num(host, [scene, 'differences', which, 'worst_agreement'])),
+    ).toFixed(4);
+  const iou = (which: string): string =>
+    Math.min(
+      ...SCENES_MEASURED.map((scene) => num(host, [scene, 'differences', which, 'worst_iou'])),
+    ).toFixed(3);
+  const row = (label: string, which: string): readonly string[] => [label, agreement(which), iou(which)];
+  return {
+    heading: 'And the clips cannot tell any of it apart, which is a fact about the clips',
+    prose: [
+      'The obvious way to judge the three corrections above is to run the whole tracker with and without each and see which masks are better. That was done, on all four clips, and it says almost nothing: every configuration lands between 0.91 and 0.99 against the reference, and the ordering is not even consistent across scenes. Two of the wrong ones score better than the right one somewhere.',
+      'The reason is the fixtures rather than the corrections. Ten to sixteen frames of one large object on a clean background is a clip where a tracker never has to decide anything hard, and the bank’s window does not even come into it: an anchored bank and a sliding one hold the same seven entries until the eighth tracked frame, which on a ten-frame clip is two of them. So the argument for the corrections is the stage table, not this one, and this one is reported because leaving it out would be quoting the evidence that agreed.',
+      'One row does separate, and it is the strongest single result here. Seeded with the reference’s own mask rather than with the coverage the command log holds, this tracker reproduces the PyTorch reference exactly, frame for frame, on every frame of all four clips. What the round trip through coverage costs is the gap between that row and the first one, and it buys a shade of IoU back against the ground truth, because a slightly eroded seed sits better inside a hard-edged disc.',
+    ],
+    table: {
+      columns: ['run end to end', 'worst agreement with the reference', 'worst IoU against truth'],
+      rows: [
+        row('as it is built', 'as it is built'),
+        row('with no padding point', 'no padding point'),
+        row('resampling nearest', 'nearest, not bilinear'),
+        row('with a sliding bank', 'a sliding bank, no anchor'),
+        row('seeded with raw logits rather than coverage', 'the seed as raw logits'),
+      ],
+    },
+    caveat:
+      'Worst over the four clips, so one bad frame anywhere decides a row. Nothing takes the wrong object in any configuration, which is the other thing these clips are too easy to test.',
+    command: 'python tools/edgetam-export/host.py --sweep',
+  };
+}
+
 function download(video: unknown, shrink: unknown): Section {
   const mb = (variant: string): string =>
     `${num(video, ['half-precision', 'memory_attention', variant, 'model_mb']).toFixed(1)} MB`;
@@ -880,13 +996,14 @@ export interface Results {
   readonly real: unknown;
   readonly video: unknown;
   readonly tracking: unknown;
+  readonly host: unknown;
   readonly shrink: unknown;
   readonly bundle: unknown;
   readonly log: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
-  const { style, real, video, tracking, shrink, bundle, log } = results;
+  const { style, real, video, tracking, host, shrink, bundle, log } = results;
   return [
     {
       slug: 'the-look',
@@ -983,6 +1100,19 @@ export function entries(results: Results): readonly Entry[] {
         commandLog(log),
         readback(video),
       ],
+    },
+    {
+      slug: 'the-host',
+      results: 'tools/edgetam-export/host.json',
+      title: 'The half of a tracked frame that is not in a graph',
+      standfirst:
+        'Every transpose, the memory bank and the prompt a tracked frame sends, each run against the reference’s own inputs. Three of them were wrong, and none of the three produced an error.',
+      harness: 'tools/edgetam-export',
+      lede: [
+        'The two graphs a tracker needs were exported and checked against the modules they came from. That leaves the other half of a tracked frame, which is host code: two published graphs either side of the exported pair, the transposes between four sessions, the bank’s layout, and the arithmetic the memory encoder is fed either side of it.',
+        'None of that is in a graph and all of it fails silently. A transposed field, a bank that forgets the frame the user pointed at, a mask resampled the wrong way and a prompt that is nearly the right prompt all produce a plausible mask of roughly the right object. So none of it is judged by looking at one.',
+      ],
+      sections: [hostArithmetic(host), hostMistakes(host), hostEndToEnd(host)],
     },
     {
       slug: 'the-editor',

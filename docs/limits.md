@@ -5,14 +5,47 @@
 Nothing here is a bug report. Each of these is a decision, or the honest edge of
 one, and the measurement behind it is on `/research.html`.
 
-- **Tracking has an engine and no weights.** The loop that follows a selection
-  forward through a clip is built, DOM-free and tested; the two ONNX graphs it
-  needs are not in the published EdgeTAM release and are not hosted anywhere, so
-  nothing in the product can start a run. `tools/edgetam-export` produces them
-  in one command and lists the three checkpoint parameters and the position
-  encoding a host has to supply alongside. Until they are hosted, a selection
-  held across a moving subject still drifts off it and has to be corrected by
-  selecting again further along.
+- **Tracking needs somewhere to fetch two graphs from, and there is no default.**
+  `memory_attention_shared_fp16.onnx`, `memory_encoder.onnx` and
+  `parameters.json` are in no published EdgeTAM release. `tools/edgetam-export`
+  produces all three in two commands, and a build points at wherever they were
+  put with `VITE_TRACKING_HOST`. Without one there is no Track button, which is
+  a deliberate absence rather than a disabled control: a wrong or missing host
+  is nineteen megabytes fetched and then a 404, at the moment somebody asked for
+  the feature. Until a build has one, a selection held across a moving subject
+  still drifts off it and has to be corrected by selecting again further along.
+- **The clips a tracker is verified against are too easy to separate its
+  mistakes.** `host.py` puts every piece of the host's arithmetic against the
+  reference's own tensors and is unambiguous, and running the whole thing end to
+  end on the four fixture clips is not: every configuration, including three
+  known-wrong ones, lands between 0.91 and 0.99 against the reference, and the
+  ordering is not consistent between clips. Ten to sixteen frames of one large
+  object on a clean background is not a clip where a tracker has to decide
+  anything, and an anchored memory bank and a sliding one do not even differ
+  until the eighth tracked frame. What is missing is a longer fixture, and that
+  is what the end-to-end table on `/research/the-host.html` says rather than a
+  claim it cannot support.
+- **The seed a run starts from is the command log's coverage, not the model's
+  own logits, and that is the one deliberate difference from the reference.**
+  Given the reference's mask, this tracker reproduces the PyTorch tracker
+  exactly, frame for frame, on all four clips. Given the same selection through
+  the log, it agrees to between 0.91 and 0.99, because the coverage ramp puts
+  its own decision boundary at a logit of one rather than at zero and the seed
+  arrives very slightly eroded. It is kept, because a seed genuinely is a
+  coverage mask by the time a run starts, the user may have brushed it, and
+  measured against the fixtures' ground truth the eroded seed is a shade better
+  rather than worse.
+- **An object the model says is not in a frame gets an empty mask on that
+  frame**, which is the reference's behaviour and means a tracked clip shows no
+  selection at all while the subject is behind something.
+- **A tracker has no object pointers, so it comes back from an occlusion one
+  frame late.** The published mask decoder does not expose `object_pointer`, the
+  token that carries an object's identity between frames, so the bank's pointer
+  block stays masked. Measured on a fixture with a three-frame occlusion, the
+  cost is exactly one frame: no mask at all on the frame the object reappears,
+  picked up on the next. Every average hides it, which is why it is a field in
+  the results rather than something to notice. Re-exporting the decoder buys it
+  back and is the reason to.
 - A tracked run holds one mask per frame in the command log. Held plainly that
   is 64 KB each, 20 MB for ten seconds and 1.2 GB for ten minutes; packed, which
   is how they are held, it is 3.4 KB each and 62 MB for ten minutes. Folding
@@ -20,13 +53,13 @@ one, and the measurement behind it is on `/research.html`.
   cuts at the last command that decides the frame by itself, so a replay unpacks
   one mask rather than all of them. What is left is a clip long enough that
   62 MB matters, which is longer than the clip export already fails on.
-- What is known about building tracking is measured.
+- A tracked frame is about ninety milliseconds and playback's is thirty-three,
+  so tracking is a job rather than something the playhead drives.
   `tools/video-bench` puts memory attention at 60 ms a frame on WebGPU and 38 at
-  half precision, which with the encoder and the decoder makes a tracked frame
-  around 90 ms, so tracking runs behind the playhead rather than in the render
-  loop. The graphs it needs are produced by `tools/edgetam-export`, which also
-  demonstrates them holding a mask across ten frames, mask-for-mask identical to
-  the PyTorch tracker.
+  half precision, and the encoder and the decoder make up the rest. Nine to
+  eleven tracked frames a second means a three-hundred-frame run is half a
+  minute, which the interface is honest about and can be stopped part way
+  through.
 - **A clip is re-encoded, so outside the selection it is the source pixels
   written again rather than the source bytes.** The composite is still exact
   there, and H.264 is not: measured against the source, a region nobody selected

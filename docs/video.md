@@ -81,13 +81,14 @@ on. Scrub or play past it and the style is still there.
 The other reading is that a command applies to its own frame alone, and it is
 right about something real: a stroke's coordinates say where something _was_
 when it was drawn, so a selection held across a moving subject drifts off it.
-This was built that way first and it was the wrong call. Nothing can currently
-produce the missing frames, so exact match does not trade drift for accuracy.
-it trades a selection that drifts for no selection at all. Holding forward is
-wrong slowly, and only when the subject moves. Exact match is wrong immediately
-and always. When tracking lands it will contribute commands on the frames it has
-followed the object to, and those fold on top of the held value at each of them:
-the same mechanism, with the gap filled in properly rather than held.
+This was built that way first and it was the wrong call. With nothing producing
+the missing frames, exact match does not trade drift for accuracy. it trades a
+selection that drifts for no selection at all. Holding forward is wrong slowly,
+and only when the subject moves. Exact match is wrong immediately and always.
+Tracking is what produces those frames, and it needed none of this to change:
+its commands fold on top of the held value at each frame it reached, so the gap
+gets filled in properly rather than held, by the mechanism that was already
+there.
 
 Two smaller things, both the difference between honest and usable. The timeline
 marks the frames where an edit begins, because a selection whose origin cannot
@@ -109,10 +110,36 @@ anywhere asking which kind of file this is.
 
 ## Tracking, and where it runs
 
-**The engine is built and the weights are not hosted**, so nothing in the
-product can start a run yet. What exists is the part that is this project's own
-design rather than the model's: `src/core/perception/tracking-job.ts`, which is
-DOM-free, has one seam, and is tested against a tracker made of arithmetic.
+**It is wired up, and it needs a host to fetch two graphs from.** The loop, the
+memory bank, the second decoder and the button are all here;
+`memory_attention_shared_fp16.onnx`, `memory_encoder.onnx` and
+`parameters.json` are in no published release, so a build says where they are or
+the feature is not offered:
+
+```bash
+VITE_TRACKING_HOST=https://example.org/edgetam pnpm build
+```
+
+**There is deliberately no default.** A wrong guess does not fail at start-up,
+it fails after fetching nineteen megabytes at the moment somebody presses Track,
+so with nothing configured there is no Track button rather than one that can
+only apologise. `tools/edgetam-export` produces the three files in two commands
+and says what a host owes anyone it serves them to, which is the Apache-2.0
+licence text and a note that the files were modified.
+
+**What the tracker computes is checked against the reference and not against
+its author.** Half of a tracked frame is not in any graph: the transposes
+between four sessions, the memory bank's layout, the prompt a frame with no
+click sends, and the arithmetic either side of the memory encoder. Every one of
+those fails by producing a plausible mask of roughly the right object.
+`tools/edgetam-export/host.py` runs each of them against the reference's own
+inputs; three were wrong when it was first run and none of the three produced an
+error. The numbers are on `/research/the-host.html`, and the fixture it writes
+is what `test/memory-bank.test.ts` asserts the TypeScript against.
+
+The part that is this project's own design rather than the model's is
+`src/core/perception/tracking-job.ts`, which is DOM-free, has one seam, and is
+tested against a tracker made of arithmetic.
 
 **It does not follow the playhead, and that is the decision.** A tracked frame
 is about ninety milliseconds against playback's thirty-three, a memory bank is
@@ -145,9 +172,22 @@ scale with the number of objects. The first track's command replaces what was
 held forward, which is the drift being removed, and the rest add. A second
 tracker is a second implementation of four methods and nothing else changes.
 
-What it needs to run is in `tools/edgetam-export`: two graphs that the published
-release does not contain, three parameters from the checkpoint, and a position
-encoding worth computing rather than shipping.
+**Two cursors need two decoders.** A run opens a second `FrameProvider` over the
+same file and a full-resolution texture of its own. Sharing the playhead's would
+be each cursor cancelling the other's reads, since a provider lets a newer
+request supersede whatever is in flight, which is exactly right for a pointer
+being dragged along a timeline and exactly wrong for two readers. It also keeps
+the reads cheap: a run only ever moves forward, so it never re-seeks after the
+first frame, at 0.47 ms a frame against fifteen for a seek.
+
+**What it does not share is the expensive half twice.** A run reads each frame
+with the same vision encoder a click is answered by, borrowed from the
+perception store that owns it, so tracking costs no second download and no
+second copy of the weights in memory.
+
+What produces the files it fetches is in `tools/edgetam-export`: two graphs the
+published release does not contain, four parameters from the checkpoint, and a
+position encoding worth computing rather than shipping.
 
 ## Getting frames out of a file
 
