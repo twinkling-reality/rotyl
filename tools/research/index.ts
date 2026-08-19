@@ -111,6 +111,10 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // command: what the two graphs are worth is one question, and whether the
   // host around them says the same thing as the reference is another.
   const host = read('tools/edgetam-export/host.json');
+  // Its own file because its own command writes it, and because that command
+  // needs a tracking host: without one there is nothing to fetch the two graphs
+  // from, so it cannot be part of a run everyone can take.
+  const tracked = read('tools/video-bench/results-tracked-frame.json');
   const shrink = read('tools/edgetam-export/shrink.json');
   // Its own file because its own command writes it: bundle sizes need a build
   // and no browser, so they are not part of the run the other numbers come from.
@@ -123,7 +127,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
-    ...entries({ style, real, video, tracking, host, shrink, bundle, log }),
+    ...entries({ style, real, video, tracking, tracked, host, shrink, bundle, log }),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',

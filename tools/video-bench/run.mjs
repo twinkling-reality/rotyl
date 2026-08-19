@@ -3,6 +3,7 @@
 //   node tools/video-bench/run.mjs decode colour
 //   node tools/video-bench/run.mjs all
 //   node tools/video-bench/run.mjs log     # its own file; see APART below
+//   node tools/video-bench/run.mjs tracked-frame   # needs VITE_TRACKING_HOST
 //
 // Headed, and channel:'chrome', for the same reason playwright.config.ts uses
 // them: bundled Chromium falls back to SwiftShader, which reports success while
@@ -16,13 +17,17 @@ import { chromium } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 
 /**
- * Kept out of `all`, and out of the file `all` writes, because it shares
- * nothing with the rest: no GPU, no clips, nothing to fetch. Running it inside
- * the same run would re-date every decode and encode figure beside it for a
- * measurement about a data structure. Its own command, its own results file,
- * the same as the bundle sizes.
+ * Kept out of `all`, and out of the file `all` writes, each for its own reason.
+ *
+ * `log` shares nothing with the rest: no GPU, no clips, nothing to fetch, and
+ * running it inside the same run would re-date every decode and encode figure
+ * beside it for a measurement about a data structure.
+ *
+ * `tracked-frame` needs a dev server started with VITE_TRACKING_HOST pointing
+ * at the two graphs `tools/edgetam-export` produces, which most machines will
+ * not have. In `all` it would leave an error where every other number is.
  */
-const APART = ['log'];
+const APART = ['log', 'tracked-frame'];
 
 const ALL = [
   'readback',

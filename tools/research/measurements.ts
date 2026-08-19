@@ -523,7 +523,7 @@ function trackedFrame(video: unknown): Section {
   return {
     heading: 'Nine to eleven tracked frames a second, against thirty for playback',
     prose: [
-      'A tracked frame costs about 90 ms against the 33 a playing clip has. Tracking cannot be a render-loop activity, and no amount of tidying makes it one.',
+      'A tracked frame costs about 90 ms against the 33 a playing clip has, summing the four graphs it is made of. Tracking cannot be a render-loop activity, and no amount of tidying makes it one.',
       'It runs behind the playhead instead, and the interface has to be honest that a mask arrives after the frame does. That is a product decision taken from a number, before any of it was built.',
       'Memory attention is the expensive half, and the fixed-size memory bank is why: 4096 queries against 3648 keys on every frame, where the reference attends against fewer early in a clip.',
     ],
@@ -635,6 +635,104 @@ function pointers(tracking: unknown): Section {
     caveat:
       'One occlusion, three frames long, on a synthetic clip. It establishes that the cost is real and where it falls, not how it grows with the length of an occlusion or the number of objects, which is what pointers are actually for and what this clip is still too short to say.',
     command: 'python tools/edgetam-export/verify.py --sweep',
+  };
+}
+
+// --- what a tracked frame costs, now that there is one -----------------------
+
+const TRACKED_CLIPS = ['720p30-gop30', '1080p30-gop30'] as const;
+
+/**
+ * One run out of the list, by clip and by how many objects it followed.
+ *
+ * A list rather than a keyed object because the harness reports what it ran
+ * rather than what somebody expected it to run, and finding a row by its two
+ * fields is what makes an added configuration cost nothing here.
+ */
+function trackedRun(tracked: unknown, clip: string, objects: number): unknown {
+  const runs = at(tracked, ['tracked-frame', 'runs']);
+  if (!Array.isArray(runs)) throw new Error('research: tracked-frame has no runs');
+  const found = runs.find(
+    (run: unknown) =>
+      typeof run === 'object' &&
+      run !== null &&
+      Object.getOwnPropertyDescriptor(run, 'clip')?.value === clip &&
+      Object.getOwnPropertyDescriptor(run, 'objects')?.value === objects,
+  );
+  if (found === undefined) {
+    throw new Error(`research: no tracked-frame run for ${clip} with ${String(objects)} objects`);
+  }
+  return found;
+}
+
+const trackedMs = (tracked: unknown, clip: string, objects: number): number =>
+  num(trackedRun(tracked, clip, objects), ['frame_ms', 'median']);
+
+function trackedCost(tracked: unknown): Section {
+  const cell =
+    (objects: number): ((clip: string) => string) =>
+    (clip) =>
+      ms(trackedMs(tracked, clip, objects));
+  const derived = (clip: string): number => trackedMs(tracked, clip, 2) - trackedMs(tracked, clip, 1);
+  const perSecond = Math.round(1000 / trackedMs(tracked, TRACKED_CLIPS[0], 1));
+  return {
+    heading: `${String(perSecond)} tracked frames a second, where the sum said nine to eleven`,
+    prose: [
+      'The figure this project designed tracking around was summed from four graphs measured separately, and published saying plainly that nothing had been run end to end because there was nothing to run. There is now, so this drives the product’s own code: the two engines it loads, the scene it walks, the loop it runs, writing into a real command log.',
+      'The conclusion survives and gets firmer. Playback is thirty frames a second and this is seven, so tracking is a job, the playhead is free to ignore it, and no amount of tidying makes it a render-loop activity.',
+      'Frame size does not enter into it, exactly as predicted: the vision encoder always works at 1024 square, and 720p and 1080p differ by two tenths of a millisecond.',
+    ],
+    table: {
+      columns: ['a tracked frame', '720p', '1080p'],
+      rows: [
+        ['one object', ...TRACKED_CLIPS.map(cell(1))],
+        ['two objects', ...TRACKED_CLIPS.map(cell(2))],
+        ['a second object, by difference', ...TRACKED_CLIPS.map((clip) => ms(derived(clip)))],
+        [
+          'reading the frame, by difference',
+          ...TRACKED_CLIPS.map((clip) => ms(trackedMs(tracked, clip, 1) - derived(clip))),
+        ],
+      ],
+    },
+    caveat:
+      'The split is derived rather than timed, and that is not fussiness. A run has two seams and a stopwatch on each of them does not add up to a frame: the segmentation engine asks for gpu-buffer outputs, so its run returns before the GPU has finished and reading a frame measures seven milliseconds, with the rest landing in whatever asks for those outputs next. A second tracked object is exactly one more advance and not one more read, so the difference between one object and two is an advance and what is left over is the read. Both are fenced by construction.',
+    command: 'node tools/video-bench/run.mjs tracked-frame',
+  };
+}
+
+function trackedArithmetic(tracked: unknown): Section {
+  const each = (name: string): number => num(tracked, ['tracked-frame', 'arithmetic', name, 'median']);
+  const row = (label: string, name: string, times: number): readonly string[] => [
+    label,
+    ms(each(name)),
+    `×${String(times)}`,
+  ];
+  const perObject =
+    each('to_channel_major') * 2 +
+    each('to_token_major') +
+    each('at_memory_resolution') +
+    each('mask_for_memory');
+  return {
+    heading: 'The missing forty-five milliseconds are not in a graph',
+    prose: [
+      'Five passes over a million elements of JavaScript run per tracked object, and not one of them is a model, which is exactly why none of them was in the sum. With the three graphs an advance is 38 plus 19 plus 13, which is 70; plus these and a four-megabyte readback of the conditioned map it is 91, to within the noise.',
+      'So the sum was not wrong about the graphs. It was a sum of graphs, in a frame that is a third something else. That is the general shape of the finding rather than a detail of this one: a cost model built out of the expensive parts is a lower bound, and the arithmetic between them is where the rest lives.',
+      '`toChannelMajor` runs twice because attention answers token-major and both the memory encoder and the mask decoder want the other way round. One of the two is avoidable, since the memory encoder’s input is the vision encoder’s own layout with one constant subtracted, and it is being rebuilt from a transpose of itself. It is four per cent of a frame, so it is written down rather than done.',
+    ],
+    table: {
+      columns: ['the arithmetic between the graphs', 'per call', 'a frame'],
+      rows: [
+        row('toChannelMajor', 'to_channel_major', 2),
+        row('toTokenMajor', 'to_token_major', 1),
+        row('atMemoryResolution', 'at_memory_resolution', 1),
+        row('maskForMemory', 'mask_for_memory', 1),
+        ['all of it, per tracked object', ms(perObject), ''],
+      ],
+    },
+    caveat: `The vision position encoding is ${ms(
+      each('vision_position_encoding'),
+    )} and runs once a session rather than once a frame, which is the whole of what computing four megabytes costs against shipping them: a third of the shared attention graph's entire download, for five milliseconds, once.`,
+    command: 'node tools/video-bench/run.mjs tracked-frame',
   };
 }
 
@@ -996,6 +1094,7 @@ export interface Results {
   readonly real: unknown;
   readonly video: unknown;
   readonly tracking: unknown;
+  readonly tracked: unknown;
   readonly host: unknown;
   readonly shrink: unknown;
   readonly bundle: unknown;
@@ -1003,7 +1102,7 @@ export interface Results {
 }
 
 export function entries(results: Results): readonly Entry[] {
-  const { style, real, video, tracking, host, shrink, bundle, log } = results;
+  const { style, real, video, tracking, tracked, host, shrink, bundle, log } = results;
   return [
     {
       slug: 'the-look',
@@ -1100,6 +1199,19 @@ export function entries(results: Results): readonly Entry[] {
         commandLog(log),
         readback(video),
       ],
+    },
+    {
+      slug: 'tracked-frame',
+      results: 'tools/video-bench/results-tracked-frame.json',
+      title: 'What a tracked frame costs, now that there is one to time',
+      standfirst:
+        'The end-to-end figure tracking was designed around, taken end to end for the first time. It is 135 ms rather than the 90 that summing four graphs predicted, and the difference is not a graph.',
+      harness: 'tools/video-bench',
+      lede: [
+        'Every number this project has quoted about tracking was taken before a tracked frame existed: four graphs timed one at a time and added up. That was the honest thing to do and it was published saying so. This is the same question asked of the thing itself.',
+        'It needs somewhere to fetch two graphs from, so unlike everything else here it is not part of a run anybody can take without setting one up. What it drives is the product’s own code and not a reimplementation of it, which is the only way the number is about the product.',
+      ],
+      sections: [trackedCost(tracked), trackedArithmetic(tracked)],
     },
     {
       slug: 'the-host',

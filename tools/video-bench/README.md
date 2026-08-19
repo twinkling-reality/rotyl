@@ -19,13 +19,16 @@ node tools/video-bench/run.mjs all         # real Chrome, headed
 `run.mjs all` takes the nine that need a GPU and a clip, and it takes any
 subset of them: `readback`, `ort-device`, `attention`, `bank-rampup`,
 `half-precision`, `decode`, `colour`, `encode`, `encode-colour`,
-`shared-device`. Two measurements sit outside that run and write their own
+`shared-device`. Three measurements sit outside that run and write their own
 files, because they share nothing with it and re-taking one of them should not
 re-date every figure it would otherwise have landed beside. The bundle sizes
 need a build and no browser: `node tools/video-bench/bundle-size.mjs`. The
 command log needs neither, since it is arithmetic over a data structure:
-`node tools/video-bench/run.mjs log`. The clips are gitignored, `results.json`,
-`results-bundle.json` and `results-log.json` are not, and the graphs come from
+`node tools/video-bench/run.mjs log`. And a tracked frame needs a dev server
+started with `VITE_TRACKING_HOST` pointing at the two graphs, which most
+machines will not have: `node tools/video-bench/run.mjs tracked-frame`. The
+clips are gitignored, `results.json`, `results-bundle.json`, `results-log.json`
+and `results-tracked-frame.json` are not, and the graphs come from
 `tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
 
 Real Chrome and headed, for the reason `playwright.config.ts` gives: bundled
@@ -38,7 +41,7 @@ appears nowhere: it throttles when the pane is hidden, which silently turns a
 3 ms number into a 16 ms one. Medians of 15 to 30 runs after warm-up, on an
 Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 
-**Eight findings, each with the command that re-takes it:**
+**Nine findings, each with the command that re-takes it:**
 
 1. [The 12 MB readback does not bind](#1-the-12-mb-readback-does-not-bind-and-it-is-avoidable-anyway)
 2. [Memory attention is 60 ms](#2-memory-attention-is-60-ms-and-38-at-half-precision)
@@ -48,6 +51,7 @@ Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 6. [Writing a container costs as much as the application](#6-writing-a-container-costs-as-much-as-the-whole-application)
 7. [The encoder is not what moves colour](#7-the-encoder-is-not-what-moves-colour)
 8. [A tracked clip does not fit in the command log](#8-a-tracked-clip-does-not-fit-in-the-command-log-and-the-fold-is-not-why)
+9. [A tracked frame is 135 ms, and the sum said 90](#9-a-tracked-frame-is-135-ms-and-the-sum-said-90)
 
 ---
 
@@ -163,8 +167,7 @@ why the obvious version of it finds nothing to share.
 
 ### What a tracked frame costs
 
-Summed from parts measured separately on this machine, not measured end to end,
-because the end to end does not exist yet:
+Summed from parts measured separately on this machine:
 
 | vision encoder | memory attention | mask decoder | memory encoder | total      |
 | -------------- | ---------------- | ------------ | -------------- | ---------- |
@@ -178,6 +181,12 @@ because the end to end does not exist yet:
 cannot be a render-loop activity, and no amount of tidying makes it one. It runs
 behind the playhead, or ahead of it, and the interface has to be honest that a
 mask arrives after the frame does.
+
+**The end to end exists now and it is 135 ms rather than 90**, which is
+[measurement 9](#9-a-tracked-frame-is-135-ms-and-the-sum-said-90). The
+conclusion in the paragraph above survives and gets firmer; the arithmetic in
+the table above is what was incomplete, because summing four graphs counts only
+the four graphs.
 
 ---
 
@@ -555,12 +564,89 @@ The numbers are on `/research/tracking.html`, out of `results-log.json`.
 
 ---
 
+## 9. A tracked frame is 135 ms, and the sum said 90
+
+Measurement 2 added four graphs together and said plainly that nothing had been
+run end to end, because there was nothing to run. There is now, so this drives
+the product's own code: `loadEdgeTamEngine`, `loadEdgeTamTracker`, `VideoScene`
+over a real `FrameProvider`, and `runTracking` writing into a real
+`SelectionDocument`. Nothing in it is reimplemented here, which is the point.
+
+Medians of 23 tracked frames, one seed unless the row says two:
+
+| a tracked frame          | 720p      | 1080p     |
+| ------------------------ | --------- | --------- |
+| one object               | **134.5** | **134.7** |
+| two objects              | 225.4     | 225.7     |
+| a second object, derived | 90.9      | 91.0      |
+| reading the frame        | 43.6      | 43.7      |
+
+**Seven tracked frames a second, not nine to eleven.** Which changes nothing
+about the design and settles it harder: playback is 30 and this is 7, so
+tracking is a job, and no amount of tidying makes it a render-loop activity.
+Frame size does not enter into it, as predicted: the vision encoder always works
+at 1024 square, and 720p and 1080p differ by two tenths of a millisecond.
+
+**The split is derived rather than timed, and that is not fussiness.** A run has
+two seams and both are easy to put a stopwatch on, and the two numbers that come
+back do not add up to a frame: the segmentation engine asks for `gpu-buffer`
+outputs, so its `run` returns before the GPU has finished and reading a frame
+measures 7 ms, with the rest of the encoder's cost landing in the next thing
+that asks for those outputs. A second tracked object is exactly one more advance
+and not one more read, so the difference between one object and two IS an
+advance and what is left over IS the read. Both are fenced by construction.
+
+**So a second object costs 91 ms and the frame it shares costs 44.** The claim
+that reading the frame is the expensive half and does not scale with objects is
+right about the mechanism and wrong about the half: reading is a third of a
+frame and advancing is two thirds. Sharing it saves 44 ms per frame per extra
+object, which is 20% rather than the 50% "the expensive half" implies.
+
+### Where the missing 45 milliseconds are, and it is not a graph
+
+| the arithmetic between the graphs | per call | per frame |
+| --------------------------------- | -------- | --------- |
+| `toChannelMajor`                  | 5.5 ms   | ×2        |
+| `toTokenMajor`                    | 2.5 ms   | ×1        |
+| `atMemoryResolution`              | 2.8 ms   | ×1        |
+| `maskForMemory`                   | 1.6 ms   | ×1        |
+| **total, per tracked object**     |          | **17.9**  |
+
+Five passes over a million elements of JavaScript each, none of which is a model
+and none of which was in the sum. With the three graphs an advance runs at
+38 + 19 + 13 = 70, plus 18 of arithmetic and a 4 MB readback of the conditioned
+map, which is 91 to within the noise. **The sum was not wrong about the graphs.
+It was a sum of graphs, in a frame that is a third something else.**
+
+`toChannelMajor` runs twice because attention answers token-major and both the
+memory encoder and the mask decoder want the other way round. One of those two
+is avoidable: the memory encoder's input is the encoder's own layout with the
+no-memory embedding off, which is an elementwise subtract rather than a
+transpose, and it is being reconstructed from a transpose of itself. It is 5.5
+ms of 135, so it is written down here rather than done.
+
+**`visionPositionEncoding` is 4.8 ms and runs once a session**, not once a
+frame. That is the whole of what computing four megabytes rather than shipping
+them costs, against a third of the shared attention graph's download.
+
+```bash
+VITE_TRACKING_HOST=... pnpm dev --port 5180
+node tools/video-bench/run.mjs tracked-frame
+```
+
+It needs a tracking host, which is why it is out of `all` and writes its own
+file: the two graphs are in no published release, so most machines have nowhere
+to fetch them from and would leave an error where every other number is.
+
+---
+
 ## What follows
 
 1. **Decode is free and seeking is not.** Scrubbing is a decoder kept alive and
    fed forward, with a re-seek only for backward or distant jumps.
-2. **Tracking is a background job.** 9 to 11 frames per second against 30. It
-   cannot live in the render loop and the interface should not pretend it does.
+2. **Tracking is a background job.** Seven frames a second against 30, measured
+   end to end rather than summed. It cannot live in the render loop and the
+   interface should not pretend it does.
 3. **The frame-tensor readback stays where it is for images** and can be removed
    for video by building the tensor on the runtime's own device, which will take
    a `GPUBuffer` input and gives back the same answer bit for bit.
