@@ -14,9 +14,9 @@ import type { SceneEmbedding } from './segmentation-engine.ts';
  * which is the one property that makes object selection feel immediate.
  *
  * What the two share is `SceneEmbedding`, and that is not incidental. Reading a
- * frame costs about twenty milliseconds and both of them need exactly that
- * reading, so a tracked frame encodes once and every track advances against the
- * same embedding.
+ * frame costs 44 ms of a 135 ms tracked frame and both of them need exactly
+ * that reading, so a tracked frame encodes once and every track advances
+ * against the same embedding: two objects is 226 ms rather than 270.
  *
  * TRACKING A SECOND OBJECT IS A SECOND `ObjectTrack`, not a mode. That is the
  * whole reason a track is a value here rather than a state the engine is in:

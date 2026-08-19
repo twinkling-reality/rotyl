@@ -53,13 +53,13 @@ one, and the measurement behind it is on `/research.html`.
   cuts at the last command that decides the frame by itself, so a replay unpacks
   one mask rather than all of them. What is left is a clip long enough that
   62 MB matters, which is longer than the clip export already fails on.
-- A tracked frame is about ninety milliseconds and playback's is thirty-three,
-  so tracking is a job rather than something the playhead drives.
-  `tools/video-bench` puts memory attention at 60 ms a frame on WebGPU and 38 at
-  half precision, and the encoder and the decoder make up the rest. Nine to
-  eleven tracked frames a second means a three-hundred-frame run is half a
-  minute, which the interface is honest about and can be stopped part way
-  through.
+- A tracked frame is 135 ms and playback's is thirty-three, so tracking is a job
+  rather than something the playhead drives. Seven tracked frames a second means
+  a three-hundred-frame run is three quarters of a minute, which the interface
+  is honest about and can be stopped part way through. The figure this was
+  designed around was 90, summed from the four graphs a frame runs; the
+  difference is not a graph but the arithmetic between them, which is 18 ms of
+  JavaScript a frame over five passes of a million elements each.
 - **A clip is re-encoded, so outside the selection it is the source pixels
   written again rather than the source bytes.** The composite is still exact
   there, and H.264 is not: measured against the source, a region nobody selected

@@ -186,10 +186,10 @@ export class PerceptionStore {
    * The engine itself, loading it if it is not loaded, for the one other thing
    * in the product that reads frames.
    *
-   * A tracking run needs exactly the reading this store already pays for:
-   * twenty milliseconds a frame, and the same `SceneEmbedding` a click is
-   * answered from. Letting it load its own would be a second vision encoder in
-   * memory and a second twenty-megabyte download, for the same weights.
+   * A tracking run needs exactly the reading this store already pays for: 44 ms
+   * a frame, and the same `SceneEmbedding` a click is answered from. Letting it
+   * load its own would be a second vision encoder in memory and a second
+   * twenty-megabyte download, for the same weights.
    *
    * BORROWED, NOT GIVEN. This store still owns it and still disposes it, so a
    * run holding one has to end when the store does.

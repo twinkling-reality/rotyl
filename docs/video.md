@@ -142,9 +142,9 @@ The part that is this project's own design rather than the model's is
 tested against a tracker made of arithmetic.
 
 **It does not follow the playhead, and that is the decision.** A tracked frame
-is about ninety milliseconds against playback's thirty-three, a memory bank is
-causal so there is no meaning to running it backwards, and the frame provider
-costs 0.47 ms forward against fifteen to seek back. Behind the playhead and
+measures 135 ms against playback's thirty-three, a memory bank is causal so
+there is no meaning to running it backwards, and the frame provider costs
+0.47 ms forward against fifteen to seek back. Behind the playhead and
 ahead of it were both on the table and are wrong the same way: both make the set
 of frames that end up tracked a function of where somebody happened to scrub.
 

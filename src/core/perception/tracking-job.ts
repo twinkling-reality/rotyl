@@ -11,8 +11,8 @@ import type { ObjectTrack, TrackingEngine } from './tracking-engine.ts';
  * WHERE IT RUNS RELATIVE TO THE PLAYHEAD: nowhere. It does not follow the
  * playhead at all, and that is the decision rather than an omission.
  *
- * Three measurements force it. A tracked frame is about ninety milliseconds
- * against playback's thirty-three, so it cannot keep up with a playhead that is
+ * Three measurements force it. A tracked frame measures 135 ms against
+ * playback's thirty-three, so it cannot keep up with a playhead that is
  * moving. A memory bank is causal, so frame N's answer is built from frame
  * N-1's and there is no meaning to running it backwards. And the frame provider
  * costs 0.47 ms to step forward and fifteen to seek back, so a tracker that
@@ -57,8 +57,9 @@ export interface TrackedScene {
    */
   readonly frames: readonly number[];
   /**
-   * Read one frame. Expensive, about twenty milliseconds, and once per frame
-   * however many objects are being followed.
+   * Read one frame. Expensive, 44 ms measured, and once per frame however many
+   * objects are being followed, which is what makes a second tracked object 91
+   * rather than another 135.
    *
    * The caller disposes what it gets back; an embedding is tens of megabytes on
    * the GPU and a clip has hundreds of frames.
