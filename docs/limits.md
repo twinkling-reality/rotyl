@@ -14,17 +14,19 @@ one, and the measurement behind it is on `/research.html`.
   is nineteen megabytes fetched and then a 404, at the moment somebody asked for
   the feature. Until a build has one, a selection held across a moving subject
   still drifts off it and has to be corrected by selecting again further along.
-- **The clips a tracker is verified against are too easy to separate its
-  mistakes.** `host.py` puts every piece of the host's arithmetic against the
-  reference's own tensors and is unambiguous, and running the whole thing end to
-  end on the four fixture clips is not: every configuration, including three
-  known-wrong ones, lands between 0.91 and 0.99 against the reference, and the
-  ordering is not consistent between clips. Ten to sixteen frames of one large
-  object on a clean background is not a clip where a tracker has to decide
-  anything, and an anchored memory bank and a sliding one do not even differ
-  until the eighth tracked frame. What is missing is a longer fixture, and that
-  is what the end-to-end table on `/research/the-host.html` says rather than a
-  claim it cannot support.
+- **The fixture clips had to be rebuilt before they could price the host's
+  mistakes end to end.** `host.py` puts every piece of the host's arithmetic
+  against the reference's own tensors and is unambiguous either way; running the
+  whole tracker with and without each mistake needs a clip carrying a moment
+  where the mistake can cost something, which the ten-frame clips this project
+  started with did not. Length alone does not supply one either: a memory bank
+  kept from the frame the user pointed at is insurance against the recent frames
+  being wrong, and a control that merely converged and stayed close moved it by
+  nothing at all over twenty-two frames of divergence. Rebuilt, all four
+  separate every correction in the right order. What is still missing is a clip
+  on which any of these makes the tracker take the wrong object at all: they
+  differ in where a mask sits on the hardest single frame, not in what they
+  followed.
 - **The seed a run starts from is the command log's coverage, not the model's
   own logits, and that is the one deliberate difference from the reference.**
   Given the reference's mask, this tracker reproduces the PyTorch tracker
@@ -38,12 +40,12 @@ one, and the measurement behind it is on `/research.html`.
 - **An object the model says is not in a frame gets an empty mask on that
   frame**, which is the reference's behaviour and means a tracked clip shows no
   selection at all while the subject is behind something.
-- **A tracker has no object pointers, so it comes back from an occlusion one
-  frame late.** The published mask decoder does not expose `object_pointer`, the
-  token that carries an object's identity between frames, so the bank's pointer
-  block stays masked. Measured on a fixture with a three-frame occlusion, the
-  cost is exactly one frame: no mask at all on the frame the object reappears,
-  picked up on the next. Every average hides it, which is why it is a field in
+- **A tracker has no object pointers, so it comes back from an occlusion late.**
+  The published mask decoder does not expose `object_pointer`, the token that
+  carries an object's identity between frames, so the bank's pointer block stays
+  masked. What that costs is measured on the occlusion fixture and reported on
+  `/research/tracking.html` as the frames between the object reappearing and a
+  mask appearing on it. Every average hides it, which is why it is a field in
   the results rather than something to notice. Re-exporting the decoder buys it
   back and is the reason to.
 - A tracked run holds one mask per frame in the command log. Held plainly that

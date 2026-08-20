@@ -74,8 +74,14 @@ is not exposed.
 said in the same breath that the result was weak because pointers exist for
 re-identification after occlusion and the fixture had none. **It has one now,
 and the cost is exactly where the warning said.** Without pointers the tracker
-misses the frame the object comes back on, produces no mask at all, and picks it
-up on the next one. One frame late.
+produces no mask at all on the frame the object comes back on and finds it again
+later; the figure is `reacquisition_delay` in `results.json` and on
+`/research/tracking.html`.
+
+Taking that occlusion from three hidden frames to eight moved both numbers and
+not the gap: pointers buy back one frame either way. The frame the object first
+shows again is a five per cent sliver, which nothing segments well, so some of
+the delay is the fixture rather than the memory.
 
 Every average hides that, which is why it is a field in `results.json` rather
 than something to notice: worst IoU over whole frames is a shade BETTER without
@@ -137,15 +143,34 @@ seed away on the eighth. Laid out the reference's way, `layOutBank` reproduces
 the reference's own bank to the bit, all 233,472 floats of it, on every frame of
 every clip.
 
-**The fixtures cannot separate any of this end to end, and that is the honest
-half of the finding.** Running the whole tracker with and without each mistake
-puts every configuration between 0.91 and 0.99 against the reference, with an
-ordering that is not consistent between clips. Ten to sixteen frames of one
-large object on a clean background is not a clip where a tracker has to decide
-anything, and an anchored bank and a sliding one hold the same seven entries
-until the eighth tracked frame. So the stage table is the evidence and the
-end-to-end table is reported because leaving it out would be quoting the half
-that agreed. What is missing is a longer fixture.
+**Pricing any of this end to end took a change to the clips**, and it was not
+the obvious one. Running the whole tracker with and without each mistake used to
+put every configuration between 0.91 and 0.99 against the reference with an
+ordering that was not consistent between clips, which was the fixtures rather
+than the corrections.
+
+Length alone did not fix it. A longer control whose two lookalikes merely
+converged and stayed three radii apart moved the sliding bank by nothing at all,
+over twenty-two frames of divergence. **An anchored bank is insurance against
+the recent frames being wrong**, so pricing it needs a clip carrying a moment
+where the tracker could plausibly go wrong; on one where it never does, every
+entry in the bank is right and which seven are kept cannot matter.
+
+Rebuilt around that, all four clips carry such a moment and all four separate
+every correction, in the right order, which had never happened before. The
+control crosses head-on and the two objects end five radii apart on opposite
+sides, so afterwards the tracker has to keep the one it was pointed at while the
+other leaves. The occlusion hides the target for longer than the bank remembers.
+The smeared clip is ambiguous at the boundary throughout, and is the one that
+prices the anchor highest. Keeping the anchor is worth between 0.65 and 2.11
+points of worst-frame agreement depending on the clip; sending the decoder no
+prompt costs up to 17 on the occlusion. The table is on
+`/research/the-host.html`.
+
+One row moves on a single clip, and that is the row behaving correctly rather
+than the clips failing: the absent gate decides what a frame the object is not
+in contributes to the bank, and the occlusion is the only fixture with such
+frames.
 
 **One row does separate.** Seeded with the reference's own mask rather than with
 the coverage Rotyl's command log holds, this host reproduces the PyTorch tracker
@@ -211,22 +236,76 @@ truth, so "the mask stayed on the object" is a measurement rather than an
 impression. The first is the control and the other three each change exactly one
 thing about it, which is the only way a row means anything.
 
-**crossing**, the original. Two identical objects on converging paths. A tracker
-that has lost its memory has nothing to distinguish them by and will take
-whichever is nearer; one whose memory is intact keeps the one it was pointed at.
+**crossing**, the original, thirty frames of it. Two identical objects crossing
+head-on, twelve radii apart at the start and three at their closest on frame 21,
+ending five apart on opposite sides so that "which one did it keep" has an
+answer. A tracker that has lost its memory has nothing to distinguish them by
+and will take whichever is nearer; one whose memory is intact keeps the one it
+was pointed at.
 
-**occlusion**, which is the one that was missing. The target passes behind a bar
-for three frames and comes out the far side, with an identical object waiting
-there. The bar is the object's own width plus three frames of travel, so "fully
-hidden" follows from the geometry rather than from a number somebody has to keep
-in step with it. Nothing in the picture says which object was pointed at on the
-frame it reappears.
+It was ten frames, and it is thirty because a memory bank holds seven entries:
+at ten, a bank that keeps the frame the user pointed at and a bank that slides
+differ on two frames out of nine and the clip cannot price the difference. At
+thirty they differ on twenty-two, with the crossing inside them, and it can. At
+twenty-two frames, which was tried, it cannot: the two banks score the same to
+four places, so the last eight frames are doing the work.
+
+**Length was not sufficient on its own**, which is worth more than the row is. A
+version of these paths that merely converged and stayed three radii apart moved
+the sliding bank by nothing at all, over twenty-two frames of divergence. An
+anchored bank is insurance against the recent frames being WRONG, so what a clip
+has to carry is a moment where the tracker could plausibly go wrong. Converging
+and staying close never produces one. Crossing and then pulling apart on
+opposite sides does, because afterwards the tracker has to keep the one it was
+pointed at while the other leaves.
+
+**And length was not free**, which is why the smeared clip stops at twenty-two
+while these run to thirty. See the blur scene below.
+
+Getting there cost one wrong turn worth recording. A first version of the longer
+paths started the two objects five radii apart and converged from there, and
+that made the REFERENCE tracker fail outright: with object pointers on it
+reported no object at all from frame two and never found it again, on the sharp
+clip and on the relit one, while the motion-blurred version of the very same
+paths tracked perfectly. A control the reference cannot track measures the clip
+rather than the export, so the distractor comes from the far side now and the
+opening frames are unambiguous.
+
+**occlusion**, which is the one that was missing, and the one that prices
+everything. The target passes behind a bar for eight frames and comes out the
+far side, with an identical object waiting there. The bar is the object's own
+width plus eight frames of travel, so "fully hidden" follows from the geometry
+rather than from a number somebody has to keep in step with it. Nothing in the
+picture says which object was pointed at on the frame it reappears.
+
+**Eight because the bank remembers seven.** It was three, and three is fewer
+than the six tracked frames a bank keeps beside its anchor, so a sliding bank
+still held plenty of the approach and the anchor bought nothing measurable. At
+eight, every entry a sliding bank holds is a frame with nothing in it. It is the
+sharpest of the two clips that can price the host's mistakes, and the only one
+that starves the memory outright rather than merely testing it.
 
 **blur**, the same paths with each object integrated along its own velocity over
 half a frame, which is a 180 degree shutter. The ground truth stays the sharp
 circle: a smeared object's extent is a matter of opinion, and the question is
 whether the tracker stays on the thing rather than whether it agrees about where
 a smear ends.
+
+**It stops at twenty-two frames where the others run to thirty**, and the number
+is the model's rather than a preference. On the smeared clip the object score
+falls with the length of the run and crosses zero on frame 29: +4.2, +3.1, +1.4,
++2.9, -0.04, on a frame whose mask is the same size as every other frame's. The
+sharp and relit clips sit between +4 and +10 throughout, so it is the smear and
+the length together, and it is not a memory problem: a bank that keeps its
+anchor and one that slides produce that trajectory to the hundredth. One gated
+frame takes a run's worst-frame score from 0.95 to zero, which put three
+configurations including the correct one at zero and a known-wrong one above
+them, and a fixture that ranks a mistake above the thing it is a mistake in is
+worse than a short one. At twenty-two the worst score on the clip is +2.5.
+
+What that costs is that this scene differs from the control in two things rather
+than one. The paths are identical and deterministic, so the control's first
+twenty-two frames are this clip unsmeared, and that is the comparison to read.
 
 **lighting**, the same paths under a ramp of a stop and a half with a warm
 shift, applied to the whole picture. A memory entry encodes appearance, so this

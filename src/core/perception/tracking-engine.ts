@@ -45,10 +45,9 @@ export interface TrackedMask {
    *
    * An object that has gone behind something is not an object that got smaller,
    * and a tracker with nothing to report has to be able to say so. Measured on
-   * a fixture with a three-frame occlusion, the reference produces an empty
-   * mask for exactly the frames the object is hidden and finds it again on the
-   * frame it returns, so this is the model agreeing with itself rather than a
-   * threshold anybody chose.
+   * a fixture whose occlusion outlasts the memory bank, the reference produces
+   * an empty mask for exactly the frames the object is hidden, so this is the
+   * model agreeing with itself rather than a threshold anybody chose.
    */
   readonly present: boolean;
 }

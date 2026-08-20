@@ -43,9 +43,11 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
  * WHAT IT DOES WITHOUT, and it is a measured trade rather than an omission. The
  * published mask decoder does not expose `object_pointer`, the token carrying
  * an object's identity between frames, so the bank's pointer block stays empty.
- * Measured on a fixture with a three-frame occlusion, that costs exactly one
- * frame on the way back: the tracker produces no mask on the frame the object
- * reappears and picks it up on the next. Re-exporting the decoder buys it back.
+ * What that costs is frames on the way back from an occlusion, where the
+ * tracker produces no mask at all until it finds the object again; the number
+ * is measured against a fixture in `tools/edgetam-export` rather than quoted
+ * here, since it depends on how long the object was hidden for. Re-exporting
+ * the decoder buys it back.
  *
  * A TRACKED FRAME IS 135 MS, of which 44 is reading it and 91 is advancing one
  * track against what was read. Two objects is 226 rather than 270, because the
