@@ -1,0 +1,1480 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "motion": {
+    "what": "what a temporal method would cost, measured before one is built",
+    "covered_threshold": 128,
+    "frames": 24,
+    "traffic-720p": {
+      "comic, default": {
+        "per frame": {
+          "residue": {
+            "mean": 1.116,
+            "p99": 3.565,
+            "flicker": 0.22
+          },
+          "honest": {
+            "mean": 4.924,
+            "p99": 97.783,
+            "flicker": 8.688
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 0.941,
+            "p99": 2.522,
+            "flicker": 0.202
+          },
+          "honest": {
+            "mean": 4.586,
+            "p99": 76,
+            "flicker": 10.762
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.151,
+              "p99": 1,
+              "flicker": 0.073
+            },
+            "moving": {
+              "mean": 1.398,
+              "p99": 25.348,
+              "flicker": 5.428
+            },
+            "vacated": {
+              "mean": 6.801,
+              "p99": 27.696,
+              "flicker": 30.545
+            }
+          },
+          "detail_against_per_frame": 0.985,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.478,
+            "p99": 2,
+            "flicker": 0.212
+          },
+          "honest": {
+            "mean": 3.918,
+            "p99": 53,
+            "flicker": 12.583
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.858,
+              "p99": 2,
+              "flicker": 0.212
+            },
+            "moving": {
+              "mean": 4.281,
+              "p99": 52.957,
+              "flicker": 12.511
+            },
+            "vacated": {
+              "mean": 17.579,
+              "p99": 58.478,
+              "flicker": 48.083
+            }
+          },
+          "detail_against_per_frame": 0.952,
+          "pairs": 23
+        }
+      },
+      "comic, detail 0": {
+        "per frame": {
+          "residue": {
+            "mean": 0.931,
+            "p99": 3,
+            "flicker": 0.213
+          },
+          "honest": {
+            "mean": 4.316,
+            "p99": 68.565,
+            "flicker": 9.576
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 0.836,
+            "p99": 2,
+            "flicker": 0.193
+          },
+          "honest": {
+            "mean": 4.032,
+            "p99": 55.043,
+            "flicker": 10.882
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.086,
+              "p99": 1,
+              "flicker": 0.068
+            },
+            "moving": {
+              "mean": 1.203,
+              "p99": 18.261,
+              "flicker": 4.509
+            },
+            "vacated": {
+              "mean": 5.779,
+              "p99": 24.435,
+              "flicker": 27.537
+            }
+          },
+          "detail_against_per_frame": 0.989,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.347,
+            "p99": 1.304,
+            "flicker": 0.2
+          },
+          "honest": {
+            "mean": 3.42,
+            "p99": 42.217,
+            "flicker": 12.114
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.795,
+              "p99": 1.957,
+              "flicker": 0.2
+            },
+            "moving": {
+              "mean": 3.8,
+              "p99": 42.304,
+              "flicker": 12.073
+            },
+            "vacated": {
+              "mean": 14.267,
+              "p99": 52.696,
+              "flicker": 41.356
+            }
+          },
+          "detail_against_per_frame": 0.962,
+          "pairs": 23
+        }
+      },
+      "comic, detail 1": {
+        "per frame": {
+          "residue": {
+            "mean": 1.629,
+            "p99": 6.696,
+            "flicker": 0.603
+          },
+          "honest": {
+            "mean": 5.691,
+            "p99": 111,
+            "flicker": 8.579
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 1.27,
+            "p99": 4.609,
+            "flicker": 0.484
+          },
+          "honest": {
+            "mean": 5.053,
+            "p99": 83.087,
+            "flicker": 10.566
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.325,
+              "p99": 1.609,
+              "flicker": 0.133
+            },
+            "moving": {
+              "mean": 1.591,
+              "p99": 27.913,
+              "flicker": 5.381
+            },
+            "vacated": {
+              "mean": 6.838,
+              "p99": 33.826,
+              "flicker": 21.533
+            }
+          },
+          "detail_against_per_frame": 0.975,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.777,
+            "p99": 3.478,
+            "flicker": 0.406
+          },
+          "honest": {
+            "mean": 4.24,
+            "p99": 55.652,
+            "flicker": 12.249
+          },
+          "deviation": {
+            "still": {
+              "mean": 1.07,
+              "p99": 3.478,
+              "flicker": 0.409
+            },
+            "moving": {
+              "mean": 4.519,
+              "p99": 55.913,
+              "flicker": 12.166
+            },
+            "vacated": {
+              "mean": 15.807,
+              "p99": 68,
+              "flicker": 49.443
+            }
+          },
+          "detail_against_per_frame": 0.929,
+          "pairs": 23
+        }
+      },
+      "poster, default": {
+        "per frame": {
+          "residue": {
+            "mean": 0.46,
+            "p99": 4.609,
+            "flicker": 0.4
+          },
+          "honest": {
+            "mean": 5.831,
+            "p99": 97.087,
+            "flicker": 11.357
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 0.388,
+            "p99": 3.478,
+            "flicker": 0.308
+          },
+          "honest": {
+            "mean": 5.327,
+            "p99": 73.261,
+            "flicker": 13.54
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.073,
+              "p99": 1,
+              "flicker": 0.096
+            },
+            "moving": {
+              "mean": 1.681,
+              "p99": 24.435,
+              "flicker": 6.712
+            },
+            "vacated": {
+              "mean": 2.692,
+              "p99": 12.13,
+              "flicker": 4.86
+            }
+          },
+          "detail_against_per_frame": 0.941,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.187,
+            "p99": 2.435,
+            "flicker": 0.243
+          },
+          "honest": {
+            "mean": 4.526,
+            "p99": 49.739,
+            "flicker": 15.308
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.366,
+              "p99": 2.435,
+              "flicker": 0.245
+            },
+            "moving": {
+              "mean": 4.729,
+              "p99": 49.739,
+              "flicker": 15.225
+            },
+            "vacated": {
+              "mean": 7.968,
+              "p99": 27.043,
+              "flicker": 42.899
+            }
+          },
+          "detail_against_per_frame": 0.87,
+          "pairs": 23
+        }
+      },
+      "print, default": {
+        "per frame": {
+          "residue": {
+            "mean": 1.504,
+            "p99": 13.957,
+            "flicker": 3.009
+          },
+          "honest": {
+            "mean": 6.636,
+            "p99": 89,
+            "flicker": 17.183
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 1.152,
+            "p99": 9.913,
+            "flicker": 1.382
+          },
+          "honest": {
+            "mean": 5.756,
+            "p99": 74.435,
+            "flicker": 14.302
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.329,
+              "p99": 3.391,
+              "flicker": 0.136
+            },
+            "moving": {
+              "mean": 1.886,
+              "p99": 24.739,
+              "flicker": 5.606
+            },
+            "vacated": {
+              "mean": 2.813,
+              "p99": 17,
+              "flicker": 10.123
+            }
+          },
+          "detail_against_per_frame": 0.997,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.728,
+            "p99": 6.522,
+            "flicker": 0.572
+          },
+          "honest": {
+            "mean": 4.833,
+            "p99": 57.217,
+            "flicker": 13.398
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.841,
+              "p99": 6.522,
+              "flicker": 0.579
+            },
+            "moving": {
+              "mean": 4.942,
+              "p99": 57.043,
+              "flicker": 13.422
+            },
+            "vacated": {
+              "mean": 7.607,
+              "p99": 41.783,
+              "flicker": 31.189
+            }
+          },
+          "detail_against_per_frame": 0.991,
+          "pairs": 23
+        }
+      },
+      "poster, no line": {
+        "per frame": {
+          "residue": {
+            "mean": 0.369,
+            "p99": 3.913,
+            "flicker": 0.193
+          },
+          "honest": {
+            "mean": 3.487,
+            "p99": 69.783,
+            "flicker": 6.969
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 0.313,
+            "p99": 2.696,
+            "flicker": 0.136
+          },
+          "honest": {
+            "mean": 3.263,
+            "p99": 55.087,
+            "flicker": 8.483
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.051,
+              "p99": 1,
+              "flicker": 0.033
+            },
+            "moving": {
+              "mean": 1.002,
+              "p99": 18.435,
+              "flicker": 4.04
+            },
+            "vacated": {
+              "mean": 4.601,
+              "p99": 18.348,
+              "flicker": 24.633
+            }
+          },
+          "detail_against_per_frame": 0.986,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.135,
+            "p99": 2,
+            "flicker": 0.106
+          },
+          "honest": {
+            "mean": 2.85,
+            "p99": 39.087,
+            "flicker": 9.754
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.307,
+              "p99": 2.043,
+              "flicker": 0.107
+            },
+            "moving": {
+              "mean": 3.179,
+              "p99": 39.522,
+              "flicker": 9.882
+            },
+            "vacated": {
+              "mean": 11.116,
+              "p99": 37.435,
+              "flicker": 45.412
+            }
+          },
+          "detail_against_per_frame": 0.981,
+          "pairs": 23
+        }
+      }
+    },
+    "traffic-clean-720p": {
+      "comic, default": {
+        "per frame": {
+          "residue": {
+            "mean": 0.067,
+            "p99": 1,
+            "flicker": 0.138
+          },
+          "honest": {
+            "mean": 4.49,
+            "p99": 97.826,
+            "flicker": 8.657
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 0.061,
+            "p99": 1,
+            "flicker": 0.151
+          },
+          "honest": {
+            "mean": 4.231,
+            "p99": 75.913,
+            "flicker": 10.722
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.016,
+              "p99": 1,
+              "flicker": 0.067
+            },
+            "moving": {
+              "mean": 1.342,
+              "p99": 25.261,
+              "flicker": 5.408
+            },
+            "vacated": {
+              "mean": 6.768,
+              "p99": 27.739,
+              "flicker": 29.978
+            }
+          },
+          "detail_against_per_frame": 0.985,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.048,
+            "p99": 1,
+            "flicker": 0.183
+          },
+          "honest": {
+            "mean": 3.773,
+            "p99": 52.826,
+            "flicker": 12.553
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.078,
+              "p99": 1,
+              "flicker": 0.184
+            },
+            "moving": {
+              "mean": 4.057,
+              "p99": 52.783,
+              "flicker": 12.503
+            },
+            "vacated": {
+              "mean": 17.468,
+              "p99": 59.261,
+              "flicker": 48.134
+            }
+          },
+          "detail_against_per_frame": 0.955,
+          "pairs": 23
+        }
+      },
+      "comic, detail 0": {
+        "per frame": {
+          "residue": {
+            "mean": 0.069,
+            "p99": 1,
+            "flicker": 0.157
+          },
+          "honest": {
+            "mean": 3.979,
+            "p99": 68.217,
+            "flicker": 9.535
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 0.065,
+            "p99": 1,
+            "flicker": 0.162
+          },
+          "honest": {
+            "mean": 3.734,
+            "p99": 54.783,
+            "flicker": 10.829
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.016,
+              "p99": 1,
+              "flicker": 0.064
+            },
+            "moving": {
+              "mean": 1.176,
+              "p99": 18.217,
+              "flicker": 4.499
+            },
+            "vacated": {
+              "mean": 5.88,
+              "p99": 24.478,
+              "flicker": 28.517
+            }
+          },
+          "detail_against_per_frame": 0.989,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.049,
+            "p99": 1,
+            "flicker": 0.187
+          },
+          "honest": {
+            "mean": 3.336,
+            "p99": 42.261,
+            "flicker": 12.06
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.083,
+              "p99": 1,
+              "flicker": 0.185
+            },
+            "moving": {
+              "mean": 3.624,
+              "p99": 42.261,
+              "flicker": 12.031
+            },
+            "vacated": {
+              "mean": 14.371,
+              "p99": 52.435,
+              "flicker": 41.534
+            }
+          },
+          "detail_against_per_frame": 0.965,
+          "pairs": 23
+        }
+      },
+      "comic, detail 1": {
+        "per frame": {
+          "residue": {
+            "mean": 0.069,
+            "p99": 1,
+            "flicker": 0.172
+          },
+          "honest": {
+            "mean": 5.002,
+            "p99": 111.174,
+            "flicker": 8.418
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 0.061,
+            "p99": 1,
+            "flicker": 0.174
+          },
+          "honest": {
+            "mean": 4.541,
+            "p99": 83.217,
+            "flicker": 10.45
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.017,
+              "p99": 1,
+              "flicker": 0.047
+            },
+            "moving": {
+              "mean": 1.448,
+              "p99": 27.87,
+              "flicker": 5.341
+            },
+            "vacated": {
+              "mean": 6.839,
+              "p99": 34.261,
+              "flicker": 21.005
+            }
+          },
+          "detail_against_per_frame": 0.975,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.045,
+            "p99": 1,
+            "flicker": 0.168
+          },
+          "honest": {
+            "mean": 3.946,
+            "p99": 55.652,
+            "flicker": 12.147
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.072,
+              "p99": 1,
+              "flicker": 0.17
+            },
+            "moving": {
+              "mean": 4.206,
+              "p99": 56.043,
+              "flicker": 12.059
+            },
+            "vacated": {
+              "mean": 15.761,
+              "p99": 69,
+              "flicker": 49.638
+            }
+          },
+          "detail_against_per_frame": 0.932,
+          "pairs": 23
+        }
+      },
+      "poster, default": {
+        "per frame": {
+          "residue": {
+            "mean": 0.067,
+            "p99": 1,
+            "flicker": 0.146
+          },
+          "honest": {
+            "mean": 5.691,
+            "p99": 97.174,
+            "flicker": 11.298
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 0.057,
+            "p99": 1,
+            "flicker": 0.153
+          },
+          "honest": {
+            "mean": 5.204,
+            "p99": 73.217,
+            "flicker": 13.456
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.017,
+              "p99": 1,
+              "flicker": 0.076
+            },
+            "moving": {
+              "mean": 1.672,
+              "p99": 24.435,
+              "flicker": 6.679
+            },
+            "vacated": {
+              "mean": 2.67,
+              "p99": 11.913,
+              "flicker": 4.373
+            }
+          },
+          "detail_against_per_frame": 0.941,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.043,
+            "p99": 1,
+            "flicker": 0.155
+          },
+          "honest": {
+            "mean": 4.498,
+            "p99": 49.609,
+            "flicker": 15.281
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.062,
+              "p99": 1,
+              "flicker": 0.155
+            },
+            "moving": {
+              "mean": 4.63,
+              "p99": 49.609,
+              "flicker": 15.188
+            },
+            "vacated": {
+              "mean": 7.841,
+              "p99": 26.609,
+              "flicker": 41.856
+            }
+          },
+          "detail_against_per_frame": 0.87,
+          "pairs": 23
+        }
+      },
+      "print, default": {
+        "per frame": {
+          "residue": {
+            "mean": 0.049,
+            "p99": 1,
+            "flicker": 0.12
+          },
+          "honest": {
+            "mean": 5.027,
+            "p99": 88.739,
+            "flicker": 11.319
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 0.043,
+            "p99": 1,
+            "flicker": 0.105
+          },
+          "honest": {
+            "mean": 4.669,
+            "p99": 74.348,
+            "flicker": 11.62
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.013,
+              "p99": 1,
+              "flicker": 0.035
+            },
+            "moving": {
+              "mean": 1.519,
+              "p99": 24.696,
+              "flicker": 5.467
+            },
+            "vacated": {
+              "mean": 2.72,
+              "p99": 16.261,
+              "flicker": 9.665
+            }
+          },
+          "detail_against_per_frame": 0.997,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.032,
+            "p99": 1,
+            "flicker": 0.095
+          },
+          "honest": {
+            "mean": 4.17,
+            "p99": 57.13,
+            "flicker": 12.509
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.044,
+              "p99": 1,
+              "flicker": 0.095
+            },
+            "moving": {
+              "mean": 4.329,
+              "p99": 57.087,
+              "flicker": 12.527
+            },
+            "vacated": {
+              "mean": 7.425,
+              "p99": 40.565,
+              "flicker": 30.235
+            }
+          },
+          "detail_against_per_frame": 0.991,
+          "pairs": 23
+        }
+      },
+      "poster, no line": {
+        "per frame": {
+          "residue": {
+            "mean": 0.035,
+            "p99": 1,
+            "flicker": 0.073
+          },
+          "honest": {
+            "mean": 3.363,
+            "p99": 70.13,
+            "flicker": 6.94
+          },
+          "deviation": {
+            "still": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "moving": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            },
+            "vacated": {
+              "mean": 0,
+              "p99": 1,
+              "flicker": 0
+            }
+          },
+          "detail_against_per_frame": 1,
+          "pairs": 23
+        },
+        "blend 0.25": {
+          "residue": {
+            "mean": 0.031,
+            "p99": 1,
+            "flicker": 0.074
+          },
+          "honest": {
+            "mean": 3.153,
+            "p99": 55.652,
+            "flicker": 8.461
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.008,
+              "p99": 1,
+              "flicker": 0.027
+            },
+            "moving": {
+              "mean": 0.997,
+              "p99": 18.609,
+              "flicker": 4.031
+            },
+            "vacated": {
+              "mean": 4.63,
+              "p99": 18.391,
+              "flicker": 24.891
+            }
+          },
+          "detail_against_per_frame": 0.986,
+          "pairs": 23
+        },
+        "blend 0.5": {
+          "residue": {
+            "mean": 0.023,
+            "p99": 1,
+            "flicker": 0.076
+          },
+          "honest": {
+            "mean": 2.829,
+            "p99": 39.087,
+            "flicker": 9.749
+          },
+          "deviation": {
+            "still": {
+              "mean": 0.04,
+              "p99": 1,
+              "flicker": 0.076
+            },
+            "moving": {
+              "mean": 3.092,
+              "p99": 39.696,
+              "flicker": 9.879
+            },
+            "vacated": {
+              "mean": 11.147,
+              "p99": 36.957,
+              "flicker": 45.773
+            }
+          },
+          "detail_against_per_frame": 0.981,
+          "pairs": 23
+        }
+      }
+    }
+  },
+  "motion:wall-seconds": 34.7,
+  "motion-pictures:wall-seconds": 0.6,
+  "attribution": {
+    "what": "where the residue comes from, measured before anything is built to remove it",
+    "where": "pixels no moving thing touched, on either frame of a pair",
+    "denoise_weight": 0.25,
+    "frames": 24,
+    "as it is": {
+      "comic, default": {
+        "input": {
+          "mean": 2.43,
+          "p99": 9.739,
+          "flicker": 1.978
+        },
+        "styled": {
+          "mean": 1.116,
+          "p99": 3.565,
+          "flicker": 0.22
+        },
+        "amplification": {
+          "mean": 0.459,
+          "p99": 0.366
+        },
+        "pairs": 23
+      },
+      "comic, detail 0": {
+        "input": {
+          "mean": 2.43,
+          "p99": 9.739,
+          "flicker": 1.978
+        },
+        "styled": {
+          "mean": 0.931,
+          "p99": 3,
+          "flicker": 0.213
+        },
+        "amplification": {
+          "mean": 0.383,
+          "p99": 0.308
+        },
+        "pairs": 23
+      },
+      "comic, detail 1": {
+        "input": {
+          "mean": 2.43,
+          "p99": 9.739,
+          "flicker": 1.978
+        },
+        "styled": {
+          "mean": 1.629,
+          "p99": 6.696,
+          "flicker": 0.603
+        },
+        "amplification": {
+          "mean": 0.67,
+          "p99": 0.688
+        },
+        "pairs": 23
+      },
+      "poster, default": {
+        "input": {
+          "mean": 2.43,
+          "p99": 9.739,
+          "flicker": 1.978
+        },
+        "styled": {
+          "mean": 0.46,
+          "p99": 4.609,
+          "flicker": 0.4
+        },
+        "amplification": {
+          "mean": 0.189,
+          "p99": 0.473
+        },
+        "pairs": 23
+      },
+      "print, default": {
+        "input": {
+          "mean": 2.43,
+          "p99": 9.739,
+          "flicker": 1.978
+        },
+        "styled": {
+          "mean": 1.504,
+          "p99": 13.957,
+          "flicker": 3.009
+        },
+        "amplification": {
+          "mean": 0.619,
+          "p99": 1.433
+        },
+        "pairs": 23
+      },
+      "poster, no line": {
+        "input": {
+          "mean": 2.43,
+          "p99": 9.739,
+          "flicker": 1.978
+        },
+        "styled": {
+          "mean": 0.369,
+          "p99": 3.913,
+          "flicker": 0.193
+        },
+        "amplification": {
+          "mean": 0.152,
+          "p99": 0.402
+        },
+        "pairs": 23
+      }
+    },
+    "no moving grain": {
+      "comic, default": {
+        "input": {
+          "mean": 0.047,
+          "p99": 1.391,
+          "flicker": 0.118
+        },
+        "styled": {
+          "mean": 0.067,
+          "p99": 1,
+          "flicker": 0.138
+        },
+        "amplification": {
+          "mean": 1.426,
+          "p99": 0.719
+        },
+        "pairs": 23
+      },
+      "comic, detail 0": {
+        "input": {
+          "mean": 0.047,
+          "p99": 1.391,
+          "flicker": 0.118
+        },
+        "styled": {
+          "mean": 0.069,
+          "p99": 1,
+          "flicker": 0.157
+        },
+        "amplification": {
+          "mean": 1.468,
+          "p99": 0.719
+        },
+        "pairs": 23
+      },
+      "comic, detail 1": {
+        "input": {
+          "mean": 0.047,
+          "p99": 1.391,
+          "flicker": 0.118
+        },
+        "styled": {
+          "mean": 0.069,
+          "p99": 1,
+          "flicker": 0.172
+        },
+        "amplification": {
+          "mean": 1.468,
+          "p99": 0.719
+        },
+        "pairs": 23
+      },
+      "poster, default": {
+        "input": {
+          "mean": 0.047,
+          "p99": 1.391,
+          "flicker": 0.118
+        },
+        "styled": {
+          "mean": 0.067,
+          "p99": 1,
+          "flicker": 0.146
+        },
+        "amplification": {
+          "mean": 1.426,
+          "p99": 0.719
+        },
+        "pairs": 23
+      },
+      "print, default": {
+        "input": {
+          "mean": 0.047,
+          "p99": 1.391,
+          "flicker": 0.118
+        },
+        "styled": {
+          "mean": 0.049,
+          "p99": 1,
+          "flicker": 0.12
+        },
+        "amplification": {
+          "mean": 1.043,
+          "p99": 0.719
+        },
+        "pairs": 23
+      },
+      "poster, no line": {
+        "input": {
+          "mean": 0.047,
+          "p99": 1.391,
+          "flicker": 0.118
+        },
+        "styled": {
+          "mean": 0.035,
+          "p99": 1,
+          "flicker": 0.073
+        },
+        "amplification": {
+          "mean": 0.745,
+          "p99": 0.719
+        },
+        "pairs": 23
+      }
+    },
+    "input denoised": {
+      "comic, default": {
+        "input": {
+          "mean": 1.858,
+          "p99": 6.957,
+          "flicker": 0.399
+        },
+        "styled": {
+          "mean": 0.864,
+          "p99": 2.826,
+          "flicker": 0.184
+        },
+        "amplification": {
+          "mean": 0.465,
+          "p99": 0.406
+        },
+        "pairs": 23
+      },
+      "comic, detail 0": {
+        "input": {
+          "mean": 1.858,
+          "p99": 6.957,
+          "flicker": 0.399
+        },
+        "styled": {
+          "mean": 0.727,
+          "p99": 2.043,
+          "flicker": 0.179
+        },
+        "amplification": {
+          "mean": 0.391,
+          "p99": 0.294
+        },
+        "pairs": 23
+      },
+      "comic, detail 1": {
+        "input": {
+          "mean": 1.858,
+          "p99": 6.957,
+          "flicker": 0.399
+        },
+        "styled": {
+          "mean": 1.262,
+          "p99": 4.826,
+          "flicker": 0.495
+        },
+        "amplification": {
+          "mean": 0.679,
+          "p99": 0.694
+        },
+        "pairs": 23
+      },
+      "poster, default": {
+        "input": {
+          "mean": 1.858,
+          "p99": 6.957,
+          "flicker": 0.399
+        },
+        "styled": {
+          "mean": 0.361,
+          "p99": 3.522,
+          "flicker": 0.304
+        },
+        "amplification": {
+          "mean": 0.194,
+          "p99": 0.506
+        },
+        "pairs": 23
+      },
+      "print, default": {
+        "input": {
+          "mean": 1.858,
+          "p99": 6.957,
+          "flicker": 0.399
+        },
+        "styled": {
+          "mean": 1.19,
+          "p99": 10.304,
+          "flicker": 1.534
+        },
+        "amplification": {
+          "mean": 0.64,
+          "p99": 1.481
+        },
+        "pairs": 23
+      },
+      "poster, no line": {
+        "input": {
+          "mean": 1.858,
+          "p99": 6.957,
+          "flicker": 0.399
+        },
+        "styled": {
+          "mean": 0.278,
+          "p99": 2.826,
+          "flicker": 0.128
+        },
+        "amplification": {
+          "mean": 0.15,
+          "p99": 0.406
+        },
+        "pairs": 23
+      }
+    }
+  },
+  "attribution:wall-seconds": 29.4
+}

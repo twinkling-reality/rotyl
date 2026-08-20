@@ -15,6 +15,7 @@ import { figures } from './figures.ts';
 import { lightnessStats } from './lightness.ts';
 import { flicker } from './flicker.ts';
 import { motion, motionPictures } from './motion.ts';
+import { attribution } from './attribution.ts';
 
 export const MEASUREMENTS = [
   'chain',
@@ -37,6 +38,9 @@ export const MEASUREMENTS = [
   // existing tables come from: re-taking it must not re-date them.
   'motion',
   'motion-pictures',
+  // And where the residue comes from, which is the question the counter-metric
+  // exists to let anybody answer honestly. Same clip, same group.
+  'attribution',
 ] as const;
 
 export type Measurement = (typeof MEASUREMENTS)[number];
@@ -81,6 +85,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('real-flicker', () => flicker(dev));
   await step('motion', () => motion(dev));
   await step('motion-pictures', () => motionPictures(dev));
+  await step('attribution', () => attribution(dev));
 
   if (failures.length > 0) out['gpu-errors'] = failures;
   dev.destroy();

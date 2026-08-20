@@ -16,12 +16,20 @@
 //               flicker restricted to the pixels that are honestly still.
 //   HONEST      how much it moves where something did. The control: it should
 //               be large, and a method that shrinks it is erasing motion.
-//   TRAIL       how much the styled frame differs from the per-frame render in
-//               the band a car has JUST LEFT. A ghost lives exactly there and
-//               almost nothing else does, which is what makes this a
-//               counter-metric rather than a measure of "did anything change".
+//   DEVIATION   how far the method's frame is from the per-frame render of the
+//               same frame, in each of the three populations. Zero everywhere
+//               for the per-frame row by construction, which is the reading of
+//               "no stabilisation at all" the others are compared against.
 //   DETAIL      the gradient energy inside a moving car, against the per-frame
 //               render's. A smear loses it.
+//
+// THE DEVIATION IS SPLIT THREE WAYS BECAUSE THE PICTURE SAID SO. The first
+// version of this measured it only in the band a car had just left, on the
+// argument that a ghost can live nowhere else. The trail map it writes says
+// otherwise: at these speeds most of what a blend does is a halo just OUTSIDE
+// the moving object, on ground no car touched on either frame. That lands in
+// `still`, where a vacated-band figure cannot see it, and it is the larger half
+// of the damage.
 //
 // A METRIC WITH NO FAILING CASE IS NOT A CHECK, so a straw man is measured
 // alongside: the previous stylised frame blended in at a fixed weight, with no
@@ -37,10 +45,10 @@ import { CLIPS, StyleStage, type Difference } from './harness.ts';
 import { clipFrames } from './stability.ts';
 import { toBase64, type Still } from './stills.ts';
 
-const SIZE = { width: 1280, height: 720 };
+export const SIZE = { width: 1280, height: 720 };
 
 /** How many consecutive pairs each row averages over. Two seconds is sixty. */
-const FRAMES = 24;
+export const FRAMES = 24;
 
 /**
  * Above this the mask says a moving thing covered the pixel.
@@ -66,7 +74,7 @@ const BLENDS = [0.25, 0.5] as const;
 const round = (value: number): number => Math.round(value * 1000) / 1000;
 
 /** Three disjoint populations of pixel, decided by the mask on two frames. */
-interface Populations {
+export interface Populations {
   /** Covered by nothing, on this frame or the last. Where the residue lives. */
   readonly still: Uint8Array;
   /** Covered now. The control. */
@@ -75,7 +83,7 @@ interface Populations {
   readonly vacated: Uint8Array;
 }
 
-function populations(previous: Uint8Array, now: Uint8Array): Populations {
+export function populations(previous: Uint8Array, now: Uint8Array): Populations {
   const pixels = now.length / 4;
   const still = new Uint8Array(pixels);
   const moving = new Uint8Array(pixels);
@@ -97,7 +105,7 @@ function populations(previous: Uint8Array, now: Uint8Array): Populations {
  * useful of them here for the reason it is there: boiling is a small proportion
  * of pixels moving a long way rather than every pixel moving a little.
  */
-function differenceWhere(a: Uint8Array, b: Uint8Array, keep: Uint8Array): Difference {
+export function differenceWhere(a: Uint8Array, b: Uint8Array, keep: Uint8Array): Difference {
   const histogram = new Float64Array(256);
   let pixels = 0;
   for (let i = 0; i < keep.length; i++) {
@@ -172,17 +180,22 @@ function blended(current: Uint8Array, previous: Uint8Array | undefined, weight: 
 }
 
 interface Running {
-  still: Difference;
-  moving: Difference;
-  trail: Difference;
+  /** Frame to frame, where nothing moved. The number the chapter is about. */
+  residue: Difference;
+  /** Frame to frame, where something did. The control. */
+  honest: Difference;
+  /** Against the per-frame render, in each of the three populations. */
+  deviation: { still: Difference; moving: Difference; vacated: Difference };
   detailRatio: number;
   n: number;
 }
 
+const nothing = (): Difference => ({ mean: 0, p99: 0, flicker: 0 });
+
 const empty = (): Running => ({
-  still: { mean: 0, p99: 0, flicker: 0 },
-  moving: { mean: 0, p99: 0, flicker: 0 },
-  trail: { mean: 0, p99: 0, flicker: 0 },
+  residue: nothing(),
+  honest: nothing(),
+  deviation: { still: nothing(), moving: nothing(), vacated: nothing() },
   detailRatio: 0,
   n: 0,
 });
@@ -242,13 +255,31 @@ async function overTraffic(device: GPUDevice, clip: string, item: Case): Promise
         const output = blended(styled, method.previous, method.weight);
         if (where && method.previous) {
           const running = method.running;
-          running.still = add(running.still, differenceWhere(method.previous, output, where.still));
-          running.moving = add(running.moving, differenceWhere(method.previous, output, where.moving));
-          // Against the per-frame render of THIS frame, so a trail is the
-          // method's own doing rather than anything the clip did. Zero for the
-          // per-frame row by construction, which is the reading of "no
-          // stabilisation at all" the other rows are compared against.
-          running.trail = add(running.trail, differenceWhere(styled, output, where.vacated));
+          running.residue = add(running.residue, differenceWhere(method.previous, output, where.still));
+          running.honest = add(running.honest, differenceWhere(method.previous, output, where.moving));
+          // Against the per-frame render of THIS frame, so a deviation is the
+          // method's own doing rather than anything the clip did. Zero in every
+          // population for the per-frame row by construction, which is the
+          // reading of "no stabilisation at all" the others are compared to.
+          //
+          // ALL THREE POPULATIONS, and the picture is why. The first version of
+          // this measured only the band a car had just left, on the argument
+          // that a ghost can live nowhere else. The trail map says otherwise: at
+          // these speeds most of what a blend does is a halo just OUTSIDE the
+          // moving object, on ground no car has touched on either frame, which
+          // lands in `still` and which a vacated-band figure cannot see.
+          running.deviation.still = add(
+            running.deviation.still,
+            differenceWhere(styled, output, where.still),
+          );
+          running.deviation.moving = add(
+            running.deviation.moving,
+            differenceWhere(styled, output, where.moving),
+          );
+          running.deviation.vacated = add(
+            running.deviation.vacated,
+            differenceWhere(styled, output, where.vacated),
+          );
           running.detailRatio +=
             perFrameDetail === 0 ? 1 : detail(output, where.moving, SIZE.width) / perFrameDetail;
           running.n++;
@@ -268,9 +299,13 @@ async function overTraffic(device: GPUDevice, clip: string, item: Case): Promise
   for (const method of methods) {
     const running = method.running;
     out[method.name] = {
-      still: settle(running.still, running.n),
-      moving: settle(running.moving, running.n),
-      trail: settle(running.trail, running.n),
+      residue: settle(running.residue, running.n),
+      honest: settle(running.honest, running.n),
+      deviation: {
+        still: settle(running.deviation.still, running.n),
+        moving: settle(running.deviation.moving, running.n),
+        vacated: settle(running.deviation.vacated, running.n),
+      },
       detail_against_per_frame: running.n === 0 ? 0 : round(running.detailRatio / running.n),
       pairs: running.n,
     };
@@ -297,7 +332,12 @@ export async function motion(device: GPUDevice): Promise<unknown> {
  *
  * The same argument `flicker.ts` makes: a scalar can say a method got steadier
  * while saying nothing about what it did to the picture, and the one thing a
- * reader wants to see about a smear is the smear.
+ * reader wants to see about a smear is the smear. Three pictures rather than
+ * two, because the first two do not show it. A recursive blend at a half is a
+ * geometric decay, so on a car crossing two or three pixels a frame the ghost
+ * is a thin bright annulus rather than a visible double image, and side by side
+ * the two frames look almost the same. The third one paints where the
+ * difference is, which is what the number is counting.
  */
 export async function motionPictures(device: GPUDevice): Promise<readonly Still[]> {
   const out: Still[] = [];
@@ -306,24 +346,35 @@ export async function motionPictures(device: GPUDevice): Promise<readonly Still[
   if (!item) throw new Error('style-bench: no poster case to draw a trail with');
 
   const pictures = clipFrames(`${CLIPS}/traffic-720p.mp4`, FRAMES);
+  const masks = clipFrames(`${CLIPS}/traffic-mask-720p.mp4`, FRAMES);
   let carried: Uint8Array | undefined;
   let last: Uint8Array | undefined;
+  let previousMask: Uint8Array | undefined;
+  let where: Populations | undefined;
 
   try {
     for (;;) {
       const picture = await pictures.next();
-      if (picture.done) break;
+      const mask = await masks.next();
+      if (picture.done || mask.done) break;
+
       stage.uploadImage(picture.value);
       await stage.render(item.style, item.controls, 'full', true);
       last = await stage.readOutput();
       carried = blended(last, carried, 0.5);
+
+      stage.uploadImage(mask.value);
+      const maskBytes = await stage.readSource();
+      if (previousMask) where = populations(previousMask, maskBytes);
+      previousMask = maskBytes;
     }
   } finally {
     await pictures.return(undefined);
+    await masks.return(undefined);
   }
   stage.dispose();
 
-  if (!carried || !last) return out;
+  if (!carried || !last || !where) return out;
   out.push({
     name: 'motion per frame',
     width: SIZE.width,
@@ -338,5 +389,45 @@ export async function motionPictures(device: GPUDevice): Promise<readonly Still[
     rgb: toBase64(carried),
     labels: ['the same frame with half of the last one blended in, and no motion compensation'],
   });
+  out.push({
+    name: 'motion trail',
+    width: SIZE.width,
+    height: SIZE.height,
+    rgb: toBase64(trailMap(last, carried, where), 3),
+    labels: ['where the two differ: red is the band a car has just left, blue is everywhere else'],
+  });
   return out;
+}
+
+/**
+ * Where the blended frame differs from the per-frame one, over the frame.
+ *
+ * TWO COLOURS, because the difference between them is the whole finding. Red is
+ * the vacated band, which is what the trail figure counts and where a ghost is
+ * the only thing that can live. Blue is every other pixel, where a difference
+ * is the method doing the job it was asked to do. A single colour would say a
+ * temporal method changes the picture, which nobody doubted.
+ */
+function trailMap(perFrame: Uint8Array, method: Uint8Array, where: Populations): Uint8Array {
+  const pixels = perFrame.length / 4;
+  const rgb = new Uint8Array(pixels * 3);
+  for (let i = 0, o = 0; i < pixels; i++, o += 3) {
+    const at = i * 4;
+    const delta = Math.max(
+      Math.abs((perFrame[at] ?? 0) - (method[at] ?? 0)),
+      Math.abs((perFrame[at + 1] ?? 0) - (method[at + 1] ?? 0)),
+      Math.abs((perFrame[at + 2] ?? 0) - (method[at + 2] ?? 0)),
+    );
+    if (delta > 8) {
+      const vacated = where.vacated[i] === 1;
+      rgb[o] = vacated ? 255 : 40;
+      rgb[o + 1] = 40;
+      rgb[o + 2] = vacated ? 40 : 255;
+    } else {
+      rgb[o] = (perFrame[at] ?? 0) >> 1;
+      rgb[o + 1] = (perFrame[at + 1] ?? 0) >> 1;
+      rgb[o + 2] = (perFrame[at + 2] ?? 0) >> 1;
+    }
+  }
+  return rgb;
 }

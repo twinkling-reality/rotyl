@@ -25,7 +25,7 @@ const REAL = ['real-chain', 'real-perturbation', 'real-clips', 'real-lightness',
 // group and its own results file: it needs a clip the other two do not, it
 // answers a question about a method rather than about a chain, and re-taking it
 // must not re-date the tables the existing findings come from.
-const MOTION = ['motion', 'motion-pictures'];
+const MOTION = ['motion', 'motion-pictures', 'attribution'];
 
 const args = process.argv.slice(2);
 const named = { all: ALL, real: REAL, motion: MOTION };
