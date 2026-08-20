@@ -1513,3 +1513,298 @@ test('offers a palette as a choice, not as a slider', async ({ page }) => {
     expect(Buffer.compare(await park(), before)).toBe(0);
   }).toPass();
 });
+
+/**
+ * The mask that was saved, as bytes, out of the product's own readback.
+ *
+ * `readSelection` is what a tracking run is seeded from, so it is the mask the
+ * renderer actually holds at the engine's own 256 px square rather than
+ * anything reconstructed for this test. Comparing two of these across a reload
+ * is the whole claim of a saved document: not that a file was written, but that
+ * replaying it rebuilds the same selection.
+ */
+async function selectionBytes(page: Page): Promise<string> {
+  return page.evaluate(async () => {
+    const mask = await globalThis.rotyl?.engine.readSelection();
+    if (!mask) return '';
+    const parts: string[] = [];
+    for (let at = 0; at < mask.packed.length; at += 8192) {
+      parts.push(String.fromCharCode(...mask.packed.subarray(at, at + 8192)));
+    }
+    return btoa(parts.join(''));
+  });
+}
+
+/** A saved document handed back to the page as a file, the way a picker would. */
+function asFile(
+  bytes: Uint8Array<ArrayBuffer>,
+  name: string,
+): {
+  name: string;
+  mimeType: string;
+  buffer: Buffer;
+} {
+  return { name, mimeType: 'application/octet-stream', buffer: Buffer.from(bytes) };
+}
+
+/**
+ * A selection made, saved, the tab closed, and the same selection back.
+ *
+ * The one thing this chapter exists to make true, asserted on the mask rather
+ * than looked at: the log is the source of truth, so a document that reproduces
+ * the log reproduces the mask, and a document that quietly lost a stroke would
+ * still open, still draw something, and still look right in a screenshot.
+ */
+test('saves a selection and rebuilds the same mask after the tab is reloaded', async ({ page }) => {
+  await stubSavePicker(page);
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  // Two kinds of command, so the file is carrying a log rather than one shape.
+  await page.getByRole('button', { name: 'Area' }).click();
+  await page.mouse.move(box.x + box.width * 0.25, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.62, { steps: 10 });
+  await page.mouse.up();
+
+  await page.getByRole('button', { name: 'Erase' }).click();
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.4);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5, { steps: 8 });
+  await page.mouse.up();
+
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  const before = await selectionBytes(page);
+  // A guard on the guard: two empty strings compare equal.
+  expect(before.length).toBeGreaterThan(100);
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Wrote sample.rotyl.')).toBeVisible();
+
+  const saved = await readPickedFile(page, 'sample.rotyl');
+  // "ROTYL" and a zero, which is what a sniff reads and what refuses everything
+  // else by signature.
+  expect([...saved.subarray(0, 6)]).toEqual([0x52, 0x4f, 0x54, 0x59, 0x4c, 0x00]);
+
+  // The tab, closed.
+  await page.goto('/');
+  await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
+
+  // The document first, which is the order somebody who reloaded is in: it has
+  // no media to attach to, so it waits and says which file it wants.
+  await page.locator('input[type=file]').setInputFiles(asFile(saved, 'sample.rotyl'));
+  await expect(page.getByText('Drop sample.png, or click to browse')).toBeVisible();
+  await expect(page.getByText('A saved selection is waiting for it')).toBeVisible();
+
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  await expect(canvas).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+  expect(await selectionBytes(page)).toBe(before);
+  // And no complaint: the bytes matched, so there is nothing to say about them.
+  await expect(page.locator('.file-status__note')).toHaveCount(0);
+});
+
+/**
+ * The other order, which is the one somebody still working is in.
+ *
+ * Dropped onto the editor rather than onto the drop zone, because by then there
+ * is no drop zone. A document is additive to the open media and a photograph is
+ * not, which is why this path takes one and refuses the other.
+ */
+test('takes a document dropped onto the editor, and restores where the playhead and range were', async ({
+  page,
+}) => {
+  await stubSavePicker(page);
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  await expect(page.getByText('1 / 60')).toBeVisible();
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  const timeline = page.getByRole('slider', { name: 'Frame' });
+  await timeline.fill('24');
+  await expect(page.getByText('25 / 60')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Area' }).click();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.68, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+  await timeline.fill('10');
+  await page.getByRole('button', { name: 'In', exact: true }).click();
+  await timeline.fill('44');
+  await page.getByRole('button', { name: 'Out', exact: true }).click();
+  await timeline.fill('24');
+  await expect(page.getByText('25 / 60')).toBeVisible();
+
+  const before = await selectionBytes(page);
+  expect(before.length).toBeGreaterThan(100);
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Wrote sample.rotyl.')).toBeVisible();
+  const saved = await readPickedFile(page, 'sample.rotyl');
+
+  // A fresh tab, the clip open again, and nothing selected on it.
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles(clip);
+  await expect(canvas).toBeVisible();
+  await expect(page.getByText('1 / 60')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  await expect(page.locator('.timeline__range-bar')).toHaveCount(0);
+
+  const dropped = await page.evaluateHandle((encoded: string) => {
+    const binary = atob(encoded);
+    const bytes = new Uint8Array(binary.length);
+    for (let at = 0; at < binary.length; at++) bytes[at] = binary.charCodeAt(at);
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes], 'sample.rotyl', { type: 'application/octet-stream' }));
+    return transfer;
+  }, Buffer.from(saved).toString('base64'));
+  await canvas.dispatchEvent('drop', { dataTransfer: dropped });
+
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  // The playhead came back where it was, so a ten-minute clip does not reopen
+  // at frame zero, and the range came back with it.
+  await expect(page.getByText('25 / 60')).toBeVisible();
+  await expect(page.locator('.timeline__range-bar')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Clip' })).toHaveAttribute(
+    'title',
+    /^Write 00:00\.10 to 00:01\.14 as an MP4/,
+  );
+
+  expect(await selectionBytes(page)).toBe(before);
+});
+
+/**
+ * A document whose media is not the media, refused rather than replayed.
+ *
+ * The shape is what decides it: a log made on a photograph cannot describe a
+ * sixty-frame clip, so there is nothing to replay and no judgement call to
+ * make. What the sentence has to carry is which file it wanted, because "wrong
+ * file" without that leaves somebody guessing between two on a desk.
+ */
+test('refuses a document whose media has been replaced by a different file', async ({ page }) => {
+  await stubSavePicker(page);
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  await page.getByRole('button', { name: 'Area' }).click();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.7, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Wrote sample.rotyl.')).toBeVisible();
+  const saved = await readPickedFile(page, 'sample.rotyl');
+
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles(asFile(saved, 'sample.rotyl'));
+  await expect(page.getByText('Drop sample.png, or click to browse')).toBeVisible();
+
+  // A clip instead, which is a perfectly good file and not this one.
+  await page.locator('input[type=file]').setInputFiles(clip);
+  await expect(canvas).toBeVisible();
+  await expect(page.getByText(/so the selection does not describe it/)).toBeVisible();
+  await expect(page.getByText(/made on sample\.png/)).toBeVisible();
+  // The file it named is open and has nothing on it, which is the honest
+  // outcome: the clip is fine, the pairing is not.
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  await expect(page.getByText('1 / 60')).toBeVisible();
+});
+
+/** A file that says it is a document and is not one, refused by signature. */
+test('refuses a file that is not a document at all', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  await expect(page.locator('canvas')).toBeVisible();
+
+  // "ROTYL" and a zero, a version this build does not read, and nothing else.
+  const fromTheFuture = new Uint8Array(new ArrayBuffer(12));
+  fromTheFuture.set([0x52, 0x4f, 0x54, 0x59, 0x4c, 0x00], 0);
+  new DataView(fromTheFuture.buffer).setUint16(6, 99, true);
+
+  const dropped = await page.evaluateHandle((encoded: string) => {
+    const binary = atob(encoded);
+    const bytes = new Uint8Array(binary.length);
+    for (let at = 0; at < binary.length; at++) bytes[at] = binary.charCodeAt(at);
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes], 'later.rotyl', { type: 'application/octet-stream' }));
+    return transfer;
+  }, Buffer.from(fromTheFuture).toString('base64'));
+  await page.locator('canvas').dispatchEvent('drop', { dataTransfer: dropped });
+
+  await expect(page.getByText(/written by a newer version of Rotyl/)).toBeVisible();
+});
+
+/**
+ * The same picture, different bytes: opened, and said.
+ *
+ * The shape matched, so every command replays and every frame number means what
+ * it meant. The bytes did not, so this may be a re-encode rather than the file
+ * the selection was drawn on, which is an ordinary thing to have done and is
+ * still worth knowing. A STATE RATHER THAN AN EVENT, so it goes beside the
+ * file's name where the soundtrack warning goes, for as long as the file is
+ * open, rather than in the line that takes itself down after ten seconds.
+ */
+test('opens a document against a re-encoded copy of its media, and says so', async ({ page }) => {
+  await stubSavePicker(page);
+  const original = await readFile(fixture);
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  await page.getByRole('button', { name: 'Area' }).click();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.7, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+  const before = await selectionBytes(page);
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Wrote sample.rotyl.')).toBeVisible();
+  const saved = await readPickedFile(page, 'sample.rotyl');
+
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles(asFile(saved, 'sample.rotyl'));
+  await expect(page.getByText('Drop sample.png, or click to browse')).toBeVisible();
+
+  // The same picture with something after the end of it, which every decoder
+  // ignores and no digest does. Same dimensions, different bytes, different
+  // length: the case a name and a size cannot tell apart from the real one.
+  await page.locator('input[type=file]').setInputFiles({
+    name: 'sample.png',
+    mimeType: 'image/png',
+    buffer: Buffer.concat([original, Buffer.from('rotyl-was-here')]),
+  });
+  await expect(canvas).toBeVisible();
+
+  // It opened, the mask is the mask that was saved, and the row beside the name
+  // says what happened.
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  expect(await selectionBytes(page)).toBe(before);
+  await expect(
+    page.getByText('this selection was saved against a different copy of this file'),
+  ).toBeVisible();
+  // Not a failure, so not in the colour this product spends on failures.
+  await expect(page.locator('.notice')).toHaveCount(0);
+});
