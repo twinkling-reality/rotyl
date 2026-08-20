@@ -25,5 +25,15 @@ fixture with no audio track cannot tell an export that carries it from one that
 drops it. Pink noise rather than a tone, so every packet is a different length:
 packets that are all the same size make any arrangement of them look regular.
 
+**`sample-mulaw.mov`** is the same video again with a mu-law soundtrack. It
+exists so the branch that refuses to carry a soundtrack is a branch that gets
+run: QuickTime holds mu-law and MP4 does not, so this is an ordinary file whose
+sound has nowhere to go.
+
+```bash
+ffmpeg -i sample.mp4 -f lavfi -i "sine=frequency=440:sample_rate=8000:duration=2" \
+  -map 0:v -map 1:a -c:v copy -c:a pcm_mulaw sample-mulaw.mov
+```
+
 **`sample.webm`** is refused by signature and never decoded, so what is in it
 does not matter beyond the first four bytes.

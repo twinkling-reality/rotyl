@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFile } from 'node:fs/promises';
-import { BlobSource, EncodedPacketSink, Input, MP4 } from 'mediabunny';
+import { BlobSource, EncodedPacketSink, Input, MP4, QTFF } from 'mediabunny';
 
 /**
  * One end-to-end pass through the product's actual claim: open an image, select
@@ -58,6 +58,10 @@ async function medianAt(results: string, path: readonly string[]): Promise<numbe
 const fixture = join(fixtures, 'sample.png');
 const clip = join(fixtures, 'sample.mp4');
 const webm = join(fixtures, 'sample.webm');
+// A QuickTime file whose sound an MP4 cannot hold. QuickTime carries mu-law and
+// MP4 does not, so this is an ordinary file whose soundtrack has nowhere to go,
+// which is the branch that would otherwise never be run.
+const mulaw = join(fixtures, 'sample-mulaw.mov');
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -1081,6 +1085,24 @@ test('does no work when the save dialog is dismissed', async ({ page }) => {
   expect(downloaded).toBe(0);
 });
 
+/** The audio packets of a clip, as bytes and times, in order. */
+async function audioPackets(
+  bytes: Uint8Array<ArrayBuffer>,
+): Promise<{ data: Uint8Array; seconds: number }[]> {
+  const input = new Input({ formats: [MP4, QTFF], source: new BlobSource(new Blob([bytes])) });
+  try {
+    const track = await input.getPrimaryAudioTrack();
+    if (!track) return [];
+    const out: { data: Uint8Array; seconds: number }[] = [];
+    for await (const packet of new EncodedPacketSink(track).packets()) {
+      out.push({ data: packet.data, seconds: packet.timestamp });
+    }
+    return out;
+  } finally {
+    input.dispose();
+  }
+}
+
 /**
  * Stopping keeps what was written, which is the rule this whole path turns on.
  *
@@ -1130,6 +1152,256 @@ test('stops where it is told, and keeps what it wrote', async ({ page }) => {
   // where it stopped is worth what it would have been had the clip ended there.
   expect(frames).toBeGreaterThan(0);
   expect(frames).toBeLessThan(60);
+
+  // AND THE SOUND STOPPED WITH IT. Draining the rest of the soundtrack at the
+  // end would give an export stopped four minutes into a fourteen minute clip a
+  // fourteen minute soundtrack over a four minute picture, which is the one way
+  // a stop could leave a file worse than the part that was rendered.
+  const sound = await audioPackets(bytes);
+  expect(sound.length).toBeGreaterThan(0);
+  const endOfPicture = frames / 30;
+  expect(sound.at(-1)?.seconds ?? 0).toBeLessThan(endOfPicture + 0.05);
+});
+
+/**
+ * The sound goes out as the sound that came in, and it goes out INTERLEAVED.
+ *
+ * Two claims, and the second one is the reason the first one was not just a
+ * call after the loop. Measured (`node tools/video-bench/run.mjs interleave`), a
+ * file whose audio is one run after the video puts the sound of a given second
+ * a median of half the file away from its picture and grows with the clip, and
+ * with the index reserved at the front it usually cannot be written at all. So
+ * what is asserted here is that the packets are bit-identical AND that they are
+ * spread through the file rather than gathered at one end of it.
+ */
+test('writes the clip with its sound, unchanged and spread through the file', async ({ page }) => {
+  await stubSavePicker(page);
+  await page.locator('input[type=file]').setInputFiles(clip);
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.getByText('1 / 60')).toBeVisible();
+
+  // Said before the work, and this clip's sound is one an MP4 holds, so what
+  // the button promises is the sound rather than the absence of it.
+  await expect(page.getByRole('button', { name: 'Clip' })).toHaveAttribute(
+    'title',
+    'Write the whole clip as an MP4, with its sound.',
+  );
+
+  await page.getByRole('button', { name: 'Clip' }).click();
+  await expect(page.getByText('Wrote sample-rotyl.mp4.')).toBeVisible({ timeout: 60_000 });
+
+  const written = await readPickedFile(page, 'sample-rotyl.mp4');
+  const source = await audioPackets(new Uint8Array(await readFile(clip)));
+  const out = await audioPackets(written);
+
+  // The fixture has sound in it, which is the thing that makes this test able
+  // to fail: without this line a product that dropped every packet would pass.
+  expect(source.length).toBeGreaterThan(50);
+  // Every packet that STARTS inside the clip, and no others. Two edges, and
+  // both of them are decisions rather than accidents. An audio packet grid does
+  // not land on frame boundaries, so a clip of sixty frames at thirty a second
+  // ends at two seconds and a packet beginning after that plays under nothing.
+  // And an AAC track begins with a PRIMING packet at a negative timestamp,
+  // whose samples a decoder throws away: MP4 has no way to say "before zero"
+  // except an edit list this muxer only writes for positive offsets, so keeping
+  // it would put the whole soundtrack a packet late against the picture.
+  const kept = source.filter((packet) => packet.seconds >= 0 && packet.seconds < 60 / 30);
+  expect(kept.length).toBeLessThan(source.length);
+  expect(out.length).toBe(kept.length);
+  // BIT-IDENTICAL. The video is re-encoded because it was re-drawn; the audio
+  // was not touched, so nothing about it may change but the moment it plays.
+  for (const [index, packet] of out.entries()) {
+    const was = kept[index];
+    expect(
+      Buffer.from(packet.data).equals(Buffer.from(was?.data ?? new Uint8Array())),
+      `packet ${String(index)}`,
+    ).toBe(true);
+    expect(packet.seconds, `packet ${String(index)} time`).toBeCloseTo(was?.seconds ?? -1, 6);
+  }
+
+  // And where the bytes ended up. For every whole second of the clip, how far
+  // away in the file the sound that plays with it is: gathered at one end that
+  // distance is most of the file, interleaved it is a fraction of it.
+  const reach = await page.evaluate(
+    async ([encoded, indexModule]) => {
+      // The benchmark's own sample-table reader, reached through the dev server
+      // the way the provider is above. Reading the file the way a player reads it
+      // is the point: byte offsets are the only thing this claim is about.
+      const parse: {
+        mp4Index: (bytes: Uint8Array) => {
+          tracks: { kind: string; samples: { seconds: number; offset: number }[] }[];
+        };
+      } = await import(indexModule);
+      const decoded = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+      const index = parse.mp4Index(decoded);
+      const at = (kind: string, when: number): number | undefined => {
+        const track = index.tracks.find((candidate) => candidate.kind === kind);
+        let found: number | undefined;
+        for (const sample of track?.samples ?? []) {
+          if (sample.seconds > when) break;
+          found = sample.offset;
+        }
+        return found;
+      };
+      let worst = 0;
+      for (let second = 0; second < 2; second++) {
+        const picture = at('video', second);
+        const sound = at('audio', second);
+        if (picture === undefined || sound === undefined) continue;
+        worst = Math.max(worst, Math.abs(picture - sound));
+      }
+      return { worst, size: decoded.length };
+    },
+    [Buffer.from(written).toString('base64'), '/tools/video-bench/mp4-index.ts'] as const,
+  );
+
+  // Within one second's worth of bytes of its own picture, where gathering the
+  // sound at one end of the file would put it at the length of the whole thing.
+  // Stated in seconds of media rather than as a fraction, because the muxer
+  // closes a chunk every half second and a two second clip therefore has only
+  // four of them: a fraction that looked tight here would be a fraction that
+  // failed on a longer clip for no reason. The number itself lives in the
+  // results file the research page reads rather than in a bound copied here.
+  const bytesPerSecond = reach.size / (60 / 30);
+  expect(reach.worst).toBeLessThan(bytesPerSecond);
+});
+
+/**
+ * A range writes part of the clip, and a selection made before it still applies.
+ *
+ * THE SECOND HALF IS THE DECISION. A range is a range on the export and not a
+ * trim of the document: every command in the log carries an absolute frame
+ * number and folds forward, so a rectangle dragged on frame 0 is still in
+ * effect on frame 40. A trim that renumbered frames would have quietly dropped
+ * it, and the difference is invisible until somebody exports the second half of
+ * a clip and gets none of their work.
+ */
+test('exports a range, and a selection made before it still applies', async ({ page }) => {
+  await stubSavePicker(page);
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  await expect(page.getByText('1 / 60')).toBeVisible();
+
+  // Selected on frame zero, and the range starts a long way after it.
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  await page.getByRole('button', { name: 'Area' }).click();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.7, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+  const timeline = page.getByRole('slider', { name: 'Frame' });
+  await timeline.fill('40');
+  await page.getByRole('button', { name: 'In', exact: true }).click();
+  await timeline.fill('49');
+  await page.getByRole('button', { name: 'Out', exact: true }).click();
+
+  // Nothing on the track until a range is set, and something the moment one is.
+  await expect(page.locator('.timeline__range-bar')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'All', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Clip' })).toHaveAttribute(
+    'title',
+    /^Write 00:01\.10 to 00:01\.19 as an MP4/,
+  );
+
+  await page.getByRole('button', { name: 'Clip' }).click();
+  await expect(page.getByText('Wrote sample-rotyl.mp4.')).toBeVisible({ timeout: 60_000 });
+
+  const bytes = await readPickedFile(page, 'sample-rotyl.mp4');
+  // The index is still at the front on a ranged, two-track file.
+  expect(boxOrder(bytes).slice(0, 2)).toEqual(['ftyp', 'moov']);
+
+  const input = new Input({ formats: [MP4], source: new BlobSource(new Blob([bytes])) });
+  const track = await input.getPrimaryVideoTrack();
+  expect(track).not.toBeNull();
+  if (!track) return;
+  let frames = 0;
+  for await (const packet of new EncodedPacketSink(track).packets(undefined, undefined, {
+    metadataOnly: true,
+  })) {
+    if (packet.byteLength >= 0) frames++;
+  }
+  input.dispose();
+  // Ten frames, inclusive of both ends, out of sixty.
+  expect(frames).toBe(10);
+
+  // Sound as well, and less of it: the packets that play under those ten frames.
+  const sound = await audioPackets(bytes);
+  expect(sound.length).toBeGreaterThan(5);
+  expect(sound.length).toBeLessThan(30);
+
+  // AND THE SELECTION REACHED IT. The rectangle was dragged on frame zero and
+  // the range begins at frame forty, so a written frame that matches the source
+  // everywhere would mean the log had been renumbered out from under it.
+  const difference = await page.evaluate(
+    async ([encoded, providerModule]) => {
+      const loaded: ProviderModule = await import(providerModule);
+      const { FrameProvider } = loaded;
+      const pixels = async (blob: Blob, want: number): Promise<Uint8ClampedArray> => {
+        const opened = await FrameProvider.open(blob, 8192);
+        if (!opened.ok) throw new Error('the exported clip could not be opened');
+        let data: Uint8ClampedArray | undefined;
+        const shown = await opened.value.readFrame(want, (frame) => {
+          const surface = new OffscreenCanvas(frame.displayWidth, frame.displayHeight);
+          const context = surface.getContext('2d');
+          if (!context) throw new Error('no 2d context');
+          context.drawImage(frame, 0, 0);
+          data = context.getImageData(0, 0, surface.width, surface.height).data;
+        });
+        opened.value.dispose();
+        if (!shown || !data) throw new Error('that frame could not be read');
+        return data;
+      };
+      const decoded = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+      // The fifth frame of the written file, which is frame 44 of the source.
+      const written = await pixels(new Blob([decoded]), 4);
+      const source = await pixels(await (await fetch('/e2e/fixtures/sample.mp4')).blob(), 44);
+      const patch = (x0: number, y0: number, size: number): number => {
+        let total = 0;
+        let count = 0;
+        for (let y = y0; y < y0 + size; y++) {
+          for (let x = x0; x < x0 + size; x++) {
+            const o = (y * 320 + x) * 4;
+            for (let channel = 0; channel < 3; channel++) {
+              total += Math.abs((written[o + channel] ?? 0) - (source[o + channel] ?? 0));
+              count++;
+            }
+          }
+        }
+        return total / count;
+      };
+      return { selected: patch(144, 104, 32), corner: patch(4, 4, 32) };
+    },
+    [Buffer.from(bytes).toString('base64'), '/src/platform/video/frame-provider.ts'] as const,
+  );
+  expect(difference.selected).toBeGreaterThan(6);
+  expect(difference.corner).toBeLessThan(4);
+  expect(difference.selected).toBeGreaterThan(difference.corner * 2);
+});
+
+/**
+ * A soundtrack an MP4 cannot carry is said BEFORE the work, not after it.
+ *
+ * Which is the rule the destination already follows, and for the same reason: a
+ * clip export is minutes of encoding, and finding out at the end that the file
+ * is silent is finding out too late to do anything about it. QuickTime carries
+ * mu-law and MP4 does not, so this is an ordinary file whose sound has nowhere
+ * to go, and the answer costs a list lookup on a track that is already open.
+ */
+test('says a soundtrack cannot be carried while the file is merely open', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles(mulaw);
+  await expect(page.locator('canvas')).toBeVisible();
+
+  await expect(page.getByText('its ulaw sound cannot go in an MP4')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Clip' })).toHaveAttribute(
+    'title',
+    'Write the whole clip as an MP4. Its ulaw soundtrack is one an MP4 cannot carry, so the clip will be silent.',
+  );
 });
 
 test('undo goes to the frame it undid', async ({ page }) => {

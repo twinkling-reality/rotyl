@@ -158,9 +158,14 @@ export function Timeline({
         Marking the part to export.
         Two words rather than two icons, because there is no drawing of a
         bracket that anybody reads as "start the export here" without being
-        told, and the keys are the ones every editor uses. Clear appears only
-        when there is something to clear, which is what keeps the row from
-        carrying a control for a decision nobody has taken.
+        told, and the keys are the ones every editor uses. The third appears
+        only when there is a range to drop, which is what keeps the row from
+        carrying a control for a decision nobody has taken. It is not called
+        Clear and not called Whole clip: the toolbar already has a Clear, the
+        export button is already called Clip, and a control whose name contains
+        another control's name is a trap for anybody reaching things by name
+        rather than by eye. In, Out and All is the set of answers to one
+        question, which is what these three are.
       */}
       <div class="timeline__range">
         <button
@@ -192,7 +197,7 @@ export function Timeline({
               onRangeChange(undefined);
             }}
           >
-            Clear
+            All
           </button>
         ) : null}
       </div>
