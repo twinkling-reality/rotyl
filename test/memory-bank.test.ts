@@ -201,6 +201,25 @@ describe('laying out a memory bank', () => {
     return { features, positions };
   }
 
+  it('holds the frame the object was pointed at, however long ago that was', () => {
+    // THE CLAIM THE WHOLE LAYOUT RESTS ON, taken off the reference rather than
+    // out of its source: the fixture names which frame each 512-token block of
+    // the reference's own bank came from, matched by value against the entries
+    // its memory encoder produced. On the last frame of a thirty-frame clip
+    // that is frame zero plus the six before this one, twenty-two frames after
+    // a window keeping the last seven would have dropped the first.
+    const last = host.frames.at(-1);
+    expect(last).toBeDefined();
+    const slots = last?.bank.slots ?? [];
+    expect(slots.length).toBe(MEMORY_ENTRIES);
+    expect(slots[0]).toBe(0);
+    // And the rest are consecutive and end on the frame before this one, which
+    // is what makes their temporal rows count back from zero.
+    slots.slice(1).forEach((slot, index) => {
+      expect(slot).toBe((last?.frame ?? 0) - RECENT_ENTRIES + index);
+    });
+  });
+
   it('is the bank the reference built, entry for entry and row for row', () => {
     // THE ONE THAT WAS WRONG. The reference holds the frame the object was
     // pointed at plus the six before this one, gives the first the OLDEST
