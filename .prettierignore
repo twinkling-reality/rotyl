@@ -14,6 +14,9 @@ tools/style-bench/real
 # Committed, but written by the harness rather than by a person.
 tools/style-bench/figures
 tools/video-bench/results.json
+# And where the sound goes, whose codec list a formatter collapses onto one
+# line: a re-take would then fail format:check for having been re-taken.
+tools/video-bench/results-interleave.json
 # The stage table, and the probes test/memory-bank.test.ts drives the
 # TypeScript over. The fixture is written on one line on purpose: it is forty
 # thousand numbers, and a formatter would make every re-take a forty-thousand
