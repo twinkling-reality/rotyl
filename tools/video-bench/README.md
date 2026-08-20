@@ -4,9 +4,9 @@ The measurements video was waiting on, and the harness that took them.
 
 **Nothing in Rotyl uses this.** It exists for the same reason `edgetam-export`
 does: it answered questions that decide an architecture, and a number nobody can
-reproduce is worth about as much as a guess. Seven things were unknown, all of
-them capable of forcing a different design, and all seven now have an answer
-that can be re-taken on other hardware in one command.
+reproduce is worth about as much as a guess. Everything below was capable of
+forcing a different design when it was asked, and every one of them now has an
+answer that can be re-taken on other hardware in one command.
 
 ## Running it
 
@@ -19,7 +19,7 @@ node tools/video-bench/run.mjs all         # real Chrome, headed
 `run.mjs all` takes the nine that need a GPU and a clip, and it takes any
 subset of them: `readback`, `ort-device`, `attention`, `bank-rampup`,
 `half-precision`, `decode`, `colour`, `encode`, `encode-colour`,
-`shared-device`. Four measurements sit outside that run and write their own
+`shared-device`. Five measurements sit outside that run and write their own
 files, because they share nothing with it and re-taking one of them should not
 re-date every figure it would otherwise have landed beside. The bundle sizes
 need a build and no browser: `node tools/video-bench/bundle-size.mjs`. The
@@ -29,11 +29,13 @@ started with `VITE_TRACKING_HOST` pointing at the two graphs, which most
 machines will not have: `node tools/video-bench/run.mjs tracked-frame`. And how
 long a clip export can be takes twenty minutes and ends by running the tab out
 of memory, which is the measurement rather than a hazard of it:
-`node tools/video-bench/run.mjs long-clip`. The clips are gitignored,
-`results.json`, `results-bundle.json`, `results-log.json`,
-`results-tracked-frame.json` and `results-long-clip.json` are not, and the
-graphs come from `tools/edgetam-export`. `export.py` for the pair, then
-`half_precision.py`.
+`node tools/video-bench/run.mjs long-clip`. And where the sound goes in a file
+needs no GPU at all, answering a question about byte layout that shares nothing
+with a timing: `node tools/video-bench/run.mjs interleave`. The clips are
+gitignored, `results.json`, `results-bundle.json`, `results-log.json`,
+`results-tracked-frame.json`, `results-long-clip.json` and
+`results-interleave.json` are not, and the graphs come from
+`tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
 
 **Nothing under `src/` may be edited while a run is going.** The dev server
 hot-reloads the page underneath it, which arrives as "the execution context was
@@ -50,7 +52,7 @@ appears nowhere: it throttles when the pane is hidden, which silently turns a
 3 ms number into a 16 ms one. Medians of 15 to 30 runs after warm-up, on an
 Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 
-**Ten findings, each with the command that re-takes it:**
+**Eleven findings, each with the command that re-takes it:**
 
 1. [The 12 MB readback does not bind](#1-the-12-mb-readback-does-not-bind-and-it-is-avoidable-anyway)
 2. [Memory attention is 60 ms](#2-memory-attention-is-60-ms-and-38-at-half-precision)
@@ -62,6 +64,7 @@ Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 8. [A tracked clip does not fit in the command log](#8-a-tracked-clip-does-not-fit-in-the-command-log-and-the-fold-is-not-why)
 9. [A tracked frame is 135 ms, and the sum said 90](#9-a-tracked-frame-is-135-ms-and-the-sum-said-90)
 10. [Ten minutes was never the problem, and twenty was](#10-ten-minutes-was-never-the-problem-and-twenty-was)
+11. [Sound in one run is not a file anybody can stream](#11-sound-in-one-run-is-not-a-file-anybody-can-stream)
 
 ---
 
@@ -808,6 +811,86 @@ tab.
 
 ---
 
+---
+
+## 11. Sound in one run is not a file anybody can stream
+
+A clip that arrived with a soundtrack left without one, and `docs/limits.md`
+argued the principle and then described the opposite of what happened: "a clip
+that silently dropped a soundtrack it had been given would be worse than one
+that never had it". It was given one, and it dropped it, silently.
+
+**What audio passthrough costs was never the question worth measuring.** Copying
+packets that are already encoded costs nothing and everybody knows it. What
+nobody here had measured is INTERLEAVING, and it decides whether
+[measurement 10](#10-ten-minutes-was-never-the-problem-and-twenty-was)'s central
+commitment was real. The index goes at the front so a file starts playing before
+it has finished arriving, and a file whose video is one contiguous run and whose
+audio is another satisfies that on paper and violates it completely in practice:
+a player has to hold the whole video to reach the first audio sample.
+
+```bash
+./tools/video-bench/make-clips.sh          # 1080p30-aac.mp4 and 1080p30-ulaw.mov
+node tools/video-bench/run.mjs interleave
+```
+
+It writes the same clip three ways and asks, for every whole second of it, how
+far away in the file the sound that plays with that second is. Both tracks are
+passed through as encoded packets with no encoder anywhere in it, which is what
+a clip export does with audio and is also what isolates this from
+[measurement 5](#5-the-whole-export-pipeline-is-5-ms-a-frame-and-almost-all-of-it-is-the-encoder):
+what is being laid out here is the muxer's arrangement of bytes.
+
+### The cheapest arrangement does not produce a file at all
+
+Adding every video packet and then every audio packet fails, at every length,
+before a byte is written. With `fastStart: 'reserve'` the muxer cannot size the
+movie box until it has seen a packet from EVERY track it was told about, so a run
+of video with the audio behind it queues every frame in memory, and on a track
+carrying B-frames the tentative movie box it builds at that moment asserts
+rather than being built. One audio packet in front of the video is what makes
+that arrangement exist at all.
+
+**And once it exists, it is not progressive.** The table is on
+`/research/sound.html`; the shape of it is that the reach grows one for one with
+the file when the audio is gathered at one end, and is a constant when it is
+not. Interleaving costs one comparison per frame and the export loop already had
+a frame to hang it on.
+
+### Counting the sound before the first frame
+
+`reserve` needs a `maximumPacketCount` on every track, so the number of audio
+packets has to be known before anything is rendered. That is a metadata-only
+walk of the whole audio track, which reads the sample tables and none of the
+payload, and it is about a microsecond a packet: 50 ms for the 56,280 packets in
+twenty minutes of 48 kHz audio, linear, paid once, before anything slow.
+
+### The one thing this cannot do, and when it says so
+
+`Mp4OutputFormat` holds eighteen audio codecs and QuickTime holds more, so a
+`.mov` with mu-law audio is an ordinary file whose sound has nowhere to go.
+Deciding that costs a list lookup on a track that is already open, which is why
+it is said while the file is merely open rather than after the encoding. That is
+what `1080p30-ulaw.mov` exists for: without a file that provokes it, the branch
+that refuses is code nobody has ever run.
+
+### Two things this does not measure, said rather than left out
+
+**Memory does not separate the arrangements.** Both stream, because the muxer
+writes each chunk as it closes either way, and what grows is the sample table
+`reserve` keeps per track, which both need in equal measure. A heap figure taken
+across these rungs reads the packet list the harness built rather than anything
+the arrangement decided, so it is left out and this paragraph is why.
+
+**A range does not cut the sound where it cuts the picture.** The packet holding
+the in point began before it, and MP4 has no way to say "before zero" except an
+edit list this muxer only writes for positive offsets. So the straddling packet
+is dropped, which costs at most one packet at the head, 21 ms at 48 kHz against
+a 33 ms frame, and leaves every remaining packet at exactly the moment it was at
+in the source. An AAC track's own priming packet, which sits at a negative
+timestamp and whose samples a decoder throws away, goes the same way and for the
+same reason.
+
 ## What follows
 
 1. **Decode is free and seeking is not.** Scrubbing is a decoder kept alive and
@@ -837,3 +920,8 @@ tab.
    minutes of 1080p on this machine. Which browser somebody is in decides which
    of those they get, so it is asked at the click rather than discovered at the
    end.
+10. **Carrying sound across is free and putting it in the right place is not.**
+    A second track added in one run after the first is either no file at all or
+    a file whose sound sits most of the file away from its picture and grows
+    with the clip. Interleaved it is a constant, and it costs one comparison per
+    frame inside a loop that was already there.

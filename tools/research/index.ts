@@ -128,10 +128,14 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // and ends by running the tab out of memory. Not a thing to do in the middle
   // of the run every other figure here comes from.
   const long = read('tools/video-bench/results-long-clip.json');
+  // And the same again for where the sound goes, which needs no GPU and answers
+  // a question about byte layout: taking it inside the run above would re-date
+  // every decode and encode figure whenever somebody asked about audio.
+  const sound = read('tools/video-bench/results-interleave.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
-    ...entries({ style, real, video, tracking, tracked, host, shrink, bundle, log, long }),
+    ...entries({ style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound }),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',

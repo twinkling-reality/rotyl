@@ -42,6 +42,34 @@ export const TRIALS: readonly Trial[] = [
     where: 'tools/video-bench, measurement 10',
   },
   {
+    what: 'Copying the whole soundtrack in one call after the video, which is the cheapest thing to write',
+    verdict: 'rejected',
+    evidence:
+      'It produces no file at all: with the index reserved the muxer cannot size the movie box until it has seen a packet from every track, so a run of video with the audio behind it queues every frame and, on a track carrying B-frames, fails before a byte is written. Unblocked with one packet in front, the sound of a given second then sits 98% of the file away from its picture and grows with the clip: 32 MB at thirty seconds, 325 MB at five minutes. Interleaved it is a constant 2.7 MB',
+    where: 'tools/video-bench, measurement 11',
+  },
+  {
+    what: 'Re-encoding the first audio packet so a range cuts exactly where the video does',
+    verdict: 'rejected',
+    evidence:
+      'The only exact answer, and the only one that stops the sound being the source\u2019s own bytes. What it buys is at most one packet at the head of a range, 21 ms at 48 kHz against a 33 ms frame, and what it costs is an audio decoder and an audio encoder this product otherwise has none of. Dropping the straddling packet instead leaves every remaining one at exactly the moment it was at in the source',
+    where: 'src/platform/video/frame-provider.ts',
+  },
+  {
+    what: 'Making an export range a trim of the document rather than a range on the export',
+    verdict: 'rejected',
+    evidence:
+      'Every command in the log carries an absolute frame number and folds forward, so renumbering frames would put the log and the timeline into disagreement about what frame 500 means, and a selection made before the in point would stop applying. Handing over fewer frames with the document\u2019s own numbers on them changes nothing else, and the end-to-end suite exports frames 40 to 49 of a selection made on frame 0',
+    where: 'src/platform/export/export-source.ts',
+  },
+  {
+    what: 'Asking the container writer whether it can carry a file\u2019s soundtrack',
+    verdict: 'rejected',
+    evidence:
+      'The writer is 42.8 KB gzipped behind a dynamic import only a clip export fetches, and the question has to be answered while a video is merely open, so asking it would put the whole muxer in the chunk that opens a video. The codec list is written out in export.ts instead and a unit test asserts it against the writer\u2019s own, so an upgrade that changed it fails the suite',
+    where: 'src/platform/export/export.ts',
+  },
+  {
     what: 'Abandoning a clip export when it is stopped, which is what it used to do',
     verdict: 'rejected',
     evidence:

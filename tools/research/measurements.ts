@@ -1243,6 +1243,106 @@ function theBudget(long: unknown): Section {
   };
 }
 
+// --- where the sound goes ---------------------------------------------------
+
+/** The arrangement rows, read as a list: one of them does not produce a file. */
+function arrangements(sound: unknown): readonly unknown[] {
+  const rows = at(sound, ['interleave', 'the arrangements']);
+  if (!Array.isArray(rows)) throw new Error('research: the arrangements are not a list');
+  return rows;
+}
+
+function pick(sound: unknown, arrangement: string, seconds: number): unknown {
+  const found = arrangements(sound).find(
+    (row) => field(row, 'arrangement') === arrangement && field(row, 'seconds') === seconds,
+  );
+  if (found === undefined) {
+    throw new Error(`research: no ${arrangement} arrangement at ${String(seconds)} seconds`);
+  }
+  return found;
+}
+
+function theArrangements(sound: unknown): Section {
+  const rows = arrangements(sound);
+  const worst = (arrangement: string, seconds: number): string =>
+    numberIn(pick(sound, arrangement, seconds), 'worst_gap_mb', (value) => `${value.toFixed(1)} MB`);
+  return {
+    heading: 'A file with its sound in one run is not a file anybody can stream',
+    prose: [
+      'The index goes at the front of every file this writes, so a player can start before the last byte has arrived. Adding a second track is the first thing capable of quietly undoing that. A file whose video is one contiguous run and whose audio is another satisfies "the index is at the front" on paper and violates it completely in practice, because a player has to hold the whole video to reach the first audio sample.',
+      `So this asks, for every whole second of the clip, how far away in the file the sound that plays with it is. Gathered at one end the answer is most of the file and it GROWS with the clip: ${worst('primed', 30)} at thirty seconds, ${worst('primed', 120)} at two minutes and ${worst('primed', 300)} at five. Interleaved it is a constant ${worst('interleaved', 300)} at every length measured, which is about two and a half seconds of media.`,
+      'And the cheapest arrangement of all does not produce a file at all. With the index reserved, the muxer cannot size the movie box until it has seen a packet from every track it was told about, so a run of video with the audio behind it queues every frame in memory, and on a track carrying B-frames it fails outright before a byte is written. One audio packet in front of the video is what makes the second row exist, and it is also all that separates the second row from the third: after that, interleaving is one comparison per frame.',
+    ],
+    table: {
+      columns: ['arrangement', 'seconds', 'file', 'worst reach', 'median reach', 'of the file'],
+      rows: rows.map((row) => [
+        String(field(row, 'arrangement')),
+        numberIn(row, 'seconds', (value) => value.toFixed(0)),
+        numberIn(row, 'file_mb', (value) => `${value.toFixed(0)} MB`),
+        numberIn(row, 'worst_gap_mb', (value) => `${value.toFixed(2)} MB`),
+        numberIn(field(row, 'gap'), 'median', (value) => `${(value / 2 ** 20).toFixed(2)} MB`),
+        field(row, 'ok') === false
+          ? 'no file'
+          : numberIn(row, 'worst_gap_over_file', (value) => `${(value * 100).toFixed(1)}%`),
+      ]),
+    },
+    caveat:
+      'Both tracks are passed through as encoded packets, with no encoder anywhere in it, which is what a clip export does with audio and is also what isolates this from the encode ladder. What is being laid out here is the muxer\u2019s arrangement of bytes. Memory is not in the table because it does not separate the arrangements: both stream, and what grows is the sample table a reserved index keeps per track, which both need in equal measure.',
+    command: 'node tools/video-bench/run.mjs interleave',
+  };
+}
+
+function countingFirst(sound: unknown): Section {
+  const rows = at(sound, ['interleave', 'counting it first', 'rows']);
+  if (!Array.isArray(rows)) throw new Error('research: the counting rows are not a list');
+  const longest = rows.at(-1);
+  return {
+    heading: 'Knowing how much sound there is, before the first frame is rendered',
+    prose: [
+      'The movie box is reserved at the front of the file, which means its sample tables are sized before the first sample lands, which means every track needs a maximum packet count up front. The video has one for nothing: an export knows how many frames it is writing before it renders the first one. The audio does not, and the only way to get one is to walk the whole track.',
+      `It is a metadata-only walk, which reads the sample tables and none of the payload, and it is about a microsecond a packet: ${numberIn(longest, 'ms', (value) => `${value.toFixed(0)} ms`)} for the ${numberIn(longest, 'packets', (value) => value.toLocaleString('en-GB'))} packets in twenty minutes of 48 kHz audio. Linear, and paid once, before anything slow, which is the rule the destination already follows.`,
+    ],
+    table: {
+      columns: ['audio', 'packets', 'to walk it', 'per packet'],
+      rows: rows.map((row) => [
+        numberIn(row, 'minutes', (value) =>
+          value < 1 ? `${(value * 60).toFixed(0)} seconds` : `${value.toFixed(0)} minutes`,
+        ),
+        numberIn(row, 'packets', (value) => value.toLocaleString('en-GB')),
+        numberIn(row, 'ms', (value) => `${value.toFixed(1)} ms`),
+        numberIn(row, 'us_per_packet', (value) => `${value.toFixed(2)} \u00b5s`),
+      ]),
+    },
+    command: 'node tools/video-bench/run.mjs interleave',
+  };
+}
+
+function whatItWillNotCarry(sound: unknown): Section {
+  const rows = at(sound, ['interleave', 'what the container will not carry', 'rows']);
+  if (!Array.isArray(rows)) throw new Error('research: the codec rows are not a list');
+  const codecs = at(sound, ['interleave', 'what the container will not carry', 'mp4_audio_codecs']);
+  if (!Array.isArray(codecs)) throw new Error('research: the codec list is not a list');
+  return {
+    heading: 'A soundtrack the container will not take, said before any of the work',
+    prose: [
+      'QuickTime carries mu-law and MP4 does not, so a .mov off an older camera is a perfectly ordinary file whose sound has nowhere to go. Losing it silently is the thing this chapter existed to fix, so the question is not whether it can be answered but when.',
+      `It is answered from the track and the format alone, with nothing decoded and nothing encoded, in no time at all: an MP4 holds ${String(codecs.length)} audio codecs and the file already says which one it has. So it is said while the file is merely open, in the same row as its name and its size, and again in the button's own sentence before the minutes of encoding rather than after them.`,
+    ],
+    table: {
+      columns: ['file', 'its soundtrack', 'an MP4 can carry it', 'to decide'],
+      rows: rows.map((row) => [
+        String(field(row, 'file')),
+        String(field(row, 'codec')),
+        field(row, 'mp4_can_carry_it') === true ? 'yes' : 'no',
+        numberIn(row, 'ms_to_decide', (value) => `${value.toFixed(0)} ms`),
+      ]),
+    },
+    caveat:
+      'The codecs an MP4 holds are written out in export.ts rather than asked of the container writer, because the writer is behind a dynamic import only a clip export fetches and the question has to be answerable while a video is merely open. A copied list can drift, so a unit test asserts it against the writer\u2019s own.',
+    command: 'node tools/video-bench/run.mjs interleave',
+  };
+}
+
 // --- entries ----------------------------------------------------------------
 
 /**
@@ -1264,10 +1364,11 @@ export interface Results {
   readonly bundle: unknown;
   readonly log: unknown;
   readonly long: unknown;
+  readonly sound: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
-  const { style, real, video, tracking, tracked, host, shrink, bundle, log, long } = results;
+  const { style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound } = results;
   return [
     {
       slug: 'the-look',
@@ -1358,6 +1459,19 @@ export function entries(results: Results): readonly Entry[] {
         'So this drives the product’s own export loop over a source that hands the same clip round again, at the export’s own bitrate, for as long as it is asked for. One thing in it is not the product’s code, and it is the thing being compared against: the sink that shipped before this chapter, which held every encoded packet until the end and no longer exists to import.',
       ],
       sections: [heldCeiling(long), intoAFile(long), theBudget(long)],
+    },
+    {
+      slug: 'sound',
+      results: 'tools/video-bench/results-interleave.json',
+      title: 'Where the sound goes in the file',
+      standfirst:
+        'A clip arrived with a soundtrack and left without one. Carrying it across is a packet copy that costs nothing; putting the packets in the right PLACE is the measurement, and the cheap answer does not produce a file at all.',
+      harness: 'tools/video-bench',
+      lede: [
+        'What audio passthrough costs was never the question worth asking. Copying packets that are already encoded costs nothing and everybody knows it. What nobody here had measured is interleaving, and it decides whether the last chapter\u2019s central commitment was real: the index goes at the front so a file starts playing before it has finished arriving, and a second track is the first thing capable of undoing that without moving a single box.',
+        'So this writes the same clip three ways and asks, for every second of it, how far away in the file the sound that plays with that second is. If the distance grows with the length of the clip, the file is not progressive whatever order the boxes are in.',
+      ],
+      sections: [theArrangements(sound), countingFirst(sound), whatItWillNotCarry(sound)],
     },
     {
       slug: 'tracking',
