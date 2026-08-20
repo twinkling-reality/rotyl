@@ -42,6 +42,34 @@ export const TRIALS: readonly Trial[] = [
     where: 'tools/video-bench, measurement 10',
   },
   {
+    what: 'Blending the previous stylised frame into this one, to stop a clip boiling',
+    verdict: 'rejected',
+    evidence:
+      'Measured before it was built, on a clip where five cars move against a city that does not. Half of the last frame improves the residue from 3.6 codes to 2.0, which is the number everybody quotes, and costs 58 codes of deviation in the band a car has just left, 53 on the car itself and 13% of the gradient energy inside it. On the clip with no moving grain, where the residue is already at the codec floor, it makes the residue worse and costs the same sixty codes. It also ends "a render is a function of its frame"',
+    where: 'tools/style-bench, measurement 5',
+  },
+  {
+    what: 'Averaging each frame against the one before it on the way INTO the chain',
+    verdict: 'rejected',
+    evidence:
+      'One pass, no motion estimation on a fixed camera, and it takes the input down about a fifth and the styled output down with it. It also makes the amplification WORSE wherever it was above one: poster on a brick wall 1.36 to 1.52, on foliage 1.46 to 1.62, comic at full detail 2.02 to 2.48. What it removes is the part these chains attenuate hardest, so it reports less flicker rather than causing less',
+    where: 'tools/style-bench, measurement 4',
+  },
+  {
+    what: 'Reading the flicker residue out of the middle of a chain, stage by stage',
+    verdict: 'rejected',
+    evidence:
+      'It needs a way to hand a working buffer out of a style pipeline, which is measurement scaffolding in shipped code and tells the outside what a style does. Three conditions over two clips answer the same question without one: a chain is a pure function of its frame, so a clip with no moving grain prices what it invents at the codec floor, and the amplification ratio prices what it does with what it was given',
+    where: 'tools/style-bench/attribution.ts',
+  },
+  {
+    what: 'Judging a temporal method on the flicker number alone',
+    verdict: 'rejected',
+    evidence:
+      'Every temporal method improves it trivially. `static-720p` has a fixed camera and nothing in it can expose a ghost, and `pan-720p` moves a still, so every pixel moves together, which is the one case a warp of the last frame gets right by construction. A clip with differential motion and a mask saying which pixels moved is what makes the trade visible, and it cost one scene change and 342 lines',
+    where: 'tools/style-bench, measurement 5',
+  },
+  {
     what: 'Copying the whole soundtrack in one call after the video, which is the cheapest thing to write',
     verdict: 'rejected',
     evidence:

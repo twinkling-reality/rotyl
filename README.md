@@ -44,7 +44,10 @@ See [how it is put together](docs/architecture.md).
 **Video.** Open an MP4 or a MOV, play it, scrub it, and select on any frame. An
 edit holds from the frame it was made on until something later changes it, and
 Track follows what is selected forward through the clip as a job the playhead is
-free to ignore. See [video](docs/video.md).
+free to ignore. Every stage still runs per frame, and what that costs was
+measured rather than assumed: a chain invents nothing, so the flicker that is
+left is the input, and both ways of filtering it out were priced and neither is
+here. See [video](docs/video.md).
 
 **Exporting.** The frame on screen as a picture, or the clip as an MP4, whole or
 between an In and an Out. Both are the preview's renderer at the preview's

@@ -158,6 +158,26 @@ one, and the measurement behind it is on `/research.html`.
   appears or disappears when the density crosses the spot function, and that is
   a hard threshold against a screen that does not move with the picture. It may
   not want fixing; a print is allowed to look like a print.
+- **The residue that is left is the input, and it is not going to be filtered
+  out.** Every stage runs per frame, so a chain is a pure function of its frame
+  and invents nothing: on a clip with no moving grain every chain answers the
+  codec floor. Two answers to the remaining flicker were measured before either
+  was built, and neither is here. Averaging frames on the way in takes the input
+  down a fifth and the output with it, and makes the amplification worse
+  wherever it was above one, because what it removes is the part these chains
+  attenuate hardest. Blending the previous stylised frame in improves the number
+  everybody quotes by two fifths and costs sixty codes of deviation around
+  anything that moves, thirteen per cent of the detail inside it, and this
+  product's promise that a render is a function of its frame. What is left is in
+  one stage of one chain, which is the entry below and the one after it.
+- **The comic chain amplifies a brick wall at full detail, by two.** At detail 0
+  it attenuates by 0.62 and at detail 1 it amplifies by 2.02, on the same
+  photograph, because raising detail shrinks the Kuwahara radius until the
+  flatten stops flattening and what survives is the grain it was there to
+  remove. The drawn scene reports 0.69 and says nothing about it. Nothing here
+  fixes it: the control does what it says, and somebody who wants the steadiest
+  comic frame should turn detail down, which is a sentence rather than a
+  feature.
 - **The poster style's outline is steady on detailed footage now, and it is
   still not as steady as no outline at all.** It used to be drawn where the
   quantised colour here differed from the quantised colour a line's width away,

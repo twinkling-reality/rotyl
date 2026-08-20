@@ -48,6 +48,37 @@ that to 4.9 and 0.6%, at no cost anyone can see on a still. That rule
 generalises: a style may make any decision it likes, as long as the decision is
 allowed to be undecided somewhere.
 
+**And what is left of it is the input, not an invention.** A chain is a pure
+function of its frame: hand it the same picture twice and it answers the same
+twice, which is measurable rather than arguable. On a clip encoded with no
+temporal grain the input moves 1.4 codes at the 99th percentile and every chain
+answers with 1.0, which is the floor. There is nothing in a styled frame that
+was not in the source frame, so a temporal method has nothing to remove that a
+quieter input would not also remove.
+
+What differs between chains is the GAIN, and the gain depends on the picture.
+The drawn scene says every chain but print attenuates. A photograph of a brick
+wall says the poster chain is at 1.36 and the comic chain at full detail is at
+2.02, where at no detail it is 0.62. Both of those are one stage: the poster
+outline, which the section below is about, and the Kuwahara radius falling until
+the flatten stops flattening.
+
+**A cleaner input was measured and does less than it looks.** Averaging each
+frame against the one before it on the way in is one pass and needs no motion
+estimation on a fixed camera. It takes the input down about a fifth and the
+output down with it, and it makes the amplification WORSE wherever it was above
+one, because what it removes is the part these chains attenuate hardest. It is
+a way of reporting less flicker rather than of having less, so it is not here.
+
+**And blending the previous stylised frame in is worse than the disease.** That
+was measured before it was built, on a clip where five cars move against a city
+that does not: half the last frame improves the residue by two fifths and costs
+sixty codes of deviation around anything that moves, and 13% of the gradient
+energy inside a moving car. On the clip with no moving grain, where there is no
+residue left to remove, it makes the residue worse and costs the same sixty
+codes. `tools/style-bench` has the counter-metric and the picture, and
+[known limits](limits.md) has what none of it fixed.
+
 **The rule was not applied everywhere, and it took a photograph to show it.**
 The poster style's outline compared two quantised colours a line's width apart,
 which is a hard decision with a neighbour on one side of it and therefore no
