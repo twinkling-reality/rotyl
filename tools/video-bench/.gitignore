@@ -26,3 +26,8 @@ results-*.json
 # the origin private file system and shares nothing with either of the two
 # above.
 !results-recovery.json
+# And the export ladder, which is the only measurement in `all` that puts a
+# STYLE CHAIN under the encoder: a change to a style makes it stale and makes
+# nothing else in that run stale, so re-taking it together with the rest meant
+# re-timing an ONNX session and a readback ladder that had not moved.
+!results-export.json

@@ -104,6 +104,12 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // to be fetched before it can run at all. See tools/style-bench/fetch-real.sh.
   const real = read('tools/style-bench/results-real.json');
   const video = read('tools/video-bench/results.json');
+  // Its own file because the export ladder is the only measurement in that run
+  // that puts a STYLE CHAIN under the encoder, so a change to a style makes it
+  // stale and makes nothing else in the run stale. Kept together they were
+  // re-taken together, which meant re-timing an ONNX session and a readback
+  // ladder that had not moved.
+  const exported = read('tools/video-bench/results-export.json');
   // Written by a Python harness against PyTorch rather than by a browser, which
   // is why it is neither of the two above.
   const tracking = read('tools/edgetam-export/results.json');
@@ -152,6 +158,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
       style,
       real,
       video,
+      exported,
       tracking,
       tracked,
       host,

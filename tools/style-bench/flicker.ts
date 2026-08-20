@@ -21,10 +21,9 @@
 // painted red over it.
 
 import { CONTENT_CASES } from './chain.ts';
-import { difference, pictureBytes, REAL_PICTURES, SCENE_PICTURE, StyleStage } from './harness.ts';
+import { difference, StyleStage } from './harness.ts';
+import { perturbationStills } from './stability.ts';
 import { toBase64, type Still } from './stills.ts';
-
-const SIZE = { width: 1280, height: 720 };
 
 /** Plainly visible, and the same threshold the stability tables call flicker. */
 const VISIBLE = 8;
@@ -63,7 +62,7 @@ function perturb(source: Uint8Array, sigma: number, seed: number): Uint8Array {
  * "which part of the picture" and a difference image on its own has no picture
  * in it to point at.
  */
-function map(styled: Uint8Array, shaken: Uint8Array): { rgb: Uint8Array; moved: number } {
+function paint(styled: Uint8Array, shaken: Uint8Array): { rgb: Uint8Array; moved: number } {
   const pixels = styled.length / 4;
   const rgb = new Uint8Array(pixels * 3);
   let moved = 0;
@@ -90,11 +89,14 @@ function map(styled: Uint8Array, shaken: Uint8Array): { rgb: Uint8Array; moved: 
 
 export async function flicker(device: GPUDevice): Promise<readonly Still[]> {
   const out: Still[] = [];
-  const stage = new StyleStage(device, SIZE);
 
-  for (const picture of [SCENE_PICTURE, ...REAL_PICTURES]) {
-    const base = await pictureBytes(picture, SIZE.width, SIZE.height);
+  // The same six stills the perturbation table is taken against, including the
+  // two frames of film, so a row and a picture of that row cannot come from
+  // different populations.
+  for (const still of await perturbationStills()) {
+    const { bytes: base, size } = still;
     const shaken = perturb(base, SIGMA, SEED);
+    const stage = new StyleStage(device, size);
 
     for (const item of CONTENT_CASES) {
       stage.uploadBytes(base);
@@ -105,18 +107,19 @@ export async function flicker(device: GPUDevice): Promise<readonly Still[]> {
       await stage.render(item.style, item.controls, 'full', true);
       const second = await stage.readOutput();
 
-      const { rgb, moved } = map(styled, second);
+      const { rgb, moved } = paint(styled, second);
       const spread = difference(styled, second);
       out.push({
-        name: `flicker ${picture.name} ${item.name}`,
-        width: SIZE.width,
-        height: SIZE.height,
+        name: `flicker ${still.name} ${item.name}`,
+        width: size.width,
+        height: size.height,
         rgb: toBase64(rgb, 3),
         labels: [`${String(moved)}% moved more than ${String(VISIBLE)} codes`, `p99 ${String(spread.p99)}`],
       });
     }
+
+    stage.dispose();
   }
 
-  stage.dispose();
   return out;
 }

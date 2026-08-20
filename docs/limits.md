@@ -221,18 +221,43 @@ one, and the measurement behind it is on `/research.html`.
   down a fifth and the output with it, and makes the amplification worse
   wherever it was above one, because what it removes is the part these chains
   attenuate hardest. Blending the previous stylised frame in improves the number
-  everybody quotes by two fifths and costs sixty codes of deviation around
+  everybody quotes by two fifths and costs fifty-five codes of deviation around
   anything that moves, thirteen per cent of the detail inside it, and this
   product's promise that a render is a function of its frame. What is left is in
   one stage of one chain, which is the entry below and the one after it.
-- **The comic chain amplifies a brick wall at full detail, by two.** At detail 0
-  it attenuates by 0.63 and at detail 1 it amplifies by 2.00, on the same
-  photograph, because raising detail shrinks the Kuwahara radius until the
-  flatten stops flattening and what survives is the grain it was there to
-  remove. The drawn scene reports 0.69 and says nothing about it. Nothing here
-  fixes it: the control does what it says, and somebody who wants the steadiest
-  comic frame should turn detail down, which is a sentence rather than a
-  feature.
+- **The comic chain still amplifies a brick wall at full detail, by three
+  quarters, and it used to be by two.** At detail 0 it attenuates by 0.63 and at
+  detail 1 it amplifies by 1.75, on the same photograph; the drawn scene reports
+  0.56 and says nothing about it, for the third time. What is left is the
+  anisotropic Kuwahara's own sector weighting, which is the amplifier at every
+  setting rather than only at the top: average the eight sectors instead of
+  choosing between them and the same wall goes from 25 codes out of six to 8 at
+  detail 1 and from 7 to 1 at detail 0, and a frame of film from 17 to 5. That
+  is not available. A Kuwahara that does not choose its sector is a blur, and
+  the choosing is the difference between painterly and smooth. Somebody who
+  wants the steadiest comic frame should still turn detail down, which is a
+  smaller sentence than it was.
+- **The reason written here for that was the wrong one, which took an
+  intervention to find out.** This page said the Kuwahara radius shrinks with
+  detail until the flatten stops flattening. Measured by holding each of the
+  three things detail moves and taking the number again, a floor under that
+  radius takes a brick wall from 29 codes out of six to 9 and takes a frame of
+  film from 17 UP to 22 on the way, because a wider ellipse spans more structure
+  and a sector that flips then costs more codes. There is no radius that is
+  right for both pictures. What was actually happening is that the flatten's
+  buffer resolution is derived to hold its radius, at detail 1 that derivation
+  asks for 1356 pixels of a 720 pixel frame, and clamping the request at the
+  frame turned the box downsample in front of the Kuwahara into a copy. The
+  downsample is this chain's only grain rejection. It is bounded a root two
+  below the picture now, which restores it at every setting, moves the apparent
+  scale by nothing, and makes the chain three times cheaper at 720p.
+- **One of the two film shots was never the chain at all.** Both amplify as
+  clips, including at detail 0 where the flatten is at its widest, and a clip of
+  a film has actors in it. Rendered as stills, one frame twice with grain of a
+  known size added the second time, the exterior amplifies 1.33 where its clip
+  says 1.39 and the interior attenuates 0.50 where its clip says 1.11. So the
+  exterior's figure is the chain and the interior's is the actors, and one page
+  had been reading them as one thing.
 - **The poster style's outline is steady on detailed footage now, and it is
   still not as steady as no outline at all.** It used to be drawn where the
   quantised colour here differed from the quantised colour a line's width away,

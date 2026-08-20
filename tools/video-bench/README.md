@@ -16,12 +16,18 @@ pnpm dev --port 5180                       # in another shell
 node tools/video-bench/run.mjs all         # real Chrome, headed
 ```
 
-`run.mjs all` takes the nine that need a GPU and a clip, and it takes any
+`run.mjs all` takes the seven that need a GPU and a clip, and it takes any
 subset of them: `readback`, `ort-device`, `attention`, `bank-rampup`,
-`half-precision`, `decode`, `colour`, `encode`, `encode-colour`,
-`shared-device`. Five measurements sit outside that run and write their own
-files, because they share nothing with it and re-taking one of them should not
-re-date every figure it would otherwise have landed beside. The bundle sizes
+`half-precision`, `decode`, `colour`, `shared-device`. `run.mjs export` takes
+the two that put a style chain under an encoder, `encode` and `encode-colour`,
+and writes `results-export.json`. They are apart because the export ladder is
+the only thing in here whose answer depends on what a STYLE costs, so a change
+to a style makes it stale and makes nothing else stale: taken together, the run
+that re-timed a comic chain also re-timed an ONNX session and a readback ladder
+that had not moved, and the diff was forty numbers of noise around the one that
+had changed. Six more measurements sit outside both runs and write their own
+files, because they share nothing with either and re-taking one of them should
+not re-date every figure it would otherwise have landed beside. The bundle sizes
 need a build and no browser: `node tools/video-bench/bundle-size.mjs`. The
 command log needs neither, since it is arithmetic over a data structure:
 `node tools/video-bench/run.mjs log`. What the same log costs once it has to
@@ -35,9 +41,9 @@ of memory, which is the measurement rather than a hazard of it:
 `node tools/video-bench/run.mjs long-clip`. And where the sound goes in a file
 needs no GPU at all, answering a question about byte layout that shares nothing
 with a timing: `node tools/video-bench/run.mjs interleave`. The clips are
-gitignored, `results.json`, `results-bundle.json`, `results-log.json`,
-`results-document.json`, `results-tracked-frame.json`, `results-long-clip.json`
-and `results-interleave.json` are not, and the graphs come from
+gitignored, `results.json`, `results-export.json`, `results-bundle.json`,
+`results-log.json`, `results-document.json`, `results-tracked-frame.json`,
+`results-long-clip.json` and `results-interleave.json` are not, and the graphs come from
 `tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
 
 **Nothing under `src/` may be edited while a run is going.** The dev server
@@ -263,7 +269,7 @@ QuickTime, which is what a phone or a camera writes, costs 64 bytes gzipped: it
 is the same demuxer with a different brand list. Matroska costs 15.4 KB, because
 it is not.
 
-The current application bundle is 50.7 KB gzipped, so this is not
+The current application bundle is 50.8 KB gzipped, so this is not
 going in it. It gets the same treatment as the inference runtime, a dynamic
 import and its own chunk, and a session that never opens a video never fetches
 it.
@@ -331,16 +337,16 @@ quality tier. Wall-clock milliseconds per frame:
 
 | rung                                     | 720p    | 1080p   |
 | ---------------------------------------- | ------- | ------- |
-| decode the frame and upload it           | 1.1     | 1.7     |
-| + the style chain and the composite      | 2.7     | 3.3     |
-| + capture the canvas as a frame          | 2.4     | 3.4     |
-| + our own `VideoEncoder`, packets binned | 2.9     | 4.9     |
-| + write them into an MP4                 | **3.0** | **5.0** |
-| the library driving the encoder as well  | 2.9     | 5.2     |
+| decode the frame and upload it           | 1.2     | 1.4     |
+| + the style chain and the composite      | 2.7     | 3.1     |
+| + capture the canvas as a frame          | 2.3     | 3.0     |
+| + our own `VideoEncoder`, packets binned | 2.7     | 4.8     |
+| + write them into an MP4                 | **2.7** | **5.0** |
+| the library driving the encoder as well  | 2.8     | 5.3     |
 
 **The encoder is the pipeline.** The encoder handed the same picture with the
 GPU taken out of the loop entirely measures 4.7 ms a frame at 1080p, against
-5.0 for everything. Every rung below it runs on threads the encoder is not
+5.0 for everything, and 2.6 at 720p against 2.7. Every rung below it runs on threads the encoder is not
 using, so the ladder does not add up, and that is the finding rather than an
 artefact: at 1080p with a cheap style there is no point optimising anything
 except the encoder.
@@ -350,14 +356,17 @@ style:
 
 | end to end, export tier | 720p             | 1080p            |
 | ----------------------- | ---------------- | ---------------- |
-| poster                  | 2.9 ms (345 fps) | 5.0 ms (199 fps) |
-| print                   | 2.7 ms (375 fps) | 5.3 ms (190 fps) |
-| comic                   | 117 ms (9 fps)   | 339 ms (3 fps)   |
+| poster                  | 2.7 ms (375 fps) | 5.0 ms (202 fps) |
+| print                   | 2.7 ms (367 fps) | 5.1 ms (198 fps) |
+| comic                   | 36 ms (28 fps)   | 143 ms (7 fps)   |
 
 The comic chain is the style-cost table again with an encoder underneath it that
-it never has to wait for. A minute of 1080p through it is five and a half
-minutes of work, which is why an export has to be stoppable and has to say how
-far it has got.
+it never has to wait for. A minute of 1080p through it is a little over two
+minutes of work, which is why an export still has to be stoppable and has to say
+how far it has got. That row was 117 ms and 339 until the comic style's flatten
+was bounded a root two below the picture, which is a change made for temporal
+stability and paid for the cost table as well; see `tools/style-bench`
+measurement 6.
 
 ### Capture the canvas. The other way costs a millisecond and a de-padding loop
 
@@ -383,7 +392,8 @@ Letting the library own the `VideoEncoder` too, rather than driving it here,
 costs 0.26 ms a frame at 1080p. An earlier run put that at 0.7 ms and it was
 wrong: the library was being asked for `high` quality, which resolves to a
 quantizer, and it was encoding two and a half times the bits. Given the same
-bitrate the two produce byte-identical file sizes and differ by 5%.
+bitrate the two produce byte-identical file sizes and differ by 5%. The figure
+is 0.29 ms on the run above.
 
 ### `latencyMode: 'realtime'` is slower, and once it was catastrophic
 
@@ -404,16 +414,20 @@ A qualitative quality level resolves to a QUANTIZER where the codec supports
 one, which is constant quality and therefore an unbounded file. Measured on a
 styled 1080p frame, ninety frames, three seconds:
 
-| what was asked for        | ms/frame | file     | rate        |
-| ------------------------- | -------- | -------- | ----------- |
-| `high`, as a quantizer    | 5.4      | 11.24 MB | 30.0 Mbit/s |
-| `high`, as a bitrate      | 5.3      | 2.32 MB  | 6.2 Mbit/s  |
-| `very-high`, as a bitrate | 5.3      | 4.42 MB  | 11.8 Mbit/s |
-| 12 Mbit/s, stated         | 5.3      | 4.57 MB  | 12.2 Mbit/s |
+| what was asked for        | ms/frame | file    | rate        |
+| ------------------------- | -------- | ------- | ----------- |
+| `high`, as a quantizer    | 5.3      | 8.77 MB | 23.4 Mbit/s |
+| `high`, as a bitrate      | 5.3      | 2.33 MB | 6.2 Mbit/s  |
+| `very-high`, as a bitrate | 5.2      | 4.41 MB | 11.8 Mbit/s |
+| 12 Mbit/s, stated         | 5.2      | 4.57 MB | 12.2 Mbit/s |
 
-**Five times the file for no time at all.** The default is the quantizer, so a
-clip export that says nothing about rate control ships the first row. Rotyl asks
-for `very-high` as a bitrate, which is the third.
+**Nearly four times the file for no time at all.** The default is the quantizer,
+so a clip export that says nothing about rate control ships the first row. Rotyl
+asks for `very-high` as a bitrate, which is the third. The first row is the one
+figure here that is not repeatable to the tenth: a quantizer is constant QUALITY
+and what that costs in bits is the picture's, so the same three seconds came
+back at 30.0 Mbit/s on one run and 23.4 on another. The three bitrate rows agree
+to a hundredth of a megabyte between runs, which is the point of them.
 
 ### The capture takes frame N, and that had to be checked
 
@@ -497,7 +511,7 @@ Gzipped, before the export chunk existed, at the split that made it, and today:
 
 | chunk            | before writing | at the split | today   |
 | ---------------- | -------------- | ------------ | ------- |
-| the application  | 41.6 KB        | 42.5 KB      | 50.7 KB |
+| the application  | 41.6 KB        | 42.5 KB      | 50.8 KB |
 | opening a video  | 33.2 KB        | 42.0 KB      | 42.2 KB |
 | exporting a clip | none           | 32.0 KB      | 33.5 KB |
 

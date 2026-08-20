@@ -27,7 +27,10 @@ node tools/style-bench/run.mjs real        # the same three, on photographs
 `figures`, the five that need `fetch-real.sh` to have run: `real-chain`,
 `real-perturbation`, `real-clips`, `real-lightness`, `real-flicker`, and the
 three about what would hold a clip still: `motion`, `motion-pictures`,
-`attribution`. `all` is the first six, `real` is the next five and `motion` is
+`attribution`. `real-perturbation` and `real-flicker` take the two film cuts as
+STILLS as well as the four photographs, at the film's own 1280x534, which is the
+only way to ask what a chain does to real sensor noise with no actor moving
+through it; see [measurement 6](#6-the-detail-control-had-a-broken-end-and-it-was-not-the-radius). `all` is the first six, `real` is the next five and `motion` is
 the last three. They are kept apart because only one of the three groups needs a
 network and only one needs a clip with motion in it, and because re-taking one
 must not re-date the pages the others feed. The inputs are gitignored,
@@ -82,9 +85,12 @@ a chapter was cost: the anisotropic Kuwahara's sample bound grows with local
 anisotropy, so a frame of architecture should cost more than a frame of foliage,
 and the comic figures were to be treated as a hard case rather than a typical
 one. Measured against four photographs, that is wrong in the ordering and nearly
-right in the conclusion. The scene is the dearest of the five by 2 to 19 per
-cent, which is the top of a narrow range rather than a class of its own, and
-foliage costs more than a brick wall does.
+right in the conclusion. All five sit inside a band 19 per cent wide, which is a
+narrow range rather than a class of its own, and foliage costs more than a brick
+wall does. The scene was the dearest of the five when this was written and is
+now second: [measurement 6](#6-the-detail-control-had-a-broken-end-and-it-was-not-the-radius)
+took a third off the comic chain at 720p and the five moved together but not
+by the same amount.
 
 **What was actually wrong was the temporal measurement**, in the one style
 nobody was worried about, and it cost that style an operator.
@@ -136,8 +142,9 @@ smallest.
 ### What came back
 
 **The cost question, which is the one this README worried about, is a non-event.**
-Content moves the comic chain by 2 to 19 per cent and moves the ordering the
-wrong way round: foliage costs more than a brick wall. Corrected above.
+Content moves the comic chain across a band 19 per cent wide and moves the
+ordering the wrong way round: foliage costs more than a brick wall. Corrected
+above.
 
 **The comic chain holds.** It is steadier than its input on all four
 photographs, which is the finding that was surprising and the one the design
@@ -207,7 +214,7 @@ flickered, and losing them is the change a person can see.
 
 ---
 
-## 1. Print is not "probably cheaper". It is 200 times cheaper
+## 1. Print is not "probably cheaper". It is eighty times cheaper
 
 An earlier version of this project timed the comic chain and said plainly that
 the print chain never had been, three passes against nineteen, only one at output resolution,
@@ -217,9 +224,16 @@ Median milliseconds, full quality tier, default controls:
 
 | style  | 720p    | 2 MP    | 12 MP | 24 MP |
 | ------ | ------- | ------- | ----- | ----- |
-| comic  | 119.4   | 100.2   | 106.9 | 107.9 |
-| poster | **1.1** | **1.3** | 2.9   | 4.9   |
-| print  | **0.5** | **0.6** | 1.9   | 3.7   |
+| comic  | 40.0    | 100.3   | 106.7 | 107.8 |
+| poster | **1.2** | **1.3** | 2.9   | 5.4   |
+| print  | **0.5** | **0.6** | 2.0   | 4.2   |
+
+The comic row's 720p and 2 MP cells were 119.4 and 100.2 until
+[measurement 6](#6-the-detail-control-had-a-broken-end-and-it-was-not-the-radius)
+bounded its flatten below the picture, which is a change made for temporal
+stability that happens to be the largest cost change this file has recorded. The
+heading was "200 times cheaper" and the ratio at 720p is eighty now; at two
+megapixels, where the bound does not bind, it is 167.
 
 The ordering holds at every size, and an earlier version of this table said it
 did not. It reported 25.1 and 13.0 in the 24 MP column and argued from them that
@@ -247,31 +261,35 @@ Two things follow, and the second one is the whole reason a third style exists.
 
 **The comic chain is the Kuwahara and nothing else.** Its cost tracks the
 flatten buffer's pixel count almost exactly and is nearly flat in output
-resolution: 720p costs _more_ than 2 MP, because a 16:9 flatten buffer holding
-the same apparent radius is 19% larger than a 3:2 one. Everything at output
-resolution, the cel step, the ink threshold, the composite, is single digits.
+resolution above the size at which that buffer stops being bounded by the
+picture. Everything at output resolution, the cel step, the ink threshold, the
+composite, is single digits.
 
 **A style does not have to be expensive to be flat.** The comic chain spends
-119 ms deciding what to smooth. The print chain spends half a millisecond and
-reads as more deliberately designed than the comic chain does, because what
+107 ms deciding what to smooth at twelve megapixels. The print chain spends two
+and reads as more deliberately designed than the comic chain does, because what
 makes it look chosen is the four inks and the paper, not the amount of work.
 
 The detail control is where the surprising figures live: higher detail is
-CHEAPER when a clamp binds, because the
-Kuwahara radius falls, and the quality tiers COLLAPSE when a stage clamps to the
-output's short edge. Both reproduce here.
+CHEAPER wherever the flatten buffer is bounded by the picture rather than by its
+own derivation, because the Kuwahara radius falls, and the quality tiers
+COLLAPSE for the same reason. Both reproduce here, and both bind at more sizes
+than they used to.
 
-| comic, full tier | 720p  | 2 MP  | 12 MP | 24 MP |
-| ---------------- | ----- | ----- | ----- | ----- |
-| detail 0         | 43.0  | 40.6  | 41.4  | 42.1  |
-| detail 0.5       | 119.4 | 100.2 | 106.9 | 107.9 |
-| detail 1         | 49.1  | 203.2 | 348.6 | 349.5 |
+| comic, full tier | 720p | 2 MP  | 12 MP | 24 MP |
+| ---------------- | ---- | ----- | ----- | ----- |
+| detail 0         | 43.7 | 40.9  | 41.3  | 42.5  |
+| detail 0.5       | 40.0 | 100.3 | 106.7 | 107.8 |
+| detail 1         | 16.4 | 65.5  | 349.9 | 349.6 |
 
-At 720p and detail 1 the flatten buffer clamps to 720 and the radius falls to
-4.25, so draft, full and export are the same render. 49.2, 49.1, 49.1. At 2 MP
-nothing clamps and the same setting costs four times as much.
+At 720p and detail 1 the flatten buffer reaches its bound at 509 and the radius
+falls to 3.0, so draft, full and export are the same render: 16.4, 16.4, 16.4.
+At 12 megapixels the bound does not bind, nothing about that column moved, and
+the same setting costs eight times as much as it does at 720p. The 720p column
+read 43.0, 119.4 and 49.1 before the bound; what it bought and what it cost is
+[measurement 6](#6-the-detail-control-had-a-broken-end-and-it-was-not-the-radius).
 
-**The poster chain is a per-frame budget.** 1.1 ms at 720p against a 33 ms
+**The poster chain is a per-frame budget.** 1.2 ms at 720p against a 33 ms
 frame. Video playback stops being limited by the style.
 
 ## 2. Temporal stability: the assumption was backwards
@@ -354,7 +372,7 @@ only widens where the picture has no edge to sharpen.
 | moving camera | mean  | p99   | flicker |
 | ------------- | ----- | ----- | ------- |
 | the source    | 10.22 | 62.5  | 33.5%   |
-| comic         | 7.88  | 100.5 | 17.4%   |
+| comic         | 7.87  | 100.3 | 17.5%   |
 | poster        | 7.15  | 86.1  | 13.7%   |
 | print         | 8.64  | 127.3 | 18.7%   |
 
@@ -387,8 +405,8 @@ The costed answer is the first two together, and neither is expensive:
   [measurement 0](#0-the-same-three-measurements-on-a-picture-a-camera-took) is
   what that cost.
 
-Whole chain, nine passes, one at output resolution: **1.1 ms at 720p** against
-the comic chain's 119.
+Whole chain, nine passes, one at output resolution: **1.2 ms at 720p** against
+the comic chain's 40.
 
 ### The measurement that mattered most
 
@@ -468,15 +486,17 @@ too, without a warp and without breaking the invariant.
 The amplification table is on `/research/holding-still.html`. Its shape is the
 finding: on the drawn scene every chain but print attenuates, and on
 photographs the poster chain amplifies a brick wall by 1.36 and foliage by 1.46,
-and the comic chain at full detail amplifies the wall by 2.00 where at no detail
+and the comic chain at full detail amplifies the wall by 1.75 where at no detail
 it attenuates by 0.63.
 
 **Both of those are already located.** Poster's is the outline, which is 1.36
 with it drawn and 0.95 without on the wall, 1.46 against 0.86 on foliage. That
 is the same stage measurement 0 rebuilt, and `docs/limits.md` already carries
-the gap it did not close. Comic's is the detail control: raising it shrinks the
-Kuwahara radius until the flatten stops flattening, and what survives is the
-grain the flatten was there to remove.
+the gap it did not close. Comic's rises with the detail control, and this
+paragraph used to say that was the Kuwahara radius shrinking until the flatten
+stopped flattening. That is the wrong mechanism and
+[measurement 6](#6-the-detail-control-had-a-broken-end-and-it-was-not-the-radius)
+is what it turned out to be.
 
 **And the drawn scene hides all of it**, which is the second time that has
 happened and the reason the four photographs are in this run rather than beside
@@ -494,7 +514,7 @@ It takes the input down by about a fifth and the styled output down with it,
 roughly in proportion, on every chain and every picture. **And it makes the
 amplification worse wherever the amplification was already above one**: poster
 on the wall goes from 1.36 to 1.54, on foliage from 1.46 to 1.63, and comic at
-full detail from 2.00 to 2.51.
+full detail from 1.75 to 2.15.
 
 That was not what this expected and it is the useful half. What a denoise
 removes is the high-frequency part of the input, which is the part these chains
@@ -553,21 +573,184 @@ and nothing built on it can be believed.
 
 It fails. Half of the last frame takes the comic chain's residue from 3.6 codes
 to 2.0, which is the number everybody quotes, improved by two fifths. It pays
-with 58.5 codes of deviation in the band a car has just left, 53 on the car
+with 55.1 codes of deviation in the band a car has just left, 48.5 on the car
 itself, and 13% of the gradient energy inside a moving car for the poster chain.
 
 **And on the clip with no moving grain it is worse than that.** There the
 residue is already at the codec floor, so the same blend has nothing left to
-remove: it makes the residue flicker WORSE and still costs the same sixty codes
-of deviation. The cure being worse than the disease with nothing left to cure,
+remove: it makes the residue flicker WORSE and still costs the same fifty-five
+codes of deviation. The cure being worse than the disease with nothing left to cure,
 in one row, which is exactly what this measurement was built to be able to say.
 
 ### What was built
 
 Nothing. The expensive answer solves a problem that does not exist, the cheap
 one lowers a number without touching what causes it, and what is left is in one
-stage of one chain, where measurement 0 has already been once and where the
-number it did not close is in `docs/limits.md` rather than in a plan.
+stage of one chain, where measurement 0 has already been once. Which stage, and
+what half of it was, is the measurement below.
+
+---
+
+## 6. The detail control had a broken end, and it was not the radius
+
+Measurement 4 left one number with no chapter. The comic chain amplifies a brick
+wall at full detail and attenuates it at none, and the sentence written beside
+that, here and in `docs/limits.md`, was that raising detail shrinks the Kuwahara
+radius until the flatten stops flattening. That sentence is wrong. Finding out
+took an intervention rather than an argument, and the thing it was wrong about
+is the one the fix depended on.
+
+### Separate the two populations first, because they wanted opposite fixes
+
+`results-real.json` has carried this column across six pictures since it was
+first taken, and nobody had read it. Before anything below:
+
+| amplification p99, comic | detail 0 | default | detail 1 |
+| ------------------------ | -------- | ------- | -------- |
+| the drawn scene          | 0.28     | 0.34    | 0.59     |
+| facade                   | 0.63     | 0.88    | 2.00     |
+| foliage                  | 0.56     | 0.63    | 0.87     |
+| fog                      | 0.32     | 0.39    | 0.66     |
+| portrait                 | 0.38     | 0.45    | 0.63     |
+| a film, exterior         | 1.40     | 1.80    | 2.28     |
+| a film, interior         | 1.09     | 1.49    | 1.94     |
+
+Five of those rows are a control doing what it says. The last two are not: the
+film amplifies at DETAIL 0, where the flatten is at its widest and is supposed
+to be attenuating hardest. So either there were two mechanisms or the one
+written down was not the one running, and which of those it was decides whether
+this chapter has one fix or two. Nothing was changed until it was settled.
+
+**The settlement is to stop using a clip.** A film has actors in it, so a
+difference taken over consecutive frames carries a man walking in both of its
+columns. One frame of the film rendered twice, with grain of a known size added
+the second time, has no motion in it at all, which is the experiment the four
+photographs were already answering. So `real-perturbation` and `real-flicker`
+take the two cuts as stills, at the film's own 1280x534 rather than padded to
+16:9, decoded through a 2D canvas exactly as a photograph is.
+
+Taken that way the two film rows separate. The exterior amplifies **1.33** as a
+still against 1.39 as a clip, so its figure is the chain and not the actors. The
+interior **attenuates 0.50** as a still against 1.11 as a clip, so its figure is
+the actors and not the chain. One page had been reading them as one finding.
+
+### Attribution by intervention, because the ledger already refused the scaffolding
+
+Detail moves three quantities: the flatten's apparent scale, the ink's apparent
+scale, and `tau`, which is how much of the local lightness the difference of
+Gaussians subtracts before it decides. Reading a working buffer out of the middle
+of a chain is in the trials ledger as rejected, and a parameter override handed
+to a bench is the same objection in a different hat, so each quantity was held at
+its detail-0 value in the shipped code and the perturbation taken again. Ten
+rows, on the two pictures that disagree, at detail 1:
+
+| what was changed, grain σ 2, p99 out of 6 in   | facade | a film, exterior |
+| ---------------------------------------------- | ------ | ---------------- |
+| nothing, as it was                             | 29     | 17               |
+| the ink's scale held at its detail-0 value     | 26     | 15               |
+| the flatten's scale floored at 0.0088          | 20     | 22               |
+| the flatten's scale floored at 0.0111          | 13     | 21               |
+| the flatten's scale floored at 0.0140          | 10     | 18               |
+| the flatten's scale not moved by detail at all | 9      | 11               |
+| `tau` held at its detail-0 value               | 15     | 9                |
+| the flatten bounded a root two below the frame | 25     | 9                |
+| the flatten bounded a factor of two below it   | 20     | 6                |
+| no sector weighting at all                     | 8      | 5                |
+
+**The sector weighting is the amplifier, and at every setting rather than only at
+the top.** Average the eight sectors instead of choosing between them and the
+wall goes from 29 codes to 8 at detail 1 and from 7 to 1 at detail 0, and the
+film from 17 to 5. It cannot be taken out. An anisotropic Kuwahara that does not
+choose its sector is a blur, and the choosing is the whole difference between
+painterly and smooth.
+
+**A floor under the apparent scale is not the answer**, which is the row that
+matters most, because a floor is what `docs/limits.md` implied and what a reader
+of measurement 2's rule would reach for. Measured at four values it takes the
+wall from 29 down to 9 and takes the film UP from 17 to 22 on the way, in the
+same run. A wider ellipse spans more structure, so a sector that flips costs
+more codes; there is no radius that is right for both pictures, which is the
+honest reason the control exists.
+
+**And measurement 0's lesson does not transfer.** That one ended "the answer to a
+decision taken on a discrete quantity is not a wider transition, it is not taking
+a decision", and this decision looks like the same shape and is not. A sector is
+chosen by a steep power of a variance, which is continuous in the picture: there
+is nothing rounded here for a width to fail to resolve. What makes it flip is
+that the variance is an ESTIMATE, from a few dozen samples of a field with grain
+in it, and the answer to a noisy estimate is a cleaner field rather than a softer
+decision.
+
+### What was built: the flatten always downsamples
+
+Every stage derives its buffer resolution from the apparent scale it asked for.
+At detail 1 the flatten asks for 1356 pixels of a 720 pixel frame, and the
+request was clamped at the frame's own resolution: the fraction stays exact,
+which is what preview-matches-export needs, and the box downsample in front of
+the Kuwahara quietly becomes a copy. That downsample is the only thing in this
+chain that removes grain before the stage that amplifies it.
+
+So the flatten carries a second bound now, a root two below the picture, and
+every flatten pixel is the mean of at least two source pixels at every setting.
+Nothing about the apparent scale moves; only sample density does, which is what
+a quality tier moves too. `test/comic-params.test.ts` asserts it across ten
+sizes, five settings and three tiers.
+
+Root two rather than two is where the measurement stopped rather than where the
+argument did. Two takes the wall to 20 and the film to 6, and it also binds at
+detail 0, where the derivation was already asking for less than half the frame:
+it moves 1.2% of the reference scene at the BOTTOM of the control and 9.0% at the
+top. Root two moves none at the bottom and 4.7% at the top, and it is the largest
+bound that leaves the bottom of the control byte for byte where it was.
+
+### What it bought, and what it cost
+
+Every row of the table this chapter opened with, taken again:
+
+| amplification p99, comic | detail 0 | default | detail 1 |
+| ------------------------ | -------- | ------- | -------- |
+| the drawn scene          | 0.28     | 0.33    | 0.56     |
+| facade                   | 0.63     | 0.89    | 1.75     |
+| foliage                  | 0.56     | 0.63    | 0.71     |
+| fog                      | 0.32     | 0.42    | 0.59     |
+| portrait                 | 0.38     | 0.45    | 0.62     |
+| a film, exterior         | 1.39     | 1.63    | 1.82     |
+| a film, interior         | 1.11     | 1.45    | 1.61     |
+
+Nothing at the top of the control got worse and two cells in the middle moved by
+a hundredth in the wrong direction. On the drawn clip the committed figures are
+unchanged where they matter: comic at its default is still p99 3.2 and 0.098% of
+pixels moving more than eight codes, and poster is still 4.1 and 0.294%.
+
+**And it made the chain cheaper**, which is the opposite of the usual trade and
+is worth stating because a fix that costs milliseconds has to be argued for. The
+bound only binds where the derivation was asking for more resolution than the
+picture had, which is small pictures, which is video: 119.4 ms to 40.0 at 720p
+at the default, 49.1 to 16.4 at detail 1, 203.2 to 65.5 at two megapixels. At
+twelve megapixels nothing binds and nothing moved. The export ladder in
+`tools/video-bench` moved with it, 117 ms a frame to 36 at 720p and 339 to 143 at
+1080p.
+
+**What it cost is 4.7% of the reference scene at detail 1 and 1.5% at the
+default**, moving more than eight codes, and 0.0% at detail 0. `figures/detail`
+is the control at all three settings, through the same compositor as every number
+here, so the question a bound raises, whether anybody was using the top of the
+control for anything but noise, can be looked at rather than argued about.
+
+### What is left, and what was rejected on the look
+
+The sector weighting, which is the amplifier at every setting and is the style.
+The wall reads 1.75 at detail 1 against 0.63 at detail 0, and 25 codes out of six
+against 8 with the weighting removed. That is in `docs/limits.md` with its number
+rather than described as solved.
+
+And `tau`, which produced the best number of anything short of removing the
+weighting: held at its detail-0 value it takes the wall from 29 to 15 and the
+film from 17 to 9, on every picture and at every setting, with no picture made
+worse. It is rejected on the look and not on the number. Rendering the reference
+scene both ways, holding `tau` erases the contour around every window at detail 1
+and moves 5.8% of the frame: `tau` is not a side effect of the detail control, it
+is how the detail control inks.
 
 ## What follows
 
@@ -577,9 +760,9 @@ number it did not close is in `docs/limits.md` rather than in a plan.
    answers the codec floor. What differs is the gain, and the gain depends on
    the picture rather than on the chain. The drawn scene says every chain but
    print attenuates; a brick wall says the poster outline is at 1.36 and the
-   comic chain at full detail is at 2.00.
+   comic chain at full detail is at 1.75.
 1. **Style cost is a choice, not a constraint.** Two of the three styles run in
-   under 2 ms at 720p. The one that costs 119 ms spends all of it in a single
+   under 2 ms at 720p. The one that costs 40 there spends all of it in a single
    stage whose look, on this scene, the cheap one matches or beats.
 2. **Per-frame independence is not the problem it was assumed to be** for
    smoothing-dominated chains. It is a real problem for hard thresholds against
@@ -601,7 +784,24 @@ number it did not close is in `docs/limits.md` rather than in a plan.
    removes is the part the chain attenuates hardest.
 7. **Build the thing that catches a cure being worse than the disease first.**
    The cheapest temporal filter improves the number everybody quotes by two
-   fifths and costs sixty codes of deviation around anything that moves. Without
-   a clip where something moves against something that does not, and a mask
-   saying which is which, that trade is invisible and the number looks like
+   fifths and costs fifty-five codes of deviation around anything that moves.
+   Without a clip where something moves against something that does not, and a
+   mask saying which is which, that trade is invisible and the number looks like
    progress.
+8. **A steep function of an estimate is a hard decision wearing a soft coat, and
+   it is fixed by a cleaner field rather than by a softer decision.** A Kuwahara
+   sector is chosen by a variance raised to the eighth, and the variance is an
+   estimate from a few dozen samples. Nothing about it is rounded, so measurement
+   0's answer does not transfer; what it needed was the downsample the derivation
+   had stopped doing.
+9. **A derived resolution that exceeds the picture is a stage losing a step, not
+   a stage being clamped.** The clamp keeps the fraction exact, which is the
+   invariant everything here rests on, and it silently turns a downsample into a
+   copy. Bounding the flatten a root two below the picture took a brick wall from
+   2.00 times its input to 1.75 and made the chain three times cheaper at 720p,
+   which is the only measurement in this file where the number and the cost moved
+   the same way.
+10. **A film clip cannot answer a question about a chain on its own.** Both of
+    its rows amplified at every setting and one of the two was the actors. One
+    frame rendered twice with grain added is the same experiment with the motion
+    taken out, and it is the only way to read real sensor noise here.

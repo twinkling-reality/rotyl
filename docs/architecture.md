@@ -8,7 +8,7 @@ src/platform/  browser adapters: decode, texture upload, encode, mux, inference
 src/app/       Preact UI
 ```
 
-It ships as 163 KB of JavaScript, 50.7 KB gzipped, plus 31 KB of subset fonts.
+It ships as 163 KB of JavaScript, 50.8 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches none of the other two: the inference runtime arrives on the first object
 click, the demuxer on the first video, the container writer on the first clip
@@ -204,6 +204,18 @@ Because every length is a fraction of the image and never of the output buffer,
 preview and export compose identically. That is a property of the two parameter
 modules alone, and it is tested in each of them exactly, across every output
 size and quality tier.
+
+**A derived resolution can ask for more than the picture has, and what happens
+then is not free.** The comic style's flatten asks for 1356 pixels of a 720
+pixel frame at full detail. Clamping the request at the frame's own resolution
+keeps the fraction exact, which is what the invariant above needs, and it also
+turns the box downsample in front of that stage into a copy, which is what the
+picture needed: that downsample is the only thing in the chain that removes
+grain before the stage that amplifies it. So the flatten now carries a second
+bound, a root two below the picture, and every flatten pixel is the mean of at
+least two source pixels at every setting. The apparent scale is untouched, only
+sample density moves, and the chain is three times cheaper at 720p. What that
+cost and what it did not fix is on `/research/the-detail-control.html`.
 
 ## The selection is a command log
 

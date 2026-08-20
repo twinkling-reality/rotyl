@@ -33,7 +33,9 @@ import {
  *   - The flatten buffer is genuinely small (a few hundred pixels at low
  *     detail). It is magnified back to output resolution before quantisation,
  *     and quantising a soft ramp re-sharpens it into a clean cel band, so the
- *     magnification does not read as blur.
+ *     magnification does not read as blur. It is also never allowed to reach
+ *     the picture's own resolution, because the downsample onto it is the only
+ *     thing in this chain that removes grain; see FLATTEN_DOWNSAMPLE.
  *   - The ink buffer is likewise capped. The tanh threshold that turns the DoG
  *     response into a line is applied *after* magnification, at output
  *     resolution, so lines come out crisp at full size from a cheap detection.
@@ -79,6 +81,36 @@ export const COMIC_CONTROLS: readonly StyleControlSpec[] = [
  */
 const FLATTEN_RADIUS = 8;
 const EDGE_SIGMA = 4;
+
+/**
+ * The flatten's buffer is never larger than the picture's short edge over this,
+ * so the box downsample in front of it always averages at least two pixels.
+ *
+ * THE DOWNSAMPLE IS THIS CHAIN'S GRAIN REJECTION, and the derivation above used
+ * to lose it silently. A buffer resolution derived from an apparent scale can
+ * exceed the picture it is derived from - at detail 1 it asks for 1356 px of a
+ * 720 px frame - and clamping the request at the picture's own resolution turns
+ * the downsample into a copy. Every code of grain then reaches the Kuwahara,
+ * whose sector weighting is a steep power of a variance estimated from a few
+ * dozen samples, and a brick wall comes out moving 4.8 times as much as it went
+ * in. Measured with the codec and the camera taken out, on a perturbation of
+ * six codes: 29 codes out with the buffer clamped at the frame, 25 with it
+ * held here.
+ *
+ * Nothing about the apparent scale moves: the radius is still recovered from
+ * the resolution granted, so the fraction, and therefore the composition, is
+ * what it was. What changes is sample density, which is what a quality tier
+ * changes too.
+ *
+ * Root two rather than two, and that is where the measurement stopped rather
+ * than where the argument did. Two averages four pixels and takes the wall to
+ * 20, and it also binds at detail 0, where the derivation was already asking
+ * for less than half the frame: it moves 1.2% of the reference scene at the
+ * bottom of the control and 9% at the top, against nothing and 4.7% here. Root
+ * two is the largest bound that leaves the bottom of the control byte for byte
+ * where it was.
+ */
+const FLATTEN_DOWNSAMPLE = Math.SQRT2;
 
 /** Ink detection above this short edge buys precision the threshold pass discards. */
 const INK_RESOLUTION_CAP = 2048;
@@ -142,7 +174,10 @@ export function resolveComicParams(
   // every intermediate texture per frame. Quantisation is free: the radius is
   // recovered from the granted resolution, so the apparent scale is exactly
   // preserved and only sample density steps.
-  const flattenShortEdge = stageResolution((FLATTEN_RADIUS * q) / flattenFraction, outputShortEdge);
+  const flattenShortEdge = stageResolution(
+    (FLATTEN_RADIUS * q) / flattenFraction,
+    Math.round(outputShortEdge / FLATTEN_DOWNSAMPLE),
+  );
   const inkShortEdge = stageResolution(
     (EDGE_SIGMA * q) / edgeFraction,
     Math.min(outputShortEdge, Math.round(INK_RESOLUTION_CAP * q)),

@@ -38,7 +38,6 @@ import {
   settleDifference,
   StyleStage,
   type Difference,
-  type Picture,
 } from './harness.ts';
 import { CASES, CONTENT_CASES, type Case } from './chain.ts';
 
@@ -78,13 +77,21 @@ function perturb(source: Uint8Array, sigma: number, seed: number): Uint8Array {
 
 const SIZE = { width: 1280, height: 720 };
 
-async function perturbOne(
+/**
+ * Letterboxed 2.39:1, which is what the film is.
+ *
+ * Not padded to 16:9: the black bars would be a fifth of every pixel a
+ * measurement averages over, and a bar cannot boil.
+ */
+const FILM = { width: 1280, height: 534 };
+
+async function perturbBytes(
   device: GPUDevice,
-  picture: Picture,
+  base: Uint8Array,
+  size: { width: number; height: number },
   cases: readonly Case[],
 ): Promise<Record<string, unknown>> {
-  const base = await pictureBytes(picture, SIZE.width, SIZE.height);
-  const stage = new StyleStage(device, SIZE);
+  const stage = new StyleStage(device, size);
   stage.uploadBytes(base);
   const out: Record<string, unknown> = {};
 
@@ -114,22 +121,89 @@ async function perturbOne(
 }
 
 export async function perturbation(device: GPUDevice): Promise<unknown> {
-  return perturbOne(device, SCENE_PICTURE, CASES);
+  const base = await pictureBytes(SCENE_PICTURE, SIZE.width, SIZE.height);
+  return perturbBytes(device, base, SIZE, CASES);
 }
 
 /**
- * The same perturbation against four photographs.
+ * THE FILM AS A STILL, which is the one thing its clip rows cannot be.
+ *
+ * The two cuts of Tears of Steel are the only inputs here with real sensor
+ * noise in them and they are also the only ones with actors in them, so an
+ * amplification taken over consecutive frames of either carries subject motion
+ * in both its columns and cannot say whether a chain amplified grain or merely
+ * transmitted a man walking. One frame of the film rendered twice, with grain
+ * of a known size added the second time, has no motion in it at all: the two
+ * pictures are the same picture. Whatever the ratio says here is the style's.
+ *
+ * The frame is the first of each cut, which is deterministic and needs no
+ * choosing. Its texture is the film's, its codec artefacts are the film's, and
+ * the grain added on top is the same grain the photographs get, so the input
+ * column is the same six codes and the rows are directly comparable.
+ */
+const FILM_STILLS = [
+  { name: 'a film, exterior', clip: `${REAL}/tos-bridge.mp4` },
+  { name: 'a film, interior', clip: `${REAL}/tos-interior.mp4` },
+] as const;
+
+/**
+ * The first frame of a clip, as bytes.
+ *
+ * Through a 2D canvas, which is how `pictureBytes` gets a photograph's bytes,
+ * so the two kinds of still arrive by the same route. It is not the route the
+ * clip rows take, `copyExternalImageToTexture` is, and the difference is a
+ * colour conversion applied identically to both renders of a pair. A ratio
+ * cannot see it.
+ */
+async function filmStill(clip: string): Promise<Uint8Array> {
+  const canvas = new OffscreenCanvas(FILM.width, FILM.height);
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('no 2d context');
+  for await (const frame of clipFrames(clip, 1)) {
+    context.drawImage(frame, 0, 0);
+  }
+  return new Uint8Array(context.getImageData(0, 0, FILM.width, FILM.height).data.buffer);
+}
+
+/**
+ * Every still a perturbation is taken against, and what each one is there for.
+ *
+ * The scene is the control, the four photographs change one variable, and the
+ * two film stills change the rest of them. Shared with `flicker`, which paints
+ * WHERE each of these moved rather than how much, because a population one of
+ * them reports on and the other does not is a diagnosis waiting to be missed.
+ */
+export async function perturbationStills(): Promise<
+  readonly { name: string; size: { width: number; height: number }; bytes: Uint8Array }[]
+> {
+  const out = [];
+  for (const picture of [SCENE_PICTURE, ...REAL_PICTURES]) {
+    out.push({
+      name: picture.name,
+      size: SIZE,
+      bytes: await pictureBytes(picture, SIZE.width, SIZE.height),
+    });
+  }
+  for (const film of FILM_STILLS) {
+    out.push({ name: film.name, size: FILM, bytes: await filmStill(film.clip) });
+  }
+  return out;
+}
+
+/**
+ * The same perturbation against four photographs and two frames of a film.
  *
  * This is the cleanest of the three real measurements and the least like real
  * life, which is exactly what it is for. No codec, no camera, no subject: one
  * picture rendered twice with grain of a known size added the second time, so
  * the ratio out to in is the style's own amplification and nothing else's. If
- * the finding survives here and not on the film, the difference is the film.
+ * the finding survives here and not on the film's clip rows, the difference is
+ * what a clip has that a still does not, which is motion.
  */
 export async function realPerturbation(device: GPUDevice): Promise<unknown> {
   const out: Record<string, unknown> = {};
-  for (const picture of [SCENE_PICTURE, ...REAL_PICTURES]) {
-    out[picture.name] = await perturbOne(device, picture, CONTENT_CASES);
+  for (const still of await perturbationStills()) {
+    out[still.name] = await perturbBytes(device, still.bytes, still.size, CONTENT_CASES);
   }
   return out;
 }
@@ -305,10 +379,6 @@ export async function realClips(device: GPUDevice): Promise<unknown> {
     );
   }
 
-  // Letterboxed 2.39:1, which is what the film is. Not padded to 16:9: the
-  // black bars would be a fifth of every pixel this measurement averages over,
-  // and a bar cannot boil.
-  const FILM = { width: 1280, height: 534 };
   out['Tears of Steel, exterior'] = await overClip(
     device,
     `${REAL}/tos-bridge.mp4`,

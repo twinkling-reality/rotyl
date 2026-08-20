@@ -1,0 +1,771 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "encode": {
+    "what": "sustained throughput of the whole export pipeline, per frame",
+    "frames": 90,
+    "tier": "export",
+    "720p, encoder alone": {
+      "quality": {
+        "ms_per_frame": 2.609,
+        "frames_per_s": 383.305,
+        "per_frame": {
+          "n": 90,
+          "median": 2.4,
+          "min": 0,
+          "max": 16.7
+        },
+        "frames": 90,
+        "encoded": 90,
+        "dropped": 0,
+        "codec": "avc1.640034"
+      },
+      "realtime": {
+        "ms_per_frame": 54.703,
+        "frames_per_s": 18.28,
+        "per_frame": {
+          "n": 90,
+          "median": 3.1,
+          "min": 0,
+          "max": 4387.7
+        },
+        "frames": 90,
+        "encoded": 90,
+        "dropped": 0,
+        "codec": "avc1.640034"
+      }
+    },
+    "720p, ladder (poster)": {
+      "decode": {
+        "ms_per_frame": 1.204,
+        "frames_per_s": 830.258,
+        "per_frame": {
+          "n": 90,
+          "median": 0.8,
+          "min": 0.7,
+          "max": 12.2
+        },
+        "frames": 90
+      },
+      "composite": {
+        "ms_per_frame": 2.653,
+        "frames_per_s": 376.884,
+        "per_frame": {
+          "n": 90,
+          "median": 2.2,
+          "min": 1.7,
+          "max": 17.7
+        },
+        "frames": 90
+      },
+      "capture, canvas": {
+        "ms_per_frame": 2.263,
+        "frames_per_s": 441.826,
+        "per_frame": {
+          "n": 90,
+          "median": 2,
+          "min": 1.7,
+          "max": 10.2
+        },
+        "frames": 90
+      },
+      "capture, readback": {
+        "ms_per_frame": 2.584,
+        "frames_per_s": 386.93,
+        "per_frame": {
+          "n": 90,
+          "median": 2.2,
+          "min": 2.1,
+          "max": 10.5
+        },
+        "frames": 90
+      },
+      "encode": {
+        "ms_per_frame": 2.664,
+        "frames_per_s": 375.313,
+        "per_frame": {
+          "n": 90,
+          "median": 2.3,
+          "min": 2,
+          "max": 13.8
+        },
+        "frames": 90,
+        "encoded": 90
+      },
+      "mux": {
+        "ms_per_frame": 2.679,
+        "frames_per_s": 373.289,
+        "per_frame": {
+          "n": 90,
+          "median": 2.2,
+          "min": 1.9,
+          "max": 21.1
+        },
+        "frames": 90,
+        "encoded": 90,
+        "bytes": 4572702,
+        "finalize_ms": 3.1
+      },
+      "mediabunny": {
+        "ms_per_frame": 2.78,
+        "frames_per_s": 359.712,
+        "per_frame": {
+          "n": 90,
+          "median": 2.3,
+          "min": 1.9,
+          "max": 21.6
+        },
+        "frames": 90,
+        "bytes": 4572702,
+        "finalize_ms": 41.9,
+        "encoder_config": {
+          "codec": "avc1.64001f",
+          "width": 1280,
+          "height": 720,
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "bitrate": 12000000,
+          "bitrateMode": "variable",
+          "alpha": "discard",
+          "avc": {
+            "format": "avc"
+          }
+        }
+      }
+    },
+    "720p, end to end": {
+      "poster": {
+        "ms_per_frame": 2.669,
+        "frames_per_s": 374.688,
+        "per_frame": {
+          "n": 90,
+          "median": 2.2,
+          "min": 1.9,
+          "max": 22
+        },
+        "frames": 90,
+        "encoded": 90,
+        "bytes": 4572702,
+        "finalize_ms": 1.5
+      },
+      "print": {
+        "ms_per_frame": 2.724,
+        "frames_per_s": 367.047,
+        "per_frame": {
+          "n": 90,
+          "median": 2.5,
+          "min": 0.9,
+          "max": 22.3
+        },
+        "frames": 90,
+        "encoded": 90,
+        "bytes": 4864122,
+        "finalize_ms": 1.7
+      },
+      "comic": {
+        "ms_per_frame": 36.347,
+        "frames_per_s": 27.513,
+        "per_frame": {
+          "n": 90,
+          "median": 35.9,
+          "min": 34.2,
+          "max": 69.2
+        },
+        "frames": 90,
+        "encoded": 90,
+        "bytes": 4579262,
+        "finalize_ms": 1.2
+      }
+    },
+    "1080p, encoder alone": {
+      "quality": {
+        "ms_per_frame": 4.714,
+        "frames_per_s": 212.114,
+        "per_frame": {
+          "n": 90,
+          "median": 4.8,
+          "min": 0,
+          "max": 15.1
+        },
+        "frames": 90,
+        "encoded": 90,
+        "dropped": 0,
+        "codec": "avc1.640034"
+      },
+      "realtime": {
+        "ms_per_frame": 5.821,
+        "frames_per_s": 171.789,
+        "per_frame": {
+          "n": 90,
+          "median": 5.6,
+          "min": 0,
+          "max": 25.9
+        },
+        "frames": 90,
+        "encoded": 90,
+        "dropped": 0,
+        "codec": "avc1.640034"
+      }
+    },
+    "1080p, ladder (poster)": {
+      "decode": {
+        "ms_per_frame": 1.376,
+        "frames_per_s": 726.979,
+        "per_frame": {
+          "n": 90,
+          "median": 0.8,
+          "min": 0.6,
+          "max": 16.1
+        },
+        "frames": 90
+      },
+      "composite": {
+        "ms_per_frame": 3.104,
+        "frames_per_s": 322.119,
+        "per_frame": {
+          "n": 90,
+          "median": 2.4,
+          "min": 2.2,
+          "max": 23.6
+        },
+        "frames": 90
+      },
+      "capture, canvas": {
+        "ms_per_frame": 3.046,
+        "frames_per_s": 328.347,
+        "per_frame": {
+          "n": 90,
+          "median": 2.5,
+          "min": 2.3,
+          "max": 19.7
+        },
+        "frames": 90
+      },
+      "capture, readback": {
+        "ms_per_frame": 3.872,
+        "frames_per_s": 258.25,
+        "per_frame": {
+          "n": 90,
+          "median": 3.4,
+          "min": 2.8,
+          "max": 21.5
+        },
+        "frames": 90
+      },
+      "encode": {
+        "ms_per_frame": 4.809,
+        "frames_per_s": 207.948,
+        "per_frame": {
+          "n": 90,
+          "median": 4.7,
+          "min": 2.6,
+          "max": 19.5
+        },
+        "frames": 90,
+        "encoded": 90
+      },
+      "mux": {
+        "ms_per_frame": 4.966,
+        "frames_per_s": 201.387,
+        "per_frame": {
+          "n": 90,
+          "median": 4.7,
+          "min": 2.6,
+          "max": 37.8
+        },
+        "frames": 90,
+        "encoded": 90,
+        "bytes": 4570622,
+        "finalize_ms": 2.7
+      },
+      "mediabunny": {
+        "ms_per_frame": 5.254,
+        "frames_per_s": 190.315,
+        "per_frame": {
+          "n": 90,
+          "median": 4.8,
+          "min": 2.7,
+          "max": 43.1
+        },
+        "frames": 90,
+        "bytes": 4570622,
+        "finalize_ms": 64.6,
+        "encoder_config": {
+          "codec": "avc1.640028",
+          "width": 1920,
+          "height": 1080,
+          "displayWidth": 1920,
+          "displayHeight": 1080,
+          "bitrate": 12000000,
+          "bitrateMode": "variable",
+          "alpha": "discard",
+          "avc": {
+            "format": "avc"
+          }
+        }
+      }
+    },
+    "1080p, end to end": {
+      "poster": {
+        "ms_per_frame": 4.953,
+        "frames_per_s": 201.884,
+        "per_frame": {
+          "n": 90,
+          "median": 4.8,
+          "min": 2.4,
+          "max": 30.9
+        },
+        "frames": 90,
+        "encoded": 90,
+        "bytes": 4570622,
+        "finalize_ms": 3
+      },
+      "print": {
+        "ms_per_frame": 5.051,
+        "frames_per_s": 197.976,
+        "per_frame": {
+          "n": 90,
+          "median": 4.9,
+          "min": 1.5,
+          "max": 25.4
+        },
+        "frames": 90,
+        "encoded": 90,
+        "bytes": 5094751,
+        "finalize_ms": 2.8
+      },
+      "comic": {
+        "ms_per_frame": 142.548,
+        "frames_per_s": 7.015,
+        "per_frame": {
+          "n": 90,
+          "median": 142.3,
+          "min": 136.8,
+          "max": 187.8
+        },
+        "frames": 90,
+        "encoded": 90,
+        "bytes": 4566171,
+        "finalize_ms": 1.1
+      }
+    },
+    "rate control (1080p, poster)": {
+      "high, quantizer": {
+        "ms_per_frame": 5.349,
+        "frames_per_s": 186.955,
+        "per_frame": {
+          "n": 90,
+          "median": 5.3,
+          "min": 2.6,
+          "max": 14.6
+        },
+        "frames": 90,
+        "bytes": 8768450,
+        "finalize_ms": 72.3,
+        "encoder_config": {
+          "codec": "avc1.640028",
+          "width": 1920,
+          "height": 1080,
+          "displayWidth": 1920,
+          "displayHeight": 1080,
+          "bitrateMode": "quantizer",
+          "alpha": "discard",
+          "avc": {
+            "format": "avc"
+          }
+        },
+        "megabits_per_s": 23.383
+      },
+      "high, bitrate": {
+        "ms_per_frame": 5.286,
+        "frames_per_s": 189.195,
+        "per_frame": {
+          "n": 90,
+          "median": 4.7,
+          "min": 3.3,
+          "max": 46.6
+        },
+        "frames": 90,
+        "bytes": 2334386,
+        "finalize_ms": 63.8,
+        "encoder_config": {
+          "codec": "avc1.640028",
+          "width": 1920,
+          "height": 1080,
+          "displayWidth": 1920,
+          "displayHeight": 1080,
+          "bitrate": 6111000,
+          "bitrateMode": "variable",
+          "alpha": "discard",
+          "avc": {
+            "format": "avc"
+          }
+        },
+        "megabits_per_s": 6.225
+      },
+      "very-high, bitrate": {
+        "ms_per_frame": 5.222,
+        "frames_per_s": 191.489,
+        "per_frame": {
+          "n": 90,
+          "median": 4.7,
+          "min": 3.2,
+          "max": 40.6
+        },
+        "frames": 90,
+        "bytes": 4408298,
+        "finalize_ms": 63.1,
+        "encoder_config": {
+          "codec": "avc1.640028",
+          "width": 1920,
+          "height": 1080,
+          "displayWidth": 1920,
+          "displayHeight": 1080,
+          "bitrate": 11571000,
+          "bitrateMode": "variable",
+          "alpha": "discard",
+          "avc": {
+            "format": "avc"
+          }
+        },
+        "megabits_per_s": 11.756
+      },
+      "12 Mbit/s": {
+        "ms_per_frame": 5.17,
+        "frames_per_s": 193.424,
+        "per_frame": {
+          "n": 90,
+          "median": 4.7,
+          "min": 2.7,
+          "max": 38.9
+        },
+        "frames": 90,
+        "bytes": 4570622,
+        "finalize_ms": 65.5,
+        "encoder_config": {
+          "codec": "avc1.640028",
+          "width": 1920,
+          "height": 1080,
+          "displayWidth": 1920,
+          "displayHeight": 1080,
+          "bitrate": 12000000,
+          "bitrateMode": "variable",
+          "alpha": "discard",
+          "avc": {
+            "format": "avc"
+          }
+        },
+        "megabits_per_s": 12.188
+      }
+    },
+    "capture alignment (720p)": {
+      "what": "each written frame against the source frame it was rendered from",
+      "frames": 16,
+      "stride": 4,
+      "worst_offset": 0,
+      "worst_margin": 1.524,
+      "bytes": 896874,
+      "rows": [
+        {
+          "offset": 0,
+          "own": 7.088,
+          "nearest_other": 11.199
+        },
+        {
+          "offset": 0,
+          "own": 6.951,
+          "nearest_other": 10.591
+        },
+        {
+          "offset": 0,
+          "own": 7.129,
+          "nearest_other": 11.535
+        },
+        {
+          "offset": 0,
+          "own": 6.815,
+          "nearest_other": 11.67
+        },
+        {
+          "offset": 0,
+          "own": 6.734,
+          "nearest_other": 12.162
+        },
+        {
+          "offset": 0,
+          "own": 6.855,
+          "nearest_other": 11.759
+        },
+        {
+          "offset": 0,
+          "own": 6.717,
+          "nearest_other": 12.174
+        },
+        {
+          "offset": 0,
+          "own": 6.577,
+          "nearest_other": 11.336
+        },
+        {
+          "offset": 0,
+          "own": 6.318,
+          "nearest_other": 12.473
+        },
+        {
+          "offset": 0,
+          "own": 6.432,
+          "nearest_other": 11.575
+        },
+        {
+          "offset": 0,
+          "own": 6.274,
+          "nearest_other": 12.326
+        },
+        {
+          "offset": 0,
+          "own": 6.337,
+          "nearest_other": 12.105
+        },
+        {
+          "offset": 0,
+          "own": 6.199,
+          "nearest_other": 12.7
+        },
+        {
+          "offset": 0,
+          "own": 6.195,
+          "nearest_other": 12.725
+        },
+        {
+          "offset": 0,
+          "own": 6.103,
+          "nearest_other": 13.113
+        },
+        {
+          "offset": 0,
+          "own": 5.914,
+          "nearest_other": 14.34
+        }
+      ]
+    }
+  },
+  "encode:wall-seconds": 30.8,
+  "encode-colour": {
+    "what": "known sRGB patches through the composite, out through the encoder, and back",
+    "patches": 16,
+    "frames": 10,
+    "ours": {
+      "bytes": 2621,
+      "handed_to_the_encoder_as": {
+        "fullRange": true,
+        "matrix": "rgb",
+        "primaries": "bt709",
+        "transfer": "iec61966-2-1"
+      },
+      "container_says": {
+        "codec": "avc1.640028",
+        "colorSpace": {
+          "primaries": "bt709",
+          "transfer": "bt709",
+          "matrix": "bt709",
+          "fullRange": false
+        }
+      },
+      "decoded_as": {
+        "primaries": "bt709",
+        "transfer": "bt709",
+        "matrix": "bt709",
+        "fullRange": false
+      },
+      "format": "NV12",
+      "round_trip": {
+        "worst": 11,
+        "median_abs": 2,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "14,14,14",
+            "delta": "-2,-2,-2"
+          },
+          {
+            "want": "32,32,32",
+            "got": "35,35,35",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "64,64,64",
+            "got": "73,73,73",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "96,96,96",
+            "got": "107,107,107",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "128,128,128",
+            "got": "139,139,139",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "160,160,160",
+            "got": "169,169,169",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "192,192,192",
+            "got": "199,199,199",
+            "delta": "7,7,7"
+          },
+          {
+            "want": "235,235,235",
+            "got": "238,238,238",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "255,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,0,255",
+            "got": "0,0,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,255,0",
+            "got": "254,255,0",
+            "delta": "-1,0,0"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,254,255",
+            "delta": "0,-1,0"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,0,254",
+            "delta": "0,0,-1"
+          }
+        ]
+      }
+    },
+    "ffmpeg, same decode path": {
+      "decoded_as": {
+        "primaries": "bt709",
+        "transfer": "bt709",
+        "matrix": "bt709",
+        "fullRange": false
+      },
+      "format": "NV12",
+      "round_trip": {
+        "worst": 11,
+        "median_abs": 2,
+        "rows": [
+          {
+            "want": "0,0,0",
+            "got": "0,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "16,16,16",
+            "got": "14,14,14",
+            "delta": "-2,-2,-2"
+          },
+          {
+            "want": "32,32,32",
+            "got": "35,35,35",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "64,64,64",
+            "got": "73,73,73",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "96,96,96",
+            "got": "107,107,107",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "128,128,128",
+            "got": "139,139,139",
+            "delta": "11,11,11"
+          },
+          {
+            "want": "160,160,160",
+            "got": "169,169,169",
+            "delta": "9,9,9"
+          },
+          {
+            "want": "192,192,192",
+            "got": "199,199,199",
+            "delta": "7,7,7"
+          },
+          {
+            "want": "235,235,235",
+            "got": "238,238,238",
+            "delta": "3,3,3"
+          },
+          {
+            "want": "255,255,255",
+            "got": "255,255,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,0,0",
+            "got": "255,0,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,255,0",
+            "got": "0,255,0",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "0,0,255",
+            "got": "0,0,255",
+            "delta": "0,0,0"
+          },
+          {
+            "want": "255,255,0",
+            "got": "254,255,0",
+            "delta": "-1,0,0"
+          },
+          {
+            "want": "0,255,255",
+            "got": "0,254,255",
+            "delta": "0,-1,0"
+          },
+          {
+            "want": "255,0,255",
+            "got": "255,0,254",
+            "delta": "0,0,-1"
+          }
+        ]
+      }
+    }
+  },
+  "encode-colour:wall-seconds": 0.1
+}

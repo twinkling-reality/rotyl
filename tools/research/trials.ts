@@ -129,14 +129,14 @@ export const TRIALS: readonly Trial[] = [
     what: 'Blending the previous stylised frame into this one, to stop a clip boiling',
     verdict: 'rejected',
     evidence:
-      'Measured before it was built, on a clip where five cars move against a city that does not. Half of the last frame improves the residue from 3.6 codes to 2.0, which is the number everybody quotes, and costs 58.5 codes of deviation in the band a car has just left, 53 on the car itself and 13% of the gradient energy inside it. On the clip with no moving grain, where the residue is already at the codec floor, it makes the residue worse and costs the same sixty codes. It also ends "a render is a function of its frame"',
+      'Measured before it was built, on a clip where five cars move against a city that does not. Half of the last frame improves the residue from 3.6 codes to 2.0, which is the number everybody quotes, and costs 55.1 codes of deviation in the band a car has just left, 48.5 on the car itself and 13% of the gradient energy inside it. On the clip with no moving grain, where the residue is already at the codec floor, it makes the residue worse and costs the same fifty-five codes. It also ends "a render is a function of its frame"',
     where: 'tools/style-bench, measurement 5',
   },
   {
     what: 'Averaging each frame against the one before it on the way INTO the chain',
     verdict: 'rejected',
     evidence:
-      'One pass, no motion estimation on a fixed camera, and it takes the input down about a fifth and the styled output down with it. It also makes the amplification WORSE wherever it was above one: poster on a brick wall 1.36 to 1.54, on foliage 1.46 to 1.63, comic at full detail 2.00 to 2.51. What it removes is the part these chains attenuate hardest, so it reports less flicker rather than causing less',
+      'One pass, no motion estimation on a fixed camera, and it takes the input down about a fifth and the styled output down with it. It also makes the amplification WORSE wherever it was above one: poster on a brick wall 1.36 to 1.54, on foliage 1.46 to 1.63, comic at full detail 1.75 to 2.15. What it removes is the part these chains attenuate hardest, so it reports less flicker rather than causing less',
     where: 'tools/style-bench, measurement 4',
   },
   {
@@ -236,6 +236,41 @@ export const TRIALS: readonly Trial[] = [
     evidence:
       'On a brick wall a perturbation of six codes comes out at 15 rather than 78, against 8 for the same picture with no outline at all, and the same clip goes from 5.7 times its input to 1.36. It costs 7.8% of the reference scene, and what it costs is the contours the quantiser was drawing on its own grid',
     where: 'src/core/style/poster/wgsl/poster.wgsl',
+  },
+  {
+    what: 'A floor under the comic flatten’s apparent scale, so raising detail cannot shrink it away',
+    verdict: 'rejected',
+    evidence:
+      'The mechanism known limits named, and it is not one. Measured at four floors on a perturbation of six codes, it takes a brick wall from 29 codes out to 9 and takes a frame of film from 17 UP to 22 on the way: a wider ellipse spans more structure, so a sector that flips costs more codes. There is no radius that is right for both pictures, which is what the control is for',
+    where: '"What raising detail was doing to a clip", the interventions',
+  },
+  {
+    what: 'Holding the comic ink’s tau at its detail-0 value, so a flat region keeps a margin against the threshold',
+    verdict: 'rejected',
+    evidence:
+      'The best number of anything tried short of removing the sector weighting: the wall goes from 29 codes out to 15 and the film from 17 to 9, on every picture and at every setting, none made worse. It also erases the contour around every window at detail 1, which is what the top of the control is for, and moves 5.8% of the reference scene. tau is not a side effect of detail, it is how detail inks',
+    where: 'src/core/style/comic/comic-params.ts',
+  },
+  {
+    what: 'Averaging the eight Kuwahara sectors rather than weighting them by variance',
+    verdict: 'rejected',
+    evidence:
+      'It is the amplifier, and this is what removing it is worth: a brick wall goes from 29 codes out of 6 to 8 at detail 1 and from 7 to 1 at detail 0, and a frame of film from 17 to 5. It is also the style. An anisotropic Kuwahara that does not choose its sector is a blur, and the choosing is the difference between painterly and smooth',
+    where: 'src/core/style/comic/wgsl/anisotropic-kuwahara.wgsl',
+  },
+  {
+    what: 'Bounding the comic flatten’s buffer below the picture, so the downsample in front of it is always an average',
+    verdict: 'adopted',
+    evidence:
+      'A buffer derived to hold a radius can ask for 1356 px of a 720 px frame, and clamping that at the frame turned this chain’s only grain rejection into a copy. Bounded a root two below it, a brick wall goes from 2.00 times its input to 1.75 on a clip and the film’s exterior from 2.28 to 1.82, the apparent scale moves by nothing, and the chain is three times cheaper at 720p. A factor of two buys five more codes on the wall and moves 1.2% of the reference scene at the BOTTOM of the control, where a root two moves none',
+    where: 'src/core/style/comic/comic-params.ts',
+  },
+  {
+    what: 'Closing the gap between the comic chain at full detail and the same chain at none',
+    verdict: 'open',
+    evidence:
+      'What is left is the sector weighting itself, which is a steep power of a variance estimated from a few dozen samples and is the amplifier at every setting rather than only at the top: a brick wall reads 1.75 at detail 1 against 0.63 at detail 0, and 8 codes out of 6 with the weighting removed against 25 with it. Every way of not taking that decision measured so far is a blur',
+    where: 'docs/limits.md',
   },
   {
     what: 'Closing the last five codes between the poster outline and no outline at all',

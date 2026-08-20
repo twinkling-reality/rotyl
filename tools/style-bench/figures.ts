@@ -54,6 +54,20 @@ const SHEETS: readonly { name: string; columns: number; shots: readonly Shot[] }
     ],
   },
   {
+    // WHAT THE DETAIL CONTROL DOES, which is the thing a number about the
+    // detail control cannot show. The top of it is the setting that amplified a
+    // brick wall, and the question a floor under it raises is whether anybody
+    // was using the top for anything but noise. So the three settings are here
+    // side by side rather than described, taken after the flatten was bounded.
+    name: 'detail',
+    columns: 3,
+    shots: [
+      { label: 'detail 0', style: COMIC_STYLE, controls: { detail: 0 } },
+      { label: 'detail 0.5, the default', style: COMIC_STYLE, controls: {} },
+      { label: 'detail 1', style: COMIC_STYLE, controls: { detail: 1 } },
+    ],
+  },
+  {
     name: 'palettes',
     columns: 3,
     shots: [

@@ -30,10 +30,10 @@ it feeds is the one the per-frame design rests on, and a number nobody can
 re-take is a number nobody can contradict. `tools/style-bench/fetch-real.sh`
 argues it at length.
 
-The entry about the look carries pictures, and the others do not. An argument
-about whether output is worth looking at that shows none of it is asking to be
-taken on trust; a page of decode timings with a hero image on top is a marketing
-habit. The figures are rendered by the same harness, from the same scene,
+The entries that argue about a look carry pictures, and the rest do not. An
+argument about whether output is worth looking at that shows none of it is asking
+to be taken on trust; a page of decode timings with a hero image on top is a
+marketing habit. The figures are rendered by the same harness, from the same scene,
 through the same compositor as the numbers beside them, and their captions name
 the tiles from the figure's own metadata, so a caption cannot describe a picture
 that changed underneath it. They are the one generated artefact here that is

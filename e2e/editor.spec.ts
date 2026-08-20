@@ -923,19 +923,60 @@ test('exports the whole clip as a video, with nowhere to write it', async ({ pag
  * Installed rather than merely present, because a test that relied on the real
  * picker would open a native window and stop.
  */
-async function stubSavePicker(page: Page): Promise<void> {
-  await page.addInitScript(() => {
+async function stubSavePicker(page: Page, msPerWrite = 0): Promise<void> {
+  await page.addInitScript((delay: number) => {
+    /**
+     * A SLOW DISK, for the one test that has to catch an export while it is
+     * still running.
+     *
+     * Slowing the writer rather than the render is what makes that test a test
+     * of stopping rather than a test of how expensive a style happens to be
+     * this month. It used to rely on the render being slow enough, and bounding
+     * the comic style's flatten below the picture took a 320x240 export from a
+     * quarter of a second to under a tenth, at which point there was nothing
+     * left to press Stop during.
+     *
+     * A stream of its own rather than a patched method: the sink writes through
+     * a writer, which never reaches `FileSystemWritableFileStream`'s own write.
+     */
+    const slowly = (real: FileSystemWritableFileStream): WritableStream<FileSystemWriteChunkType> => {
+      const writer = real.getWriter();
+      return new WritableStream<FileSystemWriteChunkType>({
+        async write(chunk) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          await writer.write(chunk);
+        },
+        close: () => writer.close(),
+        abort: (reason: unknown) => writer.abort(reason),
+      });
+    };
+
     Object.assign(window, {
-      showSaveFilePicker: async (options: { suggestedName?: string }): Promise<FileSystemFileHandle> => {
+      // What the product asks of a picker is a name and one writable stream,
+      // which is `WritableFile` in destination.ts and is less than a file
+      // handle is. So this is a real implementation of that rather than a cast.
+      showSaveFilePicker: async (options: {
+        suggestedName?: string;
+      }): Promise<{
+        readonly name: string;
+        createWritable(): Promise<WritableStream<FileSystemWriteChunkType>>;
+      }> => {
         const root = await navigator.storage.getDirectory();
         const name = options.suggestedName ?? 'picked.mp4';
         // A picker hands back an empty file, and so does this: an export that
         // stopped early has to overwrite rather than append to what was there.
         await root.removeEntry(name).catch(() => undefined);
-        return root.getFileHandle(name, { create: true });
+        const handle = await root.getFileHandle(name, { create: true });
+        return {
+          name: handle.name,
+          createWritable: async () => {
+            const real = await handle.createWritable();
+            return delay > 0 ? slowly(real) : real;
+          },
+        };
       },
     });
-  });
+  }, msPerWrite);
   await page.goto('/');
 }
 
@@ -1123,9 +1164,15 @@ async function audioPackets(
  * for 220 ms, so waiting for it is waiting for a run that is genuinely under
  * way, and if the clip is ever short enough to finish inside that this fails
  * rather than passing without having tested anything.
+ *
+ * It did fail, exactly there, when the comic style's flatten was bounded below
+ * the picture and this fixture's export went from a quarter of a second to
+ * under a tenth. So the file this one writes into answers 100 ms late per write,
+ * which puts the run back over the threshold and takes the render's cost out of
+ * the question for good. The product is unchanged and so is every other test.
  */
 test('stops where it is told, and keeps what it wrote', async ({ page }) => {
-  await stubSavePicker(page);
+  await stubSavePicker(page, 100);
   await page.locator('input[type=file]').setInputFiles(clip);
   await expect(page.locator('canvas')).toBeVisible();
   await expect(page.getByText('1 / 60')).toBeVisible();

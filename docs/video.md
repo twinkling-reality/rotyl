@@ -14,9 +14,11 @@ same selection.
 **Playback holds full quality until it demonstrably cannot**, and the tolerance
 for that is deliberately wide. This is an editor showing what a filter does, not
 a media player, so a third of the frames carrying the real look beats all of
-them carrying an approximation. The chain measures 46 ms a frame on a 720p clip
-at high detail against a 20 ms budget, and it still plays at 44 of 50 frames a
-second because the frames it cannot render are skipped rather than queued.
+them carrying an approximation. When that was decided the chain measured 46 ms a
+frame on a 720p clip at high detail against a 20 ms budget, and it still played
+at 44 of 50 frames a second because the frames it cannot render are skipped
+rather than queued. That case is cheaper now: the same setting measures 16 ms
+since the flatten was bounded below the picture, and the default 40.
 Dropping to the draft tier unconditionally was the first attempt and it was
 wrong twice over: on a small clip at high detail the two tiers are the same
 render anyway, since both clamp to the clip's own short edge, and on a large one
@@ -59,9 +61,12 @@ quieter input would not also remove.
 What differs between chains is the GAIN, and the gain depends on the picture.
 The drawn scene says every chain but print attenuates. A photograph of a brick
 wall says the poster chain is at 1.36 and the comic chain at full detail is at
-2.00, where at no detail it is 0.63. Both of those are one stage: the poster
-outline, which the section below is about, and the Kuwahara radius falling until
-the flatten stops flattening.
+1.75, where at no detail it is 0.63. Both of those are one stage: the poster
+outline, which the section below is about, and the anisotropic Kuwahara's sector
+weighting, which the detail control used to hand raw grain by clamping the
+flatten's buffer at the picture's own resolution and so turning the downsample
+in front of it into a copy. That is bounded now, and what the bound did not
+close is in [known limits](limits.md) with its number.
 
 **A cleaner input was measured and does less than it looks.** Averaging each
 frame against the one before it on the way in is one pass and needs no motion
@@ -73,10 +78,10 @@ a way of reporting less flicker rather than of having less, so it is not here.
 **And blending the previous stylised frame in is worse than the disease.** That
 was measured before it was built, on a clip where five cars move against a city
 that does not: half the last frame improves the residue by two fifths and costs
-sixty codes of deviation around anything that moves, and 13% of the gradient
-energy inside a moving car. On the clip with no moving grain, where there is no
-residue left to remove, it makes the residue worse and costs the same sixty
-codes. `tools/style-bench` has the counter-metric and the picture, and
+fifty-five codes of deviation around anything that moves, and 13% of the
+gradient energy inside a moving car. On the clip with no moving grain, where
+there is no residue left to remove, it makes the residue worse and costs the
+same fifty-five codes. `tools/style-bench` has the counter-metric and the picture, and
 [known limits](limits.md) has what none of it fixed.
 
 **The rule was not applied everywhere, and it took a photograph to show it.**
@@ -394,7 +399,8 @@ rendered from and no other.
 
 **A clip is written several times faster than it plays**, for a style that fits
 inside a frame, and several times slower for one that does not: 5.0 ms a frame
-at 1080p for poster and print, 339 for comic. Which is why an export says how
+at 1080p for poster and print, 143 for comic, which was 339 before its flatten
+was bounded below the picture. Which is why an export says how
 far it has got and can be stopped, and why Stop replaces the buttons rather than
 sitting beside them. There is exactly one thing to do while it runs.
 

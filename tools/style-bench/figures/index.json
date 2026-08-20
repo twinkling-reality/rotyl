@@ -12,6 +12,17 @@
     ]
   },
   {
+    "name": "detail",
+    "width": 1924,
+    "height": 360,
+    "columns": 3,
+    "tiles": [
+      "detail 0",
+      "detail 0.5, the default",
+      "detail 1"
+    ]
+  },
+  {
     "name": "palettes",
     "width": 1924,
     "height": 360,

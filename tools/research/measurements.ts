@@ -68,11 +68,20 @@ const STYLES = ['comic', 'poster', 'print'] as const;
 // --- the look ---------------------------------------------------------------
 
 function styleCost(style: unknown): Section {
+  const median = (size: string, name: string): number =>
+    num(style, ['chain', size, `${name}, default`, 'full', 'median']);
+  // Computed, because both of these are ratios between two cells of the table
+  // below and a ratio typed into prose is a number waiting to go stale. The
+  // second one did: the comic chain got three times cheaper at 720p when its
+  // flatten was bounded below the frame, and "200 times" survived the run.
+  const times = (size: string): string => (median(size, 'comic') / median(size, 'print')).toFixed(0);
   return {
     heading: 'What a style chain costs',
     prose: [
-      'Two of the three styles run in under two milliseconds at 720p. The third takes 140, and spends essentially all of it in a single stage.',
-      'The print chain had never been timed before this. It was argued to be cheaper, on the grounds that it is three passes against nineteen with only one at output resolution. It is 200 times cheaper.',
+      `Two of the three styles run in under two milliseconds at 720p. The third takes ${ms(
+        median('720p', 'comic'),
+      )} there and ${ms(median('12 MP', 'comic'))} at twelve megapixels, and spends essentially all of it in a single stage.`,
+      `The print chain had never been timed before this. It was argued to be cheaper, on the grounds that it is three passes against nineteen with only one at output resolution. It is ${times('720p')} times cheaper at 720p and ${times('2 MP')} at two megapixels.`,
       'A style does not have to be expensive to be flat. That is what the third style came out of: one that fits inside a frame is something a clip can be played through, rather than something a clip is rendered with.',
     ],
     table: {
@@ -90,11 +99,15 @@ function styleCost(style: unknown): Section {
 
 function detailCost(style: unknown): Section {
   const tier = (name: string): string => ms(num(style, ['chain', '720p', 'comic, detail 1', name, 'median']));
+  const cell = (size: string, name: string): number => num(style, ['chain', size, name, 'full', 'median']);
+  const faster = (size: string): string =>
+    (cell(size, 'comic, detail 0') / cell(size, 'comic, detail 1')).toFixed(1);
   return {
     heading: 'Higher detail is cheaper, and the quality tiers collapse',
     prose: [
-      'Turning detail up makes the comic chain four times faster at 720p, and a draft frame there is the same render as an export. Both of those sound like bugs and are consequences of one decision.',
-      'Each stage declares the apparent scale it wants and derives its own resolution to hold it. When that resolution clamps to the output’s short edge, the kernel shrinks rather than the fraction drifting. Cost falls, and the tiers converge.',
+      `Turning detail up makes the comic chain ${faster('720p')} times faster at 720p, and a draft frame there is the same render as an export. Both of those sound like bugs and are consequences of one decision.`,
+      'Each stage declares the apparent scale it wants and derives its own resolution to hold it. When the picture cannot supply that resolution, the kernel shrinks rather than the fraction drifting. Cost falls, and the tiers converge.',
+      'The flatten reaches that bound sooner than it used to, because it is now held a root two below the frame rather than at it: the downsample onto it is this chain’s grain rejection and a buffer the size of the picture is not a downsample. What that cost is on the page it came from; what it bought here is the 720p column and the two megapixel one.',
     ],
     table: {
       columns: ['comic, full tier', ...SIZES],
@@ -107,7 +120,7 @@ function detailCost(style: unknown): Section {
         ...SIZES.map((size) => ms(num(style, ['chain', size, key ?? '', 'full', 'median']))),
       ]),
     },
-    caveat: `At 720p and detail 1 every tier clamps to 720: draft ${tier('draft')}, full ${tier('full')}, export ${tier('export')}. "Draft is cheaper" is not universally true, and no code may assume it.`,
+    caveat: `At 720p and detail 1 every tier reaches the same bound: draft ${tier('draft')}, full ${tier('full')}, export ${tier('export')}. "Draft is cheaper" is not universally true, and no code may assume it.`,
     command: 'node tools/style-bench/run.mjs chain',
   };
 }
@@ -262,8 +275,16 @@ function realCost(real: unknown): Section {
     num(real, ['real-chain', picture, '720p', 'comic, default', 'full', 'median']);
   const scene = at720('the synthetic scene');
   const cheaper = (picture: string): string => `${(((scene - at720(picture)) / scene) * 100).toFixed(0)}%`;
+  // Signed, and read through Math.abs where it is quoted: an earlier version of
+  // this said every photograph was cheaper than the scene, which was true when
+  // it was written and stopped being true when the comic chain's flatten was
+  // bounded and the whole column moved.
+  const against = (picture: string): number => ((at720(picture) - scene) / scene) * 100;
   const cheapest = REAL_PICTURES.reduce((a, b) => (at720(a) < at720(b) ? a : b));
   const dearest = REAL_PICTURES.reduce((a, b) => (at720(a) > at720(b) ? a : b));
+  const band = (
+    Math.max(...REAL_PICTURES.map(against), 0) - Math.min(...REAL_PICTURES.map(against), 0)
+  ).toFixed(0);
   return {
     heading: 'Content barely moves the cost table, and not the way it was meant to',
     prose: [
@@ -271,11 +292,11 @@ function realCost(real: unknown): Section {
       `The prediction does not appear. Foliage is the dearest of the four photographs and a brick wall is not, which is the ordering backwards. What does appear is a smaller effect running the other way: the portrait is the cheapest of the five, ${cheaper(
         'portrait',
       )} below the scene, and large out-of-focus areas are exactly where anisotropy is low.`,
-      `So the caveat was right that the scene is not typical and wrong about how much that matters. Every photograph here is cheaper than it, by ${cheaper(
-        dearest,
-      )} to ${cheaper(
+      `So the caveat was right that the scene is not typical and wrong about how much that matters. All five sit inside a band ${band}% wide: the ${cheapest} is ${cheaper(
         cheapest,
-      )}, which puts it at the top of a narrow range rather than in a class of its own. Cost is set by the stage resolutions, and those are derived from the output’s short edge and from nothing in the picture.`,
+      )} below the scene and the ${dearest} is within ${Math.abs(against(dearest)).toFixed(
+        0,
+      )}% of it. That is a narrow range rather than a class of its own. Cost is set by the stage resolutions, and those are derived from the output’s short edge and from nothing in the picture.`,
     ],
     table: {
       columns: ['comic, default, full tier', ...SIZES],
@@ -301,6 +322,7 @@ function realStability(real: unknown): Section {
       'Half of the original finding survived a photograph untouched. The comic chain really is steadier than its input, on a photograph as on a drawing, which is the part that was surprising and the part the design leans on.',
       'The other half was false, and it was the poster chain. On a brick wall it amplified by 5.7 and on foliage by 4.9, where the synthetic scene reports it attenuating by two. That is not a small drift in a number: it is the opposite sign, on the measurement that says whether stylised video is worth shipping, and it was invisible for as long as the input was drawn rather than photographed. The two sections below are what it turned out to be and what replaced it. This table is taken afterwards, and the wall now reads 1.36.',
       'The two rows that are not fixed cameras are read differently and are here for a different reason. An actor moving is a large honest change and it lands in the source column, so the ratio is the only thing those rows can say. What they said before the change was that the poster chain was four times its input on real footage while the other two were near one; what they say now is that all three sit between one and two.',
+      'The comic column is the middle of a control that has two other ends, and read across all three it is a slope rather than a number. What raising detail was doing has its own page, because it turned out not to be what this one said it was.',
     ],
     table: {
       columns: ['styled change over source change, p99', 'comic', 'poster', 'poster, no outline', 'print'],
@@ -371,6 +393,130 @@ function outlineAttempts(): Section {
     caveat:
       'Taken during development by re-running the perturbation against each version; five of the eight rows are gone from the code and cannot be regenerated without reverting it, which is the same footing the transition-floor table on the look page is on. The last two are what the table above reports today. Every one of them was checked against the look as well as against the number, by rendering the reference scene through both chains and differencing: the shipped operator moves 7.8% of that picture more than eight codes, and what moves is the outlines the old one drew on the quantiser’s grid rather than on the picture.',
     command: 'node tools/style-bench/run.mjs real-flicker',
+  };
+}
+
+/** The seven inputs, paired with the clip each one was also measured as. */
+const REAL_STILLS = [
+  ['the drawn scene', 'the synthetic scene', 'the synthetic scene, fixed camera'],
+  ['facade', 'facade', 'facade, fixed camera'],
+  ['foliage', 'foliage', 'foliage, fixed camera'],
+  ['fog', 'fog', 'fog, fixed camera'],
+  ['portrait', 'portrait', 'portrait, fixed camera'],
+  ['a film, exterior', 'a film, exterior', 'Tears of Steel, exterior'],
+  ['a film, interior', 'a film, interior', 'Tears of Steel, interior'],
+] as const;
+
+const DETAILS = [
+  ['comic, detail 0', 'detail 0'],
+  ['comic, default', 'detail 0.5'],
+  ['comic, detail 1', 'detail 1'],
+] as const;
+
+function detailRows(real: unknown): Section {
+  const cell = (clip: string, item: string): string =>
+    ratio(num(real, ['real-clips', clip, item, 'amplification', 'p99']));
+  return {
+    heading: 'The control has a broken end, and the column had been sitting here',
+    prose: [
+      'The comic row on the page before this is read at the middle of its detail control, and the control has two other ends. Read across all three it is not one number, it is a slope, and on every input the slope runs the same way: the top of the control is where a chain that attenuates starts to amplify.',
+      'The figures that started this chapter are not the ones in the table below, which is taken after it. They were a brick wall at 0.63, 0.88 and 2.00, the film’s exterior at 1.40, 1.80 and 2.28, and the drawn scene reporting 0.28, 0.34 and 0.59 and saying nothing about any of it for the third time. Somebody who wanted the steadiest comic frame was told, in known limits, to turn detail down.',
+      'The explanation written beside those numbers was that raising detail shrinks the Kuwahara radius until the flatten stops flattening. That is the wrong mechanism, and the two sections below are how it was caught and what replaced it.',
+    ],
+    table: {
+      columns: ['comic, amplification p99', ...DETAILS.map(([, label]) => label)],
+      rows: REAL_STILLS.map(([label, , clip]) => [label, ...DETAILS.map(([item]) => cell(clip, item))]),
+    },
+    caveat:
+      'Twenty-four consecutive frames, in output codes, at the 99th percentile of the per-pixel change between one frame and the next, over the styled frame and the source frame that produced it. The two film rows carry subject motion in both columns and cannot be read as absolutes; the section below is about what is left of them when the motion is taken out.',
+    command: 'node tools/style-bench/run.mjs real-clips',
+  };
+}
+
+function filmStills(real: unknown): Section {
+  const still = (picture: string, item: string): string =>
+    ratio(num(real, ['real-perturbation', picture, 'sigma 2', item, 'amplification', 'p99']));
+  const clip = (name: string, item: string): string =>
+    ratio(num(real, ['real-clips', name, item, 'amplification', 'p99']));
+  return {
+    heading: 'The film’s two rows were two different findings',
+    prose: [
+      'The film amplifies at the BOTTOM of the control, where the flatten is at its widest and is supposed to be attenuating hardest, and no photograph does. So either there are two mechanisms or the one written down is not the one running, and which it is decides whether this chapter has one fix or two. Nothing was changed until it was separated.',
+      'The separation is to stop using a clip. The two cuts of Tears of Steel are the only inputs here with real sensor noise in them and they are also the only ones with actors in them, so an amplification taken over consecutive frames carries a man walking in both of its columns. One frame of the film rendered twice, with grain of a known size added the second time, has no motion in it at all: it is the same picture twice, and it is the experiment the four photographs were already answering.',
+      `Taken that way the two film rows separate. The exterior amplifies ${still(
+        'a film, exterior',
+        'comic, detail 0',
+      )} as a still against ${clip(
+        'Tears of Steel, exterior',
+        'comic, detail 0',
+      )} as a clip, so its figure is the chain and not the actors. The interior attenuates ${still(
+        'a film, interior',
+        'comic, detail 0',
+      )} as a still against ${clip(
+        'Tears of Steel, interior',
+        'comic, detail 0',
+      )} as a clip, so its figure is the actors and not the chain. One page had been reading them as one thing.`,
+    ],
+    table: {
+      columns: [
+        'comic, amplification p99',
+        'one frame twice, detail 0',
+        'a clip, detail 0',
+        'one frame twice, detail 1',
+        'a clip, detail 1',
+      ],
+      rows: REAL_STILLS.map(([label, picture, name]) => [
+        label,
+        still(picture, 'comic, detail 0'),
+        clip(name, 'comic, detail 0'),
+        still(picture, 'comic, detail 1'),
+        clip(name, 'comic, detail 1'),
+      ]),
+    },
+    caveat:
+      'The two columns are two experiments and are read down a row rather than across it. A still is one picture rendered twice with grain of σ 2 added the second time, so its input is six codes of white noise; a clip is what a codec and a camera left between two frames. What a still can say that a clip cannot is whether a chain amplifies a picture at all when nothing in the picture moved, and the film’s two shots answer that differently.',
+    command: 'node tools/style-bench/run.mjs real-perturbation real-clips',
+  };
+}
+
+function theFlatten(real: unknown): Section {
+  const p99 = (picture: string, item: string): string =>
+    num(real, ['real-perturbation', picture, 'sigma 2', item, 'p99']).toFixed(0);
+  return {
+    heading: 'It was the downsample the derivation had stopped doing',
+    prose: [
+      'Detail moves three things: the flatten’s apparent scale, the ink’s apparent scale, and tau, which is how much of the local lightness the difference of Gaussians subtracts before it decides. Each was held at its detail-0 value in turn and the perturbation re-run, which is attribution by intervention rather than by scaffolding: the chain measured is the chain that ships, one quantity at a time.',
+      'The sector weighting is the amplifier, and it is the amplifier at every setting rather than only at the top. Take it out, so that the eight sectors are averaged rather than chosen between, and a brick wall goes from 29 codes out of 6 to 8 and the film’s exterior from 17 to 5, at detail 1, and the wall’s detail-0 figure goes from 7 to 1. It cannot be taken out: an anisotropic Kuwahara that does not choose its sector is a blur, and the choosing is what makes this style painterly rather than smooth.',
+      'A floor under the apparent scale, which is what known limits implied, is not the answer. Measured at four values it takes the wall from 29 down to 9 and takes the film’s exterior from 17 UP to 22 on the way, in the same run, because a wider ellipse spans more structure and a sector that flips then costs more codes. There is no radius that is right for both pictures, which is the honest reason the control exists.',
+      'What is uniformly right is the downsample. The flatten’s buffer resolution is derived to hold its radius near eight pixels, and at detail 1 that derivation asks for 1356 pixels of a 720 pixel frame; clamping the request at the frame’s own resolution turns the box downsample in front of the Kuwahara into a copy, and the downsample is the only thing in this chain that removes grain before the decision that amplifies it. Bounding the buffer a root two below the frame restores it at every setting, moves the apparent scale by nothing, and makes the chain cheaper rather than dearer.',
+    ],
+    figure: {
+      name: 'detail',
+      caption:
+        'What the detail control does now, at its two ends and its default, through the same compositor as every number here.',
+    },
+    table: {
+      columns: ['what was changed, grain σ 2 at detail 1, p99 out of 6 in', 'facade', 'a film, exterior'],
+      rows: [
+        ['nothing, as it was', '29', '17'],
+        ['the ink’s scale held at its detail-0 value', '26', '15'],
+        ['the flatten’s scale floored at 0.0088', '20', '22'],
+        ['the flatten’s scale floored at 0.0111', '13', '21'],
+        ['the flatten’s scale floored at 0.0140', '10', '18'],
+        ['the flatten’s scale not moved by detail at all', '9', '11'],
+        ['tau held at its detail-0 value', '15', '9'],
+        [
+          'the flatten bounded a root two below the frame',
+          p99('facade', 'comic, detail 1'),
+          p99('a film, exterior', 'comic, detail 1'),
+        ],
+        ['the flatten bounded a factor of two below the frame', '20', '6'],
+        ['no sector weighting at all', '8', '5'],
+      ],
+    },
+    caveat:
+      'Eight of the ten rows are gone from the code and cannot be regenerated without reverting it, which is the footing the outline’s tuning table on the page before this is on; the row that ships is read from the file like every other number here. Two of them were rejected on the look rather than on the number. Holding tau erases the contour around every window at detail 1, which is what the top of the control is for, and it moves 5.8% of the reference scene; bounding the flatten at a factor of two moves 9.0% of it at detail 1 and 1.2% at detail 0, where root two moves none at all, because at root two the derivation was already downsampling at the bottom of the control. What shipped moves 4.7% of the scene at detail 1 and 1.5% at the default.',
+    command: 'node tools/style-bench/run.mjs real-perturbation',
   };
 }
 
@@ -1251,9 +1397,9 @@ function comingBack(saved: unknown): Section {
 
 // --- writing a clip ---------------------------------------------------------
 
-function pipeline(video: unknown): Section {
+function pipeline(exported: unknown): Section {
   const rung = (size: string, name: string): string =>
-    ms(num(video, ['encode', `${size}, ladder (poster)`, name, 'ms_per_frame']));
+    ms(num(exported, ['encode', `${size}, ladder (poster)`, name, 'ms_per_frame']));
   const row = (label: string, name: string): readonly string[] => [
     label,
     rung('720p', name),
@@ -1282,9 +1428,9 @@ function pipeline(video: unknown): Section {
   };
 }
 
-function clipThroughput(video: unknown): Section {
+function clipThroughput(exported: unknown): Section {
   const endToEnd = (size: string, style: string, key: string): number =>
-    num(video, ['encode', `${size}, end to end`, style, key]);
+    num(exported, ['encode', `${size}, end to end`, style, key]);
   const row = (style: string): readonly string[] => [
     style,
     `${ms(endToEnd('720p', style, 'ms_per_frame'))} (${endToEnd('720p', style, 'frames_per_s').toFixed(0)} fps)`,
@@ -1304,9 +1450,9 @@ function clipThroughput(video: unknown): Section {
   };
 }
 
-function rateControl(video: unknown): Section {
+function rateControl(exported: unknown): Section {
   const rate = (name: string, key: string): number =>
-    num(video, ['encode', 'rate control (1080p, poster)', name, key]);
+    num(exported, ['encode', 'rate control (1080p, poster)', name, key]);
   const row = (label: string, name: string): readonly string[] => [
     label,
     ms(rate(name, 'ms_per_frame')),
@@ -1316,7 +1462,9 @@ function rateControl(video: unknown): Section {
   return {
     heading: 'Rate control is a decision about size, not about speed',
     prose: [
-      'A qualitative quality level resolves to a quantizer where the codec supports one, which is constant quality and therefore an unbounded file. It is also the default, so a clip export that says nothing about rate control ships five times the bytes for no time at all.',
+      `A qualitative quality level resolves to a quantizer where the codec supports one, which is constant quality and therefore an unbounded file. It is also the default, so a clip export that says nothing about rate control ships ${(
+        rate('high, quantizer', 'bytes') / rate('high, bitrate', 'bytes')
+      ).toFixed(1)} times the bytes for no time at all.`,
       'Asking for the same level as a bitrate is a predictable file and a variable picture. Rotyl asks for very-high as a bitrate, which is about 12 Mbit/s at 1080p and scales with resolution.',
     ],
     table: {
@@ -1334,11 +1482,11 @@ function rateControl(video: unknown): Section {
   };
 }
 
-function encodeColour(video: unknown): Section {
+function encodeColour(exported: unknown): Section {
   const worst = (who: string): string =>
-    `${num(video, ['encode-colour', who, 'round_trip', 'worst']).toFixed(0)} codes`;
+    `${num(exported, ['encode-colour', who, 'round_trip', 'worst']).toFixed(0)} codes`;
   const median = (who: string): string =>
-    `${num(video, ['encode-colour', who, 'round_trip', 'median_abs']).toFixed(0)} codes`;
+    `${num(exported, ['encode-colour', who, 'round_trip', 'median_abs']).toFixed(0)} codes`;
   return {
     heading: 'The encoder is not what moves colour',
     prose: [
@@ -1663,7 +1811,7 @@ function residueComesFrom(still: unknown): Section {
     prose: [
       'Every stage runs per frame with no knowledge of the last one, so a chain is a pure function of its frame: hand it the same picture twice and it gives the same answer twice. That is not an argument, it is the second row of the table. On a clip encoded with no temporal grain the input moves by 1.4 codes at the 99th percentile, which is the codec, and every chain answers with 1.0, which is the floor. There is nothing in a styled frame that was not in the source frame.',
       `So the question is only what a chain does with the change it was given, and the answer depends on the picture rather than on the chain. On the drawn scene every chain but print attenuates: comic ${amp('the synthetic scene, five cars moving', 'comic, default')}, poster ${amp('the synthetic scene, five cars moving', 'poster, default')}, print ${amp('the synthetic scene, five cars moving', 'print, default')}. On a photograph of a brick wall the same poster chain amplifies at ${amp('facade, fixed camera', 'poster, default')} and the comic chain at full detail at ${amp('facade, fixed camera', 'comic, detail 1')}.`,
-      `And where the amplification is has already been found once. Poster with its outline drawn is ${amp('facade, fixed camera', 'poster, default')} on the wall and ${amp('facade, fixed camera', 'poster, no line')} without it, ${amp('foliage, fixed camera', 'poster, default')} against ${amp('foliage, fixed camera', 'poster, no line')} on foliage. The comic chain's is the detail control: ${amp('facade, fixed camera', 'comic, detail 1')} at full detail against ${amp('facade, fixed camera', 'comic, detail 0')} at none, which is the Kuwahara radius falling until the flatten stops flattening.`,
+      `And where the amplification is has already been found once. Poster with its outline drawn is ${amp('facade, fixed camera', 'poster, default')} on the wall and ${amp('facade, fixed camera', 'poster, no line')} without it, ${amp('foliage, fixed camera', 'poster, default')} against ${amp('foliage, fixed camera', 'poster, no line')} on foliage. The comic chain's rises with the detail control: ${amp('facade, fixed camera', 'comic, detail 1')} at full detail against ${amp('facade, fixed camera', 'comic, detail 0')} at none. This sentence used to say that was the Kuwahara radius falling until the flatten stopped flattening, which is the wrong mechanism; what it turned out to be has its own page.`,
     ],
     table: {
       columns: ['amplification, p99', 'the drawn scene', 'facade', 'foliage', 'fog', 'portrait'],
@@ -1699,7 +1847,7 @@ function denoisingTheInput(still: unknown): Section {
     prose: [
       'If the residue is the input, the cheapest fix is to give the chain a quieter one: average each frame against the one before it on the way IN, which is one pass, needs no motion estimation on a fixed camera, and is nothing like a temporal filter on the output. It was measured before it was argued about, at the weakest weight worth measuring, a quarter.',
       'It works, and it works less than it looks. A quarter of the last frame takes the input down by about a fifth and the styled output down with it, roughly in proportion, on every chain and every picture.',
-      'The last two columns are the finding, and they were not what this expected. Amplification goes UP wherever it was already above one: the poster chain on a brick wall goes from 1.36 to 1.54, on foliage from 1.46 to 1.63, and the comic chain at full detail from 2.00 to 2.51. What a denoise removes is the high-frequency part of the input, which is the part these chains attenuate hardest; what is left is the part they amplify. So a cleaner input lowers the number and leaves the mechanism exactly where it was.',
+      'The last two columns are the finding, and they were not what this expected. Amplification goes UP wherever it was already above one: the poster chain on a brick wall goes from 1.36 to 1.54, on foliage from 1.46 to 1.63, and the comic chain at full detail from 1.75 to 2.15. What a denoise removes is the high-frequency part of the input, which is the part these chains attenuate hardest; what is left is the part they amplify. So a cleaner input lowers the number and leaves the mechanism exactly where it was.',
     ],
     table: {
       columns: [
@@ -1781,6 +1929,8 @@ export interface Results {
   readonly style: unknown;
   readonly real: unknown;
   readonly video: unknown;
+  /** The export ladder, apart from the rest of video-bench; see run.mjs. */
+  readonly exported: unknown;
   readonly tracking: unknown;
   readonly tracked: unknown;
   readonly host: unknown;
@@ -1795,8 +1945,9 @@ export interface Results {
 }
 
 export function entries(results: Results): readonly Entry[] {
-  const { style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound, still, saved } =
+  const { style, real, video, exported, tracking, tracked, host, shrink, bundle, log, long, sound, still } =
     results;
+  const { saved } = results;
   const { kept } = results;
   return [
     {
@@ -1846,6 +1997,19 @@ export function entries(results: Results): readonly Entry[] {
       ],
     },
     {
+      slug: 'the-detail-control',
+      results: 'tools/style-bench/results-real.json',
+      title: 'What raising detail was doing to a clip',
+      standfirst:
+        'The comic chain amplifies a photograph at the top of its detail control and attenuates it at the bottom. Attributed to a stage rather than to a control, by holding each of the three things detail moves and measuring again: the explanation that had been written down was the wrong one.',
+      harness: 'tools/style-bench',
+      lede: [
+        'One column of the table on the page before this had been in the repository across six pictures and nobody had read it. The comic chain’s amplification is not a number, it is a slope in the detail control, and the top of that slope is the only measured defect left in what this product actually draws.',
+        'A control whose upper half is worse than its lower half is a control with a broken end, and this project has been here once before: the poster style’s outline came out of it with a different operator and a better picture. That finding does not transfer, which took a measurement to find out rather than an argument.',
+      ],
+      sections: [detailRows(real), filmStills(real), theFlatten(real)],
+    },
+    {
       slug: 'holding-still',
       results: 'tools/style-bench/results-motion.json',
       title: 'What holds a stylised clip still, and what would not',
@@ -1877,7 +2041,7 @@ export function entries(results: Results): readonly Entry[] {
     },
     {
       slug: 'the-clip',
-      results: 'tools/video-bench/results.json',
+      results: 'tools/video-bench/results-export.json',
       title: 'What writing a clip costs',
       standfirst:
         'The export pipeline timed end to end, the two ways of getting the composite to the encoder, what rate control does to a file, and the probe showing the encoder leaves colour alone.',
@@ -1887,10 +2051,10 @@ export function entries(results: Results): readonly Entry[] {
         'A fourth turned up on the way. A canvas is presented rather than read, so capturing one is a claim about when as much as about what, and being one frame out would be invisible in every timing number here.',
       ],
       sections: [
-        pipeline(video),
-        clipThroughput(video),
-        rateControl(video),
-        encodeColour(video),
+        pipeline(exported),
+        clipThroughput(exported),
+        rateControl(exported),
+        encodeColour(exported),
         containerBytes(bundle),
       ],
     },

@@ -51,6 +51,20 @@ import { writeFileSync } from 'node:fs';
  */
 const APART = ['log', 'document', 'recovery', 'tracked-frame', 'long-clip', 'interleave'];
 
+/**
+ * The export ladder, apart from `all` for a reason this file learned the hard
+ * way.
+ *
+ * It is the only measurement in here that runs a STYLE CHAIN, so a change to a
+ * style makes it stale and makes nothing else in `all` stale. Left in `all`,
+ * re-taking it meant re-timing an ONNX session, four decode figures and a
+ * readback ladder that had not moved, on a machine that stalls one run in
+ * several: the diff was forty numbers of noise around the one that had actually
+ * changed. `encode-colour` comes with it because it is the same pass and is a
+ * probe rather than a timing.
+ */
+const EXPORT = ['encode', 'encode-colour'];
+
 const ALL = [
   'readback',
   'ort-device',
@@ -59,15 +73,16 @@ const ALL = [
   'half-precision',
   'decode',
   'colour',
-  'encode',
-  'encode-colour',
   'shared-device',
 ];
 
 const args = process.argv.slice(2);
-const which = args.length === 1 && args[0] === 'all' ? ALL : args;
+const named = { all: ALL, export: EXPORT };
+const which = args.length === 1 && named[args[0]] ? named[args[0]] : args;
 if (which.length === 0) {
-  console.error(`usage: node tools/video-bench/run.mjs <all|${[...ALL, ...APART].join('|')}>...`);
+  console.error(
+    `usage: node tools/video-bench/run.mjs <all|export|${[...ALL, ...EXPORT, ...APART].join('|')}>...`,
+  );
   process.exit(1);
 }
 
@@ -139,7 +154,9 @@ try {
 
 const json = JSON.stringify(result, null, 2);
 console.log(json);
-const out = `tools/video-bench/results${which === ALL ? '' : `-${which.join('-')}`}.json`;
+const out = `tools/video-bench/results${
+  which === ALL ? '' : which === EXPORT ? '-export' : `-${which.join('-')}`
+}.json`;
 writeFileSync(out, `${json}\n`);
 console.log(`\nwritten to ${out}`);
 

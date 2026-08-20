@@ -75,6 +75,25 @@ describe('resolution independence', () => {
     }
   });
 
+  it('always downsamples onto the flatten buffer, at every size and setting', () => {
+    // The box downsample in front of the Kuwahara is this chain's only grain
+    // rejection, and a buffer derived from an apparent scale can ask for more
+    // resolution than the picture has. Clamping that request at the picture's
+    // own resolution turned the downsample into a copy, which is what made the
+    // top of the detail control amplify a photograph; see FLATTEN_DOWNSAMPLE.
+    for (const shortEdge of [200, 300, 480, 700, 720, 1000, 1184, 1080, 2048, 4096]) {
+      for (const detail of [0, 0.25, 0.5, 0.75, 1]) {
+        for (const quality of QUALITIES) {
+          const params = resolveComicParams({ detail, strength: 0.7 }, shortEdge, quality);
+          expect(
+            params.flattenShortEdge * Math.SQRT2,
+            `flatten at ${String(shortEdge)}px detail ${String(detail)} ${quality}`,
+          ).toBeLessThanOrEqual(shortEdge + 1);
+        }
+      }
+    }
+  });
+
   it('holds the apparent scale identical between the preview and the export tier', () => {
     // The property the product depends on, swept over sizes that are not
     // multiples of the quantisation grid, which is exactly where it broke.
