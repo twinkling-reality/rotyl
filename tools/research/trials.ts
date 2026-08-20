@@ -14,6 +14,55 @@ import type { Trial } from './page.ts';
  */
 export const TRIALS: readonly Trial[] = [
   {
+    what: 'JSON with the packed masks base64 encoded, as the saved document format',
+    verdict: 'rejected',
+    evidence:
+      'A third larger before anything else happens, and on ten minutes of tracking 1090 ms to write against 11 for a container and 160 ms to read against 12, because every mask is built into a string on the way out and taken apart on the way back. A JSON header with the masks in a region behind it is the same file to read in a text editor and needs no library either',
+    where: 'tools/video-bench, measurement 12',
+  },
+  {
+    what: 'Embedding the media in the document, so it always opens',
+    verdict: 'rejected',
+    evidence:
+      'It is right for a photograph and impossible for a clip: the same feature would be a four megabyte file on one and two gigabytes on the other, and writing the second means holding it, which is the exact ceiling measurement 10 exists to have removed. One path for both has been this project’s answer to every question of that shape, and the answer that works for both is a reference plus a way to recognise the file',
+    where: 'src/platform/document/media-identity.ts',
+  },
+  {
+    what: 'Digesting the whole media file, so a document is certain which one it belongs to',
+    verdict: 'rejected',
+    evidence:
+      'crypto.subtle.digest takes a BufferSource and the platform has no streaming form of it, so a two gigabyte clip has to be resident to be hashed. Where it fits it runs at about 2000 MB a second, so it is a second of work on top of two gigabytes of heap. The first megabyte, the last megabyte and the length cost 1.9 ms at every size measured from 2 MB to 1 GB',
+    where: 'tools/video-bench, measurement 12',
+  },
+  {
+    what: 'Putting the document format behind a dynamic import, the way the container writer is',
+    verdict: 'rejected',
+    evidence:
+      'Measured both ways through the real build: split off it is 2.46 KB gzipped across three chunks and takes the application from 48.81 KB to 47.23, so it buys 1.58 KB back for a session that never saves and costs 0.9 KB more plus three round trips for one that does. The writer is split because it is 42.8 KB. A network fetch in front of Save is a failure mode invented for the one operation that exists to keep somebody’s afternoon',
+    where: 'src/platform/document/document-file.ts',
+  },
+  {
+    what: 'Saving the redo tail, so a reopened document can be redone as well as undone',
+    verdict: 'rejected',
+    evidence:
+      'A document holds work that was done and a redo tail is work that was undone. It is also self-defeating: SelectionDocument.apply discards the tail on the next edit, so a saved one would vanish the moment anybody drew a stroke, which is a feature that works exactly until it is used',
+    where: 'src/platform/document/document-file.ts',
+  },
+  {
+    what: 'Saving the view, so a document reopens where somebody was looking',
+    verdict: 'rejected',
+    evidence:
+      'Zoom and pan are fitted against a canvas whose size belongs to the window rather than to the work, so a document reopened in a smaller window restores a pan into empty space. The project already treats it that way: use-rotyl.ts carries the view across a lost device separately from the document, because the log is the work and the view is where somebody was standing. The playhead and the range are saved, because both are statements about this clip that somebody made on purpose',
+    where: 'src/platform/document/document-file.ts',
+  },
+  {
+    what: 'Caching the rebuilt mask in the document, so a long tracked run opens instantly',
+    verdict: 'rejected',
+    evidence:
+      'Nothing to fix. A ten-minute log folds to one command, because the fold cuts at the last command that decides a frame by itself, and the fold plus unpacking that one mask is 0.3 ms. A cache would be a second source of truth in the one structure this architecture exists to have exactly one of, in exchange for a third of a millisecond',
+    where: 'tools/video-bench, measurement 12',
+  },
+  {
     what: 'Asking where a clip goes after it has been encoded, rather than before',
     verdict: 'rejected',
     evidence:

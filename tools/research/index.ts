@@ -136,10 +136,29 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // that the other style measurements do not, and because it answers a question
   // about a method rather than about a chain.
   const still = read('tools/style-bench/results-motion.json');
+  // And the same again for what the log costs as a file, which is the same
+  // class as results-log.json and is kept apart from it: what a tracked run
+  // costs to HOLD and what it costs to WRITE are two findings answered in two
+  // chapters, and one file would re-date the first every time the second moved.
+  const saved = read('tools/video-bench/results-document.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
-    ...entries({ style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound, still }),
+    ...entries({
+      style,
+      real,
+      video,
+      tracking,
+      tracked,
+      host,
+      shrink,
+      bundle,
+      log,
+      long,
+      sound,
+      still,
+      saved,
+    }),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',

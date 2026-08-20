@@ -965,6 +965,168 @@ function commandLog(video: unknown): Section {
   };
 }
 
+// --- the document -----------------------------------------------------------
+
+/** Sub-millisecond figures read as zero, which is a timer rather than a finding. */
+const quick = (value: number): string => (value < 0.05 ? 'under 0.1 ms' : ms(value));
+
+const megabytes = (bytes: number): string =>
+  bytes < 1e6 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1e6).toFixed(2)} MB`;
+
+const CASES = [
+  ['one stroke on a photograph', 'one stroke'],
+  ['a three hundred frame tracked run', 'a tracked run'],
+  ['ten minutes of tracking', 'ten minutes'],
+] as const;
+
+function documentCost(document: unknown): Section {
+  const at = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
+  const held = num(document, ['document', 'ten minutes', 'held_megabytes']);
+  return {
+    heading: 'A ten-minute tracked run is a 65 MB file that writes in eleven milliseconds',
+    prose: [
+      'What a brush stroke costs to write down is nothing and everybody knows it. What decides whether saving is a file format or a paragraph in known limits is what a TRACKED RUN costs: one command per frame, a mask on each, packed, which the chapter before this one measured at 3.4 KB a mask and 62 MB for ten minutes held in memory.',
+      `Those 62 MB survive the trip. The file is ${megabytes(
+        at('ten minutes', ['container', 'bytes']),
+      )} against ${held.toFixed(
+        1,
+      )} MB held, and the difference is the header rather than the masks: they are the log's own arrays handed to the writer, so a save touches every byte once and copies none of them.`,
+      'None of the three sizes is slow enough to need an indicator, which is the finding that made everything after it simple. A document can be an ordinary thing somebody presses rather than an operation with a progress bar on it.',
+    ],
+    table: {
+      columns: [
+        'a saved selection',
+        'commands',
+        'the file',
+        'building it',
+        'assembling the bytes',
+        'reading it back',
+      ],
+      rows: CASES.map(([label, key]) => [
+        label,
+        at(key, ['commands']).toLocaleString('en-GB'),
+        megabytes(at(key, ['container', 'bytes'])),
+        quick(at(key, ['container', 'encode_ms', 'median'])),
+        quick(at(key, ['container', 'through_a_blob_ms', 'median'])),
+        quick(at(key, ['container', 'read_ms', 'median'])),
+      ]),
+    },
+    caveat:
+      '"Building it" is the header and the chunk list. "Assembling the bytes" is the one pass over every one of them, measured through a real Blob, which is what a browser with nowhere to write the file does; given a file handle the chunks go straight into the stream and that column is the disk rather than the heap. "Reading it back" is the whole file returned as a command log, with the header parsed and every mask handed back as a view into the buffer it was read into rather than copied out of it.',
+    command: 'node tools/video-bench/run.mjs document',
+  };
+}
+
+function documentShape(document: unknown): Section {
+  const at = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
+  const larger = at('ten minutes', ['json_base64', 'larger_by']);
+  const slower =
+    at('ten minutes', ['json_base64', 'write_ms', 'median']) /
+    at('ten minutes', ['container', 'encode_ms', 'median']);
+  return {
+    heading: 'JSON with the masks base64 encoded is a third larger and a hundred times slower',
+    prose: [
+      'The obvious shape for a document is the one the command log already nearly is: JSON, with each packed mask turned into text. It needs no format and no reader, and the argument against it was arithmetic, which is the half that does not decide anything on its own. Base64 is four bytes for every three before anything else happens.',
+      `It is that, and it is also ${slower.toFixed(0)} times slower to write and ${(
+        at('ten minutes', ['json_base64', 'read_ms', 'median']) /
+        at('ten minutes', ['container', 'read_ms', 'median'])
+      ).toFixed(
+        0,
+      )} times slower to read, because every mask has to be built into a string on the way out and taken apart on the way back. A second of work to press Save is a different product from eleven milliseconds.`,
+      'So the header is JSON and the payload is not, which is the shape every honest container has. Everything small enough to read in a text editor stays legible, and the one thing that is neither goes in a region the header points into. It needs no library, which a document format in a 46 KB application has to be able to say.',
+    ],
+    table: {
+      columns: ['ten minutes of tracking', 'the file', 'writing', 'reading'],
+      rows: [
+        [
+          'a container, masks as bytes',
+          megabytes(at('ten minutes', ['container', 'bytes'])),
+          ms(at('ten minutes', ['container', 'encode_ms', 'median'])),
+          ms(at('ten minutes', ['container', 'read_ms', 'median'])),
+        ],
+        [
+          'JSON, masks base64 encoded',
+          megabytes(at('ten minutes', ['json_base64', 'bytes'])),
+          ms(at('ten minutes', ['json_base64', 'write_ms', 'median'])),
+          ms(at('ten minutes', ['json_base64', 'read_ms', 'median'])),
+        ],
+      ],
+    },
+    caveat: `A third larger is ${((larger - 1) * 100).toFixed(
+      1,
+    )}% here rather than the 33% base64 costs by itself, because the header is the same in both and the JSON one is marginally the smaller of the two on a photograph, where there are no masks at all and a container still pays twelve bytes of prefix. The comparison is written out in tools/video-bench/document.ts rather than shipped, which is the rule the sink that used to hold a whole clip follows: the thing being compared against has to exist next to the measurement that rejected it.`,
+    command: 'node tools/video-bench/run.mjs document',
+  };
+}
+
+function documentReplay(document: unknown): Section {
+  const at = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
+  return {
+    heading: 'Opening one is a fold and one upload, so the file can be dumb',
+    prose: [
+      'This is the measurement that decided the shape of the file rather than its encoding. A document that could be read quickly and then took a second to become a picture would have to carry something a replay cannot recompute, which is a cached mask, which is a second source of truth in the one structure this architecture exists to have exactly one of.',
+      `It does not. Folding a ten-minute log to the frame it was saved on cuts at the last command that decides that frame by itself, so eighteen thousand commands fold to ${at(
+        'ten minutes',
+        ['replay', 'folded_to'],
+      ).toFixed(0)}, and unpacking that one mask and the fold together are ${ms(
+        at('ten minutes', ['replay', 'ms', 'median']),
+      )}. Everything after it is the texture upload the renderer does on every frame anyway.`,
+      'So the document carries the log and nothing derived from it. No mask, no thumbnail, no rendered anything: replaying is cheaper than reading whatever a cache of it would have been.',
+    ],
+    table: {
+      columns: ['after loading', 'commands', 'folded to', 'fold and unpack'],
+      rows: CASES.map(([label, key]) => [
+        label,
+        at(key, ['commands']).toLocaleString('en-GB'),
+        at(key, ['replay', 'folded_to']).toFixed(0),
+        quick(at(key, ['replay', 'ms', 'median'])),
+      ]),
+    },
+    caveat:
+      'The fold is the product’s own commandsForFrame over the log that came back out of the file, not over the one that went in. A reader that produced commands in a different order, or lost the frame numbers, would fold to something else and would be caught here rather than on a screen.',
+    command: 'node tools/video-bench/run.mjs document',
+  };
+}
+
+function documentIdentity(document: unknown): Section {
+  const whole = (size: string, path: readonly string[]): number =>
+    num(document, ['document', 'identity', 'the_whole_file', size, ...path]);
+  const probe = (size: string): number =>
+    num(document, ['document', 'identity', 'the_first_and_last_megabyte', size, 'ms', 'median']);
+  const rate = whole('1024 MB', ['megabytes_per_second']);
+  return {
+    heading: 'The whole file cannot be digested here, and does not need to be',
+    prose: [
+      'A browser has no paths. A document names media it cannot address, so somebody supplies the file again, and the only question left is whether it is the same file: a selection replayed over the wrong clip is a wrong answer that looks like a right one. A name and a byte length are cheap and weak. A digest of the whole file is strong.',
+      `And a digest of the whole file is not available here, which is a fact about the platform rather than a budget. crypto.subtle.digest takes a BufferSource and there is no streaming form of it, so digesting two gigabytes means holding two gigabytes at once, which is the exact thing a clip export was rebuilt to stop doing. Where it fits it runs at ${rate.toFixed(
+        0,
+      )} MB a second, so a two gigabyte clip would be a second of work on top of two gigabytes of heap.`,
+      `A digest of the first megabyte, the last megabyte and the length costs ${ms(
+        probe('1024 MB'),
+      )} whatever the file is, and the shape of the media is free because the loader already read it. What a bounded probe cannot see is a file that agrees at both ends and in length and differs in the middle, which on media is a re-encode with the same container layout and the same byte count. That is in known limits rather than left implied.`,
+    ],
+    table: {
+      columns: ['identifying the media', '2 MB', '64 MB', '1 GB'],
+      rows: [
+        [
+          'the whole file',
+          ms(whole('1 MB', ['ms', 'median']) * 2),
+          ms(whole('64 MB', ['ms', 'median'])),
+          ms(whole('1024 MB', ['ms', 'median'])),
+        ],
+        ['the first and last megabyte', ms(probe('2 MB')), ms(probe('64 MB')), ms(probe('1024 MB'))],
+      ],
+    },
+    caveat: `The first row is measured on 1, 16, 64, 256 and 1024 MB and is linear across all of them at ${whole(
+      '64 MB',
+      ['megabytes_per_second'],
+    ).toFixed(0)} to ${whole('1 MB', ['megabytes_per_second']).toFixed(
+      0,
+    )} MB a second, so the 2 MB cell is the 1 MB figure doubled rather than a rung of its own. Below two megabytes the two slices of the second row meet and the whole file is digested anyway, which is the strong answer arriving free on the files small enough to give it away. What the comparison then decides is what happens on a mismatch, and that is two answers rather than one: a file of a different shape cannot replay the log at all and is refused, and a file of the same shape and different bytes replays perfectly and opens with a sentence beside its name.`,
+    command: 'node tools/video-bench/run.mjs document',
+  };
+}
+
 // --- writing a clip ---------------------------------------------------------
 
 function pipeline(video: unknown): Section {
@@ -1506,10 +1668,12 @@ export interface Results {
   readonly long: unknown;
   readonly sound: unknown;
   readonly still: unknown;
+  readonly saved: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
-  const { style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound, still } = results;
+  const { style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound, still, saved } =
+    results;
   return [
     {
       slug: 'the-look',
@@ -1631,6 +1795,19 @@ export function entries(results: Results): readonly Entry[] {
         'So this writes the same clip three ways and asks, for every second of it, how far away in the file the sound that plays with that second is. If the distance grows with the length of the clip, the file is not progressive whatever order the boxes are in.',
       ],
       sections: [theArrangements(sound), countingFirst(sound), whatItWillNotCarry(sound)],
+    },
+    {
+      slug: 'the-document',
+      results: 'tools/video-bench/results-document.json',
+      title: 'What the command log costs as a file',
+      standfirst:
+        'The one structure this architecture is built on had never been allowed to outlive a tab. What a tracked run costs to write down, read back and replay, and what it costs to be sure the file it names is the file somebody supplied.',
+      harness: 'tools/video-bench',
+      lede: [
+        'Strokes rather than pixels have been the source of truth since the first chapter. Undo is a cursor into the log, export replays it rather than asking the app what applies, and a lost graphics device is survivable because the log belongs to the work and not to the device. Reloading the page threw all of it away.',
+        'A photograph’s log is a handful of strokes and nobody needed a measurement for that. A tracked run is one command per frame with a mask on each, which the chapter before this one measured at 62 MB in memory for ten minutes, and what happens to those 62 MB on the way to a disk is what decides whether saving is a file format or a paragraph in known limits.',
+      ],
+      sections: [documentCost(saved), documentShape(saved), documentReplay(saved), documentIdentity(saved)],
     },
     {
       slug: 'tracking',
