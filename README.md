@@ -63,7 +63,9 @@ writes it as a `.rotyl` file, and dropping that file back in replays it: the sam
 mask, on the same frames, with the playhead where it was. It holds the log and
 not the media, which a browser cannot address, so it names the file instead and
 says how to recognise it. A file of a different shape is refused; a re-encode of
-the same one opens with a sentence beside its name.
+the same one opens with a sentence beside its name. And every edit is written
+down as it lands, so a tab that dies is offered its work back on the next load
+rather than losing it between one press of Save and the next.
 See [saving the work](docs/saving.md).
 
 ![The comic style with the Mural palette applied inside a dragged rectangle,
@@ -86,9 +88,11 @@ compiles it with no `dom` library, so a stray `window` fails the build rather
 than being caught in review. The payoff is concrete: every shader is unit-tested
 by running it for real through Dawn in Node, with no browser and no mocks.
 
-It ships as 157 KB of JavaScript, 48.9 KB gzipped, plus 31 KB of subset fonts.
+It ships as 163 KB of JavaScript, 50.7 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches neither the inference runtime, nor the demuxer, nor the container writer.
+One Web Worker, which appends the crash journal because the API that can do that
+without copying the file does not exist on the main thread.
 
 ## Reading further
 
@@ -97,7 +101,7 @@ fetches neither the inference runtime, nor the demuxer, nor the container writer
 | [How it is put together](docs/architecture.md) | the layers, the render path, what a style is, why the selection is a log   |
 | [Selecting an object](docs/selection.md)       | the model, the three readings of one click, and the guided filter          |
 | [Video](docs/video.md)                         | playing, holding a selection across frames, reading frames, writing a clip |
-| [Saving the work](docs/saving.md)              | the document, which file it belongs to, and where the bytes go             |
+| [Saving the work](docs/saving.md)              | the document, coming back from a crash, and which file it belongs to       |
 | [What was measured](docs/measurements.md)      | why every number lives on a generated page instead of in these files       |
 | [The interface](docs/interface.md)             | closing a file, saying what is happening and what happened, type           |
 | [Known limits](docs/limits.md)                 | what it cannot do, in its own words                                        |

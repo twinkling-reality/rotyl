@@ -28,7 +28,7 @@
  * SO THE HEADER IS JSON AND THE PAYLOAD IS NOT, which is the shape every honest
  * container has. Everything small enough to read in a text editor stays legible
  * and extensible, and the one thing that is neither goes in a region the header
- * points into. It needs no library, which a document format in a 49 KB
+ * points into. It needs no library, which a document format in a 51 KB
  * application has to be able to say.
  *
  * AND IT IS NOT BEHIND A DYNAMIC IMPORT, which is the opposite of what the

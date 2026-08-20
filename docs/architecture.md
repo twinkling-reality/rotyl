@@ -8,7 +8,7 @@ src/platform/  browser adapters: decode, texture upload, encode, mux, inference
 src/app/       Preact UI
 ```
 
-It ships as 157 KB of JavaScript, 48.9 KB gzipped, plus 31 KB of subset fonts.
+It ships as 163 KB of JavaScript, 50.7 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches none of the other two: the inference runtime arrives on the first object
 click, the demuxer on the first video, the container writer on the first clip
@@ -29,6 +29,14 @@ measured 50% slower than doing it on the main thread, because moving a
 full-resolution image across the boundary costs more than the parallelism
 returns. Every rejection this project has made is collected, with what decided
 it, on the research page the drop zone links to.
+
+There is now exactly one worker, and it is the exception that keeps that third
+rejection intact rather than a change of mind about it. The crash journal
+appends three and a half kilobytes per edit, not a full-resolution image per
+frame, and the API that can append to a file without copying it first,
+`createSyncAccessHandle`, does not exist on the main thread at all. Through the
+one that does, adding a record to a ten-minute journal measures 98 ms; in a
+worker it is 0.13 ms at every size. See [saving the work](saving.md).
 
 One more decision belongs here because it is about the build rather than about
 the picture. **Shaders reach the bundle as strings**, and this codebase comments
@@ -244,6 +252,12 @@ commands is a fold to one and a texture upload, measured at 0.3 ms. What the
 file has to solve instead is the thing a browser makes hard, which is naming
 media it has no path to, and that is in [saving the work](saving.md) with the
 measurements behind it.
+
+**It outlives a tab that was never given the chance to save, too.** Every
+command is appended to a journal as it lands, and a session that ended is
+offered back on the next load. That is the same log in a second shape and for a
+measured reason: written as a document per edit it is 2559 ms at ten minutes of
+tracking, and appended as a record it is 0.13 ms whatever is already there.
 
 The format lives in `src/platform`, not here. Core owns what a document IS and
 knows a frame is an integer and a mask is a packed byte run; what a document

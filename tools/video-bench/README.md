@@ -263,7 +263,7 @@ QuickTime, which is what a phone or a camera writes, costs 64 bytes gzipped: it
 is the same demuxer with a different brand list. Matroska costs 15.4 KB, because
 it is not.
 
-The current application bundle is 48.9 KB gzipped, so this is not
+The current application bundle is 50.7 KB gzipped, so this is not
 going in it. It gets the same treatment as the inference runtime, a dynamic
 import and its own chunk, and a session that never opens a video never fetches
 it.
@@ -497,7 +497,7 @@ Gzipped, before the export chunk existed, at the split that made it, and today:
 
 | chunk            | before writing | at the split | today   |
 | ---------------- | -------------- | ------------ | ------- |
-| the application  | 41.6 KB        | 42.5 KB      | 48.9 KB |
+| the application  | 41.6 KB        | 42.5 KB      | 50.7 KB |
 | opening a video  | 33.2 KB        | 42.0 KB      | 42.2 KB |
 | exporting a clip | none           | 32.0 KB      | 33.5 KB |
 

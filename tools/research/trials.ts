@@ -14,6 +14,41 @@ import type { Trial } from './page.ts';
  */
 export const TRIALS: readonly Trial[] = [
   {
+    what: 'Writing the whole document on every edit, so a crash journal needs no second format',
+    verdict: 'rejected',
+    evidence:
+      'A document is one JSON header with the masks behind it, so the header is at the front and grows with the log: written once that is 11 ms for ten minutes of tracking, and written per edit it is 2559 ms at that size and 42 ms at three hundred frames. Appending one self-describing record instead is 0.13 ms whatever is already in the file',
+    where: 'tools/video-bench, measurement 13',
+  },
+  {
+    what: 'Appending to the journal through createWritable, which is all a page has',
+    verdict: 'rejected',
+    evidence:
+      'Opening a writable stream COPIES the file: 0.4 ms on an empty one, 117 ms on 64 MB, linear in between. So the append is not an append, and one record onto a ten-minute journal costs 98 ms on the thread that draws. createSyncAccessHandle is flat at 0.13 ms and does not exist on the main thread at all, which is why this product now has a Web Worker',
+    where: 'src/platform/document/journal-worker.ts',
+  },
+  {
+    what: 'Flushing the journal in batches rather than after every record',
+    verdict: 'rejected',
+    evidence:
+      'Nothing to buy. On a 64 MB journal the two are identical at 0.128 ms a record, so durability per record is free, and a journal that is only durable when the browser feels like it is not a journal',
+    where: 'tools/video-bench, measurement 13',
+  },
+  {
+    what: 'One journal per media file, so several unfinished sessions can be offered back',
+    verdict: 'rejected',
+    evidence:
+      'It needs a policy for pruning them and a directory that grows without one, to serve a case nobody has described: this product holds one file open at a time, and the drop zone names the file it wants, so opening a different one is an informed choice rather than an accident',
+    where: 'src/platform/document/journal-worker.ts',
+  },
+  {
+    what: 'Persisting a file handle so a recovery can reopen the media itself',
+    verdict: 'open',
+    evidence:
+      'A handle from showOpenFilePicker survives in IndexedDB and can be re-acquired with permission, which would make a recovery one click rather than one drop. It needs the open path to become a picker, which is Chrome and Edge only, so opening a file would differ by browser where today it does not. Nothing has been measured',
+    where: 'src/platform/document/journal.ts',
+  },
+  {
     what: 'JSON with the packed masks base64 encoded, as the saved document format',
     verdict: 'rejected',
     evidence:

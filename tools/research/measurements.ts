@@ -1127,6 +1127,128 @@ function documentIdentity(document: unknown): Section {
   };
 }
 
+// --- crash recovery ---------------------------------------------------------
+
+function whereAJournalCanBeWritten(saved: unknown): Section {
+  const opening = (held: string): string =>
+    ms(num(saved, ['recovery', 'opening_a_writable', `${held} MB already in it`, 'ms', 'median']));
+  return {
+    heading: 'The API a page can reach copies the file to open it',
+    prose: [
+      'Saving is a thing somebody presses, so a crash costs whatever has happened since they last pressed it, which on a tracked run is three quarters of a minute per press they did not make. Writing the log down as it happens is the obvious answer, and whether it is affordable is a question about one API rather than about the log.',
+      'A browser with no save dialog still has the origin private file system, and there are two ways to write into it. createWritable is the one a page can reach, and it is not an append: opening a stream on a file copies what is already in it, so the cost of adding three and a half kilobytes to a journal is the cost of the journal.',
+      `The other is createSyncAccessHandle, and asked of the browser rather than remembered, ${text(saved, [
+        'recovery',
+        'sync_access_handle_on_the_main_thread',
+      ])}. So a journal either lives in a Web Worker or does not use it, and this project had never had one.`,
+    ],
+    table: {
+      columns: ['opening a writable stream', '0 MB', '1 MB', '16 MB', '64 MB'],
+      rows: [['already in the file', opening('0'), opening('1'), opening('16'), opening('64')]],
+    },
+    caveat:
+      'Linear at about 1.8 ms per megabyte already there, which is a copy rather than a cost model anybody would design around. It is the right API for the thing it is for, which is writing a file once: a clip export opens one stream and writes a gigabyte through it. A journal opens one per edit.',
+    command: 'node tools/video-bench/run.mjs recovery',
+  };
+}
+
+function whatAnEditCosts(saved: unknown): Section {
+  const of = (label: string, path: readonly string[]): number =>
+    num(saved, ['recovery', 'appending_one_record', label, ...path]);
+  const writable = (label: string): string => ms(of(label, ['through_create_writable_ms', 'median']));
+  const worker = (label: string): string => `${of(label, ['inside_the_worker_per_append_ms']).toFixed(2)} ms`;
+  return {
+    heading: 'In a worker it is flat, and the main thread pays nothing at all',
+    prose: [
+      'The same record, appended the two ways, onto journals that already hold nothing, a three hundred frame run, and ten minutes of tracking. One of the rows depends on how much is already there and the other does not.',
+      `Ninety eight milliseconds per edit is not a journal, it is a stutter with a file underneath it. ${worker(
+        'ten minutes already in it',
+      )} is, and it is the same figure on an empty file, so the length of the session stops being a variable.`,
+      'And the interface pays none of it. The record is framed on the main thread and handed over, which measures below the clock’s own resolution at every size, because the write happens somewhere else. Nothing appears while it runs: no indicator, no line, because there is nothing to say about that.',
+    ],
+    table: {
+      columns: ['appending one record', 'an empty journal', 'a 300-frame run in it', 'ten minutes in it'],
+      rows: [
+        [
+          'through createWritable',
+          writable('an empty journal'),
+          writable('a 300-frame run already in it'),
+          writable('ten minutes already in it'),
+        ],
+        [
+          'in a worker, flushed each time',
+          worker('an empty journal'),
+          worker('a 300-frame run already in it'),
+          worker('ten minutes already in it'),
+        ],
+      ],
+    },
+    caveat: `The record is ${(num(saved, ['recovery', 'a_journal_record_bytes']) / 1024).toFixed(
+      1,
+    )} KB, which is one tracked frame's mask packed plus the command around it. Flushing after every write costs nothing at all: on a 64 MB journal the two are identical, ${of(
+      'ten minutes already in it',
+      ['without_flushing_per_append_ms'],
+    ).toFixed(3)} ms against ${of('ten minutes already in it', ['inside_the_worker_per_append_ms']).toFixed(
+      3,
+    )}, so the journal is durable per record rather than when the browser feels like it. The worker figures are timed as batches of two thousand and divided, because performance.now() is coarsened to a tenth of a millisecond there and a per-write median would be a measurement of the clock.`,
+    command: 'node tools/video-bench/run.mjs recovery',
+  };
+}
+
+function whyNotTheDocument(saved: unknown): Section {
+  const rewrite = (label: string): string =>
+    ms(num(saved, ['recovery', 'rewriting_the_whole_document', label, 'ms', 'median']));
+  const written = (label: string): string =>
+    megabytes(num(saved, ['recovery', 'rewriting_the_whole_document', label, 'bytes']));
+  return {
+    heading: 'And the format that needs no second format is 2.5 seconds an edit',
+    prose: [
+      'There is already a way to write the log to a file, and it needs nothing new: the document a save produces. Writing that on every edit means no journal format, no records, no reader, and one shape for both. It is also the one thing here that gets worse the longer somebody works.',
+      'A document is one JSON header with the masks in a region behind it, so the header is at the front and grows with the log. Written once that is the right shape and 11 ms. Written per edit it is quadratic, and it crosses from unnoticeable to unusable somewhere between a stroke and a tracked run.',
+      'So there are two shapes of the same log, and the second one exists because of this row rather than because two formats seemed nicer than one. A record carries its own lengths, nothing points backwards, and a reader walks forward and stops where the bytes stop, which is also what makes a journal cut off mid-write recoverable up to the last whole record.',
+    ],
+    table: {
+      columns: ['rewriting the whole document', 'the file', 'per edit'],
+      rows: [
+        ['one stroke', written('one stroke'), rewrite('one stroke')],
+        ['a 300-frame run', written('a 300-frame run'), rewrite('a 300-frame run')],
+        ['ten minutes of tracking', written('ten minutes'), rewrite('ten minutes')],
+      ],
+    },
+    caveat:
+      'Into the origin private file system through createWritable, which is what a page has. The stream is opened once per rewrite rather than once per chunk, so the copy in the row above is paid once here and is not what makes this quadratic: the header and the payload both grow with the log, and every edit writes all of both.',
+    command: 'node tools/video-bench/run.mjs recovery',
+  };
+}
+
+function comingBack(saved: unknown): Section {
+  const reading = (label: string): string =>
+    ms(num(saved, ['recovery', 'reading_a_journal_back', label, 'ms', 'median']));
+  const records = (label: string): string =>
+    num(saved, ['recovery', 'reading_a_journal_back', label, 'records']).toLocaleString('en-GB');
+  return {
+    heading: 'Coming back is one read, so it can happen before anything is on screen',
+    prose: [
+      'A recovery walks every record and turns it back into a command. That is the same work reading a document does, plus the framing, and it lands in the same place: a document, which then goes through the same path a dropped .rotyl takes. The media check is the same, the replay is the same, and a file that does not match is refused with the same sentence.',
+      'It is also on the main thread and without a worker, deliberately. It runs once, at start-up, before any file is open and therefore before any journal is being written, so it is an ordinary read of an ordinary file. Spinning a worker up to do it would cost every session that never opens anything a thread.',
+    ],
+    table: {
+      columns: ['reading a journal back', 'records', 'to a command log'],
+      rows: [
+        ['a 300-frame run', records('a 300-frame run'), reading('a 300-frame run')],
+        ['ten minutes of tracking', records('ten minutes'), reading('ten minutes')],
+      ],
+    },
+    caveat: `Every record parsed rather than skipped, because what a recovery pays is turning bytes back into commands and a walk that only added up lengths would be measuring the disk. What it lands in has room: the origin private file system reports ${num(
+      saved,
+      ['recovery', 'quota', 'quota_megabytes'],
+    ).toFixed(
+      0,
+    )} MB of quota here, against 65 MB for the longest session this project has ever measured, and the real ceiling is the one in known limits, which is a write refused just past a gigabyte.`,
+    command: 'node tools/video-bench/run.mjs recovery',
+  };
+}
+
 // --- writing a clip ---------------------------------------------------------
 
 function pipeline(video: unknown): Section {
@@ -1669,11 +1791,13 @@ export interface Results {
   readonly sound: unknown;
   readonly still: unknown;
   readonly saved: unknown;
+  readonly kept: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
   const { style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound, still, saved } =
     results;
+  const { kept } = results;
   return [
     {
       slug: 'the-look',
@@ -1810,6 +1934,24 @@ export function entries(results: Results): readonly Entry[] {
       sections: [documentCost(saved), documentShape(saved), documentReplay(saved), documentIdentity(saved)],
     },
     {
+      slug: 'crash-recovery',
+      results: 'tools/video-bench/results-recovery.json',
+      title: 'What it costs to write the log down on every edit',
+      standfirst:
+        'Saving is a thing somebody presses, and a crash costs whatever happened since they last pressed it. Whether the log can be written down as it is made turns out to be a question about one file API, and the answer put this project’s first Web Worker in it.',
+      harness: 'tools/video-bench',
+      lede: [
+        'The chapter before this one gave the command log a file and a button. What a button cannot do is protect the work between presses, and on a tracked run that is three quarters of a minute of following an object per press somebody did not make.',
+        'Writing it down as it happens is the obvious answer and is exactly the kind of obviously cheap that has been wrong here before. Three things were measured before any of it was built, and two of them ruled out the version anybody would write first.',
+      ],
+      sections: [
+        whereAJournalCanBeWritten(kept),
+        whatAnEditCosts(kept),
+        whyNotTheDocument(kept),
+        comingBack(kept),
+      ],
+    },
+    {
       slug: 'tracking',
       results: 'tools/edgetam-export/results.json',
       title: 'What tracking would cost, before building it',
@@ -1900,7 +2042,7 @@ export function entries(results: Results): readonly Entry[] {
           table: {
             columns: ['gzipped', 'size', 'fetched'],
             rows: [
-              ['application', '48.9 KB', 'always'],
+              ['application', '50.7 KB', 'always'],
               ['subset fonts', '31 KB', 'always'],
               ['inference runtime', '36.2 KB', 'first object click'],
               ['demuxer', '42.2 KB', 'first video'],

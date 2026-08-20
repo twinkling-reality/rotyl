@@ -17,6 +17,11 @@ Press Save, or Cmd-S, and the log becomes a `.rotyl` file. Drop that file back
 in and the selection comes back, on any frame it was made on, with the playhead
 where it was.
 
+**And the log is written down as it is made, so a tab that dies costs nothing.**
+A button cannot protect the work between presses, and on a tracked run that is
+three quarters of a minute of following an object per press somebody did not
+make. See [coming back from a session that ended](#coming-back-from-a-session-that-ended).
+
 ## What a document is, and what it is not
 
 **It is the log and nothing derived from it.** No cached mask, no thumbnail, no
@@ -102,7 +107,7 @@ and no media to go with it.
 A JSON header and the packed masks behind it, which is the shape every honest
 container has. Everything small enough to read in a text editor stays legible
 and extensible, and the one thing that is neither goes in a region the header
-points into. It needs no library, which a document format in a 48.9 KB
+points into. It needs no library, which a document format in a 50.7 KB
 application has to be able to say.
 
 ```
@@ -176,7 +181,8 @@ colour this product spends on faults.
 
 ## What it cost
 
-**3.0 KB gzipped**, taking the application bundle from 45.8 KB to 48.9. About
+**3.0 KB gzipped**, taking the application bundle from 45.8 KB to 48.9, before
+crash recovery added 1.8 KB more on top of it. About
 half of that is the format and the digest and the other half is the interface
 around them, and it is not behind a dynamic import, which is the opposite of
 what the demuxer, the container writer and the inference runtime get.
@@ -191,3 +197,71 @@ the product that exists to keep somebody's afternoon.
 
 Everything above is on `/research/the-document.html`, out of the harness that
 took it.
+
+## Coming back from a session that ended
+
+Every edit is appended to a journal in the origin private file system as it
+lands. Reload, crash, or close the tab, and the next load offers it back: the
+drop zone names the file it needs, and supplying that file replays the work.
+
+**A recovery is a document nobody had to save.** What comes back out of the
+journal is the same `RotylDocument` a dropped `.rotyl` produces, so it takes the
+same path from there. The same media check, the same replay, the same refusal if
+the file supplied is the wrong one, the same sentence beside the name if it is a
+re-encode. Nothing past that point knows where it came from except the one word
+the drop zone says.
+
+**It is not a save and it does not pretend to be.** Nothing appears while it
+writes: no indicator, no line, no tick. There is nothing to say about 0.13 ms in
+another thread, and a product that showed something would be claiming to have
+put the work somewhere the user can find, which it has not. Save is still how
+work leaves this browser.
+
+### It is a different shape of the same log, and the measurement is why
+
+A document is one JSON header with the masks in a region behind it. Written
+once that is the right shape and eleven milliseconds for ten minutes of
+tracking. Written on every edit it is quadratic, because the header is at the
+front and grows: 2559 ms per edit at that size. So a journal is append-only
+records instead, each carrying its own lengths, with nothing pointing backwards.
+
+That also decides what a half-written journal is worth. A reader walks forward
+and stops where the bytes stop, so a tab killed mid-append loses the record it
+was writing and keeps every one in front of it. Refusing the file because the
+last write did not finish would be throwing away the session in order to protect
+it.
+
+**An undo cuts the journal back rather than annotating it.** The journal is
+defined as the applied commands, so it is either extended or cut to where the
+two agree. A journal that only grew would offer back work its own session had
+already taken away, which is worse than losing it: the user undid something and
+it came back.
+
+### It needed this project's first Web Worker
+
+[How it is put together](architecture.md) rejected a worker for export at 50%
+slower, and that rejection stands. This is the opposite trade and it was
+measured before a line of it was written.
+
+`createSyncAccessHandle` is not on the main thread at all, asked of the browser
+rather than remembered. And the API a page can reach, `createWritable`, copies
+the file to open a stream on it: 0.4 ms on an empty file and 117 on a 64 MB one,
+so an append is not an append and one record onto a ten-minute journal costs 98
+milliseconds, per edit, on the thread that draws. In a worker it is flat at
+0.13 ms at every size, flushing after every record costs nothing measurable, and
+handing the record over is below the clock's own resolution.
+
+That is 1.8 KB gzipped on the application bundle and one more chunk of a
+kilobyte, which only a session that opens a file ever fetches.
+
+### What it will not do
+
+The media still has to be supplied again, because a browser has no paths. One
+journal is kept rather than one per file, so starting to edit a different file
+supersedes it: the drop zone names the file it is waiting for, so choosing
+something else is informed rather than accidental. And only one tab journals at
+a time, because a sync access handle is exclusive; a second tab on the same
+browser has crash recovery for whichever of them opened a file first. All three
+are in [known limits](limits.md).
+
+The numbers are on `/research/crash-recovery.html`.

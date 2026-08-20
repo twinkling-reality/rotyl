@@ -108,6 +108,27 @@ one, and the measurement behind it is on `/research.html`.
   and an export that fails part way, both leave a file with a header in it and
   no index where somebody asked for a video. All the product can do about that
   is say so, and it does.
+- **Crash recovery keeps one session, and starting to edit a different file
+  supersedes it.** The journal is one file rather than one per media, because
+  one per media needs a policy for pruning them and a directory that grows
+  without one. The drop zone names the file it is waiting for, so opening
+  something else is an informed choice, and it is still a choice that discards
+  the other session's work.
+- **Only one tab journals.** A sync access handle is exclusive, so a second tab
+  on the same browser has no crash recovery, and says nothing about it because
+  nothing in the interface ever claimed to have it. Both tabs still save, which
+  is the way work leaves this browser at all.
+- **A recovered session still needs the media supplied again**, for the same
+  reason a saved document does: a browser has no paths. A file handle persisted
+  in IndexedDB would let a recovery reopen the file itself, and it needs
+  `showOpenFilePicker`, which is Chrome and Edge only, so opening a file would
+  start to differ by browser where today it does not. It is in the trials ledger
+  as open rather than rejected.
+- **A tab killed mid-append loses the record it was writing.** The journal is
+  read forward and stops where the bytes stop, so everything in front of the
+  fragment is kept and the fragment is not. What that costs is at most one
+  command, and what it buys is that a half-written journal is a session rather
+  than a refusal.
 - **A saved selection references its media and cannot address it.** A browser
   has no paths, so a document names the file it was made on and somebody
   supplies that file again. What it can check is the shape, which the loader

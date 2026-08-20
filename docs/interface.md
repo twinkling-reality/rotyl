@@ -56,7 +56,15 @@ in it.
 A document dropped onto the editor is taken and a photograph is not. A document
 is additive to the media that is open; a second photograph would replace the
 file under somebody's hands and take the log with it, on a drop they may have
-meant for another window. **Nor is one taken over unsaved edits**, which is the
+meant for another window.
+
+**And the drop zone has a third thing to say, which is the one nobody asked
+for.** Work from a session that ended without being given back is offered on the
+next load, in the same place and in the same shape as a dropped document: the
+zone names the file it needs and says why it wants it. It is the same sentence
+structure on purpose, because it is the same request. What is different is one
+line, and the difference is worth having: a document is a file somebody just
+chose, and this is news. **Nor is one taken over unsaved edits**, which is the
 same rule reaching the one gesture capable of breaking it: loading a selection
 over another one is a replace, so the line says what it would cost and names the
 two ways out, Save and the X. That is the close button's rule arriving at a

@@ -141,6 +141,10 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // costs to HOLD and what it costs to WRITE are two findings answered in two
   // chapters, and one file would re-date the first every time the second moved.
   const saved = read('tools/video-bench/results-document.json');
+  // And once more for what it costs to write that log down on every edit, which
+  // is a question about the origin private file system rather than about the
+  // log, and which writes tens of megabytes into one to find out.
+  const kept = read('tools/video-bench/results-recovery.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
@@ -158,6 +162,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
       sound,
       still,
       saved,
+      kept,
     }),
     {
       slug: 'trials',
