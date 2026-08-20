@@ -48,7 +48,9 @@ free to ignore. See [video](docs/video.md).
 
 **Exporting.** The frame on screen as a picture, or the whole clip as an MP4.
 Both are the preview's renderer at the preview's parameters stopping at the same
-pass, so a saved file cannot drift from what was on screen.
+pass, so a saved file cannot drift from what was on screen. A clip asks where it
+goes before it encodes anything, and in a browser that can answer that it is
+written into the file as it is made rather than held until the end.
 
 ![The comic style with the Mural palette applied inside a dragged rectangle,
 with the style panel open](docs/media/styles.webp)
@@ -70,7 +72,7 @@ compiles it with no `dom` library, so a stray `window` fails the build rather
 than being caught in review. The payoff is concrete: every shader is unit-tested
 by running it for real through Dawn in Node, with no browser and no mocks.
 
-It ships as 144 KB of JavaScript, 44.1 KB gzipped, plus 31 KB of subset fonts.
+It ships as 145 KB of JavaScript, 44.7 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches neither the inference runtime, nor the demuxer, nor the container writer.
 
@@ -82,7 +84,7 @@ fetches neither the inference runtime, nor the demuxer, nor the container writer
 | [Selecting an object](docs/selection.md)       | the model, the three readings of one click, and the guided filter          |
 | [Video](docs/video.md)                         | playing, holding a selection across frames, reading frames, writing a clip |
 | [What was measured](docs/measurements.md)      | why every number lives on a generated page instead of in these files       |
-| [The interface](docs/interface.md)             | closing a file, saying that it is working, type and fonts                  |
+| [The interface](docs/interface.md)             | closing a file, saying what is happening and what happened, type           |
 | [Known limits](docs/limits.md)                 | what it cannot do, in its own words                                        |
 | [Licence](docs/licences.md)                    | MIT, and what the dependencies are                                         |
 
@@ -97,9 +99,12 @@ the code that produced it.
 Tracking needs two graphs that no published release contains, so a build says
 where they are hosted or there is no Track button; without one, a selection held
 across a moving subject still drifts off it. A clip is re-encoded, so outside the
-selection it is the source pixels written again rather than the source bytes. Object selection needs the network
-once, for about 36 MB of model. The full list, which is longer and does not
-flatter the project, is in [known limits](docs/limits.md).
+selection it is the source pixels written again rather than the source bytes.
+Only Chrome and Edge can give a page a file to write into, so everywhere else a
+clip export is built in the tab and stops at about twelve minutes of 1080p with
+what it wrote. Object selection needs the network once, for about 36 MB of
+model. The full list, which is longer and does not flatter the project, is in
+[known limits](docs/limits.md).
 
 ## Licence
 

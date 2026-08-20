@@ -55,6 +55,32 @@ component that can disappear. Things arrive gently and leave at once. Asking for
 less motion removes the sweep rather than freezing it half way, which is what
 the global reduced-motion rule alone would have done.
 
+## Saying that something happened
+
+The status line says what is HAPPENING. Nothing said what had happened, because
+until clips could be written into a file the browser always did: a download
+announces itself, and there was nothing else an export could produce.
+
+There is now. A clip written into a file the user chose announces nothing at
+all, and a clip that came out shorter than the clip announces nothing either,
+and both of those look exactly like an export that worked. So there is a second
+line, in the place a failure would appear and in the secondary colour rather
+than the warning one. An export that stopped where it was told to stop is the
+product doing as it was asked, and colouring that like a fault is the fastest
+way to teach people to distrust the colour.
+
+It says three things and stays quiet about the fourth. That a file was written,
+and its name. That an export stopped early, and how far it got. That it ran out
+of room, which is a different sentence because it is a limit of the browser
+rather than a button anybody pressed. And nothing at all about a whole clip that
+went to the downloads folder, which the browser has already said.
+
+**It also goes away by itself, which a failure does not.** A failure is a state
+and stays until something changes it. This is an event: it says what JUST
+happened, so left up through a scrub and two brush strokes it would be
+describing something else by then. Ten seconds, which is long enough to read a
+sentence about a clip that stopped early.
+
 ## Type and fonts
 
 Geist and Geist Mono, SIL OFL 1.1 (see `public/fonts/LICENSE.txt`). Subset to

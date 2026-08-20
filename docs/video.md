@@ -239,6 +239,50 @@ they were when export could only write a picture, and the only new decision is
 which pair the user asked for. A second container would be one entry in a table,
 and a second codec one entry in another.
 
+**Where the bytes go is asked before any of them exist.** A browser that can be
+handed a file writes each packet into it as the encoder makes one, so what the
+tab is holding does not depend on how long the clip is. A browser that cannot
+has to build the whole file first, and past some length that fails.
+`showSaveFilePicker` is Chrome and Edge; Safari and Firefox have neither it nor
+any other way to give a page somewhere to write. So this is two paths, and which
+one a session takes is settled at the click rather than discovered at the end.
+Encoding for five minutes and then asking where to put it would be the worst
+possible order: by then the file is in memory, which is the thing a handle
+exists to avoid, and the answer might be "nowhere".
+
+**The index still goes at the front, and that is what made the file path worth
+building rather than obvious.** A stream writes forward, and a container written
+forward puts its index at the END, which is a different file: nothing plays it
+until the last byte has arrived and nothing seeks it without reading to the end
+first. So the room for the index is RESERVED before the first frame and seeked
+back to at the finish. That needs a writable stream that can seek, which a file
+handle gives, and an exact packet count, which an export has: it knows how many
+frames it is writing before it renders the first one. What is left of the
+reserved room becomes a `free` box, which is under a megabyte on a ten minute
+clip.
+
+Reserving is what the path with no file to write into does now as well, and it
+is not what it did before. Building the file in memory used to mean holding
+every encoded packet until the end and only then assembling them, so the media
+existed twice at the moment it was written out. Reserving writes each packet
+into the file as its chunk closes instead, which holds one copy rather than two,
+and, the part the interface needs, makes how large the file has got so far
+something the sink can read as it goes.
+
+**And that path has a ceiling, which is now stopped at rather than run into.**
+The known limits page used to say a ten-minute export would be about a gigabyte
+and that there was no answer to that beyond failing. Ten minutes works. What
+fails is twenty-five, at finalize, three and a half minutes in, and the heap
+grows one for one with the file all the way there, so the ceiling is arithmetic:
+four times the file has to fit at the moment it is finished, twice in the buffer
+it is assembled in because that buffer doubles, once more for the copy sliced
+out of it and once more for the blob a download is handed. So the budget is the
+browser's own heap limit over four, and past it the export ends where it got to
+and hands over a clip of that. Given a file to write into there is no budget at
+all, because nothing is being held: measured over twenty-five minutes, the heap
+grows by half a megabyte per thousand frames, which is the noise of a decode
+loop. `tools/video-bench` has the ladder.
+
 **The composite reaches the encoder through the canvas it already renders into.**
 Measured, per frame at 1080p: capturing the canvas costs nothing detectable,
 where copying the composite into a buffer and rebuilding a frame from the bytes
@@ -258,6 +302,25 @@ at 1080p for poster and print, 339 for comic. Which is why an export says how
 far it has got and can be stopped, and why Stop replaces the buttons rather than
 sitting beside them. There is exactly one thing to do while it runs.
 
+**Stopping keeps what it wrote.** It used to abandon, and that was right while
+the file existed only in memory: nothing had been promised and nothing was lost.
+It stopped being right once the bytes go into a file somebody named, because a
+picker creates that file the moment it is chosen, so abandoning leaves nothing
+usable where they asked for a video. A stop finishes the file at the frame it
+reached instead, which is a clip anything can open of the part that was
+rendered. That is the rule a stopped tracking run already follows and for the
+same reason: a run cut short did the work up to where it got to, and that work
+is worth what it would have been had the clip ended there. The one exception is
+a stop before the first frame, where there is nothing to keep: a page can
+neither delete a file it was handed nor stop a writable stream committing when
+it closes, so what is left there is a header with no index, and the interface
+says that rather than leaving it to be discovered.
+
+The interface carries that rather than a comment carrying it. The button's title
+is what pressing it will do, and what came out is reported whenever it is not
+what was asked for: an export that wrote four minutes of a fourteen minute clip
+and said nothing would be indistinguishable from one that wrote all of it.
+
 **The encoder is the pipeline.** Handed the same picture with the GPU taken out
 of the loop entirely it measures 4.7 ms a frame at 1080p against 5.0 for
 everything, because every stage before it runs on threads it is not using.
@@ -276,10 +339,10 @@ by nothing else.
 
 **The container writer is behind its own dynamic import**, one further in than
 the demuxer, and that is a measured decision rather than tidiness: writing costs
-41.6 KB gzipped on top of a chunk that already reads, which is the size of the
+42.8 KB gzipped on top of a chunk that already reads, which is the size of the
 whole application bundle to the tenth of a kilobyte. A photograph fetches
 neither, a video fetches the reader, and only asking for a clip fetches the
-writer. A second container inside it would cost twelve bytes, for the same
+writer. A second container inside it would cost eleven bytes, for the same
 reason `.mov` costs forty-nine on the way in.
 
 **Colour needed nothing on the way out either.** Sixteen flat patches through

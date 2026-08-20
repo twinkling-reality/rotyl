@@ -54,7 +54,9 @@ one, and the measurement behind it is on `/research.html`.
   them is free, measured at 0.2 ms for eighteen thousand commands, and the fold
   cuts at the last command that decides the frame by itself, so a replay unpacks
   one mask rather than all of them. What is left is a clip long enough that
-  62 MB matters, which is longer than the clip export already fails on.
+  62 MB matters, which is about ten times longer than anything measured here and
+  no longer bounded by the export, since an export given a file to write into
+  holds nothing.
 - A tracked frame is 135 ms and playback's is thirty-three, so tracking is a job
   rather than something the playhead drives. Seven tracked frames a second means
   a three-hundred-frame run is three quarters of a minute, which the interface
@@ -68,11 +70,39 @@ one, and the measurement behind it is on `/research.html`.
   comes back three to five codes away on grainy footage. A still export has no
   such step and remains byte-exact. Nothing here can fix that short of a
   lossless codec, which is a file nobody wants.
-- A clip is written into memory before it is saved, because that is what puts
-  the index at the front of the file. A ten-second 1080p export is about 12 MB;
-  a ten-minute one would be closer to a gigabyte, and this has no answer for
-  that beyond failing. Streaming it to disk needs a file handle the user grants,
-  which is a different feature.
+- **A clip export needs somewhere to put the bytes, and only two browsers can
+  give it one.** Chrome and Edge have `showSaveFilePicker`, so a clip asks where
+  it goes before it encodes anything and then writes each packet into that file
+  as the encoder makes it: measured at 25 minutes of 1080p, the heap grows by
+  half a megabyte per thousand frames, which is noise, so the length of the clip
+  is not a variable and there is no ceiling to quote. Safari and Firefox have
+  neither that picker nor any other way to hand a page a writable file, so there
+  the whole file is built in the tab.
+- **Where it is built in the tab it stops at a budget, and hands over what it
+  wrote.** Four times the file has to fit at the moment it is finished, so the
+  budget is the browser's own heap limit over four, which is 1048 MB and about
+  twelve and a half minutes of 1080p on the machine every number here was taken
+  on. Past that the export ends where it got to and says so, which is the same
+  thing pressing Stop does. Left to run without a budget it manages twenty
+  minutes and fails at twenty-five, at finalize, three and a half minutes in.
+- **And that budget is not a guarantee.** How much a tab can hold depends on
+  what else the machine is doing, and the blob a download is handed can be
+  created and then refuse to be read: in a clean tab this browser gives a byte
+  back out of 1.5 GB, and with the buffer the file was assembled in still alive
+  beside it, which is what a finished export holds, it refuses at 790 MB. So the
+  download path asks for one byte before handing the blob over, and what it says
+  when that fails is a sentence rather than a file that never arrives.
+- **A stopped export keeps what it wrote**, which is a clip of the part that was
+  rendered rather than nothing at all. A stop before the first frame keeps
+  nothing, because there is nothing to keep. A page can neither delete a file it
+  was handed nor stop a writable stream committing when it closes, so that case,
+  and an export that fails part way, both leave a file with a header in it and
+  no index where somebody asked for a video. All the product can do about that
+  is say so, and it does.
+- Exporting the frame on screen is never asked where to go, and takes the
+  downloads folder in every browser. It is a couple of megabytes with no ceiling
+  in sight, so a dialog in front of it would buy nothing and cost an interaction
+  this product has always had.
 - Exporting a clip writes H.264 in MP4 and nothing else. HEVC and AV1 encode in
   some browsers and have been measured in none here, and the codec list is one
   array waiting for somebody with the numbers.

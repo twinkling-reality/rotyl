@@ -8,7 +8,7 @@ src/platform/  browser adapters: decode, texture upload, encode, mux, inference
 src/app/       Preact UI
 ```
 
-It ships as 144 KB of JavaScript, 44.1 KB gzipped, plus 31 KB of subset fonts.
+It ships as 145 KB of JavaScript, 44.7 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches none of the other two: the inference runtime arrives on the first object
 click, the demuxer on the first video, the container writer on the first clip
@@ -65,8 +65,10 @@ parameters, stopping at the same pass. The selection overlay lives in the
 display pass, which export never reaches, so a UI affordance cannot leak into a
 saved file. Writing a clip is that loop run once per frame rather than a second
 one: a source hands over frames, a sink takes them, and a photograph is a
-one-frame document that goes through it once. See
-[writing the clip out](video.md#writing-the-clip-out).
+one-frame document that goes through it once. Whether those bytes end up in a
+file the user named or in a blob the browser downloads is one line inside the
+sink, which is why a browser that can be handed a file did not cost a second
+export. See [writing the clip out](video.md#writing-the-clip-out).
 
 **Boundaries have no seam.** Every stage before the composite runs over the
 whole image. Masking earlier would be cheaper but wrong: a style's kernels

@@ -13,7 +13,7 @@ from the benchmarks' own results, for the reason
 | [Selecting an object](selection.md)       | the model, the three readings of one click, and the guided filter          |
 | [Video](video.md)                         | playing, holding a selection across frames, reading frames, writing a clip |
 | [What was measured](measurements.md)      | why every number lives on a generated page instead of in these files       |
-| [The interface](interface.md)             | closing a file, saying that it is working, type and fonts                  |
+| [The interface](interface.md)             | closing a file, saying what is happening and what happened, type           |
 | [Known limits](limits.md)                 | what it cannot do, in its own words                                        |
 | [Licence](licences.md)                    | MIT, and what the dependencies are                                         |
 
