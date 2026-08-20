@@ -67,26 +67,8 @@ type OrtTensor = InstanceType<Ort['Tensor']>;
 
 const EMBEDDING_NAMES = ['image_embeddings.0', 'image_embeddings.1', 'image_embeddings.2'] as const;
 
-/** What a tracked frame gets back from the mask decoder. */
-export interface ConditionedDecode {
-  /** Mask logits at MASK_SIZE square, best head first. */
-  readonly logits: Float32Array;
-  /** The model's own account of whether the object is in this frame at all. */
-  readonly objectScore: number;
-}
-
 interface EmbeddingState {
   readonly tensors: Record<string, OrtTensor>;
-  /**
-   * The mask decoder, run against features memory attention has conditioned
-   * and against no prompt at all.
-   *
-   * Here rather than on the engine because the embedding is what knows which
-   * sessions produced it, and here rather than in the tracker because the
-   * decoder is this engine's: a tracker reaching into another module's session
-   * would be two owners for one graph.
-   */
-  readonly decodeConditioned: (top: Float32Array) => Promise<ConditionedDecode>;
   /**
    * The frame this describes.
    *
@@ -118,13 +100,6 @@ const embeddingState = new WeakMap<SceneEmbedding, EmbeddingState>();
  */
 export function embeddingTensors(scene: SceneEmbedding): Record<string, OrtTensor> | undefined {
   return embeddingState.get(scene)?.tensors;
-}
-
-/** The conditioned decode this embedding's engine offers, for the tracker. */
-export function conditionedDecoder(
-  scene: SceneEmbedding,
-): ((top: Float32Array) => Promise<ConditionedDecode>) | undefined {
-  return embeddingState.get(scene)?.decodeConditioned;
 }
 
 /** The runtime's tensor type, so a sibling can name what it was handed. */
@@ -260,51 +235,7 @@ export async function loadEdgeTamEngine(options: EdgeTamOptions): Promise<Segmen
           for (const tensor of Object.values(held)) tensor.dispose();
         },
       };
-      embeddingState.set(embedding, {
-        tensors: held,
-        frameSize: frame.size,
-        async decodeConditioned(top: Float32Array): Promise<ConditionedDecode> {
-          const tracked = await decoder.run({
-            ...held,
-            // The conditioned map replaces the top embedding and nothing else:
-            // the two finer levels are the same picture either way.
-            'image_embeddings.2': new ort.Tensor('float32', top, [1, 256, 64, 64]),
-            // ONE POINT LABELLED -1, NOT NONE AT ALL, and the difference is
-            // silent. A label of -1 means "not a point": the coordinates are
-            // discarded and the embedding is replaced wholesale, so what this
-            // sends is a prompt made of nothing, which is what a tracked frame
-            // has instead of a click. Sending zero points is not the same
-            // thing, because the published graph was traced with the
-            // reference's trailing pad baked in, so it appends one of these
-            // itself and the reference ends up with two where an empty prompt
-            // gives one. It answers either way. Measured against the
-            // reference's own decoder on a conditioned map, one point labelled
-            // -1 is right to 4e-5 and no points at all is out by 1.5 on mask
-            // logits and 0.39 on the object score, which is enough to move a
-            // boundary and to flip whether the object is there at all. See
-            // tools/edgetam-export/host.py.
-            input_points: new ort.Tensor('float32', new Float32Array(2), [1, 1, 1, 2]),
-            input_labels: new ort.Tensor('int64', BigInt64Array.from([-1n]), [1, 1, 1]),
-            input_boxes: new ort.Tensor('float32', new Float32Array(0), [1, 0, 4]),
-          });
-
-          const masks = floatsOf(tracked.pred_masks, 'pred_masks');
-          const scores = floatsOf(tracked.iou_scores, 'iou_scores');
-          // The best of the three heads by the model's own estimate, which is
-          // the right axis here: unlike a click, nobody is being offered a
-          // choice between a part, an object and a group.
-          let best = 0;
-          for (let head = 1; head < scores.length; head++) {
-            if ((scores[head] ?? 0) > (scores[best] ?? 0)) best = head;
-          }
-          const stride = MASK_SIZE * MASK_SIZE;
-          const objectLogits = tracked.object_score_logits?.data;
-          return {
-            logits: masks.slice(best * stride, (best + 1) * stride),
-            objectScore: objectLogits instanceof Float32Array ? (objectLogits[0] ?? 0) : (scores[best] ?? 0),
-          };
-        },
-      });
+      embeddingState.set(embedding, { tensors: held, frameSize: frame.size });
       return embedding;
     },
 

@@ -3,6 +3,8 @@ import { expandCoverage } from '../../core/document/coverage-mask.ts';
 import {
   atMemoryResolution,
   FEATURE_DIM,
+  MAX_POINTERS,
+  POINTER_DIM,
   FEATURE_GRID,
   FEATURE_TOKENS,
   layOutBank,
@@ -19,7 +21,7 @@ import {
 } from '../../core/perception/memory-bank.ts';
 import type { SceneEmbedding } from '../../core/perception/segmentation-engine.ts';
 import type { ObjectTrack, TrackedMask, TrackingEngine } from '../../core/perception/tracking-engine.ts';
-import { conditionedDecoder, embeddingTensors, type EdgeTamTensor } from './edgetam-engine.ts';
+import { embeddingTensors, type EdgeTamTensor } from './edgetam-engine.ts';
 import { fetchGraph } from './model-store.ts';
 import type * as OrtNamespace from 'onnxruntime-web/webgpu';
 
@@ -80,6 +82,7 @@ interface Parameters {
   readonly parameters: {
     readonly no_memory_embedding: readonly number[];
     readonly memory_temporal_positional_encoding: readonly number[];
+    readonly no_object_pointer: readonly number[];
   };
   readonly constants: {
     readonly sigmoid_scale_for_mem_enc: number;
@@ -111,6 +114,16 @@ export interface EdgeTamTrackerOptions {
  */
 const ATTENTION = { graph: 'memory_attention_shared_fp16.onnx', bytes: 12_000_000 };
 const ENCODER = { graph: 'memory_encoder.onnx', bytes: 6_700_000 };
+/**
+ * The mask decoder a tracked frame uses, which is not the published one.
+ *
+ * It is the published decoder plus `object_pointer`, and it takes no prompt at
+ * all: what a tracked frame sends is the same two "not a point" tokens every
+ * time, so the whole prompt encoder folds to constants and this graph cannot be
+ * handed a prompt that is nearly right. Half precision, which moves its worst
+ * output by 0.27% and its pointer, the one that enters the bank, by 0.07%.
+ */
+const DECODER = { graph: 'tracked_mask_decoder_fp16.onnx', bytes: 11_100_000 };
 
 /** A model output, checked rather than assumed to be float data. */
 function floatsOf(tensor: EdgeTamTensor | undefined, name: string): Float32Array {
@@ -215,7 +228,7 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
   const { host, onProgress } = options;
   const ort = await import('onnxruntime-web/webgpu');
 
-  const total = ATTENTION.bytes + ENCODER.bytes;
+  const total = ATTENTION.bytes + ENCODER.bytes + DECODER.bytes;
   let fetched = 0;
   const graphOf = async (file: typeof ATTENTION): Promise<Uint8Array<ArrayBuffer>> => {
     const graph = await fetchGraph(
@@ -233,10 +246,15 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
   const noMemory = parameters.parameters.no_memory_embedding;
   const temporal = Float32Array.from(parameters.parameters.memory_temporal_positional_encoding);
   const { sigmoid_scale_for_mem_enc: scale, sigmoid_bias_for_mem_enc: bias } = parameters.constants;
+  // What stands in for an object that is not there. The graph hands back the
+  // projection and this is the other half of the reference's blend, kept out of
+  // it for the reason the memory encoder's sigmoid is.
+  const noObjectPointer = Float32Array.from(parameters.parameters.no_object_pointer);
 
   const common = { executionProviders: ['webgpu' as const] };
   const attention: Session = await ort.InferenceSession.create(await graphOf(ATTENTION), common);
   const encoder: Session = await ort.InferenceSession.create(await graphOf(ENCODER), common);
+  const decoder: Session = await ort.InferenceSession.create(await graphOf(DECODER), common);
 
   // The same on every frame of every clip, so it is built once rather than
   // served: four megabytes that a loop produces in a millisecond.
@@ -278,21 +296,34 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
       // The seed is what the user already decided, so it goes into the bank
       // thresholded rather than softened, and the frame it came from is never
       // written back as a command: their own click is already there.
-      let anchor: MemoryEntry | undefined = await remember(
-        toTokenMajor(await featuresOf(scene), noMemory),
-        seedLogits(seed),
-        true,
-      );
+      const seeded = toTokenMajor(await featuresOf(scene), noMemory);
+      let anchor: MemoryEntry | undefined = await remember(seeded, seedLogits(seed), true);
       // Bounded, and that is what the anchor being separate buys as well as
       // correctness: a run holds seven entries at a quarter of a megabyte each
       // however long the clip is.
       const recent: MemoryEntry[] = [];
 
+      // THE POINTER BLOCK KEEPS A LONGER MEMORY THAN THE SPATIAL ONE, sixteen
+      // against seven, because a pointer is a kilobyte where an entry is a
+      // quarter of a megabyte. The anchor's is the one the user's own frame
+      // produced, so it is held apart and never dropped, exactly as its entry
+      // is. The seed frame has no decode of its own here, so the anchor's
+      // pointer arrives on the first tracked frame instead.
+      let anchorPointer: Float32Array | undefined;
+      const recentPointers: Float32Array[] = [];
+
       return {
         async advance(next: SceneEmbedding): Promise<TrackedMask> {
           if (!anchor) throw new Error('EdgeTAM tracking: this track has been disposed');
           const raw = toTokenMajor(await featuresOf(next), noMemory);
-          const bank = layOutBank(anchor, recent, temporal);
+          // The anchor's pointer first and the rest newest-first, which is the
+          // order the reference concatenates them in. Nothing depends on it,
+          // since the block carries no position and is excluded from the rotary
+          // so attention over it is a sum over a set, but matching the
+          // reference makes `host.py`'s comparison exact rather than merely
+          // equivalent.
+          const pointers = anchorPointer ? [anchorPointer, ...recentPointers.toReversed()] : [];
+          const bank = layOutBank(anchor, recent, temporal, pointers);
 
           const conditioned = await attention.run({
             vision_features: new ort.Tensor('float32', raw, [FEATURE_TOKENS, 1, FEATURE_DIM]),
@@ -327,11 +358,25 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
           const logits = present ? decoded.logits : absent();
           recent.push(await remember(raw, logits, false));
           if (recent.length > RECENT_ENTRIES) recent.shift();
+
+          // And the pointer, which is what the object IS rather than where it
+          // was. A frame the object is not in contributes the checkpoint's
+          // stand-in rather than the projection of a token that describes
+          // nothing, which is the reference's blend written as the choice it
+          // is.
+          const pointer = present ? decoded.pointer : noObjectPointer;
+          if (anchorPointer === undefined) anchorPointer = pointer;
+          else {
+            recentPointers.push(pointer);
+            if (recentPointers.length > MAX_POINTERS - 1) recentPointers.shift();
+          }
           return { mask: present ? decoded.mask : emptyMask(), present };
         },
         dispose(): void {
           anchor = undefined;
+          anchorPointer = undefined;
           recent.length = 0;
+          recentPointers.length = 0;
         },
       };
     },
@@ -339,23 +384,62 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
     dispose(): void {
       void attention.release();
       void encoder.release();
+      void decoder.release();
     },
   };
 
   /**
-   * The mask decoder, run against conditioned features and no click.
+   * The mask decoder, run against conditioned features and no prompt.
    *
-   * Asked of the embedding rather than held here: the decoder is the
-   * segmentation engine's session, and two owners for one graph is how a
-   * session gets released while the other one is still using it.
+   * HELD HERE NOW RATHER THAN ASKED OF THE SEGMENTATION ENGINE, because it is
+   * no longer the same graph. The published decoder answers a click and does
+   * not expose `object_pointer`; this one answers a tracked frame and does.
+   * What they share is the two finer feature maps, which arrive as the
+   * runtime's own GPU buffers and are handed straight across: the two sessions
+   * live on one device, so nothing crosses back through system memory.
    */
   async function decodeFrom(
     scene: SceneEmbedding,
     top: Float32Array,
-  ): Promise<{ mask: CoverageMask; logits: Float32Array; objectScore: number }> {
-    const decode = conditionedDecoder(scene);
-    if (!decode) throw new Error('EdgeTAM tracking: that embedding was not produced here');
-    const { logits, objectScore } = await decode(top);
-    return { mask: coverageFrom(logits, 0), logits, objectScore };
+  ): Promise<{
+    mask: CoverageMask;
+    logits: Float32Array;
+    objectScore: number;
+    pointer: Float32Array;
+  }> {
+    const tensors = embeddingTensors(scene);
+    if (!tensors) throw new Error('EdgeTAM tracking: that embedding was not produced here');
+    const finer = (name: string): EdgeTamTensor => {
+      const tensor = tensors[name];
+      if (!tensor) throw new Error(`EdgeTAM tracking: the encoder produced no ${name}`);
+      return tensor;
+    };
+    const outputs = await decoder.run({
+      'image_embeddings.0': finer('image_embeddings.0'),
+      'image_embeddings.1': finer('image_embeddings.1'),
+      // The conditioned map replaces the top embedding and nothing else: the
+      // two finer levels are the same picture either way.
+      'image_embeddings.2': new ort.Tensor('float32', top, [1, FEATURE_DIM, FEATURE_GRID, FEATURE_GRID]),
+    });
+
+    const masks = floatsOf(outputs.pred_masks, 'pred_masks');
+    const scores = floatsOf(outputs.iou_scores, 'iou_scores');
+    const pointers = floatsOf(outputs.object_pointer, 'object_pointer');
+    // The best of the three heads by the model's own estimate, which is the
+    // right axis here: unlike a click, nobody is being offered a choice between
+    // a part, an object and a group. The pointer for that pick is the one at
+    // the same index, which is the whole reason the graph returns three.
+    let best = 0;
+    for (let head = 1; head < scores.length; head++) {
+      if ((scores[head] ?? 0) > (scores[best] ?? 0)) best = head;
+    }
+    const stride = MASK_SIZE * MASK_SIZE;
+    const objectLogits = outputs.object_score_logits?.data;
+    return {
+      mask: coverageFrom(masks, best * stride),
+      logits: masks.slice(best * stride, (best + 1) * stride),
+      objectScore: objectLogits instanceof Float32Array ? (objectLogits[0] ?? 0) : (scores[best] ?? 0),
+      pointer: pointers.slice(best * POINTER_DIM, (best + 1) * POINTER_DIM),
+    };
   }
 }

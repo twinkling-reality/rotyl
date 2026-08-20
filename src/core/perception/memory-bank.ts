@@ -19,8 +19,9 @@
  *
  * WHERE AN ENTRY GOES IS NOT WHERE IT ARRIVED. Real entries take the first
  * slots and the pointer block sits at the end, where the graph's
- * `num_k_exclude_rope` expects it. Anything else lands in the right shape and
- * the wrong positions, which produces a mask rather than an error.
+ * `num_k_exclude_rope` expects it: the last 64 keys are the ones it gives no
+ * rotary position to. Anything else lands in the right shape and the wrong
+ * positions, which produces a mask rather than an error.
  *
  * AND THE BANK IS NOT A SLIDING WINDOW, which is the correction this file cost.
  * The reference holds the frame the object was pointed at plus the six frames
@@ -49,8 +50,20 @@ export const TOKENS_PER_MEMORY = 512;
 export const MEMORY_ENTRIES = 7;
 /** Tokens the pointer block occupies: sixteen pointers of four tokens each. */
 export const POINTER_TOKENS = 64;
+/**
+ * How many tokens one object pointer becomes.
+ *
+ * A pointer is 256 dimensions and a memory token is 64, so the reference splits
+ * each one into four consecutive tokens rather than projecting it. Nothing
+ * chooses this: it is `hidden_dim / mem_dim`.
+ */
+export const POINTER_SPLITS = 4;
+/** Pointers the block holds, from the checkpoint's `max_object_pointers_in_encoder`. */
+export const MAX_POINTERS = POINTER_TOKENS / POINTER_SPLITS;
 /** Dimensions of a memory token, from the checkpoint's `mem_dim`. */
 export const MEMORY_DIM = 64;
+/** Dimensions of one object pointer, before it is split into tokens. */
+export const POINTER_DIM = POINTER_SPLITS * MEMORY_DIM;
 
 export const MEMORY_TOKENS = MEMORY_ENTRIES * TOKENS_PER_MEMORY + POINTER_TOKENS;
 
@@ -111,6 +124,7 @@ export function layOutBank(
   anchor: MemoryEntry,
   recent: readonly MemoryEntry[],
   temporal: Float32Array,
+  pointers: readonly Float32Array[] = [],
 ): BankInput {
   const memory = new Float32Array(MEMORY_TOKENS * MEMORY_DIM);
   const positions = new Float32Array(MEMORY_TOKENS * MEMORY_DIM);
@@ -135,11 +149,31 @@ export function layOutBank(
     keyMask.fill(0, slot * TOKENS_PER_MEMORY, (slot + 1) * TOKENS_PER_MEMORY);
   });
 
-  // The pointer block stays masked. The published mask decoder does not expose
-  // `object_pointer`, so there is nothing to put in it; what that costs is one
-  // frame on the way back from an occlusion, measured, in tools/edgetam-export.
+  // THE POINTER BLOCK, which sits at the end because that is where the graph's
+  // `num_k_exclude_rope` looks for it: the last 64 keys are the ones it does
+  // NOT give a rotary position to.
+  //
+  // THREE THINGS ABOUT IT ARE NOT GUESSABLE and all three are silent if wrong.
+  // A pointer is 256 dimensions against a token's 64, so each one becomes four
+  // consecutive tokens, which is a split rather than a projection. Its position
+  // is ZERO, because this checkpoint has
+  // `enable_temporal_pos_encoding_for_object_pointers` off, so the block says
+  // what the object looked like and never when. And with no rotary and no
+  // position, attention over the block is a sum over a set: the order pointers
+  // are laid out in cannot change the answer. They are laid out in the
+  // reference's order anyway, so a comparison against it is exact rather than
+  // merely equivalent.
+  pointers.slice(0, MAX_POINTERS).forEach((pointer, index) => {
+    const at = (POINTER_START + index * POINTER_SPLITS) * MEMORY_DIM;
+    memory.set(pointer.subarray(0, POINTER_DIM), at);
+    keyMask.fill(0, POINTER_START + index * POINTER_SPLITS, POINTER_START + (index + 1) * POINTER_SPLITS);
+  });
+
   return { memory, positions, keyMask };
 }
+
+/** Where the pointer block starts, which is after every spatial slot. */
+const POINTER_START = MEMORY_ENTRIES * TOKENS_PER_MEMORY;
 
 /**
  * The vision encoder's feature map, with the no-memory embedding taken back
