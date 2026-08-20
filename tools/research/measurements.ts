@@ -628,9 +628,9 @@ function pointers(tracking: unknown): Section {
   const worst = (scene: string, which: string): string =>
     num(tracking, [`${scene}, ${which}`, 'worst_iou']).toFixed(3);
   return {
-    heading: 'Object pointers cost the frames it matters most to have',
+    heading: 'Object pointers buy back the frames it matters most to have',
     prose: [
-      'The published mask decoder does not expose `object_pointer`, the token that carries an object’s identity between frames, so a first implementation either re-exports the decoder or goes without. Measured on the old fixture, going without cost nothing, and that result was published with a warning attached to it: pointers exist for re-identification after occlusion, and the fixture had none.',
+      'The published mask decoder does not expose `object_pointer`, the token that carries an object’s identity between frames, so an implementation either re-exports the decoder or goes without. Measured on the old fixture, going without cost nothing, and that result was published with a warning attached to it: pointers exist for re-identification after occlusion, and the fixture had none. It has one now, the decoder has been re-exported, and both halves of that warning turned out to be right.',
       'With an occlusion in the clip the cost appears, and it is exactly where the warning said it would be. It is not a swap and it is not drift: without pointers the tracker produces no mask at all on the frame the object comes back on, and finds it again some frames later. The occlusion is eight frames long, which is more than the seven a memory bank holds, so by the time the object returns nothing in that bank has ever seen it and re-identification is the only thing that could work.',
       'Every average hides that. The worst IoU over whole frames is a shade better without pointers on every clip, because a run that skips the hardest frame is not scored on it. What lengthening the occlusion from three hidden frames to eight adds is that both numbers grew and the gap between them did not: pointers buy back one frame either way, and the frame the object first shows again is a five per cent sliver that nothing segments well. Coming back late from a re-entry is a small thing on a fixture and a visible thing on a clip somebody exports, and it is the reason to re-export the decoder rather than a reason not to.',
     ],
@@ -831,43 +831,45 @@ function hostMistakes(host: unknown): Section {
 }
 
 function hostEndToEnd(host: unknown): Section {
-  const worstIou = (which: string): number =>
-    Math.min(...SCENES_MEASURED.map((scene) => num(host, [scene, 'differences', which, 'worst_iou'])));
   const cell = (which: string, name: string): string =>
     num(host, [name, 'differences', which, 'worst_agreement']).toFixed(4);
   const row = (label: string, which: string): readonly string[] => [
     label,
     ...SCENES_MEASURED.map((scene) => cell(which, scene)),
   ];
-  const anchor = (scene: string): number =>
-    (num(host, [scene, 'differences', 'as it is built', 'worst_agreement']) -
-      num(host, [scene, 'differences', 'a sliding bank, no anchor', 'worst_agreement'])) *
-    100;
+  const absent = (which: string): number => {
+    const frames = at(host, ['occlusion', 'differences', which, 'absent']);
+    if (!Array.isArray(frames)) throw new Error(`research: no absent list for ${which}`);
+    return frames.length;
+  };
   return {
     heading: 'What it takes for a clip to price any of this',
     prose: [
-      'The obvious way to judge the corrections above is to run the whole tracker with and without each of them and see which masks are better. For a long time that said nothing: every configuration, including three known-wrong ones, landed between 0.91 and 0.99 against the reference with an ordering that was not consistent between clips. That was the clips rather than the corrections, and the fixtures were rebuilt around it. Every one of them now separates every correction, in the right order.',
-      `An anchored memory bank is insurance against the recent frames being WRONG, so pricing it needs a clip carrying a moment where the tracker could plausibly go wrong. Length alone does not supply one: a version of the control that merely converged and stayed close moved the sliding bank by nothing at all over twenty-two frames of divergence. Crossing head-on and pulling apart afterwards does supply one, and so does hiding the object for longer than the bank remembers. Keeping the anchor is worth between ${anchor(
-        'lighting',
-      ).toFixed(2)} and ${anchor('blur').toFixed(2)} points of worst-frame agreement depending on which.`,
-      'The absent gate is the one row that moves on a single clip, and that is the row behaving correctly rather than the clip failing: it decides what a frame the object is not in contributes to the bank, and the occlusion is the only fixture with such frames.',
+      'The obvious way to judge the corrections above is to run the whole tracker with and without each of them and see which masks are better. For a long time that said nothing: every configuration, including three known-wrong ones, landed between 0.91 and 0.99 against the reference with an ordering that was not consistent between clips. That was the clips rather than the corrections, and the fixtures were rebuilt around it.',
+      `The largest row is the object pointer, which is what the re-exported mask decoder exists for. Without it the tracker reports the object absent from ${absent(
+        'no object pointers',
+      ).toFixed(
+        0,
+      )} frames of the occlusion clip, which is hidden for eight: it comes back two frames late and draws nothing at all until it does. With it, ${absent(
+        'as it is built',
+      ).toFixed(
+        0,
+      )}, which is exactly the frames the object is behind the bar for. On the three clips with no occlusion it is worth between six and thirteen points of agreement instead.`,
+      'An anchored memory bank is insurance against the recent frames being WRONG, so pricing it needs a clip carrying a moment where the tracker could plausibly go wrong. Length alone does not supply one: a version of the control that merely converged and stayed close moved the sliding bank by nothing at all over twenty-two frames of divergence. Crossing head-on and pulling apart afterwards does supply one, and so does hiding the object for longer than the bank remembers.',
     ],
     table: {
       columns: ['worst-frame agreement with the reference', ...SCENES_MEASURED],
       rows: [
         row('as it is built', 'as it is built'),
-        row('with no absent gate', 'no absent gate'),
+        row('with no object pointers', 'no object pointers'),
         row('with a sliding bank', 'a sliding bank, no anchor'),
         row('resampling nearest', 'nearest, not bilinear'),
-        row('with no padding point', 'no padding point'),
+        row('with a full-precision decoder', 'a full-precision decoder'),
         row('seeded with raw logits rather than coverage', 'the seed as raw logits'),
       ],
     },
-    caveat: `Worst IoU against ground truth tells the same story more coarsely and is in the results file: every configuration sits between ${worstIou(
-      'the seed as raw logits',
-    ).toFixed(3)} and ${worstIou('a sliding bank, no anchor').toFixed(
-      3,
-    )} because none of them takes the wrong object on any clip, which is still more than these fixtures can ask. The last row is the one deliberate difference and the strongest result here: seeded with the reference's own mask this tracker reproduces the PyTorch one exactly, frame for frame, on all four clips, so the gap between that row and the first is what the command log's coverage costs, and it buys a shade of IoU back against a hard-edged disc.`,
+    caveat:
+      'THE OCCLUSION COLUMN NEEDS READING CAREFULLY, and a zero in it is not a failure. Agreement is worst-frame, and on the frame the object reappears the model’s own score sits within a tenth of a per cent of zero, so what a run scores there is which side of a coin flip it landed on. The reference lands late; this tracker at half precision lands on time, and is scored zero for disagreeing with it. Running the same graph at full precision agrees with the reference and comes back a frame later, which is the whole of what that row shows: not that one precision is better, but that neither earns the frame. The three clips without an occlusion have no such frame and their columns read straight.',
     command: 'python tools/edgetam-export/host.py --sweep',
   };
 }

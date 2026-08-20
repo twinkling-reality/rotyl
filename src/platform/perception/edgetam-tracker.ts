@@ -33,23 +33,24 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
  * of a frame serves every track advancing against it, which is why a second
  * object costs a mask decode and a memory bank rather than a second encode.
  *
- * FOUR SESSIONS MAKE A TRACKED FRAME and two of them are already open. The
- * vision encoder and the mask decoder belong to the segmentation engine; the
- * two here are memory attention, which conditions this frame's features on what
- * the bank remembers, and the memory encoder, which turns this frame's answer
- * into the next entry in it. The graphs are produced by `tools/edgetam-export`
- * and are not in any published release, so `host` is where whoever is running
- * this put them. There is no default: a wrong guess would 404 after a
- * twenty-megabyte download.
+ * FIVE SESSIONS MAKE A TRACKED FRAME and one of them is already open. The
+ * vision encoder belongs to the segmentation engine and reads the frame for
+ * both of them; the three here are memory attention, which conditions this
+ * frame's features on what the bank remembers, the memory encoder, which turns
+ * this frame's answer into the next entry in it, and a mask decoder of this
+ * file's own. The graphs are produced by `tools/edgetam-export` and are not in
+ * any published release, so `host` is where whoever is running this put them.
+ * There is no default: a wrong guess would 404 after a thirty-megabyte
+ * download.
  *
- * WHAT IT DOES WITHOUT, and it is a measured trade rather than an omission. The
- * published mask decoder does not expose `object_pointer`, the token carrying
- * an object's identity between frames, so the bank's pointer block stays empty.
- * What that costs is frames on the way back from an occlusion, where the
- * tracker produces no mask at all until it finds the object again; the number
- * is measured against a fixture in `tools/edgetam-export` rather than quoted
- * here, since it depends on how long the object was hidden for. Re-exporting
- * the decoder buys it back.
+ * FIVE SESSIONS MAKE A TRACKED FRAME, and the fifth is the reason this file
+ * fetches a mask decoder of its own. The published one does not expose
+ * `object_pointer`, the token carrying an object's identity between frames, so
+ * the bank's pointer block used to stay empty and the tracker came back from an
+ * occlusion late and with no mask at all on the frames it was late by.
+ * `tools/edgetam-export` re-exports that decoder with the output on it, and
+ * with the prompt a tracked frame never varies baked in, so this graph cannot
+ * be handed the nearly-right prompt the published one accepts.
  *
  * A TRACKED FRAME IS 135 MS, of which 44 is reading it and 91 is advancing one
  * track against what was read. Two objects is 226 rather than 270, because the
@@ -121,7 +122,12 @@ const ENCODER = { graph: 'memory_encoder.onnx', bytes: 6_700_000 };
  * all: what a tracked frame sends is the same two "not a point" tokens every
  * time, so the whole prompt encoder folds to constants and this graph cannot be
  * handed a prompt that is nearly right. Half precision, which moves its worst
- * output by 0.27% and its pointer, the one that enters the bank, by 0.07%.
+ * output by 0.27% and its pointer, the one that enters the bank, by 0.07%. That
+ * changes one frame on one clip, and it is the frame the object comes back on,
+ * where the model's own score sits within a tenth of a per cent of zero: at
+ * half precision this lands on time and at full precision it lands a frame
+ * late, agreeing with the reference. Neither earns that frame. Eleven megabytes
+ * against twenty-two decides it.
  */
 const DECODER = { graph: 'tracked_mask_decoder_fp16.onnx', bytes: 11_100_000 };
 

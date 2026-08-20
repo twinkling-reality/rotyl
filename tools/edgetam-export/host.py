@@ -57,6 +57,10 @@ TOKENS_PER_MEMORY = 512
 MEMORY_ENTRIES = 7
 MEMORY_DIM = 64
 POINTER_TOKENS = 64
+POINTER_SPLITS = 4
+MAX_POINTERS = POINTER_TOKENS // POINTER_SPLITS
+POINTER_DIM = POINTER_SPLITS * MEMORY_DIM
+POINTER_START = MEMORY_ENTRIES * TOKENS_PER_MEMORY
 MEMORY_TOKENS = MEMORY_ENTRIES * TOKENS_PER_MEMORY + POINTER_TOKENS
 MASKED = -1e4
 DECIDED_LOGIT = 2.0
@@ -103,7 +107,7 @@ def to_channel_major(tokens):
     return np.ascontiguousarray(tokens.reshape(TOKENS, CHANNELS).T).reshape(-1)
 
 
-def lay_out_bank(anchor, recent, temporal, anchored=True):
+def lay_out_bank(anchor, recent, temporal, anchored=True, pointers=()):
     """
     `layOutBank`. `anchored=False` is the sliding window this had first, kept so
     the table below can say what keeping the seed frame is worth.
@@ -128,6 +132,16 @@ def lay_out_bank(anchor, recent, temporal, anchored=True):
         block = entry[1].reshape(TOKENS_PER_MEMORY, MEMORY_DIM) + temporal[row : row + MEMORY_DIM]
         positions[at : at + span] = block.reshape(-1)
         key_mask[slot * TOKENS_PER_MEMORY : (slot + 1) * TOKENS_PER_MEMORY] = 0.0
+
+    # The pointer block, at the end where `num_k_exclude_rope` looks for it.
+    # Four tokens per pointer, no position at all, and order-invariant because
+    # of both; laid out in the reference's order so the comparison is exact.
+    for index, pointer in enumerate(list(pointers)[:MAX_POINTERS]):
+        at = (POINTER_START + index * POINTER_SPLITS) * MEMORY_DIM
+        memory[at : at + POINTER_DIM] = np.asarray(pointer, np.float32).reshape(-1)[:POINTER_DIM]
+        key_mask[
+            POINTER_START + index * POINTER_SPLITS : POINTER_START + (index + 1) * POINTER_SPLITS
+        ] = 0.0
     return memory, positions, key_mask
 
 
@@ -220,8 +234,9 @@ class Host:
     """The four sessions and the bank, driven as `edgetam-tracker.ts` drives them."""
 
     def __init__(self, graphs, parameters, positions, **flags):
-        self.encoder, self.decoder, self.attention, self.memory = graphs
+        self.encoder, self.decoder, self.attention, self.memory, self.tracked, self.tracked_half = graphs
         self.no_memory = np.array(parameters["parameters"]["no_memory_embedding"], np.float32)
+        self.no_object_pointer = np.array(parameters["parameters"]["no_object_pointer"], np.float32).reshape(-1)
         self.temporal = np.array(
             parameters["parameters"]["memory_temporal_positional_encoding"], np.float32
         )
@@ -231,12 +246,15 @@ class Host:
         self.flags = flags
         self.anchor = None
         self.recent = []
+        self.anchor_pointer = None
+        self.recent_pointers = []
 
     def read(self, pixel_values):
         e0, e1, e2 = self.encoder.run(None, {"pixel_values": pixel_values})
         return e0, e1, e2, to_token_major(e2, self.no_memory)
 
     def decode(self, e0, e1, top, points, labels):
+        """The published decoder, which a click still goes through."""
         iou, masks, obj = self.decoder.run(
             None,
             {
@@ -250,6 +268,30 @@ class Host:
         )
         best = int(np.argmax(iou.reshape(-1)))
         return masks.reshape(3, MASK_SIZE * MASK_SIZE)[best].copy(), float(obj.reshape(-1)[0])
+
+    def decode_tracked(self, e0, e1, top):
+        """
+        The re-exported decoder, which takes no prompt and gives up the pointer.
+
+        Half precision by default, because that is what ships; `decoder_fp16`
+        off runs the full-precision graph so the table can say what the halving
+        costs rather than assuming it costs nothing.
+        """
+        session = self.tracked_half if self.flags["decoder_fp16"] else self.tracked
+        iou, masks, obj, pointer = session.run(
+            None,
+            {
+                "image_embeddings.0": e0,
+                "image_embeddings.1": e1,
+                "image_embeddings.2": top.reshape(1, CHANNELS, FEATURE, FEATURE),
+            },
+        )
+        best = int(np.argmax(iou.reshape(-1)))
+        return (
+            masks.reshape(3, MASK_SIZE * MASK_SIZE)[best].copy(),
+            float(obj.reshape(-1)[0]),
+            pointer.reshape(3, POINTER_DIM)[best].copy(),
+        )
 
     def remember(self, raw, logits, from_prompt):
         field = at_memory_resolution(logits, self.flags["bilinear"])
@@ -279,8 +321,13 @@ class Host:
 
     def advance(self, pixel_values):
         e0, e1, _, raw = self.read(pixel_values)
+        pointers = (
+            [self.anchor_pointer, *reversed(self.recent_pointers)]
+            if self.anchor_pointer is not None
+            else []
+        )
         memory, positions, key_mask = lay_out_bank(
-            self.anchor, self.recent, self.temporal, self.flags["anchored"]
+            self.anchor, self.recent, self.temporal, self.flags["anchored"], pointers
         )
         (conditioned,) = self.attention.run(
             None,
@@ -292,13 +339,29 @@ class Host:
                 "key_mask": key_mask.reshape(1, 1, 1, MEMORY_TOKENS),
             },
         )
-        points, labels = empty_prompt(self.flags["padding_point"])
-        logits, obj = self.decode(e0, e1, to_channel_major(conditioned), points, labels)
+        top = to_channel_major(conditioned)
+        if self.flags["pointers"]:
+            logits, obj, pointer = self.decode_tracked(e0, e1, top)
+        else:
+            points, labels = empty_prompt(self.flags["padding_point"])
+            logits, obj = self.decode(e0, e1, top, points, labels)
+            pointer = None
         # What goes into the bank is a hard choice about whether the object is
         # there at all, which is the reference's, not a count of pixels.
         remembered = np.where(obj > 0, logits, NO_OBJECT).astype(np.float32) if self.flags["gate"] else logits
         self.recent.append(self.remember(raw, remembered, False))
         del self.recent[: max(0, len(self.recent) - (MEMORY_ENTRIES - 1))]
+
+        if pointer is not None:
+            # What the object IS, rather than where it was. A frame it is not in
+            # contributes the checkpoint's stand-in, which is the reference's
+            # blend written as the choice it is.
+            held = pointer if obj > 0 else self.no_object_pointer
+            if self.anchor_pointer is None:
+                self.anchor_pointer = held
+            else:
+                self.recent_pointers.append(held)
+                del self.recent_pointers[: max(0, len(self.recent_pointers) - (MAX_POINTERS - 1))]
         return logits, obj
 
 
@@ -308,7 +371,7 @@ class Host:
 class Reference:
     """One scene through the PyTorch tracker, with everything it hands a graph kept."""
 
-    def __init__(self, scene):
+    def __init__(self, scene, pointers=True):
         folder = FIXTURE / scene
         self.truth = json.loads((folder / "truth.json").read_text())
         images = [Image.open(p).convert("RGB") for p in sorted(folder.glob("f*.png"))]
@@ -321,9 +384,12 @@ class Reference:
         self.video = processor(videos=[images], return_tensors="pt")["pixel_values_videos"][0]
 
         model = EdgeTamVideoModel.from_pretrained(CHECKPOINT, dtype=torch.float32).eval()
-        # The product has no object pointers, so the reference it is measured
-        # against must not have them either.
-        model._get_object_pointers = lambda *a, **k: ([], [], 0)
+        # The reference keeps its object pointers, because the product has them
+        # now. `pointers=False` is how a run asks what going without costs, and
+        # it is what every figure here was taken against before the mask decoder
+        # was re-exported.
+        if not pointers:
+            model._get_object_pointers = lambda *a, **k: ([], [], 0)
         self.model = model
         self.processor = processor
 
@@ -373,6 +439,7 @@ class Reference:
                     "high": [h.clone() for h in k["high_resolution_features"]],
                     "masks": o[0].clone(),
                     "iou": o[1].clone(),
+                    "tokens": o[2].clone(),
                     "object": o[3].clone(),
                 }
             ),
@@ -393,12 +460,42 @@ class Reference:
         self.masks = []
         for output in model.propagate_in_video_iterator(session, start_frame_idx=0):
             self.masks.append(output.pred_masks[0, 0].numpy().copy())
+        self.session = session
+
+        # The reference's own projection of the tokens its decoder produced,
+        # taken after the run because the propagate loop holds inference-mode
+        # tensors that autograd will not accept.
+        with torch.no_grad():
+            for call in self.decodes:
+                call["pointer"] = model.object_pointer_proj(call["tokens"].clone()).numpy()
 
     @property
     def seed_point(self):
         """The click, in the 1024 px square the model resizes everything to."""
         start = self.truth["frames"][0]["target"]
         return [start[0] * 1024 / self.width, start[1] * 1024 / self.height]
+
+    def pointers_at(self, frame):
+        """
+        The pointers the reference held on one frame, in the order it held them.
+
+        Its own gathering rather than a reading of its source: the conditioning
+        frames it has kept, then the fifteen frames before this one, which is
+        what `_get_object_pointers` walks. Read back out of the session it
+        filled, so a change to that walk shows up here as a difference rather
+        than as agreement with a stale copy of it.
+        """
+        store = self.session.output_dict_per_obj[0]
+        gathered = [
+            out["object_pointer"].detach().numpy().reshape(-1)
+            for index, out in sorted(store["cond_frame_outputs"].items())
+            if index <= frame
+        ]
+        for offset in range(1, MAX_POINTERS):
+            earlier = store["non_cond_frame_outputs"].get(frame - offset)
+            if earlier is not None:
+                gathered.append(earlier["object_pointer"].detach().numpy().reshape(-1))
+        return gathered[:MAX_POINTERS]
 
     def bank_slots(self, attend):
         """
@@ -438,7 +535,7 @@ def stages(reference, graphs, parameters, positions):
     frame and then every later stage is being compared against a slightly
     different frame, which turns six sharp answers into one blurred one.
     """
-    encoder, decoder, attention, memory = graphs
+    encoder, decoder, attention, memory, tracked, tracked_half = graphs
     no_memory = np.array(parameters["parameters"]["no_memory_embedding"], np.float32)
     temporal = np.array(parameters["parameters"]["memory_temporal_positional_encoding"], np.float32)
     scale = parameters["constants"]["sigmoid_scale_for_mem_enc"]
@@ -475,17 +572,43 @@ def stages(reference, graphs, parameters, positions):
         anchor = reference.entries[slots[0]]
         recent = [reference.entries[slot] for slot in slots[1:]]
         laid, laid_positions, key_mask = lay_out_bank(anchor, recent, temporal)
-        theirs = attend["memory"].detach().numpy().reshape(-1)
-        their_positions = attend["memory_posision_embeddings"].detach().numpy().reshape(-1)
-        bank_worst = max(bank_worst, worst(laid[: theirs.shape[0]], theirs))
-        position_worst = max(
-            position_worst, worst(laid_positions[: their_positions.shape[0]], their_positions)
-        )
+        # THE SPATIAL PART ONLY. The reference concatenates its pointers onto
+        # the end of the same tensor, so comparing the whole of it against a
+        # padded bank lines a pointer up against a spatial slot; the pointers
+        # get their own row below.
+        spatial = len(slots) * TOKENS_PER_MEMORY * MEMORY_DIM
+        theirs = attend["memory"].detach().numpy().reshape(-1)[:spatial]
+        their_positions = attend["memory_posision_embeddings"].detach().numpy().reshape(-1)[:spatial]
+        bank_worst = max(bank_worst, worst(laid[:spatial], theirs))
+        position_worst = max(position_worst, worst(laid_positions[:spatial], their_positions))
         open_tokens = int((key_mask == 0).sum())
         if open_tokens != len(slots) * TOKENS_PER_MEMORY:
             slot_trouble.append((attend["frame"], f"{open_tokens} open for {len(slots)} entries"))
     rows["the bank, laid out against the reference's own"] = bank_worst
     rows["the bank's positions, with the temporal row on"] = position_worst
+
+    # THE POINTER BLOCK, which the reference gathers as the conditioning frame's
+    # pointer followed by the most recent fifteen, splits four ways and gives no
+    # position at all. Every one of those three is silent if it is wrong.
+    pointer_worst = pointer_position_worst = 0.0
+    pointer_count = 0
+    for attend in reference.attends:
+        theirs = attend["memory"].detach().numpy().reshape(-1, MEMORY_DIM)
+        their_positions = attend["memory_posision_embeddings"].detach().numpy().reshape(-1, MEMORY_DIM)
+        spatial = attend["num_spatial_memory_tokens"] * TOKENS_PER_MEMORY
+        block = theirs[spatial:]
+        gathered = reference.pointers_at(attend["frame"])
+        mine = np.zeros_like(block)
+        for index, pointer in enumerate(gathered[: block.shape[0] // POINTER_SPLITS]):
+            mine[index * POINTER_SPLITS : (index + 1) * POINTER_SPLITS] = pointer.reshape(
+                POINTER_SPLITS, MEMORY_DIM
+            )
+        pointer_count = max(pointer_count, abs(block.shape[0] - len(gathered) * POINTER_SPLITS))
+        pointer_worst = max(pointer_worst, worst(mine, block))
+        pointer_position_worst = max(pointer_position_worst, float(np.abs(their_positions[spatial:]).max()))
+    rows["the pointer block, against the reference's own"] = pointer_worst
+    rows["the pointers the reference held, counted"] = float(pointer_count)
+    rows["the position the reference gave a pointer"] = pointer_position_worst
 
     conditioned_worst = 0.0
     for attend in reference.attends:
@@ -494,7 +617,9 @@ def stages(reference, graphs, parameters, positions):
             continue
         anchor = reference.entries[slots[0]]
         recent = [reference.entries[slot] for slot in slots[1:]]
-        laid, laid_positions, key_mask = lay_out_bank(anchor, recent, temporal)
+        laid, laid_positions, key_mask = lay_out_bank(
+            anchor, recent, temporal, pointers=reference.pointers_at(attend["frame"])
+        )
         (out,) = attention.run(
             None,
             {
@@ -552,13 +677,53 @@ def stages(reference, graphs, parameters, positions):
     rows["the published decoder, one point labelled -1"] = padded_worst
     rows["the same, with no prompt tensors at all"] = empty_worst
 
+    # And the re-exported decoder, which is the published one plus the output it
+    # does not expose. Checked against the reference's own decoder, and its
+    # pointer against the reference's own projection of the same tokens.
+    tracked_worst = pointer_output_worst = half_worst = 0.0
+    for call in reference.decodes:
+        if call["frame"] == 0:
+            continue
+        e0, e1, _ = published_features[call["frame"]]
+        feeds = {
+            "image_embeddings.0": e0,
+            "image_embeddings.1": e1,
+            "image_embeddings.2": call["top"].detach().numpy(),
+        }
+        _, masks, _, pointer = tracked.run(None, feeds)
+        tracked_worst = max(tracked_worst, worst(masks, call["masks"].detach().numpy()))
+        pointer_output_worst = max(pointer_output_worst, worst(pointer, call["pointer"]))
+        _, half_masks, _, half_pointer = tracked_half.run(None, feeds)
+        half_worst = max(half_worst, worst(half_pointer, pointer))
+    rows["the re-exported decoder against the reference's"] = tracked_worst
+    rows["its object pointer, against the reference's own"] = pointer_output_worst
+    rows["what half precision moves that pointer by"] = half_worst
+
     return rows, slot_trouble
 
 
 # --- what each difference costs, end to end ---------------------------------
 
-BUILT = dict(padding_point=True, bilinear=True, anchored=True, gate=True, seed_round_trip=True)
+BUILT = dict(
+    padding_point=True,
+    bilinear=True,
+    anchored=True,
+    gate=True,
+    seed_round_trip=True,
+    pointers=True,
+    decoder_fp16=True,
+)
 
+# WHAT THE PRODUCT COULD ACTUALLY BE, one wrong thing at a time.
+#
+# `no padding point` is kept although it can no longer differ, and that is the
+# point of keeping it. It used to be the largest row here: the published decoder
+# accepts an empty prompt and answers differently from the padded one it
+# expects, which was worth seventeen points of agreement on the occlusion clip
+# and turned a whole visible frame into "no object" on the blurred one. A
+# tracked frame now goes through a decoder with no prompt input at all, so the
+# flag reaches nothing and the row reads exactly as `as it is built`. A mistake
+# that has become unreachable is worth one identical row saying so.
 DIFFERENCES = {
     "as it is built": {},
     "no padding point": {"padding_point": False},
@@ -566,6 +731,8 @@ DIFFERENCES = {
     "a sliding bank, no anchor": {"anchored": False},
     "no absent gate": {"gate": False},
     "the seed as raw logits": {"seed_round_trip": False},
+    "no object pointers": {"pointers": False},
+    "a full-precision decoder": {"decoder_fp16": False},
 }
 
 
@@ -651,6 +818,9 @@ PROBE_TOKENS = [0, 1, 63, 64, 127, 255, 1000, 2048, 4095]
 PROBE_CHANNELS = [0, 1, 2, 63, 64, 127, 128, 129, 255]
 PROBE_MEMORY_TOKENS = [0, 1, 63, 64, 255, 511]
 PROBE_MEMORY_CHANNELS = [0, 1, 31, 32, 62, 63]
+# Into one 256-dimensional pointer, spread across all four of the tokens it
+# becomes so a split done three ways or in the wrong order disagrees somewhere.
+PROBE_POINTER = [0, 1, 63, 64, 127, 128, 191, 192, 255]
 PATCH = 8
 
 
@@ -670,11 +840,8 @@ def fixture_frames(reference, graphs, parameters, positions):
     function at the real size, and read exactly the probed outputs. Spread over
     both axes, a transposed field disagrees at nearly all of them.
     """
-    encoder, decoder, attention, memory = graphs
+    encoder = graphs[0]
     no_memory = np.array(parameters["parameters"]["no_memory_embedding"], np.float32)
-    temporal = np.array(parameters["parameters"]["memory_temporal_positional_encoding"], np.float32)
-    scale = parameters["constants"]["sigmoid_scale_for_mem_enc"]
-    bias = parameters["constants"]["sigmoid_bias_for_mem_enc"]
 
     wanted = [attend["frame"] for attend in reference.attends]
     chosen = [wanted[0], wanted[len(wanted) // 2], wanted[-1]]
@@ -757,6 +924,39 @@ def fixture_frames(reference, graphs, parameters, positions):
                     ],
                 },
                 "maskForMemory": mask_patches(low, theirs),
+                # THE POINTER BLOCK, source and destination at the same points.
+                # `values` is what the reference's decoder produced and `block`
+                # is where its own bank put it, so a test that sets one and
+                # reads the other is checking the split and the offset against
+                # the reference rather than against its own arithmetic.
+                "pointers": {
+                    "values": [
+                        [r(pointer[at]) for at in PROBE_POINTER]
+                        for pointer in reference.pointers_at(frame)
+                    ],
+                    # Read at the reference's OWN offset, which is straight
+                    # after its spatial entries rather than at 3584: its bank is
+                    # as long as it needs to be and the padded one is not. That
+                    # the two hold the same values at different offsets is the
+                    # thing being checked.
+                    "block": [
+                        [
+                            r(
+                                their_memory[
+                                    (
+                                        len(slots) * TOKENS_PER_MEMORY
+                                        + index * POINTER_SPLITS
+                                        + at // MEMORY_DIM
+                                    )
+                                    * MEMORY_DIM
+                                    + at % MEMORY_DIM
+                                ]
+                            )
+                            for at in PROBE_POINTER
+                        ]
+                        for index in range(len(reference.pointers_at(frame)))
+                    ],
+                },
             }
         )
     return out
@@ -808,11 +1008,16 @@ def graphs_and_parameters():
     for name in ("memory_attention.onnx", "memory_encoder.onnx"):
         if not (ONNX / name).exists():
             raise SystemExit(f"no onnx/{name}; run export.py first")
+    for name in ("tracked_mask_decoder.onnx", "tracked_mask_decoder_fp16.onnx"):
+        if not (ONNX / name).exists():
+            raise SystemExit(f"no onnx/{name}; run export.py then half_precision.py")
     graphs = (
         session(published("vision_encoder.onnx")),
         session(published("prompt_encoder_mask_decoder.onnx")),
         session(ONNX / "memory_attention.onnx"),
         session(ONNX / "memory_encoder.onnx"),
+        session(ONNX / "tracked_mask_decoder.onnx"),
+        session(ONNX / "tracked_mask_decoder_fp16.onnx"),
     )
     return graphs, json.loads(parameters_path.read_text())
 
@@ -871,6 +1076,7 @@ def main() -> None:
                 "channels_at": PROBE_CHANNELS,
                 "memoryTokens": PROBE_MEMORY_TOKENS,
                 "memoryChannels": PROBE_MEMORY_CHANNELS,
+                "pointerAt": PROBE_POINTER,
                 "patch": PATCH,
                 "noMemoryEmbedding": [r(v) for v in parameters["parameters"]["no_memory_embedding"]],
                 "temporal": [

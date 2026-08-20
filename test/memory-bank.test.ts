@@ -11,6 +11,8 @@ import {
   MEMORY_ENTRIES,
   MEMORY_MASK,
   MEMORY_TOKENS,
+  POINTER_DIM,
+  POINTER_SPLITS,
   RECENT_ENTRIES,
   TOKENS_PER_MEMORY,
   toChannelMajor,
@@ -57,6 +59,7 @@ interface HostFixture {
   readonly constants: { readonly sigmoidScale: number; readonly sigmoidBias: number };
   readonly memoryTokens: readonly number[];
   readonly memoryChannels: readonly number[];
+  readonly pointerAt: readonly number[];
   readonly patch: number;
   readonly noMemoryEmbedding: readonly number[];
   readonly temporal: readonly number[];
@@ -82,6 +85,10 @@ interface HostFixture {
       }[];
       readonly memory: readonly number[];
       readonly positions: readonly number[];
+    };
+    readonly pointers: {
+      readonly values: readonly (readonly number[])[];
+      readonly block: readonly (readonly number[])[];
     };
     readonly maskForMemory: readonly {
       readonly origin: readonly [number, number];
@@ -256,6 +263,50 @@ describe('laying out a memory bank', () => {
           }
         }
       }
+    }
+  });
+
+  it('splits each object pointer into the four tokens the reference splits it into', () => {
+    // THREE THINGS AT ONCE, and every one of them is silent if it is wrong. A
+    // pointer is 256 dimensions against a token's 64, so it becomes four
+    // consecutive tokens rather than being projected down. The block starts
+    // after every spatial slot, where the graph's `num_k_exclude_rope` looks
+    // for it. And the reference's own bank is only as long as it needs to be,
+    // so what its pointers sit at is not where a padded bank puts them: the
+    // fixture reads the source at the reference's offset and this reads the
+    // destination at 3584, which is the offset being checked.
+    const start = MEMORY_ENTRIES * TOKENS_PER_MEMORY;
+    for (const frame of host.frames) {
+      const { values, block } = frame.pointers;
+      if (values.length === 0) continue;
+
+      const pointers = values.map((probes) => {
+        const pointer = new Float32Array(POINTER_DIM);
+        host.pointerAt.forEach((at, index) => {
+          pointer[at] = probes[index] ?? 0;
+        });
+        return pointer;
+      });
+      const bank = layOutBank(flat(1), [], temporal, pointers);
+
+      values.forEach((_, pointer) => {
+        host.pointerAt.forEach((at, index) => {
+          const token = start + pointer * POINTER_SPLITS + Math.floor(at / MEMORY_DIM);
+          expect(
+            bank.memory[token * MEMORY_DIM + (at % MEMORY_DIM)],
+            `frame ${String(frame.frame)} pointer ${String(pointer)} at ${String(at)}`,
+          ).toBeCloseTo(block[pointer]?.[index] ?? Number.NaN, 5);
+        });
+      });
+      // Open for exactly as many as were given, and no position on any of them:
+      // this checkpoint has temporal encoding for pointers switched off, so the
+      // block says what the object looked like and never when.
+      expect(openTokens(bank.keyMask)).toBe(TOKENS_PER_MEMORY + values.length * POINTER_SPLITS);
+      let position = 0;
+      for (let i = start * MEMORY_DIM; i < MEMORY_TOKENS * MEMORY_DIM; i++) {
+        position = Math.max(position, Math.abs(bank.positions[i] ?? 0));
+      }
+      expect(position).toBe(0);
     }
   });
 

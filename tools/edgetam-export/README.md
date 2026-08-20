@@ -1,7 +1,7 @@
 # edgetam-export
 
-Produces the two ONNX graphs that video tracking needs and the published EdgeTAM
-release does not contain.
+Produces the three ONNX graphs that video tracking needs and the published
+EdgeTAM release does not contain.
 
 **Rotyl fetches these at runtime, from wherever whoever built it put them.**
 There is no default host, because the failure mode of a wrong one is nineteen
@@ -22,7 +22,8 @@ order to avoid a directory of Python would be a much worse trade.
 ```bash
 python3.12 -m venv venv && ./venv/bin/pip install -r requirements.txt
 ./venv/bin/python make_fixture.py       # four clips, analytic ground truth
-./venv/bin/python export.py
+./venv/bin/python export.py             # three graphs
+./venv/bin/python half_precision.py     # and the halves two of them ship as
 ./venv/bin/python parameters.py         # the four tensors no graph carries
 ./venv/bin/python verify.py --sweep     # every clip, with and without pointers
 ./venv/bin/python host.py --sweep       # everything that is NOT in a graph
@@ -38,8 +39,9 @@ It fetches the two published graphs on first use, at the revision
 something is wrong. `--sweep` runs all eight combinations and writes
 `results.json`, which is committed and which the research page reads.
 
-`export.py` writes `onnx/memory_encoder.onnx` and `onnx/memory_attention.onnx`,
-which are gitignored: they are 139 MB and regenerating them is one command.
+`export.py` writes `onnx/memory_encoder.onnx`, `onnx/memory_attention.onnx` and
+`onnx/tracked_mask_decoder.onnx`, which are gitignored: they are 161 MB and
+regenerating them is one command.
 Weights come from `yonigozlan/EdgeTAM-hf`, the checkpoint the published ONNX
 release was exported from.
 
@@ -65,10 +67,18 @@ entry out. Exports unchanged.
 **The memory attention**, which conditions the next frame's features on the
 bank. Exports unchanged, but see the size note below.
 
-**One extra decoder output.** The published decoder declares `iou_scores`,
-`pred_masks` and `object_score_logits`. The memory bank also wants
-`object_pointer`, the token carrying an object's identity between frames, and it
-is not exposed.
+**One extra decoder output**, which is what the third graph here exists for.
+The published decoder declares `iou_scores`, `pred_masks` and
+`object_score_logits`. The memory bank also wants `object_pointer`, the token
+carrying an object's identity between frames, and it is not exposed.
+
+`tracked_mask_decoder.onnx` is that decoder re-exported with the pointer on it,
+21.8 MB and 11.0 at half precision. It takes NO PROMPT: what a tracked frame
+sends is the same two "not a point" embeddings every time, so they are evaluated
+once and kept as a buffer, and the graph cannot be handed the nearly-right
+prompt the published one accepts. Its three shared outputs match the published
+graph to 2e-5 and the reference's own decoder to 4e-5, and its pointer matches
+the reference's own projection to 4e-6, over twenty-nine tracked frames.
 
 `verify.py --no-pointers` used to report that going without cost nothing, and
 said in the same breath that the result was weak because pointers exist for
@@ -371,11 +381,11 @@ and -10.0 here and belong to the config rather than to anyone's memory. `verify.
 it in `encode_new_memory` and it is fifteen lines. It is outside the graph so
 the graph has one meaning rather than a mode.
 
-**What is still missing is the decoder.** Object pointers need
-`object_pointer_proj` applied to a decoder output token that the published
-decoder does not expose, so a host that does not re-export the decoder has no
-pointers at all, and that costs one frame on every re-entry from an occlusion.
-See the measurement above.
+**The decoder is no longer missing.** Object pointers need
+`object_pointer_proj` applied to a decoder output token the published decoder
+does not expose, so `export.py` writes a third graph that does. A host that
+serves only the two memory graphs still works and still has no pointers, which
+is what the pointer rows in `host.json` price.
 
 ## Two things found on the way
 

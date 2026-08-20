@@ -40,14 +40,14 @@ one, and the measurement behind it is on `/research.html`.
 - **An object the model says is not in a frame gets an empty mask on that
   frame**, which is the reference's behaviour and means a tracked clip shows no
   selection at all while the subject is behind something.
-- **A tracker has no object pointers, so it comes back from an occlusion late.**
-  The published mask decoder does not expose `object_pointer`, the token that
-  carries an object's identity between frames, so the bank's pointer block stays
-  masked. What that costs is measured on the occlusion fixture and reported on
-  `/research/tracking.html` as the frames between the object reappearing and a
-  mask appearing on it. Every average hides it, which is why it is a field in
-  the results rather than something to notice. Re-exporting the decoder buys it
-  back and is the reason to.
+- **Tracking fetches a mask decoder of its own, which is thirty megabytes rather
+  than nineteen.** The published decoder does not expose `object_pointer`, the
+  token that carries an object's identity between frames, so a tracker built on
+  it came back from an occlusion late and with no mask at all on the frames it
+  was late by. `tools/edgetam-export` re-exports that decoder with the pointer
+  on it, at half precision, which is 11 MB on top of the 19 the two memory
+  graphs cost. Everything the published pair does for a click is unchanged: the
+  re-export is only ever used for a tracked frame.
 - A tracked run holds one mask per frame in the command log. Held plainly that
   is 64 KB each, 20 MB for ten seconds and 1.2 GB for ten minutes; packed, which
   is how they are held, it is 3.4 KB each and 62 MB for ten minutes. Folding
