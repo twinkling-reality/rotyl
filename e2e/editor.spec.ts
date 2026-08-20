@@ -1591,6 +1591,13 @@ test('saves a selection and rebuilds the same mask after the tab is reloaded', a
   // else by signature.
   expect([...saved.subarray(0, 6)]).toEqual([0x52, 0x4f, 0x54, 0x59, 0x4c, 0x00]);
 
+  // Closed on purpose, which gives the file back and takes the crash journal
+  // with it. Not tidiness: without it the next load would offer the same work
+  // back out of the journal, and this test would pass on a document that had
+  // never been read.
+  await page.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'Discard edits?' }).click();
+
   // The tab, closed.
   await page.goto('/');
   await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
@@ -1654,6 +1661,11 @@ test('takes a document dropped onto the editor, and restores where the playhead 
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Wrote sample.rotyl.')).toBeVisible();
   const saved = await readPickedFile(page, 'sample.rotyl');
+
+  // Given back on purpose, so the crash journal goes with it and what is tested
+  // below is the document rather than the journal underneath it.
+  await page.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'Discard edits?' }).click();
 
   // A fresh tab, the clip open again, and nothing selected on it.
   await page.goto('/');
@@ -1913,4 +1925,185 @@ test('saves a document into the downloads folder where there is nowhere to write
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
   expect(await selectionBytes(page)).toBe(before);
+});
+
+/**
+ * Waits until every record posted to the journal worker has landed.
+ *
+ * A record is framed on the main thread and appended in a worker, so the write
+ * is behind a message. Nothing in the product waits for it and nothing should:
+ * an edit costs 0.13 ms in another thread precisely because nobody is watching
+ * it. A test that reloaded the moment a stroke ended would be racing that, and
+ * reading the file until it stops growing is the honest way to stand still.
+ *
+ * The file is read from the MAIN thread while the worker holds a sync access
+ * handle over it, which is the same thing a recovery does on the next load.
+ */
+async function journalledBytes(page: Page): Promise<number> {
+  return page.evaluate(async () => {
+    try {
+      const root = await navigator.storage.getDirectory();
+      const directory = await root.getDirectoryHandle('rotyl');
+      return (await (await directory.getFileHandle('session.journal')).getFile()).size;
+    } catch {
+      return 0;
+    }
+  });
+}
+
+/** An edit is written down; wait for the bytes to stop arriving. */
+async function journalSettles(page: Page): Promise<number> {
+  let last = -1;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const size = await journalledBytes(page);
+    if (size > 0 && size === last) return size;
+    last = size;
+  }
+  return last;
+}
+
+/**
+ * A session that ended without being saved, offered back and rebuilt exactly.
+ *
+ * The chapter before this one gave the log a file and a button. What a button
+ * cannot do is protect the work between presses, so this is the same assertion
+ * the save round trip makes with the save taken out of it: a selection, a tab
+ * that ends, and the same mask on the other side.
+ */
+test('offers back the work of a session that ended without saving', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  await page.getByRole('button', { name: 'Area' }).click();
+  await page.mouse.move(box.x + box.width * 0.25, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.72, box.y + box.height * 0.66, { steps: 10 });
+  await page.mouse.up();
+  await page.getByRole('button', { name: 'Erase' }).click();
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.42);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.52, box.y + box.height * 0.54, { steps: 8 });
+  await page.mouse.up();
+
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  const before = await selectionBytes(page);
+  expect(before.length).toBeGreaterThan(100);
+  expect(await journalSettles(page)).toBeGreaterThan(0);
+
+  // Nothing was saved. Nothing was even offered to be saved: no picker, no
+  // download, no file anywhere the user chose.
+  let downloaded = 0;
+  page.on('download', () => {
+    downloaded++;
+  });
+
+  // The tab, ending.
+  await page.goto('/');
+  await expect(page.getByText('Drop sample.png, or click to browse')).toBeVisible();
+  await expect(page.getByText('Work from a session that ended is waiting for it')).toBeVisible();
+
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  await expect(canvas).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  expect(await selectionBytes(page)).toBe(before);
+  expect(downloaded).toBe(0);
+
+  // AND THE JOURNAL IT CAME OUT OF IS CARRIED ON RATHER THAN REWRITTEN. A
+  // recovery that began again would append every record it had just read, and
+  // until it finished the file would not hold the work it exists to protect.
+  const resumed = await journalSettles(page);
+  expect(resumed).toBeLessThan(2000);
+
+  // A second ending, and the work is still there: recovery is not a one-shot.
+  await page.goto('/');
+  await expect(page.getByText('Work from a session that ended is waiting for it')).toBeVisible();
+});
+
+/**
+ * Undo cuts the journal back, because the journal is the applied commands.
+ *
+ * A journal that only ever grew would offer back work its own session had
+ * already taken away, which is a worse failure than losing it: the user undid
+ * something and it came back.
+ */
+test('takes an undone edit back out of the journal', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  await page.getByRole('button', { name: 'Area' }).click();
+
+  await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  await journalSettles(page);
+  const afterOne = await selectionBytes(page);
+
+  await page.mouse.move(box.x + box.width * 0.55, box.y + box.height * 0.55);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.9, { steps: 8 });
+  await page.mouse.up();
+  const grown = await journalSettles(page);
+  expect(await selectionBytes(page)).not.toBe(afterOne);
+
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByRole('button', { name: 'Redo' })).toBeEnabled();
+  // Cut back, not annotated: the file is smaller than it was with two edits in
+  // it, which is the difference between a journal and a transcript.
+  await expect.poll(async () => journalledBytes(page)).toBeLessThan(grown);
+
+  await page.goto('/');
+  await expect(page.getByText('Work from a session that ended is waiting for it')).toBeVisible();
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  await expect(canvas).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+  // The one edit that was left, and not the one that was taken back.
+  expect(await selectionBytes(page)).toBe(afterOne);
+  // And nothing to redo: a document holds work that was done.
+  await expect(page.getByRole('button', { name: 'Redo' })).toBeDisabled();
+});
+
+/**
+ * Closing the file gives it back, so there is nothing to come back to.
+ *
+ * The close button already asks when there is something to lose, which is the
+ * one place the user says "discard this". A journal that survived that would be
+ * offering back work they had just been asked about and let go.
+ */
+test('offers nothing back after the file was closed on purpose', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  await page.getByRole('button', { name: 'Area' }).click();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.7, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  expect(await journalSettles(page)).toBeGreaterThan(0);
+
+  // Closing over work asks once, in place.
+  await page.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'Discard edits?' }).click();
+  await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
+  await expect(page.getByText('is waiting for it')).toHaveCount(0);
+
+  await page.goto('/');
+  await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
+  await expect(page.getByText('is waiting for it')).toHaveCount(0);
 });

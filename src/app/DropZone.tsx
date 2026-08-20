@@ -7,14 +7,19 @@ export interface DropZoneProps {
   /** Shown beneath the zone; the reason the last attempt was refused. */
   readonly notice?: string | undefined;
   /**
-   * A saved selection that arrived without the file it was made on.
+   * A selection that arrived without the file it was made on.
    *
    * A browser has no paths, so a document names media it cannot open and the
    * other half has to be supplied. Saying which file by name is the whole of
    * the interface for that: the zone is already the control, and what changes
    * is what it is asking for.
+   *
+   * `recovered` distinguishes a document somebody dropped from work a session
+   * left behind when it ended. They want the same thing of the user and are not
+   * the same news: one is a file they just chose, and the other is a sentence
+   * they did not expect and would want to be sure of.
    */
-  readonly waiting?: { readonly media: string } | undefined;
+  readonly waiting?: { readonly media: string; readonly recovered: boolean } | undefined;
 }
 
 /**
@@ -91,9 +96,11 @@ export function DropZone({ onFile, notice, waiting }: DropZoneProps): JSX.Elemen
           /* Named exactly, and only what the loader accepts: WebM plays in the
              browser and is refused here, so listing "video" would be a lie. */
           <span class="dropzone__secondary">
-            {waiting
-              ? 'A saved selection is waiting for it'
-              : 'PNG, JPEG, WebP, AVIF, GIF, MP4, MOV or a saved .rotyl selection'}
+            {waiting?.recovered === true
+              ? 'Work from a session that ended is waiting for it'
+              : waiting
+                ? 'A saved selection is waiting for it'
+                : 'PNG, JPEG, WebP, AVIF, GIF, MP4, MOV or a saved .rotyl selection'}
           </span>
         )}
       </button>

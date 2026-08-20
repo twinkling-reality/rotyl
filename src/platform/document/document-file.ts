@@ -159,20 +159,70 @@ export function documentFilename(mediaName: string): string {
  * The mask payloads are the log's own arrays, handed over rather than copied,
  * so this allocates the header and nothing else.
  */
+/** Nothing, without allocating a fresh one every time a stroke is written. */
+const NO_PAYLOAD = new Uint8Array(new ArrayBuffer(0));
+
+/**
+ * One command, split into the part that is JSON and the part that is not.
+ *
+ * Exported because a document is not the only thing that writes commands down.
+ * The crash journal appends them one at a time into a file of its own, and two
+ * encodings of the same command would be two places to get the mask's offset
+ * wrong. `at` is where this command's mask will live in whatever payload region
+ * the caller is building: a document concatenates them all, and a journal gives
+ * each record a region of its own and passes zero.
+ */
+export function commandToWire(
+  command: SelectionCommand,
+  at: number,
+): { readonly wire: unknown; readonly payload: Uint8Array<ArrayBuffer> } {
+  if (command.kind !== 'applyMask') return { wire: command, payload: NO_PAYLOAD };
+  const { mask, ...rest } = command;
+  return {
+    wire: { ...rest, mask: { width: mask.width, height: mask.height, at, length: mask.packed.length } },
+    payload: mask.packed,
+  };
+}
+
+/**
+ * Everything a document says that is not a command: which file, where the
+ * playhead was, which part is exported, and what it looked like.
+ *
+ * Exported and named because the crash journal writes exactly this, as one
+ * record, and a second reader for the same four fields would be a second place
+ * for them to drift. Throws on anything it does not recognise, like every other
+ * reader here, because all of it comes off a disk.
+ */
+export function documentStateFromWire(wire: unknown): Omit<RotylDocument, 'commands'> {
+  const raw = object(wire, 'the document state');
+  const style = object(raw.style, 'the style');
+  const range = raw.range === undefined ? undefined : object(raw.range, 'the range');
+  return {
+    media: asMedia(raw.media),
+    frame: integer(raw.frame, 'the frame'),
+    ...(range
+      ? { range: { from: integer(range.from, 'the range start'), to: integer(range.to, 'the range end') } }
+      : {}),
+    style: { id: string(style.id, 'the style id'), controls: asControls(style.controls) },
+  };
+}
+
+/** One command back, reading its mask out of `payload`. See `commandToWire`. */
+export function commandFromWire(wire: unknown, payload: Uint8Array<ArrayBuffer>): SelectionCommand {
+  return asCommand(wire, payload);
+}
+
 export function writeDocument(document: RotylDocument): readonly Uint8Array<ArrayBuffer>[] {
   const payloads: Uint8Array<ArrayBuffer>[] = [];
   let at = 0;
 
   const commands = document.commands.map((command) => {
-    if (command.kind !== 'applyMask') return command;
-    const { mask, ...rest } = command;
-    payloads.push(mask.packed);
-    const placed = {
-      ...rest,
-      mask: { width: mask.width, height: mask.height, at, length: mask.packed.length },
-    };
-    at += mask.packed.length;
-    return placed;
+    const { wire, payload } = commandToWire(command, at);
+    if (payload.length > 0) {
+      payloads.push(payload);
+      at += payload.length;
+    }
+    return wire;
   });
 
   const header = new TextEncoder().encode(
@@ -381,21 +431,11 @@ export function readDocument(
     const raw = header.commands;
     if (!Array.isArray(raw)) throw new Damaged('the header has no commands');
 
-    const style = object(header.style, 'the style');
-    const range = header.range === undefined ? undefined : object(header.range, 'the range');
-
     return {
       ok: true,
       value: {
-        media: asMedia(header.media),
+        ...documentStateFromWire(header),
         commands: raw.map((entry) => asCommand(entry, payload)),
-        frame: integer(header.frame, 'the frame'),
-        ...(range
-          ? {
-              range: { from: integer(range.from, 'the range start'), to: integer(range.to, 'the range end') },
-            }
-          : {}),
-        style: { id: string(style.id, 'the style id'), controls: asControls(style.controls) },
       },
     };
   } catch (cause) {
