@@ -8,7 +8,7 @@ src/platform/  browser adapters: decode, texture upload, encode, mux, inference
 src/app/       Preact UI
 ```
 
-It ships as 148 KB of JavaScript, 45.8 KB gzipped, plus 31 KB of subset fonts.
+It ships as 157 KB of JavaScript, 48.8 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches none of the other two: the inference runtime arrives on the first object
 click, the demuxer on the first video, the container writer on the first clip
@@ -234,3 +234,19 @@ again, and nothing else: a new device, a new engine around the same log, the
 image re-uploaded, and the view carried across so the canvas comes back where it
 was. Three rebuilds inside a minute is a driver that will keep doing it, and
 that is the point at which it says so rather than looping.
+
+**And it now outlives the tab, which for most of this project's life it did
+not.** The log survived a lost device and did not survive a reload, which is the
+largest gap there has been between what this page promises and what the product
+did. Saving is the log written out and opening is the log handed back: no cached
+mask, no snapshot, nothing derived, because a replay of eighteen thousand
+commands is a fold to one and a texture upload, measured at 0.3 ms. What the
+file has to solve instead is the thing a browser makes hard, which is naming
+media it has no path to, and that is in [saving the work](saving.md) with the
+measurements behind it.
+
+The format lives in `src/platform`, not here. Core owns what a document IS and
+knows a frame is an integer and a mask is a packed byte run; what a document
+becomes on a disk is bytes, a `TextEncoder` and a file handle, none of which
+exist in `tsconfig.core.json`'s world. It is the same split as the frame
+provider, where core knows a frame index and platform knows how to decode one.

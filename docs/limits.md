@@ -108,6 +108,33 @@ one, and the measurement behind it is on `/research.html`.
   and an export that fails part way, both leave a file with a header in it and
   no index where somebody asked for a video. All the product can do about that
   is say so, and it does.
+- **A saved selection references its media and cannot address it.** A browser
+  has no paths, so a document names the file it was made on and somebody
+  supplies that file again. What it can check is the shape, which the loader
+  read anyway, and a digest of the first megabyte, the last megabyte and the
+  length. A file of a different shape is refused, because frame 1043 may not
+  exist and a stroke may be off the image. A file of the same shape and
+  different bytes opens with a sentence beside its name, because it replays
+  perfectly and may be a re-encode of the same clip. What neither can see is a
+  file that agrees at both ends and in length and differs in the middle, which
+  on media is a re-encode with the same container layout and the same byte
+  count. Digesting the whole file is the answer to that and is not available
+  here: `crypto.subtle.digest` takes a buffer and the platform has no streaming
+  form of it, so two gigabytes of clip would have to be resident to be hashed.
+- **A document does not contain the media, so it is not a way to move work
+  between machines by itself.** The other half has to travel with it. Embedding
+  it would make one feature a four megabyte file on a photograph and a two
+  gigabyte one on a clip, and writing the second means holding it, which is the
+  ceiling the streaming clip export exists to have removed.
+- **A document carries the style and its controls, and opening one adopts
+  them.** That is the opposite of what closing a file does, on purpose: closing
+  is the absence of information and opening a document is the presence of it.
+  The cost is real and is stated rather than hidden. Opening somebody else's
+  document changes the palette this tool is set to.
+- **A saved selection is refused if it came from a newer build**, by version,
+  before anything in it is parsed, which is the rule HEIC and Matroska follow on
+  the way in. There is one version, so there is no reader table yet, and adding
+  one is where the second version goes.
 - Exporting the frame on screen is never asked where to go, and takes the
   downloads folder in every browser. It is a couple of megabytes with no ceiling
   in sight, so a dialog in front of it would buy nothing and cost an interaction

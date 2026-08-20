@@ -14,6 +14,13 @@ The style and its controls survive on purpose. They are a choice about how the
 tool is set up rather than about this photograph, and re-picking a palette on
 every file would be the tool forgetting what it was told.
 
+**Opening a saved document is the one thing that overrides that, and it is not a
+contradiction.** Closing a file is the ABSENCE of information about what the
+style should be, so the tool keeps what it was told. A document is the PRESENCE
+of it: it says what the selection was made under, and one that reopened beneath
+somebody else's palette would not be showing what was saved. See
+[saving the work](saving.md), which has the tie-breaker as well as the rule.
+
 For most of this project's life a session held one file and opening a second
 meant reloading the page. The load path had been re-entrant the whole time.
 What was missing was any way out of the one that was open.
@@ -22,6 +29,34 @@ Closing over work asks first, in place, and forgets it was asking after four
 seconds so it cannot sit there armed. Closing over nothing does not ask at all,
 because a confirmation nobody needs is the fastest way to teach people to click
 through confirmations.
+
+## Saving, and opening again
+
+The product has no dialogs anywhere and this is not where one arrives. Save is a
+text button beside undo and redo rather than beside Export, because it belongs
+to the work rather than to the result: undo, redo and save are the three things
+somebody does to a selection, and export is what they do with one. `Cmd-S`
+does the same, which is the binding every other application on the machine has
+for it and the one surprise a save can least afford.
+
+**With nothing selected it is disabled and its title says why**, which is the
+rule the close button already follows from the other direction: a confirmation
+nobody needs is the fastest way to teach people to click through
+confirmations, and a control that does nothing is the fastest way to teach them
+it is broken.
+
+**Opening is a drop, in either order, because a browser has no paths.** A
+document names media it cannot open, so both halves have to be supplied.
+Somebody still working drops the document onto the editor and the selection
+comes back. Somebody who reloaded the tab drops the document first, and the drop
+zone holds it and asks for the file it names, by name. Two drops rather than a
+dialog, and the drop zone is already the control: what changes is the sentence
+in it.
+
+A document dropped onto the editor is taken and a photograph is not. A document
+is additive to the media that is open; a second photograph would replace the
+file under somebody's hands and take the log with it, on a drop they may have
+meant for another window.
 
 ## Saying that it is working
 
@@ -81,7 +116,7 @@ happened, so left up through a scrub and two brush strokes it would be
 describing something else by then. Ten seconds, which is long enough to read a
 sentence about a clip that stopped early.
 
-**One thing is a state rather than an event, and it goes somewhere else.** A
+**Some things are states rather than events, and they go somewhere else.** A
 soundtrack an MP4 cannot carry is true for as long as the file is open, so it
 sits in the row beside the file's name and its dimensions, in the darkest of the
 greys there rather than in the one saturated colour this product spends on
@@ -91,6 +126,15 @@ that took itself down after ten seconds would be a line they were not looking at
 when it mattered. It is said again when the file lands, because the warning went
 up minutes earlier and a file that turns out to be silent when it is played is
 the one thing this was built to stop being a surprise.
+
+A restored selection that was saved against a different copy of this file is the
+second, and it is in the same row for the same reason. The shape matched, so
+every command replays and every frame number means what it meant; the bytes did
+not, so this may be a re-encode rather than the clip the selection was drawn on.
+That is worth knowing for as long as somebody is looking at it and is not a
+failure, so it is a note beside the name rather than a line in the warning
+colour. There can be two of them at once and the second must not replace the
+first, which is why that row takes a list.
 
 **And a button's second sentence lives in its title**, which is the rule the
 Stop button already follows. The Clip button's is what pressing it will do:

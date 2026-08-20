@@ -24,7 +24,10 @@ files, because they share nothing with it and re-taking one of them should not
 re-date every figure it would otherwise have landed beside. The bundle sizes
 need a build and no browser: `node tools/video-bench/bundle-size.mjs`. The
 command log needs neither, since it is arithmetic over a data structure:
-`node tools/video-bench/run.mjs log`. A tracked frame needs a dev server
+`node tools/video-bench/run.mjs log`. What the same log costs once it has to
+become a file needs neither either, and has a command of its own so that
+re-taking one of the two does not re-date the other:
+`node tools/video-bench/run.mjs document`. A tracked frame needs a dev server
 started with `VITE_TRACKING_HOST` pointing at the two graphs, which most
 machines will not have: `node tools/video-bench/run.mjs tracked-frame`. And how
 long a clip export can be takes twenty minutes and ends by running the tab out
@@ -33,8 +36,8 @@ of memory, which is the measurement rather than a hazard of it:
 needs no GPU at all, answering a question about byte layout that shares nothing
 with a timing: `node tools/video-bench/run.mjs interleave`. The clips are
 gitignored, `results.json`, `results-bundle.json`, `results-log.json`,
-`results-tracked-frame.json`, `results-long-clip.json` and
-`results-interleave.json` are not, and the graphs come from
+`results-document.json`, `results-tracked-frame.json`, `results-long-clip.json`
+and `results-interleave.json` are not, and the graphs come from
 `tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
 
 **Nothing under `src/` may be edited while a run is going.** The dev server
@@ -52,19 +55,20 @@ appears nowhere: it throttles when the pane is hidden, which silently turns a
 3 ms number into a 16 ms one. Medians of 15 to 30 runs after warm-up, on an
 Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 
-**Eleven findings, each with the command that re-takes it:**
+**Twelve findings, each with the command that re-takes it:**
 
 1. [The 12 MB readback does not bind](#1-the-12-mb-readback-does-not-bind-and-it-is-avoidable-anyway)
 2. [Memory attention is 60 ms](#2-memory-attention-is-60-ms-and-38-at-half-precision)
 3. [Decode is 71× real time](#3-decode-is-71-real-time-the-only-cost-is-seeking)
 4. [A decoded frame needs no colour path](#4-a-decoded-frame-lands-in-the-existing-colour-contract-unchanged)
 5. [The export pipeline is 5 ms a frame](#5-the-whole-export-pipeline-is-5-ms-a-frame-and-almost-all-of-it-is-the-encoder)
-6. [Writing a container costs as much as the application](#6-writing-a-container-costs-as-much-as-the-whole-application)
+6. [Writing a container costs nearly as much as the application](#6-writing-a-container-costs-nearly-as-much-as-the-whole-application)
 7. [The encoder is not what moves colour](#7-the-encoder-is-not-what-moves-colour)
 8. [A tracked clip does not fit in the command log](#8-a-tracked-clip-does-not-fit-in-the-command-log-and-the-fold-is-not-why)
 9. [A tracked frame is 135 ms, and the sum said 90](#9-a-tracked-frame-is-135-ms-and-the-sum-said-90)
 10. [Ten minutes was never the problem, and twenty was](#10-ten-minutes-was-never-the-problem-and-twenty-was)
 11. [Sound in one run is not a file anybody can stream](#11-sound-in-one-run-is-not-a-file-anybody-can-stream)
+12. [Ten minutes of tracking is a 65 MB file that writes in eleven milliseconds](#12-ten-minutes-of-tracking-is-a-65-mb-file-that-writes-in-eleven-milliseconds)
 
 ---
 
@@ -259,7 +263,7 @@ QuickTime, which is what a phone or a camera writes, costs 64 bytes gzipped: it
 is the same demuxer with a different brand list. Matroska costs 15.4 KB, because
 it is not.
 
-The current application bundle is 46.3 KB gzipped, so this is not
+The current application bundle is 48.8 KB gzipped, so this is not
 going in it. It gets the same treatment as the inference runtime, a dynamic
 import and its own chunk, and a session that never opens a video never fetches
 it.
@@ -433,7 +437,7 @@ turned an ambiguous result into a conclusive one.
 
 ---
 
-## 6. Writing a container costs as much as the whole application
+## 6. Writing a container costs nearly as much as the whole application
 
 Through Rotyl's own build, so the answer is what this bundler's tree shaking
 actually produces. `node tools/video-bench/bundle-size.mjs`:
@@ -453,7 +457,8 @@ actually produces. `node tools/video-bench/bundle-size.mjs`:
 The three numbers that decide the design:
 
 - **Writing costs 42.8 KB gzipped on top of a chunk that already reads**, which
-  is the size of the entire application bundle to the tenth of a kilobyte. So
+  is nine tenths of the entire application bundle, and was all of it until the
+  chapter that let a selection be saved. So
   the writer is its own dynamic import, fetched by an export and by nothing
   else, the same treatment the demuxer and the model get.
 - **A second container to write costs 11 bytes.** QuickTime is the same muxer
@@ -492,7 +497,7 @@ Gzipped, before the export chunk existed, at the split that made it, and today:
 
 | chunk            | before writing | at the split | today   |
 | ---------------- | -------------- | ------------ | ------- |
-| the application  | 41.6 KB        | 42.5 KB      | 45.8 KB |
+| the application  | 41.6 KB        | 42.5 KB      | 48.8 KB |
 | opening a video  | 33.2 KB        | 42.0 KB      | 42.2 KB |
 | exporting a clip | none           | 32.0 KB      | 33.5 KB |
 
@@ -924,6 +929,137 @@ in the source. An AAC track's own priming packet, which sits at a negative
 timestamp and whose samples a decoder throws away, goes the same way and for the
 same reason.
 
+---
+
+## 12. Ten minutes of tracking is a 65 MB file that writes in eleven milliseconds
+
+The command log has been the source of truth since the first chapter and had
+never been allowed to outlive a tab. What a brush stroke costs to write down is
+nothing and everybody knows it. What decides whether saving is a file format or
+a paragraph in known limits is what a TRACKED RUN costs, and
+[measurement 8](#8-a-tracked-clip-does-not-fit-in-the-command-log-and-the-fold-is-not-why)
+put that at 3.4 KB a packed mask and 62 MB held for ten minutes.
+
+```bash
+node tools/video-bench/run.mjs document
+```
+
+Its own command and its own file, for the ordinary reason: no GPU, no clips,
+nothing to fetch, and what a tracked run costs to HOLD and what it costs to
+WRITE are two findings answered in two chapters. One file would re-date the
+first every time the second moved.
+
+It drives the product's own writer and reader rather than a sketch of them, and
+it asserts the round trip before reporting a number: a document that lost a mask
+or shortened one would measure beautifully.
+
+### The bytes survive the trip, and so does the time
+
+| a saved selection | commands | the file | building it | assembling the bytes | reading it back |
+| ----------------- | -------- | -------- | ----------- | -------------------- | --------------- |
+| one stroke        | 1        | 2.3 KB   | under 0.1   | 0.1 ms               | under 0.1       |
+| a 300-frame run   | 301      | 1.09 MB  | 0.2 ms      | 0.9 ms               | 0.2 ms          |
+| ten minutes       | 18,001   | 65.45 MB | 11.2 ms     | 45.7 ms              | 12.1 ms         |
+
+**65.45 MB against 62.1 MB held, and the difference is the header.** The masks
+are the log's own arrays handed to the writer rather than copied into it, so a
+save touches every byte once. "Building it" is the header and the chunk list;
+"assembling the bytes" is the one pass over all of them through a real `Blob`,
+which is what a browser with nowhere to write the file does. Given a file handle
+each chunk goes straight into the stream and that column is the disk.
+
+Reading is the whole file back to a command log: the header parsed and every
+mask handed back as a `subarray` of the buffer it was read into. No copy
+anywhere in it, which is why 65 MB reads in 12 ms.
+
+**None of it is slow enough to need an indicator**, which is the finding that
+made everything after it simple. Saving can be an ordinary thing somebody
+presses rather than an operation with a progress bar on it.
+
+### The obvious format is a third larger and a hundred times slower
+
+JSON with each packed mask base64 encoded needs no format and no reader at all.
+The argument against it was arithmetic, four bytes for every three, which is the
+half that decides nothing on its own.
+
+| ten minutes of tracking     | the file | writing | reading |
+| --------------------------- | -------- | ------- | ------- |
+| a container, masks as bytes | 65.45 MB | 11.2 ms | 12.1 ms |
+| JSON, masks base64 encoded  | 85.91 MB | 1090 ms | 160 ms  |
+
+**Ninety seven times slower to write and thirteen times slower to read**, because
+every mask has to be built into a string on the way out and taken apart on the
+way back. A second of work to press Save is a different product from eleven
+milliseconds. So the header is JSON and the payload is not, which is the shape
+every honest container has and needs no library either. The alternative is
+written out in `document.ts` rather than shipped, which is the rule
+[measurement 10](#10-ten-minutes-was-never-the-problem-and-twenty-was) follows
+for the sink it compares against.
+
+A third larger is 31.2% here rather than 33%, because the header is the same in
+both. On a photograph the JSON is marginally the SMALLER of the two, 2301 bytes
+against 2313, since there are no masks at all and a container still pays twelve
+bytes of prefix.
+
+### Opening one is a fold and one upload, so the file can be dumb
+
+This is the measurement that decided the SHAPE of the file rather than its
+encoding. A document that read quickly and then took a second to become a
+picture would have to carry something a replay cannot recompute, which is a
+cached mask, which is a second source of truth in the one structure the document
+model exists to have exactly one of.
+
+| after loading   | commands | folded to | fold and unpack |
+| --------------- | -------- | --------- | --------------- |
+| one stroke      | 1        | 1         | under 0.1 ms    |
+| a 300-frame run | 301      | 1         | under 0.1 ms    |
+| ten minutes     | 18,001   | 1         | 0.3 ms          |
+
+The fold cuts at the last command that decides a frame by itself, and a tracked
+run writes `replace` on every frame it reached, so eighteen thousand commands
+fold to one. **0.3 ms**, and everything after it is the texture upload the
+renderer does on every frame anyway. So the document carries the log and nothing
+derived from it.
+
+The fold here runs over the log that came back OUT of the file rather than the
+one that went in. A reader that produced commands in a different order, or lost
+the frame numbers, would fold to something else and be caught here.
+
+### The whole file cannot be digested, and does not need to be
+
+A browser has no paths, so a document names media it cannot address and somebody
+supplies the file again. Whether it is the same file is the only question left,
+and a selection replayed over the wrong clip is a wrong answer that looks like a
+right one.
+
+| identifying the media       | 2 MB   | 64 MB   | 1 GB   |
+| --------------------------- | ------ | ------- | ------ |
+| the whole file              | 0.8 ms | 29.2 ms | 516 ms |
+| the first and last megabyte | 1.7 ms | 1.7 ms  | 1.9 ms |
+
+**The first row is not available on a real clip, and that is the platform rather
+than a budget.** `crypto.subtle.digest` takes a `BufferSource` and there is no
+streaming form of it anywhere, so digesting two gigabytes means holding two
+gigabytes, which is the exact thing
+[measurement 10](#10-ten-minutes-was-never-the-problem-and-twenty-was) rebuilt
+the clip sink to stop doing. Where it fits it is linear at 2192 to 2500 MB a
+second across every rung from 1 MB to 1 GB, so on a two gigabyte clip it would
+be a second of work on top of the whole file in the heap.
+
+**The second row is flat**, which is the finding: two slices and eight bytes of
+length whatever the file is. The 2 MB cell for the whole file is the 1 MB figure
+doubled rather than a rung of its own; below two megabytes the two slices of the
+bounded probe meet and the whole file is digested anyway, which is the strong
+answer arriving free on the files small enough to give it away.
+
+What the comparison decides is what happens on a mismatch, and that is two
+answers rather than one. The SHAPE, which the loader read anyway, decides
+refusal: a file of different dimensions or a different frame count cannot replay
+the log at all. The BYTES decide a sentence: a file of the same shape replays
+perfectly and may be a re-encode of the same clip, so it opens and says so.
+What neither can see is a file agreeing at both ends and in length and differing
+in the middle. That is in `docs/limits.md` rather than left implied.
+
 ## What follows
 
 1. **Decode is free and seeking is not.** Scrubbing is a decoder kept alive and
@@ -958,3 +1094,11 @@ same reason.
     a file whose sound sits most of the file away from its picture and grows
     with the clip. Interleaved it is a constant, and it costs one comparison per
     frame inside a loop that was already there.
+11. **The log fits in a file with room to spare, and the file can be dumb.**
+    Ten minutes of tracking is 65 MB, eleven milliseconds to write and twelve to
+    read, and folding it after a load is 0.3 ms, so nothing derived has to be
+    stored in it. The obvious format, JSON with base64 masks, is a third larger
+    and a hundred times slower. The media it names cannot be hashed whole here,
+    so a document recognises a file by its shape and by its two ends, and the
+    two failures want opposite treatment: a different shape is refused, and
+    different bytes at the same shape open with a sentence.

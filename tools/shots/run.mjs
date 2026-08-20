@@ -33,7 +33,7 @@ const VIEWPORT = { width: 1100, height: 660 };
 /**
  * What the animated hero is allowed to cost.
  *
- * A repository whose entire argument is 45.8 KB gzipped cannot carry a
+ * A repository whose entire argument is 48.8 KB gzipped cannot carry a
  * multi-megabyte screenshot, and a GIF is the only moving format GitHub renders
  * from a repository path. 680 pixels across 32 frames of 48 colours is the point
  * where the split down the middle still reads and the file stops being rude.
@@ -168,7 +168,7 @@ rmSync(FRAMES, { recursive: true, force: true });
 
 // WebP for the stills, the same format the research figures use. A screenshot of
 // flat interface chrome is exactly what lossy compression is good at, and this
-// project's whole argument is 45.8 KB gzipped: it cannot carry megabytes of PNG.
+// project's whole argument is 48.8 KB gzipped: it cannot carry megabytes of PNG.
 console.log('stills: to webp');
 for (const name of ['video', 'styles']) {
   execFileSync('cwebp', [

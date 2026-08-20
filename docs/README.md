@@ -12,6 +12,7 @@ from the benchmarks' own results, for the reason
 | [How it is put together](architecture.md) | the layers, the render path, what a style is, why the selection is a log   |
 | [Selecting an object](selection.md)       | the model, the three readings of one click, and the guided filter          |
 | [Video](video.md)                         | playing, holding a selection across frames, reading frames, writing a clip |
+| [Saving the work](saving.md)              | the document, which file it belongs to, and where the bytes go             |
 | [What was measured](measurements.md)      | why every number lives on a generated page instead of in these files       |
 | [The interface](interface.md)             | closing a file, saying what is happening and what happened, type           |
 | [Known limits](limits.md)                 | what it cannot do, in its own words                                        |

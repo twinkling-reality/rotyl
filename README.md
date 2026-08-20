@@ -58,6 +58,14 @@ than held until the end. Its soundtrack goes with it, copied across as the
 packets it arrived as rather than re-encoded, and interleaved with the picture
 so the file still plays before it has finished arriving.
 
+**Saving.** The selection is a command log and now it outlives the tab. Save
+writes it as a `.rotyl` file, and dropping that file back in replays it: the same
+mask, on the same frames, with the playhead where it was. It holds the log and
+not the media, which a browser cannot address, so it names the file instead and
+says how to recognise it. A file of a different shape is refused; a re-encode of
+the same one opens with a sentence beside its name.
+See [saving the work](docs/saving.md).
+
 ![The comic style with the Mural palette applied inside a dragged rectangle,
 with the style panel open](docs/media/styles.webp)
 
@@ -78,7 +86,7 @@ compiles it with no `dom` library, so a stray `window` fails the build rather
 than being caught in review. The payoff is concrete: every shader is unit-tested
 by running it for real through Dawn in Node, with no browser and no mocks.
 
-It ships as 148 KB of JavaScript, 45.8 KB gzipped, plus 31 KB of subset fonts.
+It ships as 157 KB of JavaScript, 48.8 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches neither the inference runtime, nor the demuxer, nor the container writer.
 
@@ -89,6 +97,7 @@ fetches neither the inference runtime, nor the demuxer, nor the container writer
 | [How it is put together](docs/architecture.md) | the layers, the render path, what a style is, why the selection is a log   |
 | [Selecting an object](docs/selection.md)       | the model, the three readings of one click, and the guided filter          |
 | [Video](docs/video.md)                         | playing, holding a selection across frames, reading frames, writing a clip |
+| [Saving the work](docs/saving.md)              | the document, which file it belongs to, and where the bytes go             |
 | [What was measured](docs/measurements.md)      | why every number lives on a generated page instead of in these files       |
 | [The interface](docs/interface.md)             | closing a file, saying what is happening and what happened, type           |
 | [Known limits](docs/limits.md)                 | what it cannot do, in its own words                                        |
@@ -111,7 +120,10 @@ soundtrack an MP4 cannot carry is dropped, which the interface says before the
 work rather than after it. Playback has no sound at all. Only Chrome and Edge
 can give a page a file to write into, so everywhere else a clip export is built
 in the tab and stops at about twelve minutes of 1080p with what it wrote. Object
-selection needs the network once, for about 36 MB of model. The full list, which
+selection needs the network once, for about 36 MB of model. A saved selection
+references its media rather than containing it, and recognises the file by its
+shape and by a digest of its two ends, which cannot see a re-encode that agrees
+at both ends and in length. The full list, which
 is longer and does not flatter the project, is in
 [known limits](docs/limits.md).
 

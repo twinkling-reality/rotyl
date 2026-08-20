@@ -435,8 +435,9 @@ by nothing else.
 
 **The container writer is behind its own dynamic import**, one further in than
 the demuxer, and that is a measured decision rather than tidiness: writing costs
-42.8 KB gzipped on top of a chunk that already reads, which is the size of the
-whole application bundle to the tenth of a kilobyte. A photograph fetches
+42.8 KB gzipped on top of a chunk that already reads, which is nine tenths of
+the whole application bundle and was all of it until a selection could be saved.
+A photograph fetches
 neither, a video fetches the reader, and only asking for a clip fetches the
 writer. A second container inside it would cost eleven bytes, for the same
 reason `.mov` costs forty-nine on the way in.

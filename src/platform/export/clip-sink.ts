@@ -22,7 +22,8 @@ import type { ExportAudio, ExportFrame, FrameSink, SinkState, Written } from './
  * REACHED ONLY THROUGH A DYNAMIC IMPORT. Writing a container costs 42.8 KB
  * gzipped on top of the demuxer already in the video chunk, measured through
  * this project's own build (`node tools/video-bench/bundle-size.mjs`), which is
- * the size of the whole application bundle to the tenth of a kilobyte. Someone
+ * nine tenths of the whole application bundle and was all of it until the
+ * chapter that let a selection be saved. Someone
  * who opens a photograph never fetches it, and someone who opens a video does
  * not fetch it either until they ask for a clip.
  *

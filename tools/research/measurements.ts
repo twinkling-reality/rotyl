@@ -980,14 +980,14 @@ const CASES = [
 ] as const;
 
 function documentCost(document: unknown): Section {
-  const at = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
+  const of = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
   const held = num(document, ['document', 'ten minutes', 'held_megabytes']);
   return {
     heading: 'A ten-minute tracked run is a 65 MB file that writes in eleven milliseconds',
     prose: [
       'What a brush stroke costs to write down is nothing and everybody knows it. What decides whether saving is a file format or a paragraph in known limits is what a TRACKED RUN costs: one command per frame, a mask on each, packed, which the chapter before this one measured at 3.4 KB a mask and 62 MB for ten minutes held in memory.',
       `Those 62 MB survive the trip. The file is ${megabytes(
-        at('ten minutes', ['container', 'bytes']),
+        of('ten minutes', ['container', 'bytes']),
       )} against ${held.toFixed(
         1,
       )} MB held, and the difference is the header rather than the masks: they are the log's own arrays handed to the writer, so a save touches every byte once and copies none of them.`,
@@ -1004,11 +1004,11 @@ function documentCost(document: unknown): Section {
       ],
       rows: CASES.map(([label, key]) => [
         label,
-        at(key, ['commands']).toLocaleString('en-GB'),
-        megabytes(at(key, ['container', 'bytes'])),
-        quick(at(key, ['container', 'encode_ms', 'median'])),
-        quick(at(key, ['container', 'through_a_blob_ms', 'median'])),
-        quick(at(key, ['container', 'read_ms', 'median'])),
+        of(key, ['commands']).toLocaleString('en-GB'),
+        megabytes(of(key, ['container', 'bytes'])),
+        quick(of(key, ['container', 'encode_ms', 'median'])),
+        quick(of(key, ['container', 'through_a_blob_ms', 'median'])),
+        quick(of(key, ['container', 'read_ms', 'median'])),
       ]),
     },
     caveat:
@@ -1018,18 +1018,18 @@ function documentCost(document: unknown): Section {
 }
 
 function documentShape(document: unknown): Section {
-  const at = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
-  const larger = at('ten minutes', ['json_base64', 'larger_by']);
+  const of = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
+  const larger = of('ten minutes', ['json_base64', 'larger_by']);
   const slower =
-    at('ten minutes', ['json_base64', 'write_ms', 'median']) /
-    at('ten minutes', ['container', 'encode_ms', 'median']);
+    of('ten minutes', ['json_base64', 'write_ms', 'median']) /
+    of('ten minutes', ['container', 'encode_ms', 'median']);
   return {
     heading: 'JSON with the masks base64 encoded is a third larger and a hundred times slower',
     prose: [
       'The obvious shape for a document is the one the command log already nearly is: JSON, with each packed mask turned into text. It needs no format and no reader, and the argument against it was arithmetic, which is the half that does not decide anything on its own. Base64 is four bytes for every three before anything else happens.',
       `It is that, and it is also ${slower.toFixed(0)} times slower to write and ${(
-        at('ten minutes', ['json_base64', 'read_ms', 'median']) /
-        at('ten minutes', ['container', 'read_ms', 'median'])
+        of('ten minutes', ['json_base64', 'read_ms', 'median']) /
+        of('ten minutes', ['container', 'read_ms', 'median'])
       ).toFixed(
         0,
       )} times slower to read, because every mask has to be built into a string on the way out and taken apart on the way back. A second of work to press Save is a different product from eleven milliseconds.`,
@@ -1040,15 +1040,15 @@ function documentShape(document: unknown): Section {
       rows: [
         [
           'a container, masks as bytes',
-          megabytes(at('ten minutes', ['container', 'bytes'])),
-          ms(at('ten minutes', ['container', 'encode_ms', 'median'])),
-          ms(at('ten minutes', ['container', 'read_ms', 'median'])),
+          megabytes(of('ten minutes', ['container', 'bytes'])),
+          ms(of('ten minutes', ['container', 'encode_ms', 'median'])),
+          ms(of('ten minutes', ['container', 'read_ms', 'median'])),
         ],
         [
           'JSON, masks base64 encoded',
-          megabytes(at('ten minutes', ['json_base64', 'bytes'])),
-          ms(at('ten minutes', ['json_base64', 'write_ms', 'median'])),
-          ms(at('ten minutes', ['json_base64', 'read_ms', 'median'])),
+          megabytes(of('ten minutes', ['json_base64', 'bytes'])),
+          ms(of('ten minutes', ['json_base64', 'write_ms', 'median'])),
+          ms(of('ten minutes', ['json_base64', 'read_ms', 'median'])),
         ],
       ],
     },
@@ -1060,16 +1060,16 @@ function documentShape(document: unknown): Section {
 }
 
 function documentReplay(document: unknown): Section {
-  const at = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
+  const of = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
   return {
     heading: 'Opening one is a fold and one upload, so the file can be dumb',
     prose: [
       'This is the measurement that decided the shape of the file rather than its encoding. A document that could be read quickly and then took a second to become a picture would have to carry something a replay cannot recompute, which is a cached mask, which is a second source of truth in the one structure this architecture exists to have exactly one of.',
-      `It does not. Folding a ten-minute log to the frame it was saved on cuts at the last command that decides that frame by itself, so eighteen thousand commands fold to ${at(
+      `It does not. Folding a ten-minute log to the frame it was saved on cuts at the last command that decides that frame by itself, so eighteen thousand commands fold to ${of(
         'ten minutes',
         ['replay', 'folded_to'],
       ).toFixed(0)}, and unpacking that one mask and the fold together are ${ms(
-        at('ten minutes', ['replay', 'ms', 'median']),
+        of('ten minutes', ['replay', 'ms', 'median']),
       )}. Everything after it is the texture upload the renderer does on every frame anyway.`,
       'So the document carries the log and nothing derived from it. No mask, no thumbnail, no rendered anything: replaying is cheaper than reading whatever a cache of it would have been.',
     ],
@@ -1077,9 +1077,9 @@ function documentReplay(document: unknown): Section {
       columns: ['after loading', 'commands', 'folded to', 'fold and unpack'],
       rows: CASES.map(([label, key]) => [
         label,
-        at(key, ['commands']).toLocaleString('en-GB'),
-        at(key, ['replay', 'folded_to']).toFixed(0),
-        quick(at(key, ['replay', 'ms', 'median'])),
+        of(key, ['commands']).toLocaleString('en-GB'),
+        of(key, ['replay', 'folded_to']).toFixed(0),
+        quick(of(key, ['replay', 'ms', 'median'])),
       ]),
     },
     caveat:
@@ -1246,7 +1246,7 @@ function containerBytes(bundle: unknown): Section {
     heading: 'Writing a container costs as much as the application',
     prose: [
       'Measured through Rotyl’s own build, so the answer is what this bundler’s tree shaking actually produces rather than what a standalone one would.',
-      `Writing costs ${delta('writing, on top of reading')} gzipped on top of a chunk that already reads, which is the size of the entire application bundle to the tenth of a kilobyte. So the writer is its own dynamic import, fetched by an export and by nothing else, the same treatment the demuxer and the model get.`,
+      `Writing costs ${delta('writing, on top of reading')} gzipped on top of a chunk that already reads, which is nine tenths of the entire application bundle and was all of it until saving a selection was added to that bundle. So the writer is its own dynamic import, fetched by an export and by nothing else, the same treatment the demuxer and the model get.`,
       `A second container to write costs ${delta('a second container to write')}: QuickTime is the same muxer with a different brand list, exactly as it is on the read side. A soundtrack copied across costs ${delta('a soundtrack copied across')}, which is a second track and a second source on a muxer that was already paid for. The encoder wrapper is ${delta('the encoder wrapper')} of the writer, and driving the encoder by hand instead would save that and cost five per cent a frame.`,
       'Shipped, there are two consumers of one library and the bundler puts what they share in a chunk of its own, so opening a video costs 8.8 KB more than it did for somebody who never exports one. The alternative arrangements are worse: one chunk makes every video session pay for the writer, and no split at all puts it in the application.',
     ],
@@ -1900,7 +1900,7 @@ export function entries(results: Results): readonly Entry[] {
           table: {
             columns: ['gzipped', 'size', 'fetched'],
             rows: [
-              ['application', '45.8 KB', 'always'],
+              ['application', '48.8 KB', 'always'],
               ['subset fonts', '31 KB', 'always'],
               ['inference runtime', '36.2 KB', 'first object click'],
               ['demuxer', '42.2 KB', 'first video'],
