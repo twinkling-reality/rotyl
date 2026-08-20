@@ -54,11 +54,18 @@
 // from make-clips.sh, and the four photograph clips from fetch-real.sh.
 
 import { CONTENT_CASES, type Case } from './chain.ts';
-import { amplification, CLIPS, REAL, StyleStage, type Difference } from './harness.ts';
+import {
+  addDifference,
+  amplification,
+  CLIPS,
+  NO_DIFFERENCE,
+  REAL,
+  settleDifference,
+  StyleStage,
+  type Difference,
+} from './harness.ts';
 import { clipFrames } from './stability.ts';
 import { differenceWhere, populations, FRAMES, SIZE } from './motion.ts';
-
-const round = (value: number): number => Math.round(value * 1000) / 1000;
 
 /**
  * How much of the last frame the cheap fix keeps.
@@ -94,20 +101,7 @@ interface Running {
   n: number;
 }
 
-const empty = (): Running => ({
-  input: { mean: 0, p99: 0, flicker: 0 },
-  styled: { mean: 0, p99: 0, flicker: 0 },
-  n: 0,
-});
-
-const add = (into: Difference, one: Difference): Difference => ({
-  mean: into.mean + one.mean,
-  p99: into.p99 + one.p99,
-  flicker: into.flicker + one.flicker,
-});
-
-const settle = (one: Difference, n: number): Difference =>
-  n === 0 ? one : { mean: round(one.mean / n), p99: round(one.p99 / n), flicker: round(one.flicker / n) };
+const empty = (): Running => ({ input: NO_DIFFERENCE, styled: NO_DIFFERENCE, n: 0 });
 
 /** What is done to a clip's frames on the way into the chain. */
 interface Condition {
@@ -220,8 +214,8 @@ async function overCondition(
           maskBytes && previousMask
             ? populations(previousMask, maskBytes).still
             : everywhere(styled.length / 4);
-        running.input = add(running.input, differenceWhere(previousFed, fed, still));
-        running.styled = add(running.styled, differenceWhere(previousStyled, styled, still));
+        running.input = addDifference(running.input, differenceWhere(previousFed, fed, still));
+        running.styled = addDifference(running.styled, differenceWhere(previousStyled, styled, still));
         running.n++;
       }
 
@@ -236,8 +230,8 @@ async function overCondition(
     stage.dispose();
   }
 
-  const input = settle(running.input, running.n);
-  const styled = settle(running.styled, running.n);
+  const input = settleDifference(running.input, running.n);
+  const styled = settleDifference(running.styled, running.n);
   return { input, styled, amplification: amplification(styled, input), pairs: running.n };
 }
 

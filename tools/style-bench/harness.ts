@@ -235,7 +235,51 @@ export function difference(a: Uint8Array, b: Uint8Array): Difference {
   };
 }
 
-/** How much more a style moved than its input did. */
+/** Nothing has moved, which is where every accumulator starts. */
+export const NO_DIFFERENCE: Difference = { mean: 0, p99: 0, flicker: 0 };
+
+/** Two differences summed, on the way to averaging a run of them. */
+export function addDifference(into: Difference, one: Difference): Difference {
+  return {
+    mean: into.mean + one.mean,
+    p99: into.p99 + one.p99,
+    flicker: into.flicker + one.flicker,
+  };
+}
+
+/**
+ * The average of `n` differences, ROUNDED ONCE, HERE, AT THE PRECISION IT IS
+ * PUBLISHED TO.
+ *
+ * That last clause is the rule, and it exists because breaking it published one
+ * measurement as two numbers. p99 is an integer per pair of frames and is shown
+ * to a tenth of a code everywhere it appears; the amplification beside it is
+ * that number over the input's. Round the two to a tenth and divide, and the
+ * ratio is the one a reader gets by dividing the table's own columns. Keep more
+ * decimals here and divide, and it is not: 11.217 over 5.565 is 2.02 where the
+ * table plainly says 11.2 over 5.6, which is 2.00. Both are the same 23 pairs
+ * of the same clip. The three harness files that average differences each used
+ * to round on their own, two of them one way and one the other, and the
+ * disagreement reached four documents before anybody divided the columns.
+ *
+ * A tenth of a code is also all this measurement has. The quantity is a
+ * difference between two 8-bit renders.
+ */
+export function settleDifference(total: Difference, n: number): Difference {
+  if (n === 0) return NO_DIFFERENCE;
+  return {
+    mean: round(total.mean / n),
+    p99: Math.round((total.p99 / n) * 10) / 10,
+    flicker: round(total.flicker / n),
+  };
+}
+
+/**
+ * How much more a style moved than its input did.
+ *
+ * Taken from settled figures, so it is the ratio of the numbers beside it
+ * rather than of two the reader cannot see.
+ */
 export function amplification(styled: Difference, source: Difference): Record<string, number> {
   const ratio = (a: number, b: number): number => (b === 0 ? 0 : round(a / b));
   return {

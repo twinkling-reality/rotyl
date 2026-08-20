@@ -68,6 +68,13 @@ const result = await page.evaluate(async (names) => {
 // that replaced the index wholesale would leave the research page linking a
 // picture that is still on disk and no longer described, which the build turns
 // into a caption for the wrong thing.
+//
+// What each tile is goes in beside the pictures, so a caption on the research
+// page is composed from the figure rather than remembered about it. The pixels
+// do not: they go to the .webp next door, and the index is read by a build that
+// has no use for a megabyte of base64.
+const described = ({ name, width, height, columns, tiles }) => ({ name, width, height, columns, tiles });
+
 const figures = [result.figures, result['motion-pictures']].flatMap((set) => (Array.isArray(set) ? set : []));
 delete result.figures;
 delete result['motion-pictures'];
@@ -80,8 +87,6 @@ if (figures.length > 0) {
     index = [];
   }
   const written = new Set(figures.map((figure) => figure.name));
-  // What each tile is, written beside the pictures, so the caption on the
-  // research page is composed from the figure rather than remembered about it.
   writeFileSync(
     'tools/style-bench/figures/index.json',
     `${JSON.stringify(

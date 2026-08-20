@@ -129,14 +129,14 @@ export const TRIALS: readonly Trial[] = [
     what: 'Blending the previous stylised frame into this one, to stop a clip boiling',
     verdict: 'rejected',
     evidence:
-      'Measured before it was built, on a clip where five cars move against a city that does not. Half of the last frame improves the residue from 3.6 codes to 2.0, which is the number everybody quotes, and costs 58 codes of deviation in the band a car has just left, 53 on the car itself and 13% of the gradient energy inside it. On the clip with no moving grain, where the residue is already at the codec floor, it makes the residue worse and costs the same sixty codes. It also ends "a render is a function of its frame"',
+      'Measured before it was built, on a clip where five cars move against a city that does not. Half of the last frame improves the residue from 3.6 codes to 2.0, which is the number everybody quotes, and costs 58.5 codes of deviation in the band a car has just left, 53 on the car itself and 13% of the gradient energy inside it. On the clip with no moving grain, where the residue is already at the codec floor, it makes the residue worse and costs the same sixty codes. It also ends "a render is a function of its frame"',
     where: 'tools/style-bench, measurement 5',
   },
   {
     what: 'Averaging each frame against the one before it on the way INTO the chain',
     verdict: 'rejected',
     evidence:
-      'One pass, no motion estimation on a fixed camera, and it takes the input down about a fifth and the styled output down with it. It also makes the amplification WORSE wherever it was above one: poster on a brick wall 1.36 to 1.52, on foliage 1.46 to 1.62, comic at full detail 2.02 to 2.48. What it removes is the part these chains attenuate hardest, so it reports less flicker rather than causing less',
+      'One pass, no motion estimation on a fixed camera, and it takes the input down about a fifth and the styled output down with it. It also makes the amplification WORSE wherever it was above one: poster on a brick wall 1.36 to 1.54, on foliage 1.46 to 1.63, comic at full detail 2.00 to 2.51. What it removes is the part these chains attenuate hardest, so it reports less flicker rather than causing less',
     where: 'tools/style-bench, measurement 4',
   },
   {

@@ -59,7 +59,7 @@ quieter input would not also remove.
 What differs between chains is the GAIN, and the gain depends on the picture.
 The drawn scene says every chain but print attenuates. A photograph of a brick
 wall says the poster chain is at 1.36 and the comic chain at full detail is at
-2.02, where at no detail it is 0.62. Both of those are one stage: the poster
+2.00, where at no detail it is 0.63. Both of those are one stage: the poster
 outline, which the section below is about, and the Kuwahara radius falling until
 the flatten stops flattening.
 

@@ -226,7 +226,7 @@ one, and the measurement behind it is on `/research.html`.
   product's promise that a render is a function of its frame. What is left is in
   one stage of one chain, which is the entry below and the one after it.
 - **The comic chain amplifies a brick wall at full detail, by two.** At detail 0
-  it attenuates by 0.62 and at detail 1 it amplifies by 2.02, on the same
+  it attenuates by 0.63 and at detail 1 it amplifies by 2.00, on the same
   photograph, because raising detail shrinks the Kuwahara radius until the
   flatten stops flattening and what survives is the grain it was there to
   remove. The drawn scene reports 0.69 and says nothing about it. Nothing here

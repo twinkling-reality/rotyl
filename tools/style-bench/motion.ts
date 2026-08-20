@@ -41,7 +41,14 @@
 // from make-clips.sh.
 
 import { CONTENT_CASES, type Case } from './chain.ts';
-import { CLIPS, StyleStage, type Difference } from './harness.ts';
+import {
+  addDifference,
+  CLIPS,
+  NO_DIFFERENCE,
+  settleDifference,
+  StyleStage,
+  type Difference,
+} from './harness.ts';
 import { clipFrames } from './stability.ts';
 import type { Figure } from './figures.ts';
 import { halve, tile, toBase64 } from './sheet.ts';
@@ -191,22 +198,13 @@ interface Running {
   n: number;
 }
 
-const nothing = (): Difference => ({ mean: 0, p99: 0, flicker: 0 });
-
 const empty = (): Running => ({
-  residue: nothing(),
-  honest: nothing(),
-  deviation: { still: nothing(), moving: nothing(), vacated: nothing() },
+  residue: NO_DIFFERENCE,
+  honest: NO_DIFFERENCE,
+  deviation: { still: NO_DIFFERENCE, moving: NO_DIFFERENCE, vacated: NO_DIFFERENCE },
   detailRatio: 0,
   n: 0,
 });
-
-function add(into: Difference, one: Difference): Difference {
-  return { mean: into.mean + one.mean, p99: into.p99 + one.p99, flicker: into.flicker + one.flicker };
-}
-
-const settle = (one: Difference, n: number): Difference =>
-  n === 0 ? one : { mean: round(one.mean / n), p99: round(one.p99 / n), flicker: round(one.flicker / n) };
 
 /**
  * One style over the traffic clip, per frame and blended, side by side.
@@ -256,8 +254,14 @@ async function overTraffic(device: GPUDevice, clip: string, item: Case): Promise
         const output = blended(styled, method.previous, method.weight);
         if (where && method.previous) {
           const running = method.running;
-          running.residue = add(running.residue, differenceWhere(method.previous, output, where.still));
-          running.honest = add(running.honest, differenceWhere(method.previous, output, where.moving));
+          running.residue = addDifference(
+            running.residue,
+            differenceWhere(method.previous, output, where.still),
+          );
+          running.honest = addDifference(
+            running.honest,
+            differenceWhere(method.previous, output, where.moving),
+          );
           // Against the per-frame render of THIS frame, so a deviation is the
           // method's own doing rather than anything the clip did. Zero in every
           // population for the per-frame row by construction, which is the
@@ -269,15 +273,15 @@ async function overTraffic(device: GPUDevice, clip: string, item: Case): Promise
           // these speeds most of what a blend does is a halo just OUTSIDE the
           // moving object, on ground no car has touched on either frame, which
           // lands in `still` and which a vacated-band figure cannot see.
-          running.deviation.still = add(
+          running.deviation.still = addDifference(
             running.deviation.still,
             differenceWhere(styled, output, where.still),
           );
-          running.deviation.moving = add(
+          running.deviation.moving = addDifference(
             running.deviation.moving,
             differenceWhere(styled, output, where.moving),
           );
-          running.deviation.vacated = add(
+          running.deviation.vacated = addDifference(
             running.deviation.vacated,
             differenceWhere(styled, output, where.vacated),
           );
@@ -300,12 +304,12 @@ async function overTraffic(device: GPUDevice, clip: string, item: Case): Promise
   for (const method of methods) {
     const running = method.running;
     out[method.name] = {
-      residue: settle(running.residue, running.n),
-      honest: settle(running.honest, running.n),
+      residue: settleDifference(running.residue, running.n),
+      honest: settleDifference(running.honest, running.n),
       deviation: {
-        still: settle(running.deviation.still, running.n),
-        moving: settle(running.deviation.moving, running.n),
-        vacated: settle(running.deviation.vacated, running.n),
+        still: settleDifference(running.deviation.still, running.n),
+        moving: settleDifference(running.deviation.moving, running.n),
+        vacated: settleDifference(running.deviation.vacated, running.n),
       },
       detail_against_per_frame: running.n === 0 ? 0 : round(running.detailRatio / running.n),
       pairs: running.n,

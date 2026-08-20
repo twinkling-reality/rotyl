@@ -26,13 +26,16 @@
 
 import { BlobSource, EncodedPacketSink, Input, MP4, type EncodedPacket } from 'mediabunny';
 import {
+  addDifference,
   amplification,
   CLIPS,
   difference,
+  NO_DIFFERENCE,
   pictureBytes,
   REAL,
   REAL_PICTURES,
   SCENE_PICTURE,
+  settleDifference,
   StyleStage,
   type Difference,
   type Picture,
@@ -187,25 +190,18 @@ export async function* clipFrames(url: string, count: number): AsyncGenerator<Vi
   }
 }
 
+/** A run of differences on its way to an average; the rounding is in harness.ts. */
 interface Running {
-  mean: number;
-  p99: number;
-  flicker: number;
+  total: Difference;
   n: number;
 }
 
+const empty = (): Running => ({ total: NO_DIFFERENCE, n: 0 });
+
 const accumulate = (into: Running, one: Difference): void => {
-  into.mean += one.mean;
-  into.p99 += one.p99;
-  into.flicker += one.flicker;
+  into.total = addDifference(into.total, one);
   into.n++;
 };
-
-const settle = (running: Running): Difference => ({
-  mean: Math.round((running.mean / running.n) * 1000) / 1000,
-  p99: Math.round((running.p99 / running.n) * 10) / 10,
-  flicker: Math.round((running.flicker / running.n) * 1000) / 1000,
-});
 
 /**
  * One style over consecutive frames of one clip.
@@ -227,8 +223,8 @@ async function overClip(
   for (const item of cases) {
     let previousSource: Uint8Array | undefined;
     let previousStyled: Uint8Array | undefined;
-    const source: Running = { mean: 0, p99: 0, flicker: 0, n: 0 };
-    const styled: Running = { mean: 0, p99: 0, flicker: 0, n: 0 };
+    const source = empty();
+    const styled = empty();
 
     for await (const frame of clipFrames(url, count)) {
       stage.uploadImage(frame);
@@ -244,8 +240,8 @@ async function overClip(
       previousStyled = nowStyled;
     }
 
-    const sourceDiff = settle(source);
-    const styledDiff = settle(styled);
+    const sourceDiff = settleDifference(source.total, source.n);
+    const styledDiff = settleDifference(styled.total, styled.n);
     out[item.name] = {
       source: sourceDiff,
       styled: styledDiff,

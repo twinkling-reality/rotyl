@@ -44,6 +44,16 @@ Chrome 151, adapter `apple / metal-3`. What is timed is the STYLE CHAIN ALONE.
 the composite is one pass that re-runs on every brush movement and is timed on
 the research site's editor page instead.
 
+**A difference is rounded once, where it is averaged, at the precision it is
+published to.** p99 is an integer per pair of frames and is shown to a tenth of
+a code wherever it appears, and the amplification beside it is that number over
+the input's. Rounding both to a tenth and dividing gives the ratio a reader gets
+from the table's own columns; keeping more decimals and dividing does not, and
+this file published one measurement as two numbers for a chapter because three
+harness files each rounded on their own. 11.2 over 5.6 is 2.00 and 11.217 over
+5.565 is 2.02, on the same 23 pairs of the same clip, and the 2.02 reached four
+documents. `harness.ts` now owns the rule and the other three call it.
+
 **Run it on a quiet machine, and check that it was one.** Taken while the Dawn
 unit suite was running, the same chain measured 211 ms where it measures 140,
 and the largest case moved by a factor of three. Contention does not add a
@@ -458,8 +468,8 @@ too, without a warp and without breaking the invariant.
 The amplification table is on `/research/holding-still.html`. Its shape is the
 finding: on the drawn scene every chain but print attenuates, and on
 photographs the poster chain amplifies a brick wall by 1.36 and foliage by 1.46,
-and the comic chain at full detail amplifies the wall by 2.02 where at no detail
-it attenuates by 0.62.
+and the comic chain at full detail amplifies the wall by 2.00 where at no detail
+it attenuates by 0.63.
 
 **Both of those are already located.** Poster's is the outline, which is 1.36
 with it drawn and 0.95 without on the wall, 1.46 against 0.86 on foliage. That
@@ -483,8 +493,8 @@ measuring, a quarter of the last frame.
 It takes the input down by about a fifth and the styled output down with it,
 roughly in proportion, on every chain and every picture. **And it makes the
 amplification worse wherever the amplification was already above one**: poster
-on the wall goes from 1.36 to 1.52, on foliage from 1.46 to 1.62, and comic at
-full detail from 2.02 to 2.48.
+on the wall goes from 1.36 to 1.54, on foliage from 1.46 to 1.63, and comic at
+full detail from 2.00 to 2.51.
 
 That was not what this expected and it is the useful half. What a denoise
 removes is the high-frequency part of the input, which is the part these chains
@@ -543,7 +553,7 @@ and nothing built on it can be believed.
 
 It fails. Half of the last frame takes the comic chain's residue from 3.6 codes
 to 2.0, which is the number everybody quotes, improved by two fifths. It pays
-with 58 codes of deviation in the band a car has just left, 53 on the car
+with 58.5 codes of deviation in the band a car has just left, 53 on the car
 itself, and 13% of the gradient energy inside a moving car for the poster chain.
 
 **And on the clip with no moving grain it is worse than that.** There the
@@ -567,7 +577,7 @@ number it did not close is in `docs/limits.md` rather than in a plan.
    answers the codec floor. What differs is the gain, and the gain depends on
    the picture rather than on the chain. The drawn scene says every chain but
    print attenuates; a brick wall says the poster outline is at 1.36 and the
-   comic chain at full detail is at 2.02.
+   comic chain at full detail is at 2.00.
 1. **Style cost is a choice, not a constraint.** Two of the three styles run in
    under 2 ms at 720p. The one that costs 119 ms spends all of it in a single
    stage whose look, on this scene, the cheap one matches or beats.
