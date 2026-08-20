@@ -834,6 +834,11 @@ test('exports the whole clip as a video, with nowhere to write it', async ({ pag
   // and seek cost is set by keyframe spacing and by nothing else.
   expect(keyframes).toBeGreaterThan(1);
 
+  // And the sound, on the path that has no file to write into either. The
+  // soundtrack is not a property of having a handle, and a product that carried
+  // it only where it could stream would be two products.
+  expect((await audioPackets(new Uint8Array(bytes))).length).toBeGreaterThan(50);
+
   // And the editor is usable afterwards rather than left on the last frame of
   // its own export.
   await expect(page.getByText('1 / 60')).toBeVisible();

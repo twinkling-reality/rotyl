@@ -315,6 +315,15 @@ interface Rung {
   readonly error?: string;
   /** Where the checkpoints had got to when it stopped, so a crash still leaves a trace. */
   readonly reached_frames?: number;
+  /**
+   * How many soundtrack packets reached the file, counted at the sink.
+   *
+   * OBSERVED RATHER THAN PREDICTED, and that is the whole point of the field.
+   * The first version of this rung computed the number it expected and printed
+   * that beside a row whose sink had quietly dropped every packet, which is the
+   * failure this chapter exists to stop, committed by the harness measuring it.
+   */
+  readonly audio_packets_written?: number;
 }
 
 /**
@@ -363,12 +372,14 @@ function watched(
   peak: () => number;
   whileWriting: () => number;
   finalizeSeconds: () => number;
+  audioWritten: () => number;
   stop: () => void;
 } {
   let peak = 0;
   let whileWriting = 0;
   let finalizeSeconds = 0;
   let written = 0;
+  let sound = 0;
   const look = (): number => {
     const used = heap().used;
     if (used > peak) peak = used;
@@ -380,10 +391,21 @@ function watched(
     peak: () => peak,
     whileWriting: () => whileWriting,
     finalizeSeconds: () => round(finalizeSeconds),
+    audioWritten: () => sound,
     stop: () => {
       clearInterval(poll);
     },
-    open: (size, frames) => inner.open(size, frames),
+    // FORWARDED, AND THIS WRAPPER GOT IT WRONG ONCE. A sink with no
+    // `acceptAudio` is how the export loop asks whether sound can be written at
+    // all, so a wrapper that omitted it silently measured a soundtrack that was
+    // never written, which is exactly the failure the chapter it was added for
+    // exists to stop. `audio_packets_written` in the row below is what makes
+    // that impossible to publish twice.
+    open: (size, frames, audio) => inner.open(size, frames, audio),
+    async acceptAudio(packet) {
+      await inner.acceptAudio?.(packet);
+      sound++;
+    },
     async accept(canvas, frame) {
       const state = await inner.accept(canvas, frame);
       written++;
@@ -459,6 +481,13 @@ async function rung(
       controls: defaultControls(POSTER_STYLE),
     });
     const seconds = (performance.now() - t0) / 1000;
+    // A rung asked to carry sound that carried none is not a slower rung, it is
+    // a different measurement wearing this one's label. Thrown rather than
+    // reported, so `section` turns it into an error where a reader cannot
+    // mistake it for a number.
+    if (withSound && watcher.audioWritten() === 0) {
+      throw new Error('asked for a soundtrack and wrote no audio packets');
+    }
     return {
       peak: watcher.peak(),
       result,
@@ -475,6 +504,7 @@ async function rung(
         heap_mb_per_1000_frames: heapSlope(trace),
         finalize_seconds: watcher.finalizeSeconds(),
         heap_limit_mb: mb(limit),
+        ...(withSound ? { audio_packets_written: watcher.audioWritten() } : {}),
       },
     };
   } catch (error) {
@@ -851,7 +881,6 @@ export async function longClip(device: GPUDevice, base: string): Promise<unknown
         ...withSound.row,
         file_mb: mb(counted.bytes()),
         peak_over_file: round(withSound.peak / Math.max(counted.bytes(), 1)),
-        audio_packets: Math.floor((longest * 60 * 48_000) / 1024),
       };
     });
 
