@@ -31,7 +31,7 @@ import { DEFAULT_REFINE_SETTINGS } from '../../src/core/mask/refine-params.ts';
 import { sample, stats, type Stat } from './util.ts';
 
 /** What the engine answers at, whatever the photograph is. */
-const MASK = 256;
+export const MASK = 256;
 
 /**
  * A mask shaped like something a tracker returns.
@@ -46,8 +46,12 @@ const MASK = 256;
  * boundary to clearly-decided across the whole 0 to 255 range on purpose, so a
  * confident edge crosses it inside a texel and a region the model is unsure
  * about never leaves it. The second sweep is what an unsure answer costs.
+ *
+ * Exported so that `document.ts` measures a file made of the same masks this
+ * one measures in memory. Two harnesses drawing their own silhouettes would
+ * make "62 MB held" and "62 MB written" two numbers about two different logs.
  */
-function coverage(roughness: number, ramp = 2): CoverageMask {
+export function coverage(roughness: number, ramp = 2): CoverageMask {
   const data = new Uint8Array(MASK * MASK);
   const centre = MASK / 2;
   for (let y = 0; y < MASK; y++) {

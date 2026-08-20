@@ -43,8 +43,14 @@ export interface CoverageMask {
    * times. 128 is a no-op and is never written. Rows are not delimited: they
    * are `width` apart in what comes back, and a run is free to cross one,
    * which is worth about a tenth of the size on a mask this shape.
+   *
+   * Over a plain `ArrayBuffer` rather than over whatever a `Uint8Array`
+   * defaults to, which is a claim worth stating rather than a formality: a mask
+   * is written into a file, and a view over a `SharedArrayBuffer` is not
+   * something a `Blob` or a writable stream will take. Every producer here
+   * already makes one, so this narrows the type to what the values are.
    */
-  readonly packed: Uint8Array;
+  readonly packed: Uint8Array<ArrayBuffer>;
 }
 
 /** Longest repeat, and longest run of literals, a control byte can describe. */

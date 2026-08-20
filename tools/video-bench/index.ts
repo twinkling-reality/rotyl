@@ -17,6 +17,7 @@ import { video, type Clip } from './decode.ts';
 import { colour, encodeColour } from './colour.ts';
 import { encode } from './encode.ts';
 import { log } from './log.ts';
+import { documentCost } from './document.ts';
 import { trackedFrame } from './tracked-frame.ts';
 import { longClip } from './long-clip.ts';
 import { interleave } from './interleave.ts';
@@ -44,6 +45,10 @@ export const MEASUREMENTS = [
   // No GPU and no clip: a measurement about the command log, which is core
   // code and runs anywhere.
   'log',
+  // The same class, and its own command for the same reason: what the log costs
+  // once it has to become a file shares nothing with a decode or an encode
+  // timing, and re-taking it should not re-date every figure beside it.
+  'document',
   // Its own command, and out of `all`, because one rung of it deliberately runs
   // the tab out of memory and because it is twenty minutes where `all` is
   // three. Neither belongs in the middle of a run with nine other measurements
@@ -76,6 +81,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   };
 
   await step('log', () => log());
+  await step('document', () => documentCost());
   await step('readback', () => readback(dev));
   await step('ort-device', () => ortDevice(dev, `${ONNX}/memory_encoder.onnx`));
   await step('attention', () => attention(ONNX));

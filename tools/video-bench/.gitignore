@@ -18,3 +18,7 @@ results-*.json
 # And where the sound goes in the file, which needs no GPU at all and answers a
 # question about byte layout that shares nothing with the timings above.
 !results-interleave.json
+# And what the log costs once it has to become a file, which is the same class
+# as results-log.json and is kept apart from it so that re-taking one does not
+# re-date the other.
+!results-document.json

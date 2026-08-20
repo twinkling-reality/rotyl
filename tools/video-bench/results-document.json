@@ -1,0 +1,251 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "document": {
+    "a_packed_mask_bytes": 3448,
+    "one stroke": {
+      "commands": 1,
+      "held_megabytes": 0,
+      "container": {
+        "bytes": 2313,
+        "megabytes": 0,
+        "chunks": 2,
+        "encode_ms": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "through_a_blob_ms": {
+          "n": 15,
+          "median": 0.1,
+          "min": 0,
+          "max": 0.2
+        },
+        "read_ms": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        }
+      },
+      "json_base64": {
+        "bytes": 2301,
+        "megabytes": 0,
+        "larger_by": 0.995,
+        "write_ms": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "read_ms": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        }
+      },
+      "replay": {
+        "folded_to": 1,
+        "ms": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    "a tracked run": {
+      "commands": 301,
+      "held_megabytes": 1,
+      "container": {
+        "bytes": 1092080,
+        "megabytes": 1.09,
+        "chunks": 302,
+        "encode_ms": {
+          "n": 9,
+          "median": 0.2,
+          "min": 0.1,
+          "max": 0.2
+        },
+        "through_a_blob_ms": {
+          "n": 9,
+          "median": 0.9,
+          "min": 0.7,
+          "max": 1
+        },
+        "read_ms": {
+          "n": 9,
+          "median": 0.2,
+          "min": 0.1,
+          "max": 0.3
+        }
+      },
+      "json_base64": {
+        "bytes": 1433495,
+        "megabytes": 1.43,
+        "larger_by": 1.313,
+        "write_ms": {
+          "n": 9,
+          "median": 18.5,
+          "min": 18.3,
+          "max": 19.7
+        },
+        "read_ms": {
+          "n": 9,
+          "median": 2.5,
+          "min": 2.4,
+          "max": 2.9
+        }
+      },
+      "replay": {
+        "folded_to": 1,
+        "ms": {
+          "n": 9,
+          "median": 0,
+          "min": 0,
+          "max": 0.2
+        }
+      }
+    },
+    "ten minutes": {
+      "commands": 18001,
+      "held_megabytes": 62.1,
+      "container": {
+        "bytes": 65453983,
+        "megabytes": 65.45,
+        "chunks": 18002,
+        "encode_ms": {
+          "n": 3,
+          "median": 11.2,
+          "min": 10.8,
+          "max": 12.8
+        },
+        "through_a_blob_ms": {
+          "n": 3,
+          "median": 45.7,
+          "min": 43.9,
+          "max": 46.7
+        },
+        "read_ms": {
+          "n": 3,
+          "median": 12.1,
+          "min": 12,
+          "max": 15.2
+        }
+      },
+      "json_base64": {
+        "bytes": 85905199,
+        "megabytes": 85.91,
+        "larger_by": 1.312,
+        "write_ms": {
+          "n": 3,
+          "median": 1089.9,
+          "min": 1079.1,
+          "max": 1095.2
+        },
+        "read_ms": {
+          "n": 3,
+          "median": 159.8,
+          "min": 155.9,
+          "max": 184.7
+        }
+      },
+      "replay": {
+        "folded_to": 1,
+        "ms": {
+          "n": 3,
+          "median": 0.3,
+          "min": 0.2,
+          "max": 0.3
+        }
+      }
+    },
+    "identity": {
+      "the_whole_file": {
+        "1 MB": {
+          "ms": {
+            "n": 7,
+            "median": 0.4,
+            "min": 0.4,
+            "max": 0.5
+          },
+          "megabytes_per_second": 2500
+        },
+        "16 MB": {
+          "ms": {
+            "n": 7,
+            "median": 7,
+            "min": 6.9,
+            "max": 7.1
+          },
+          "megabytes_per_second": 2286
+        },
+        "64 MB": {
+          "ms": {
+            "n": 7,
+            "median": 29.2,
+            "min": 28.4,
+            "max": 31.2
+          },
+          "megabytes_per_second": 2192
+        },
+        "256 MB": {
+          "ms": {
+            "n": 3,
+            "median": 121.8,
+            "min": 115.9,
+            "max": 123.4
+          },
+          "megabytes_per_second": 2102
+        },
+        "1024 MB": {
+          "ms": {
+            "n": 3,
+            "median": 516.1,
+            "min": 504.6,
+            "max": 562.4
+          },
+          "megabytes_per_second": 1984
+        }
+      },
+      "the_first_and_last_megabyte": {
+        "2 MB": {
+          "ms": {
+            "n": 7,
+            "median": 1.7,
+            "min": 1.6,
+            "max": 1.9
+          },
+          "digest_length": 64
+        },
+        "64 MB": {
+          "ms": {
+            "n": 7,
+            "median": 1.7,
+            "min": 1.6,
+            "max": 2.4
+          },
+          "digest_length": 64
+        },
+        "1024 MB": {
+          "ms": {
+            "n": 7,
+            "median": 1.9,
+            "min": 1.9,
+            "max": 2.9
+          },
+          "digest_length": 64
+        }
+      }
+    }
+  },
+  "document:wall-seconds": 9.5
+}

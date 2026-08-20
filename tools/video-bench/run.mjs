@@ -3,6 +3,7 @@
 //   node tools/video-bench/run.mjs decode colour
 //   node tools/video-bench/run.mjs all
 //   node tools/video-bench/run.mjs log     # its own file; see APART below
+//   node tools/video-bench/run.mjs document        # its own file; see APART below
 //   node tools/video-bench/run.mjs tracked-frame   # needs VITE_TRACKING_HOST
 //   node tools/video-bench/run.mjs long-clip       # twenty minutes; see below
 //   node tools/video-bench/run.mjs interleave      # its own file; see APART below
@@ -25,6 +26,11 @@ import { writeFileSync } from 'node:fs';
  * running it inside the same run would re-date every decode and encode figure
  * beside it for a measurement about a data structure.
  *
+ * `document` is the same class and is kept apart from `log` as well as from
+ * `all`: what a tracked run costs to HOLD and what it costs to WRITE are two
+ * findings answered in two chapters, and folding them into one file would
+ * re-date the first one every time the second is re-taken.
+ *
  * `tracked-frame` needs a dev server started with VITE_TRACKING_HOST pointing
  * at the two graphs `tools/edgetam-export` produces, which most machines will
  * not have. In `all` it would leave an error where every other number is.
@@ -38,7 +44,7 @@ import { writeFileSync } from 'node:fs';
  * inside `all` would re-date every decode and encode figure beside it whenever
  * somebody asked where the sound goes.
  */
-const APART = ['log', 'tracked-frame', 'long-clip', 'interleave'];
+const APART = ['log', 'document', 'tracked-frame', 'long-clip', 'interleave'];
 
 const ALL = [
   'readback',
