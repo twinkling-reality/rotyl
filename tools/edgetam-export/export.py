@@ -124,6 +124,66 @@ class MemoryAttentionGraph(torch.nn.Module):
         )
 
 
+class TrackedDecoderGraph(torch.nn.Module):
+    """
+    The mask decoder a TRACKED frame needs, with the output the published one
+    does not expose.
+
+    WHY THIS EXISTS. The published prompt-encoder/mask-decoder pair declares
+    `iou_scores`, `pred_masks` and `object_score_logits`. The memory bank also
+    wants `object_pointer`, the token carrying an object's identity between
+    frames, and without it a tracker comes back from an occlusion late and with
+    no mask at all on the frames it is late by.
+
+    WHY IT TAKES NO PROMPT. A tracked frame has no click. The reference answers
+    one by padding an absent prompt into a single point at the origin labelled
+    -1, which the prompt encoder then replaces wholesale with two "not a point"
+    embeddings, and the dense half is the no-mask embedding expanded. All of
+    that is the same on every tracked frame of every clip, so tracing folds it
+    to constants and the graph takes the three feature maps and nothing else.
+    That is worth more than the bytes it saves: the published graph accepts
+    prompt tensors and gives a DIFFERENT answer for an empty one than for the
+    padded one it expects, which is a mistake this graph cannot be asked to
+    make. See the README.
+
+    WHAT IT LEAVES TO THE HOST is what `memory_encoder` leaves it: the pointer
+    comes back projected but not blended, so the host substitutes
+    `no_object_pointer` on a frame the object is not in, exactly as it applies
+    the sigmoid and the scale either side of the memory encoder. The graph has
+    one meaning rather than a mode.
+
+    THREE POINTERS, not one, because there are three masks. The decoder answers
+    with a part, an object and a group and the host picks by the model's own IoU
+    estimate; the pointer for that pick is the one at the same index.
+    """
+
+    def __init__(self, model: EdgeTamVideoModel):
+        super().__init__()
+        self.prompt_encoder = model.prompt_encoder
+        self.mask_decoder = model.mask_decoder
+        self.object_pointer_proj = model.object_pointer_proj
+        self.register_buffer("positions", model.get_image_wide_positional_embeddings())
+
+    def forward(self, image_embeddings_0, image_embeddings_1, image_embeddings_2):
+        batch = image_embeddings_2.shape[0]
+        # What the reference pads an absent prompt into, and the only prompt a
+        # tracked frame ever has. `input_boxes=None` is what makes the encoder
+        # append its trailing "not a point", so there are two of them.
+        points = torch.zeros(batch, 1, 1, 2, dtype=image_embeddings_2.dtype)
+        labels = -torch.ones(batch, 1, 1, dtype=torch.int32)
+        sparse, dense = self.prompt_encoder(points, labels, None, None)
+
+        masks, iou_scores, tokens, object_score_logits = self.mask_decoder(
+            image_embeddings=image_embeddings_2,
+            image_positional_embeddings=self.positions,
+            sparse_prompt_embeddings=sparse,
+            dense_prompt_embeddings=dense,
+            multimask_output=True,
+            high_resolution_features=[image_embeddings_0, image_embeddings_1],
+        )
+        return iou_scores, masks, object_score_logits, self.object_pointer_proj(tokens)
+
+
 def write(module: torch.nn.Module, args: tuple, path: pathlib.Path, inputs: list[str], outputs: list[str]) -> None:
     torch.onnx.export(
         module,
@@ -169,6 +229,15 @@ def main() -> None:
         OUT / "memory_attention.onnx",
         ["vision_features", "vision_position_embeddings", "memory", "memory_position_embeddings", "key_mask"],
         ["conditioned_features"],
+    )
+
+    print("tracked-frame mask decoder")
+    write(
+        TrackedDecoderGraph(model),
+        (torch.randn(1, 32, 256, 256), torch.randn(1, 64, 128, 128), torch.randn(1, 256, 64, 64)),
+        OUT / "tracked_mask_decoder.onnx",
+        ["image_embeddings.0", "image_embeddings.1", "image_embeddings.2"],
+        ["iou_scores", "pred_masks", "object_score_logits", "object_pointer"],
     )
 
     print("\nMost of memory_attention is baked rotary tables, not weights.")
