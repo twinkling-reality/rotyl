@@ -35,6 +35,28 @@ echo "1080p30-gop300.mp4 (one keyframe, the whole clip)"
 ffmpeg -v error -y -i 1080p30-gop30.mp4 -pix_fmt yuv420p $common -g 300 -keyint_min 300 \
   1080p30-gop300.mp4
 
+# Two clips with sound in them, because until this chapter nothing here had any
+# and a clip export that drops a soundtrack cannot be measured against one that
+# keeps it. Both stream-copy the video from the clip above, so the picture is
+# the same picture and the audio track is the only thing that differs.
+echo "1080p30-aac.mp4 (the same video, with a soundtrack)"
+# Pink noise rather than a tone. A tone compresses to nearly nothing and gives
+# every packet the same length, which is the one shape an interleaving
+# measurement must not be taken against: packets that are all the same size make
+# any arrangement of them look regular.
+ffmpeg -v error -y -i 1080p30-gop30.mp4 \
+  -f lavfi -i "anoisesrc=color=pink:seed=7:sample_rate=48000:duration=10:amplitude=0.4,aformat=channel_layouts=stereo" \
+  -map 0:v -map 1:a -c:v copy -c:a aac -b:a 128k -movflags +faststart 1080p30-aac.mp4
+
+echo "1080p30-ulaw.mov (a soundtrack an MP4 cannot carry)"
+# QuickTime carries mu-law and MP4 does not, which is the case the export has to
+# say something about BEFORE it encodes anything rather than after. Made rather
+# than hoped for: without a file that provokes it, the branch that refuses is
+# code nobody has ever run.
+ffmpeg -v error -y -i 1080p30-gop30.mp4 \
+  -f lavfi -i "sine=frequency=440:sample_rate=8000:duration=10" \
+  -map 0:v -map 1:a -c:v copy -c:a pcm_mulaw 1080p30-ulaw.mov
+
 # The colour probe: sixteen flat patches whose sRGB bytes are known exactly, so
 # what a decoded frame does to them is a number rather than an impression. The
 # patch values are duplicated in colour.ts and must stay in step.

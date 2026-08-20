@@ -5,6 +5,7 @@
 //   node tools/video-bench/run.mjs log     # its own file; see APART below
 //   node tools/video-bench/run.mjs tracked-frame   # needs VITE_TRACKING_HOST
 //   node tools/video-bench/run.mjs long-clip       # twenty minutes; see below
+//   node tools/video-bench/run.mjs interleave      # its own file; see APART below
 //
 // Headed, and channel:'chrome', for the same reason playwright.config.ts uses
 // them: bundled Chromium falls back to SwiftShader, which reports success while
@@ -32,8 +33,12 @@ import { writeFileSync } from 'node:fs';
  * rather than a hazard of it, and it takes twenty minutes where `all` takes
  * three. Neither belongs in the middle of a run with nine other measurements
  * still to take.
+ *
+ * `interleave` needs no GPU and answers a question about byte layout. Taking it
+ * inside `all` would re-date every decode and encode figure beside it whenever
+ * somebody asked where the sound goes.
  */
-const APART = ['log', 'tracked-frame', 'long-clip'];
+const APART = ['log', 'tracked-frame', 'long-clip', 'interleave'];
 
 const ALL = [
   'readback',

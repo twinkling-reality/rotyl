@@ -19,6 +19,7 @@ import { encode } from './encode.ts';
 import { log } from './log.ts';
 import { trackedFrame } from './tracked-frame.ts';
 import { longClip } from './long-clip.ts';
+import { interleave } from './interleave.ts';
 
 const CLIP_SET: Clip[] = [
   { name: '1080p30-gop30', url: `${CLIPS}/1080p30-gop30.mp4` },
@@ -48,6 +49,11 @@ export const MEASUREMENTS = [
   // three. Neither belongs in the middle of a run with nine other measurements
   // still to take.
   'long-clip',
+  // Its own command as well, and for the ordinary reason rather than a dramatic
+  // one: it needs no GPU, it answers a question about byte layout that shares
+  // nothing with decode or encode timings, and re-taking it should not re-date
+  // every figure it would otherwise land beside.
+  'interleave',
 ] as const;
 
 export type Measurement = (typeof MEASUREMENTS)[number];
@@ -81,6 +87,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('encode-colour', () => encodeColour(dev, CLIPS));
   await step('tracked-frame', () => trackedFrame(dev, CLIPS, import.meta.env.VITE_TRACKING_HOST));
   await step('long-clip', () => longClip(dev, CLIPS));
+  await step('interleave', () => interleave(CLIPS));
   // LAST, AND NOT BY ACCIDENT. It assigns to `ort.env.webgpu.device` and
   // destroys the devices it made, which leaves that global pointing at a dead
   // device. Anything creating a session afterwards hangs rather than failing.

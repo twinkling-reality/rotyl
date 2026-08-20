@@ -1,0 +1,265 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "interleave": {
+    "what": "where the sound goes in the file, and what knowing how much of it there is costs",
+    "clip": "1080p30-aac.mp4",
+    "size": "1920x1080",
+    "video_codec": "avc",
+    "audio_codec": "aac",
+    "audio_sample_rate": 48000,
+    "audio_packet_seconds": 0.021,
+    "front_window_mb": 16,
+    "the arrangements": [
+      {
+        "arrangement": "appended",
+        "seconds": 30,
+        "ok": false,
+        "error": "Error: Assertion failed."
+      },
+      {
+        "arrangement": "primed",
+        "seconds": 30,
+        "ok": true,
+        "file_mb": 33.11,
+        "seconds_to_write": 0.018,
+        "seconds_measured": 30,
+        "gap": {
+          "n": 30,
+          "median": 15846280,
+          "min": 987713,
+          "max": 33847341
+        },
+        "worst_gap_mb": 32.28,
+        "worst_gap_over_file": 0.975,
+        "boxes": [
+          "ftyp",
+          "moov",
+          "free",
+          "mdat"
+        ],
+        "moov_kb": 18.3,
+        "free_kb": 64.8,
+        "video_samples": 900,
+        "audio_samples": 1407
+      },
+      {
+        "arrangement": "interleaved",
+        "seconds": 30,
+        "ok": true,
+        "file_mb": 33.11,
+        "seconds_to_write": 0.013,
+        "seconds_measured": 30,
+        "gap": {
+          "n": 30,
+          "median": 119593,
+          "min": 8173,
+          "max": 1723246
+        },
+        "worst_gap_mb": 1.64,
+        "worst_gap_over_file": 0.05,
+        "boxes": [
+          "ftyp",
+          "moov",
+          "free",
+          "mdat"
+        ],
+        "moov_kb": 18.3,
+        "free_kb": 64.8,
+        "video_samples": 900,
+        "audio_samples": 1407
+      },
+      {
+        "arrangement": "appended",
+        "seconds": 120,
+        "ok": false,
+        "error": "Error: Assertion failed."
+      },
+      {
+        "arrangement": "primed",
+        "seconds": 120,
+        "ok": true,
+        "file_mb": 132.41,
+        "seconds_to_write": 0.045,
+        "seconds_measured": 120,
+        "gap": {
+          "n": 120,
+          "median": 69765734,
+          "min": 2429333,
+          "max": 136293549
+        },
+        "worst_gap_mb": 129.98,
+        "worst_gap_over_file": 0.982,
+        "boxes": [
+          "ftyp",
+          "moov",
+          "free",
+          "mdat"
+        ],
+        "moov_kb": 69.8,
+        "free_kb": 247.6,
+        "video_samples": 3600,
+        "audio_samples": 5628
+      },
+      {
+        "arrangement": "interleaved",
+        "seconds": 120,
+        "ok": true,
+        "file_mb": 132.41,
+        "seconds_to_write": 0.044,
+        "seconds_measured": 120,
+        "gap": {
+          "n": 120,
+          "median": 121861,
+          "min": 8173,
+          "max": 2873284
+        },
+        "worst_gap_mb": 2.74,
+        "worst_gap_over_file": 0.021,
+        "boxes": [
+          "ftyp",
+          "moov",
+          "free",
+          "mdat"
+        ],
+        "moov_kb": 69.8,
+        "free_kb": 247.6,
+        "video_samples": 3600,
+        "audio_samples": 5628
+      },
+      {
+        "arrangement": "appended",
+        "seconds": 300,
+        "ok": false,
+        "error": "Error: Assertion failed."
+      },
+      {
+        "arrangement": "primed",
+        "seconds": 300,
+        "ok": true,
+        "file_mb": 331.02,
+        "seconds_to_write": 0.092,
+        "seconds_measured": 300,
+        "gap": {
+          "n": 300,
+          "median": 173653558,
+          "min": 5312584,
+          "max": 341185965
+        },
+        "worst_gap_mb": 325.38,
+        "worst_gap_over_file": 0.983,
+        "boxes": [
+          "ftyp",
+          "moov",
+          "free",
+          "mdat"
+        ],
+        "moov_kb": 172.9,
+        "free_kb": 613.1,
+        "video_samples": 9000,
+        "audio_samples": 14070
+      },
+      {
+        "arrangement": "interleaved",
+        "seconds": 300,
+        "ok": true,
+        "file_mb": 331.02,
+        "seconds_to_write": 0.092,
+        "seconds_measured": 300,
+        "gap": {
+          "n": 300,
+          "median": 121859,
+          "min": 8173,
+          "max": 2873284
+        },
+        "worst_gap_mb": 2.74,
+        "worst_gap_over_file": 0.008,
+        "boxes": [
+          "ftyp",
+          "moov",
+          "free",
+          "mdat"
+        ],
+        "moov_kb": 172.9,
+        "free_kb": 613.1,
+        "video_samples": 9000,
+        "audio_samples": 14070
+      }
+    ],
+    "counting it first": {
+      "what": "walking the audio track metadata-only, which is what a packet count costs",
+      "rows": [
+        {
+          "minutes": 0.5,
+          "packets": 1407,
+          "ms": 1.4,
+          "us_per_packet": 0.995
+        },
+        {
+          "minutes": 2,
+          "packets": 5628,
+          "ms": 4.3,
+          "us_per_packet": 0.764
+        },
+        {
+          "minutes": 10,
+          "packets": 28140,
+          "ms": 26.4,
+          "us_per_packet": 0.938
+        },
+        {
+          "minutes": 20,
+          "packets": 56280,
+          "ms": 49.6,
+          "us_per_packet": 0.881
+        }
+      ]
+    },
+    "what the container will not carry": {
+      "what": "whether an MP4 can carry the soundtrack it was handed, decided before any work",
+      "mp4_audio_codecs": [
+        "aac",
+        "opus",
+        "mp3",
+        "vorbis",
+        "flac",
+        "ac3",
+        "eac3",
+        "dts",
+        "pcm-s16",
+        "pcm-s16be",
+        "pcm-s24",
+        "pcm-s24be",
+        "pcm-s32",
+        "pcm-s32be",
+        "pcm-f32",
+        "pcm-f32be",
+        "pcm-f64",
+        "pcm-f64be"
+      ],
+      "rows": [
+        {
+          "file": "1080p30-aac.mp4",
+          "codec": "aac",
+          "has_decoder_config": true,
+          "mp4_can_carry_it": true,
+          "ms_to_decide": 0
+        },
+        {
+          "file": "1080p30-ulaw.mov",
+          "codec": "ulaw",
+          "has_decoder_config": true,
+          "mp4_can_carry_it": false,
+          "ms_to_decide": 0
+        }
+      ]
+    }
+  },
+  "interleave:wall-seconds": 1.2
+}

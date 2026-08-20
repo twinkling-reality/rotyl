@@ -15,3 +15,6 @@ results-*.json
 # time, so a checkout without them cannot build the site.
 !results-tracked-frame.json
 !results-long-clip.json
+# And where the sound goes in the file, which needs no GPU at all and answers a
+# question about byte layout that shares nothing with the timings above.
+!results-interleave.json
