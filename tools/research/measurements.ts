@@ -1101,6 +1101,148 @@ function containerBytes(bundle: unknown): Section {
   };
 }
 
+/**
+ * One field of a row, without asserting what a row is.
+ *
+ * The rows on this page come out of a benchmark that reports a rung differently
+ * depending on whether it finished, so a shape asserted here would be a shape
+ * that is right on this laptop and wrong on the next one.
+ */
+function field(row: unknown, key: string): unknown {
+  if (typeof row !== 'object' || row === null) return undefined;
+  return Object.getOwnPropertyDescriptor(row, key)?.value;
+}
+
+/** A field that should be a number, or a word where the rung has none. */
+function numberIn(row: unknown, key: string, format: (value: number) => string): string {
+  const value = field(row, key);
+  return typeof value === 'number' ? format(value) : 'none';
+}
+
+/**
+ * The rows of the ladder, read as a list rather than by index.
+ *
+ * Which rung fails depends on the machine, so a page that named the fifth one
+ * would be a page that renders on this laptop and throws on the next.
+ */
+function ladder(long: unknown): readonly unknown[] {
+  const rows = at(long, ['long-clip', 'held in memory, the ladder']);
+  if (!Array.isArray(rows)) throw new Error('research: the long-clip ladder is not a list');
+  return rows;
+}
+
+const mb = (value: number): string => `${value.toFixed(0)} MB`;
+
+function heldCeiling(long: unknown): Section {
+  const rows = ladder(long);
+  return {
+    heading: 'Where a clip export stopped working, which was not where the note said',
+    prose: [
+      'Every clip export this project had written was assembled in the tab and handed over at the end, and the known limits page said a ten-minute one would be about a gigabyte and that there was no answer to that beyond failing. The consequence was right and the number was a guess.',
+      `Ten minutes works. It is ${numberIn(rows[1], 'file_mb', mb)} and it peaks at ${numberIn(rows[1], 'peak_heap_mb', mb)} against a heap limit of ${mb(num(long, ['long-clip', 'heap_limit_mb']))}. What fails is twenty-five, and it fails at finalize with a catchable RangeError after three and a half minutes of encoding, which is the worst possible moment for one and still better than a dead tab.`,
+      `The heap tracks the file one for one: fitted across the rungs, this path held about ${num(long, ['long-clip', 'held in memory, the ladder', '0', 'heap_mb_per_1000_frames']).toFixed(0)} MB more per thousand frames written, and a thousand frames at this bitrate is 46 MB of file. So the ceiling is arithmetic rather than luck. It is also worth noticing that the twenty-minute rung peaked above the limit the browser reports and survived, so that figure is not a wall external buffers hit exactly.`,
+    ],
+    table: {
+      columns: ['minutes', 'file', 'heap while writing', 'peak heap', 'peak ÷ file', 'finalize'],
+      rows: rows.map((row) => [
+        numberIn(row, 'minutes', (value) => value.toFixed(0)),
+        numberIn(row, 'file_mb', mb),
+        numberIn(row, 'heap_while_writing_mb', mb),
+        numberIn(row, 'peak_heap_mb', mb),
+        numberIn(row, 'peak_over_file', (value) => value.toFixed(1)),
+        field(row, 'ok') === false
+          ? 'failed'
+          : numberIn(row, 'finalize_seconds', (value) => `${value.toFixed(1)} s`),
+      ]),
+    },
+    caveat:
+      'The seconds in the last column are not the container writer. With the encoder taken out of it and 790 MB of packets pushed straight into the muxer, finalizing costs 0.17 s held in memory and 0.07 s with the index reserved. They are a tab with two gigabytes in it being asked for another one.',
+    command: 'node tools/video-bench/run.mjs long-clip',
+  };
+}
+
+function intoAFile(long: unknown): Section {
+  const row = (path: string, key: string, format: (value: number) => string): string =>
+    format(num(long, ['long-clip', path, key]));
+  return {
+    heading: 'Given a file to write into, nothing is held',
+    prose: [
+      'The same loop, the same sink, the same settings, with a file handle behind it instead of a buffer. The last column is the finding: writing into a file grows the heap by half a megabyte per thousand frames, which is the noise of a decode loop rather than a trend, so the length of the clip stops being a variable and there is no ceiling to quote because there is nothing accumulating to hit one.',
+      `And it costs nothing per frame. ${row('into a file', 'ms_per_frame', (value) => `${value.toFixed(2)} ms`)} a frame at 1080p against the 5.0 the encode ladder committed to, which is the encoder's own cost with the disk underneath it disappearing into threads it was not using.`,
+      `Read back through the product's own frame provider, the ten-minute file is a clip: ${num(long, ['long-clip', 'decoded back', 'frames']).toFixed(0)} frames, ${num(long, ['long-clip', 'decoded back', 'seconds']).toFixed(0)} seconds, ${num(long, ['long-clip', 'decoded back', 'keyframes']).toFixed(0)} keyframes, and its boxes are ftyp, moov, free, mdat in that order. The index is at the front, which a stream does not do by default: the room for it is reserved before the first frame and seeked back to at the end.`,
+    ],
+    table: {
+      columns: ['where it went', 'minutes', 'file', 'peak heap', 'peak ÷ file', 'heap per 1000 frames'],
+      rows: [
+        [
+          'a file',
+          '25',
+          row('into a file, discarded at the writer', 'file_mb', mb),
+          row('into a file, discarded at the writer', 'peak_heap_mb', mb),
+          row('into a file, discarded at the writer', 'peak_over_file', (value) => value.toFixed(2)),
+          row(
+            'into a file, discarded at the writer',
+            'heap_mb_per_1000_frames',
+            (value) => `${value.toFixed(1)} MB`,
+          ),
+        ],
+        [
+          'a file',
+          '10',
+          row('into a file', 'file_mb', mb),
+          row('into a file', 'peak_heap_mb', mb),
+          row('into a file', 'peak_over_file', (value) => value.toFixed(2)),
+          row('into a file', 'heap_mb_per_1000_frames', (value) => `${value.toFixed(1)} MB`),
+        ],
+        [
+          'memory',
+          '10',
+          row('in memory', 'file_mb', mb),
+          row('in memory', 'peak_heap_mb', mb),
+          row('in memory', 'peak_over_file', (value) => value.toFixed(2)),
+          row('in memory', 'heap_mb_per_1000_frames', (value) => `${value.toFixed(1)} MB`),
+        ],
+      ],
+    },
+    caveat:
+      'The twenty-five minute row counted its bytes and discarded them, which is the harness rather than the export: Playwright cannot drive a native save dialog, so the origin private file system stands in for one, and it has a quota a real disk does not. It reports three gigabytes and refuses a write just past one, with and without exclusive mode and with durable storage granted. So one rung isolates the export from the disk and the other writes a real file and reads it back.',
+    command: 'node tools/video-bench/run.mjs long-clip',
+  };
+}
+
+function theBudget(long: unknown): Section {
+  const blob = at(long, ['long-clip', 'handing it over', 'rows']);
+  if (!Array.isArray(blob)) throw new Error('research: the blob sweep is not a list');
+  const budgeted = (key: string, format: (value: number) => string): string =>
+    format(num(long, ['long-clip', 'in memory, past the budget', key]));
+  return {
+    heading: 'So the path with nowhere to write stops at a budget',
+    prose: [
+      'Four times the file is what has to fit at the moment it is finished: up to twice in the buffer it is assembled in, since that buffer grows by doubling, once more for the copy sliced out of it, and once more for the blob a download is handed. So the budget is the heap limit over four.',
+      `Asked for thirty minutes with nowhere to write it, the export stops at ${budgeted('minutes_written', (value) => value.toFixed(1))} minutes and ${budgeted('file_mb', mb)}, peaks at ${budgeted('peak_heap_mb', mb)}, and produces ftyp, moov, free, mdat: a valid clip of the part that was rendered, which is the same thing pressing Stop produces and for the same reason.`,
+      `That blob is the other thing with a limit. In a clean tab this browser gives a byte back out of ${mb(num(long, ['long-clip', 'handing it over', 'largest_readable_mb']))}, and a two gigabyte buffer cannot be allocated at all. But a finished export is not holding a clean tab: with the buffer the file was assembled in still alive alongside the blob made from it, which is exactly what the sink holds at the moment it hands one over, a 790 MB blob comes back unreadable on every attempt. As a download that is a file that never arrives and no word about why, so the download path asks for one byte before handing the blob to an anchor.`,
+    ],
+    table: {
+      columns: ['blob handed over', 'made', 'one byte read back'],
+      rows: blob.map((entry: unknown) => {
+        const failure = field(entry, 'error');
+        return [
+          numberIn(entry, 'mb', mb),
+          field(entry, 'made') === true ? 'yes' : 'no',
+          field(entry, 'read') === true
+            ? 'yes'
+            : typeof failure === 'string'
+              ? (failure.split(':')[0] ?? 'no')
+              : 'no',
+        ];
+      }),
+    },
+    caveat:
+      'None of this is a guarantee and nothing can make it one. How much a tab can hold depends on what else the machine is doing: the same sweep taken an hour apart read a gigabyte and a half once and refused half of that the next time, on a browser that had been running exports in between. What the budget buys is that the common case ends in a file rather than in a dead tab.',
+    command: 'node tools/video-bench/run.mjs long-clip',
+  };
+}
+
 // --- entries ----------------------------------------------------------------
 
 /**
@@ -1121,10 +1263,11 @@ export interface Results {
   readonly shrink: unknown;
   readonly bundle: unknown;
   readonly log: unknown;
+  readonly long: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
-  const { style, real, video, tracking, tracked, host, shrink, bundle, log } = results;
+  const { style, real, video, tracking, tracked, host, shrink, bundle, log, long } = results;
   return [
     {
       slug: 'the-look',
@@ -1202,6 +1345,19 @@ export function entries(results: Results): readonly Entry[] {
         encodeColour(video),
         containerBytes(bundle),
       ],
+    },
+    {
+      slug: 'a-long-clip',
+      results: 'tools/video-bench/results-long-clip.json',
+      title: 'How long a clip can be, and what decides it',
+      standfirst:
+        'The export that could only build the file in memory, measured to the length where it stops, and the same export given a file to write into, where the length of the clip stops being a variable.',
+      harness: 'tools/video-bench',
+      lede: [
+        'The known limits page said a ten-minute clip export would be about a gigabyte and that there was no answer to that beyond failing. It named a consequence and measured nothing, and the two failures worth telling apart are a tab that dies and a tab that swaps for four minutes and finishes.',
+        'So this drives the product’s own export loop over a source that hands the same clip round again, at the export’s own bitrate, for as long as it is asked for. One thing in it is not the product’s code, and it is the thing being compared against: the sink that shipped before this chapter, which held every encoded packet until the end and no longer exists to import.',
+      ],
+      sections: [heldCeiling(long), intoAFile(long), theBudget(long)],
     },
     {
       slug: 'tracking',
@@ -1294,11 +1450,11 @@ export function entries(results: Results): readonly Entry[] {
           table: {
             columns: ['gzipped', 'size', 'fetched'],
             rows: [
-              ['application', '42.5 KB', 'always'],
+              ['application', '44.7 KB', 'always'],
               ['subset fonts', '31 KB', 'always'],
-              ['inference runtime', '36 KB', 'first object click'],
-              ['demuxer', '42 KB', 'first video'],
-              ['container writer', '32 KB', 'first clip export'],
+              ['inference runtime', '36.2 KB', 'first object click'],
+              ['demuxer', '40.5 KB', 'first video'],
+              ['container writer', '33.3 KB', 'first clip export'],
               ['saved by stripping shader comments', '17 KB', ''],
             ],
           },

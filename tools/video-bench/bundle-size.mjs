@@ -45,12 +45,18 @@ export async function chunks(blob: Blob, at: number): Promise<EncodedVideoChunk[
  * `Output` alone would understate it, because the encoder wrapper, the quality
  * model and the codec probe are all separate modules that only get pulled in
  * once something actually encodes.
+ *
+ * BOTH TARGETS, because the export uses both: a file the user picked takes a
+ * stream target over its writable, and a browser with no way to give it one
+ * takes a buffer. A measurement of the writer that carried only one of them
+ * would be a measurement of a chunk nobody ships.
  */
 const mux = (formats) => ({
   imports: [
     'BufferTarget',
     'Output',
     'QUALITY_HIGH',
+    'StreamTarget',
     'VideoSample',
     'VideoSampleSource',
     'getFirstEncodableVideoCodec',
@@ -59,16 +65,21 @@ const mux = (formats) => ({
   body: `
 const FORMATS = { ${formats.map((name) => `${name}: () => new ${name}()`).join(', ')} };
 
-export async function write(kind: keyof typeof FORMATS, frames: VideoFrame[]): Promise<ArrayBuffer> {
+export async function write(
+  kind: keyof typeof FORMATS,
+  frames: VideoFrame[],
+  into?: FileSystemFileHandle,
+): Promise<ArrayBuffer | undefined> {
   const format = FORMATS[kind]();
   const codec = await getFirstEncodableVideoCodec(format.getSupportedVideoCodecs(), {
     width: frames[0]!.displayWidth,
     height: frames[0]!.displayHeight,
   });
   if (!codec) throw new Error('nothing encodable');
-  const output = new Output({ format, target: new BufferTarget() });
+  const target = into ? new StreamTarget(await into.createWritable()) : new BufferTarget();
+  const output = new Output({ format, target });
   const source = new VideoSampleSource({ codec, quality: QUALITY_HIGH, keyFrameInterval: 2 });
-  output.addVideoTrack(source, { frameRate: 30 });
+  output.addVideoTrack(source, { frameRate: 30, maximumPacketCount: frames.length });
   await output.start();
   for (const frame of frames) {
     const sample = new VideoSample(frame);
@@ -77,7 +88,7 @@ export async function write(kind: keyof typeof FORMATS, frames: VideoFrame[]): P
   }
   source.close();
   await output.finalize();
-  return output.target.buffer!;
+  return target instanceof BufferTarget ? (target.buffer ?? undefined) : undefined;
 }`,
 });
 
@@ -90,10 +101,21 @@ export async function write(kind: keyof typeof FORMATS, frames: VideoFrame[]): P
  * option; if most of it is the container writer, it would buy nothing.
  */
 const muxPackets = () => ({
-  imports: ['BufferTarget', 'EncodedVideoPacketSource', 'Mp4OutputFormat', 'Output', 'EncodedPacket'],
+  imports: [
+    'BufferTarget',
+    'EncodedVideoPacketSource',
+    'Mp4OutputFormat',
+    'Output',
+    'EncodedPacket',
+    // Carried here as well as above, so the difference between the two is the
+    // encoder wrapper and only the encoder wrapper. A target that appeared in
+    // one of them would be attributed to the wrapper, which it is not part of.
+    'StreamTarget',
+  ],
   body: `
-export async function writePackets(packets: EncodedVideoChunk[], meta: EncodedVideoChunkMetadata): Promise<ArrayBuffer> {
-  const output = new Output({ format: new Mp4OutputFormat(), target: new BufferTarget() });
+export async function writePackets(packets: EncodedVideoChunk[], meta: EncodedVideoChunkMetadata, into?: FileSystemFileHandle): Promise<ArrayBuffer | undefined> {
+  const target = into ? new StreamTarget(await into.createWritable()) : new BufferTarget();
+  const output = new Output({ format: new Mp4OutputFormat(), target });
   const source = new EncodedVideoPacketSource('avc');
   output.addVideoTrack(source, { frameRate: 30 });
   await output.start();
@@ -104,7 +126,7 @@ export async function writePackets(packets: EncodedVideoChunk[], meta: EncodedVi
   }
   source.close();
   await output.finalize();
-  return output.target.buffer!;
+  return target instanceof BufferTarget ? (target.buffer ?? undefined) : undefined;
 }`,
 });
 

@@ -9,3 +9,9 @@ results-*.json
 # structure, so it needs no GPU and no clips, and re-taking it should not
 # re-date the measurements that need both.
 !results-log.json
+# A tracked frame, which needs a tracking host most machines do not have, and
+# how long a clip can be, which needs twenty minutes. Both have their own
+# command for that reason and both are read by the research pages at build
+# time, so a checkout without them cannot build the site.
+!results-tracked-frame.json
+!results-long-clip.json

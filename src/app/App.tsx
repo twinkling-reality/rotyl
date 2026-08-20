@@ -21,9 +21,13 @@ import {
   openSink,
   runExport,
   type ExportFormat,
+  type ExportResult,
   type ExportSource,
 } from '../platform/export/export.ts';
 import { clipSource, imageFileSource, videoSource } from '../platform/export/export-source.ts';
+// Imports nothing, deliberately, so a file can be asked for while the click
+// that asked is still granting the right to ask. See destination.ts.
+import { chooseFile, type Destination } from '../platform/export/destination.ts';
 import { defaultControls, type StyleControls, type StyleDefinition } from '../core/style/style.ts';
 import { editedFrames } from '../core/document/selection-command.ts';
 import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
@@ -44,6 +48,9 @@ interface LoadedFile {
 
 const DEFAULT_BRUSH_FRACTION = 0.06;
 const BRUSH_STEP = 1.25;
+
+/** How long a report stays up. Longer than the close button's arming, which is four. */
+const REPORT_LASTS = 10_000;
 
 /**
  * How playback decides it cannot keep up.
@@ -110,6 +117,41 @@ function describePerception(
   }
 }
 
+/** Minutes and seconds, which is how long a clip is to anyone who has one. */
+function atTime(frames: number, frameRate: number): string {
+  const seconds = Math.round(frames / (frameRate || 30));
+  return `${String(Math.floor(seconds / 60))}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+/**
+ * What to say about an export that has finished, if anything.
+ *
+ * Three of the four cases need a sentence and one does not. A clip written
+ * whole into the downloads folder is announced by the browser itself, and a
+ * second announcement from inside the page would be the product talking over
+ * it. Everything else is invisible: a file written to a path the user chose
+ * leaves no trace in the browser at all, and an export that came out shorter
+ * than the clip leaves one that looks exactly like an export that did not.
+ *
+ * The two short endings produce the same file and want opposite sentences.
+ * Stopping is a button somebody pressed, so the only thing worth saying is that
+ * the work up to there was kept, which is the part they cannot see. Running out
+ * of room is this browser rather than this clip, and saying only "stopped"
+ * there would blame the user for a limit they did not choose.
+ */
+function describeExport(result: ExportResult, frameRate: number): string | undefined {
+  const where = result.written.to === 'file' ? result.written.name : 'The saved file';
+  if (result.ended === 'complete') {
+    return result.written.to === 'file' ? `Wrote ${where}.` : undefined;
+  }
+  const got = atTime(result.frames, frameRate);
+  const asked = atTime(result.total, frameRate);
+  if (result.ended === 'full') {
+    return `Ran out of room at ${got} of ${asked}: with nowhere to write the file, this browser has to hold all of it. ${where} has what was written.`;
+  }
+  return `Stopped at ${got} of ${asked}. ${where} has what was written.`;
+}
+
 export function App(): JSX.Element {
   const state = useRotyl();
 
@@ -153,6 +195,20 @@ export function App(): JSX.Element {
    */
   const [exportProgress, setExportProgress] = useState<number | undefined>(undefined);
   const exportAbort = useRef<AbortController | undefined>(undefined);
+  /**
+   * Something that happened and is not a failure.
+   *
+   * Kept apart from `error` rather than folded into it, because the two read
+   * differently and should: an export that stopped where it was told to stop is
+   * the product doing as it was asked, and colouring that like a fault would
+   * teach people to distrust the colour.
+   *
+   * And it goes away by itself, which an error does not. It says what JUST
+   * happened, so left on screen through a scrub and two brush strokes it would
+   * be describing something else by then. A failure is a state and stays until
+   * something changes it; this is an event and outlives itself.
+   */
+  const [report, setReport] = useState<string | undefined>(undefined);
 
   /**
    * The decoder, and the texture it uploads into.
@@ -174,6 +230,18 @@ export function App(): JSX.Element {
     runtime,
     ...(loaded?.video ? { file: loaded.file } : { file: undefined }),
   });
+
+  // Long enough to read a sentence about a clip that stopped early, short enough
+  // that it is gone before it starts describing the wrong moment.
+  useEffect(() => {
+    if (!report) return undefined;
+    const timer = setTimeout(() => {
+      setReport(undefined);
+    }, REPORT_LASTS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [report]);
 
   // A lost device takes the source texture with it. The command log survives in
   // ordinary memory, so putting the image back is the whole of recovery here.
@@ -257,6 +325,7 @@ export function App(): JSX.Element {
         return;
       }
       setError(undefined);
+      setReport(undefined);
       setBusy('Opening');
 
       providerRef.current?.dispose();
@@ -327,6 +396,7 @@ export function App(): JSX.Element {
 
     setLoaded(undefined);
     setError(undefined);
+    setReport(undefined);
     setBusy(undefined);
     setFrame(0);
     setScrubbing(false);
@@ -535,8 +605,14 @@ export function App(): JSX.Element {
    *
    * ONE PATH FOR BOTH. A source hands over frames and a sink takes them; a
    * photograph is a one-frame document and goes through the same loop once.
-   * The only decision here is which pair the user asked for, which is the one
-   * decision that genuinely belongs in the interface.
+   * The only decisions here are which pair the user asked for and where the
+   * answer goes, which are the two that genuinely belong in the interface.
+   *
+   * WHERE IT GOES IS ASKED FIRST. A clip is minutes of encoding, and a browser
+   * that can be handed a file writes the bytes out as it makes them rather than
+   * holding the whole file until the end. Asking afterwards would be the worst
+   * possible order: the file is already in memory by then, which is the thing a
+   * handle exists to avoid, and the answer might be "nowhere".
    */
   const onExport = useCallback(
     async (what: 'frame' | 'clip'): Promise<void> => {
@@ -548,12 +624,36 @@ export function App(): JSX.Element {
       const provider = providerRef.current;
       const clip = what === 'clip' && provider !== undefined;
       const format: ExportFormat = clip ? 'mp4' : 'png';
+      // A frame of a clip carries its number, because exporting three of them
+      // would otherwise write the same name three times. The clip is the
+      // document and takes the document's name.
+      const name = exportFilename(loaded.name, format, !clip && loaded.video ? frame : undefined);
+
+      // A picture is not asked about, and that is deliberate rather than
+      // unfinished. It is a couple of megabytes with no ceiling in sight, so a
+      // dialog in front of it would buy nothing and cost the one interaction
+      // this product has always had.
+      let destination: Destination | undefined;
+      try {
+        destination = clip ? await chooseFile(name, format) : { kind: 'download' };
+      } catch (cause) {
+        // A picker that refuses for a reason other than being dismissed, which
+        // is rare and is still the only thing that has happened yet: nothing
+        // has been rendered and nothing needs cleaning up.
+        setError(cause instanceof Error ? cause.message : 'Could not ask where to save this.');
+        return;
+      }
+      // Dismissed. They were asked a question and declined to answer it, which
+      // is not a failure and gets no message.
+      if (!destination) return;
+
       const controller = new AbortController();
       exportAbort.current = controller;
 
-      setBusy('Exporting');
+      setBusy(destination.kind === 'file' ? `Writing ${destination.name}` : 'Exporting');
       setExportProgress(clip ? 0 : undefined);
       setError(undefined);
+      setReport(undefined);
 
       // Only when it moves. A clip is hundreds of frames and setting state per
       // frame would re-render the application two hundred times a second to
@@ -576,7 +676,7 @@ export function App(): JSX.Element {
           renderer: runtime.engine.compositeRenderer,
           refiner: runtime.engine.maskRefiner,
           source: await openSource(),
-          sink: await openSink(format),
+          sink: await openSink(format, destination),
           // The whole log. Which commands are in effect on a frame is core's
           // question, and an export that answered it here could answer it
           // differently from the preview.
@@ -592,24 +692,51 @@ export function App(): JSX.Element {
           signal: controller.signal,
         });
 
-        const url = URL.createObjectURL(result.blob);
-        const link = document.createElement('a');
-        link.href = url;
-        // A frame of a clip carries its number, because exporting three of them
-        // would otherwise write the same name three times. The clip is the
-        // document and takes the document's name.
-        link.download = exportFilename(loaded.name, format, !clip && loaded.video ? frame : undefined);
-        link.click();
-        // Revoked on the next task so the download has taken the reference; a
-        // leaked object URL pins the whole encoded file in memory.
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        }, 0);
+        if (result.written.to === 'download') {
+          // A blob large enough for the browser to keep somewhere other than
+          // memory can be created and then refuse to be read. Measured: on a
+          // machine under load, one byte out of a 512 MB blob throws where the
+          // same read at 256 MB does not. As a download that is a file that
+          // never arrives and no word about why, so it is asked here, where the
+          // answer can be a sentence. One byte is enough to find out.
+          try {
+            await result.written.blob.slice(0, 1).arrayBuffer();
+          } catch {
+            const size = Math.round(result.written.blob.size / 1e6);
+            throw new Error(
+              `This browser could not hold the finished clip, which came to ${String(size)} MB. Chrome and Edge can be given a file to write into instead, which holds none of it.`,
+            );
+          }
+          const url = URL.createObjectURL(result.written.blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = name;
+          link.click();
+          // Revoked on the next task so the download has taken the reference; a
+          // leaked object URL pins the whole encoded file in memory.
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+          }, 0);
+        }
+
+        // The browser announces a download and announces nothing else, so
+        // everything else has to be announced here.
+        setReport(describeExport(result, loaded.video?.frameRate ?? 30));
       } catch (cause) {
-        // Stopping is not failing, and saying so would be the product arguing
-        // with a button the user just pressed.
-        if (!(cause instanceof ExportCancelled)) {
-          setError(cause instanceof Error ? cause.message : 'Export failed.');
+        // A file the user named exists from the moment they named it, whatever
+        // happens next, and a page can neither delete one it was handed nor
+        // stop a writable stream committing on close. So the two ways of ending
+        // with nothing usable in it both have to say so: silence there is a
+        // video file that will not open and no explanation of it.
+        const unfinished = destination.kind === 'file' ? ` ${destination.name} was left unfinished.` : '';
+        if (cause instanceof ExportCancelled) {
+          // Stopping is not failing, and saying so would be the product arguing
+          // with a button the user just pressed. It only reaches here at all
+          // when it was stopped before a single frame, where there is nothing
+          // to keep.
+          if (unfinished) setReport(`Stopped before the first frame.${unfinished}`);
+        } else {
+          setError((cause instanceof Error ? cause.message : 'Export failed.') + unfinished);
         }
       } finally {
         exportAbort.current = undefined;
@@ -955,6 +1082,7 @@ export function App(): JSX.Element {
       */}
       <div class="announcer" role="status" aria-live="polite">
         {loaded && notice ? <p class="notice notice--floating">{notice}</p> : null}
+        {loaded && !notice && report ? <p class="notice notice--quiet notice--floating">{report}</p> : null}
       </div>
     </div>
   );

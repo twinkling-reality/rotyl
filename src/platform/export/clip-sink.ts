@@ -3,18 +3,21 @@ import {
   Mp4OutputFormat,
   Output,
   Quality,
+  StreamTarget,
   VideoSample,
   VideoSampleSource,
   getFirstEncodableVideoCodec,
+  type Target,
   type VideoCodec,
 } from 'mediabunny';
 import type { Dimensions } from '../../core/render/resolution.ts';
-import type { ExportFrame, FrameSink } from './export.ts';
+import type { Destination } from './destination.ts';
+import type { ExportFrame, FrameSink, SinkState, Written } from './export.ts';
 
 /**
  * Every frame, as a video file.
  *
- * REACHED ONLY THROUGH A DYNAMIC IMPORT. Writing a container costs 41.6 KB
+ * REACHED ONLY THROUGH A DYNAMIC IMPORT. Writing a container costs 42.8 KB
  * gzipped on top of the demuxer already in the video chunk, measured through
  * this project's own build (`node tools/video-bench/bundle-size.mjs`), which is
  * the size of the whole application bundle to the tenth of a kilobyte. Someone
@@ -28,6 +31,13 @@ import type { ExportFrame, FrameSink } from './export.ts';
  * codec-string construction, backpressure, flush ordering and getting the
  * decoder config into the muxer's first packet, which is exactly the class of
  * detail the demuxer was chosen for rather than hand-rolled.
+ *
+ * ONE SINK, TWO TARGETS. Where the bytes go is the only thing that differs
+ * between a browser that can be handed a file and one that cannot, and it is
+ * one line below. Everything that decides what the file IS, the codec, the rate
+ * control, the keyframe spacing and where the index sits, is the same for both,
+ * because a file that changed shape depending on which browser wrote it would
+ * be two products.
  */
 
 /**
@@ -64,21 +74,94 @@ const QUALITY = new Quality({ quality: 'very-high', preferBitrate: true });
  */
 const KEYFRAME_INTERVAL_SECONDS = 1;
 
-export function clipSink(): FrameSink {
-  const format = new Mp4OutputFormat();
-  // fastStart defaults to 'in-memory' for a BufferTarget, which puts the index
-  // at the front of the file. That is what makes an exported clip start playing
-  // before it has finished downloading, and it costs nothing here because the
-  // whole file is already being held in memory anyway.
-  const output = new Output({ format, target: new BufferTarget() });
+/**
+ * The index goes at the front, and it is reserved rather than held.
+ *
+ * `fastStart` decides where the movie box lands, and a file with it at the end
+ * is a different file: nothing can play it until the last byte has arrived, and
+ * nothing can seek it without reading to the end first. That is a property this
+ * export has always had and is not giving up.
+ *
+ * There are two ways to have it and they are not equivalent. `'in-memory'`,
+ * which is what a `BufferTarget` gets by default and what this used to take,
+ * keeps every encoded packet as its own array until finalize and only then
+ * assembles the file, so the media exists twice at the moment it is written
+ * out. `'reserve'` leaves room at the front, writes each packet into the file
+ * as its chunk closes, and seeks back at the end to fill the room in. It needs
+ * a target that can seek, which both of these are, and an exact packet count,
+ * which an export has: it knows how many frames it is writing before it writes
+ * the first one.
+ *
+ * The reserved room that is not used becomes a `free` box, measured at under a
+ * megabyte on an eighteen thousand frame clip.
+ */
+const FAST_START = 'reserve' as const;
+
+/**
+ * How large a file this will build in memory before it stops.
+ *
+ * ONLY EVER REACHED WITHOUT A FILE TO WRITE INTO. Given a handle the bytes
+ * leave as they are made and the length of the clip stops being a variable;
+ * given none the whole file is in the tab, and past some length that fails.
+ *
+ * The divisor is the mechanism rather than a guess. A file of N bytes is
+ * assembled in a buffer that grows by doubling, so up to 2N; finalizing slices
+ * a second copy out of it, N more; and the download is handed a blob, which is
+ * another. Four times the file, at the moment it is finished, is what has to
+ * fit. `node tools/video-bench/run.mjs long-clip` takes it end to end: on an
+ * Apple M3 Pro under Chrome, whose heap limit reads 4.19 GB, a 1.66 GB file
+ * finishes at a peak of 4.36 GB and a 2.2 GB file does not finish at all.
+ *
+ * Where there is no heap figure to read, which is every browser that also has
+ * no file picker, four gigabytes is assumed. It is the wrong number to be sure
+ * of and the right order of magnitude, and being wrong here costs a clip that
+ * stops early rather than a tab that dies.
+ *
+ * IT IS NOT A GUARANTEE, and nothing here can make it one: how much a tab can
+ * hold depends on what else the machine is doing at that moment, and the same
+ * export succeeds and fails on the same browser an hour apart. What the budget
+ * buys is that the common case ends in a file rather than in a dead tab. The
+ * uncommon one is caught where the blob is handed over.
+ */
+declare global {
+  interface Performance {
+    /**
+     * Chrome's, and non-standard, and the only thing that answers the question
+     * at all: the standard `measureUserAgentSpecificMemory` needs cross-origin
+     * isolation, which this application does not have and which would change
+     * what it is allowed to fetch. Optional because it genuinely is: the
+     * browsers with no save picker mostly have no heap figure either.
+     */
+    readonly memory?: {
+      readonly jsHeapSizeLimit: number;
+      readonly usedJSHeapSize: number;
+    };
+  }
+}
+
+const ASSUMED_HEAP_LIMIT = 4 * 2 ** 30;
+const COPIES_AT_FINALIZE = 4;
+
+function memoryBudget(): number {
+  return (performance.memory?.jsHeapSizeLimit ?? ASSUMED_HEAP_LIMIT) / COPIES_AT_FINALIZE;
+}
+
+export function clipSink(destination: Destination): FrameSink {
+  const format = new Mp4OutputFormat({ fastStart: FAST_START });
+  const budget = destination.kind === 'file' ? Infinity : memoryBudget();
+
+  let target: Target | undefined;
+  let output: Output | undefined;
   let track: VideoSampleSource | undefined;
+  /** How long the file is so far, which `reserve` makes knowable as it grows. */
+  let size = 0;
 
   return {
-    async open(size: Dimensions): Promise<Dimensions> {
+    async open(requested: Dimensions, frames: number): Promise<Dimensions> {
       // H.264 samples chroma at half resolution in each direction, so an odd
       // dimension has no representation. One pixel off a 4000 px edge is not
       // worth a message; silently producing a file the encoder refuses is.
-      const fitted = { width: size.width & ~1, height: size.height & ~1 };
+      const fitted = { width: requested.width & ~1, height: requested.height & ~1 };
 
       // Our preference order, narrowed to what this container can hold, then
       // narrowed again to what this browser will encode at this size.
@@ -93,6 +176,18 @@ export function clipSink(): FrameSink {
         );
       }
 
+      // The one line that differs. A writable file stream takes a positioned
+      // write, which is the same shape mediabunny's stream target emits, so
+      // seeking back to fill in the index needs nothing in between.
+      target =
+        destination.kind === 'file'
+          ? new StreamTarget(await destination.handle.createWritable())
+          : new BufferTarget();
+      target.on('write', ({ end }) => {
+        if (end > size) size = end;
+      });
+
+      output = new Output({ format, target });
       track = new VideoSampleSource({
         codec,
         quality: QUALITY,
@@ -102,12 +197,16 @@ export function clipSink(): FrameSink {
       // timestamp to it, and the timestamps below are the container's own,
       // which is the whole reason a frame index means the same thing here as it
       // does to the person who selected it.
-      output.addVideoTrack(track);
+      //
+      // maximumPacketCount is what `reserve` needs and what an export can
+      // answer: one packet per frame, and the frames are known before the first
+      // one is rendered.
+      output.addVideoTrack(track, { maximumPacketCount: frames });
       await output.start();
       return fitted;
     },
 
-    async accept(canvas: OffscreenCanvas, frame: ExportFrame): Promise<void> {
+    async accept(canvas: OffscreenCanvas, frame: ExportFrame): Promise<SinkState> {
       if (!track) throw new Error('The clip was not opened.');
       // Seconds, which is what a VideoSample is measured in.
       const sample = new VideoSample(canvas, {
@@ -123,18 +222,28 @@ export function clipSink(): FrameSink {
       } finally {
         sample.close();
       }
+      return size < budget ? 'ready' : 'full';
     },
 
-    async finish(): Promise<Blob> {
+    async finish(): Promise<Written> {
       track?.close();
-      await output.finalize();
-      return new Blob([output.target.buffer ?? new ArrayBuffer(0)], { type: format.mimeType });
+      await output?.finalize();
+      if (destination.kind === 'file') return { to: 'file', name: destination.name };
+      const buffer = target instanceof BufferTarget ? target.buffer : undefined;
+      return { to: 'download', blob: new Blob([buffer ?? new ArrayBuffer(0)], { type: format.mimeType }) };
     },
 
     async cancel(): Promise<void> {
       // Releases the encoder, which holds a hardware session, and stops the
       // muxer growing a buffer nobody is going to read.
-      if (output.state === 'started' || output.state === 'pending') await output.cancel();
+      //
+      // IT DOES NOT UNDO THE FILE, and nothing here can. A writable file stream
+      // commits on close and a page cannot delete a handle it was given, so an
+      // export abandoned before its first frame leaves a file with a header in
+      // it and no index, where the user asked for a video. That is why this is
+      // only ever reached when there is genuinely nothing to keep: past the
+      // first frame a stop finishes the file instead.
+      if (output && (output.state === 'started' || output.state === 'pending')) await output.cancel();
     },
   };
 }

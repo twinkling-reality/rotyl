@@ -19,17 +19,26 @@ node tools/video-bench/run.mjs all         # real Chrome, headed
 `run.mjs all` takes the nine that need a GPU and a clip, and it takes any
 subset of them: `readback`, `ort-device`, `attention`, `bank-rampup`,
 `half-precision`, `decode`, `colour`, `encode`, `encode-colour`,
-`shared-device`. Three measurements sit outside that run and write their own
+`shared-device`. Four measurements sit outside that run and write their own
 files, because they share nothing with it and re-taking one of them should not
 re-date every figure it would otherwise have landed beside. The bundle sizes
 need a build and no browser: `node tools/video-bench/bundle-size.mjs`. The
 command log needs neither, since it is arithmetic over a data structure:
-`node tools/video-bench/run.mjs log`. And a tracked frame needs a dev server
+`node tools/video-bench/run.mjs log`. A tracked frame needs a dev server
 started with `VITE_TRACKING_HOST` pointing at the two graphs, which most
-machines will not have: `node tools/video-bench/run.mjs tracked-frame`. The
-clips are gitignored, `results.json`, `results-bundle.json`, `results-log.json`
-and `results-tracked-frame.json` are not, and the graphs come from
-`tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
+machines will not have: `node tools/video-bench/run.mjs tracked-frame`. And how
+long a clip export can be takes twenty minutes and ends by running the tab out
+of memory, which is the measurement rather than a hazard of it:
+`node tools/video-bench/run.mjs long-clip`. The clips are gitignored,
+`results.json`, `results-bundle.json`, `results-log.json`,
+`results-tracked-frame.json` and `results-long-clip.json` are not, and the
+graphs come from `tools/edgetam-export`. `export.py` for the pair, then
+`half_precision.py`.
+
+**Nothing under `src/` may be edited while a run is going.** The dev server
+hot-reloads the page underneath it, which arrives as "the execution context was
+destroyed" and reads exactly like the out-of-memory crash `long-clip` is looking
+for. Two runs of that measurement were lost that way before it was written down.
 
 Real Chrome and headed, for the reason `playwright.config.ts` gives: bundled
 Chromium falls back to SwiftShader, which reports success while producing
@@ -41,7 +50,7 @@ appears nowhere: it throttles when the pane is hidden, which silently turns a
 3 ms number into a 16 ms one. Medians of 15 to 30 runs after warm-up, on an
 Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 
-**Nine findings, each with the command that re-takes it:**
+**Ten findings, each with the command that re-takes it:**
 
 1. [The 12 MB readback does not bind](#1-the-12-mb-readback-does-not-bind-and-it-is-avoidable-anyway)
 2. [Memory attention is 60 ms](#2-memory-attention-is-60-ms-and-38-at-half-precision)
@@ -52,6 +61,7 @@ Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 7. [The encoder is not what moves colour](#7-the-encoder-is-not-what-moves-colour)
 8. [A tracked clip does not fit in the command log](#8-a-tracked-clip-does-not-fit-in-the-command-log-and-the-fold-is-not-why)
 9. [A tracked frame is 135 ms, and the sum said 90](#9-a-tracked-frame-is-135-ms-and-the-sum-said-90)
+10. [Ten minutes was never the problem, and twenty was](#10-ten-minutes-was-never-the-problem-and-twenty-was)
 
 ---
 
@@ -430,26 +440,34 @@ actually produces. `node tools/video-bench/bundle-size.mjs`:
 | read MP4                              | 144.8 KB | 35.2 KB |
 | read MP4 and QuickTime                | 145.1 KB | 35.2 KB |
 | read MP4, QuickTime and Matroska      | 211.2 KB | 49.4 KB |
-| write MP4, from packets               | 129.3 KB | 30.5 KB |
-| write MP4, encoding as well           | 206.5 KB | 48.5 KB |
-| write MP4 and QuickTime               | 206.5 KB | 48.5 KB |
-| write MP4 and Matroska                | 243.6 KB | 56.9 KB |
-| read MP4 and QuickTime, and write MP4 | 330.1 KB | 76.8 KB |
+| write MP4, from packets               | 134.6 KB | 31.8 KB |
+| write MP4, encoding as well           | 211.8 KB | 49.8 KB |
+| write MP4 and QuickTime               | 211.9 KB | 49.8 KB |
+| write MP4 and Matroska                | 248.9 KB | 58.3 KB |
+| read MP4 and QuickTime, and write MP4 | 335.1 KB | 78.0 KB |
 
 The three numbers that decide the design:
 
-- **Writing costs 41.6 KB gzipped on top of a chunk that already reads**, which
+- **Writing costs 42.8 KB gzipped on top of a chunk that already reads**, which
   is the size of the entire application bundle to the tenth of a kilobyte. So
   the writer is its own dynamic import, fetched by an export and by nothing
   else, the same treatment the demuxer and the model get.
-- **A second container to write costs 12 bytes.** QuickTime is the same muxer
+- **A second container to write costs 11 bytes.** QuickTime is the same muxer
   with a different brand list, exactly as it is on the read side. Matroska costs
-  8.4 KB, because it is not.
-- **The encoder wrapper is 18.0 KB of the 48.5.** Driving `VideoEncoder`
+  8.5 KB, because it is not.
+- **The encoder wrapper is 18.0 KB of the 49.8.** Driving `VideoEncoder`
   directly and piping packets in would save that and cost 5% a frame. Inside a
   chunk only a clip export fetches, 18 KB does not buy back codec-string
   construction, backpressure, flush ordering and getting the decoder config into
   the muxer's first packet.
+
+**Both write rows carry both targets**, which they did not when this table was
+first taken, and that is why the write half of it is 1.2 KB larger than it was.
+A clip export writes into a file handle where the browser can give one and into
+a buffer where it cannot, so a measurement of the writer that carried only one
+of them would be a measurement of a chunk nobody ships. The packets-only row
+carries both as well, so the encoder wrapper is still the difference between the
+two and only that.
 
 These are oxc-minified where the earlier demux figures in this file were
 esbuild-minified, which is why reading MP4 now measures 35.2 KB where it
@@ -640,6 +658,156 @@ to fetch them from and would leave an error where every other number is.
 
 ---
 
+## 10. Ten minutes was never the problem, and twenty was
+
+`docs/limits.md` said a clip export was built in memory and that "a ten-minute
+one would be closer to a gigabyte, and this has no answer for that beyond
+failing". The consequence was right and the number was a guess, and a guess is
+what this measurement went to replace: a tab that dies is a different problem
+from one that swaps for four minutes and finishes, and the two want different
+answers.
+
+It drives the product's own loop, `runExport` with the shipping `clipSink`, over
+a source that hands the same ten-second clip round again with monotonically
+increasing timestamps. The pixels repeat and the packets do not: the encoder is
+given real frames at the export's own bitrate, so the bytes that pile up are the
+bytes an export of that length piles up. One thing here is not the product's
+code, and it is the thing being compared against: the sink that shipped BEFORE
+this chapter, which held every encoded packet until the end. It no longer exists
+to import, so it is reproduced in `long-clip.ts`.
+
+```bash
+node tools/video-bench/run.mjs long-clip
+```
+
+Twenty minutes, its own results file, and out of `all`: the ladder ends by
+running the tab out of memory, which is not a thing to do in the middle of a run
+with nine other measurements left to take.
+
+### The ladder, and where it stops
+
+1080p30, poster, export tier, against the sink that shipped before this chapter.
+Every rung is a complete export of that many minutes of footage.
+
+| minutes | file    | heap while writing | peak heap | peak ÷ file | finalize |
+| ------- | ------- | ------------------ | --------- | ----------- | -------- |
+| 5       | 414 MB  | 464 MB             | 1382 MB   | 3.3         | 0.2 s    |
+| 10      | 828 MB  | 885 MB             | 2193 MB   | 2.6         | 1.1 s    |
+| 15      | 1242 MB | 1305 MB            | 3535 MB   | 2.8         | 2.1 s    |
+| 20      | 1656 MB | 1752 MB            | 4361 MB   | 2.6         | 3.4 s    |
+| 25      | none    | 2211 MB            | 2211 MB   | none        | failed   |
+
+**Ten minutes works, and the note that said it would not was wrong.** It is
+828 MB and it peaks at 2.2 GB against a 4.19 GB heap limit. What fails is
+twenty-five minutes, and it fails at finalize, with
+`RangeError: Array buffer allocation failed`. Not a dead tab: a catchable error
+three and a half minutes into an export, which is the worst possible moment for
+one and still better than the alternative.
+
+Three things in that table are the whole design.
+
+**The heap tracks the file, one for one.** Fitted across every rung, the sink
+that shipped held 47 MB more per thousand frames written, and a thousand frames
+at this bitrate is 46 MB of file. So the ceiling is arithmetic rather than luck:
+it is the heap limit divided by what a finished file costs, which is between two
+and three times its own size at the moment it is assembled.
+
+**Twenty minutes peaks at 4361 MB against a limit that reads 4192.** So
+`jsHeapSizeLimit` is not a wall that external array buffers hit exactly, which
+is worth knowing before treating it as one.
+
+**And the finalize column is not the muxer.** With the encoder taken out of it
+entirely and 790 MB of synthetic packets pushed straight in, finalizing costs
+0.17 s held in memory and 0.07 s with the index reserved. What the last column
+measures is a tab with two gigabytes in it being asked for another one, which is
+why the same five rungs came back at 0.9, 2.7, 3.6, 18.3 and failed on the run
+before this one. The shape is the same and the seconds are not, and neither of
+those is a number to design against.
+
+### Into a file, nothing is held
+
+The same loop, the same sink, with a `FileSystemFileHandle` behind it:
+
+| where it went   | minutes | file    | peak heap | peak ÷ file | heap per 1000 frames |
+| --------------- | ------- | ------- | --------- | ----------- | -------------------- |
+| a file          | 25      | 2071 MB | 103 MB    | 0.05        | 0.6 MB               |
+| a file          | 10      | 829 MB  | 98 MB     | 0.12        | 0.1 MB               |
+| memory          | 10      | 829 MB  | 1982 MB   | 2.39        | 67.6 MB              |
+| memory, as sent | 10      | 828 MB  | 2193 MB   | 2.65        | 46.6 MB              |
+
+**The last column is the finding.** Writing into a file grows the heap by half a
+megabyte per thousand frames, which is the noise of a decode loop rather than a
+trend, so the length of the clip stops being a variable at all. There is no
+ceiling to quote because there is nothing accumulating to hit one.
+
+**And it costs nothing per frame.** 4.8 ms a frame at 1080p into a file against
+the 5.0 the encode ladder committed to, and the same 4.8 in memory, which is the
+encoder's own cost with everything else disappearing into the threads it is not
+using.
+
+The twenty-five minute row counted its bytes and threw them away rather than
+keeping them, and that is the harness's limit rather than the export's. The
+origin private file system is what stands in for a save dialog here, since
+Playwright cannot drive a native one, and it has a quota a real disk does not:
+`estimate()` reports three gigabytes and a write fails just past one, with and
+without `mode: 'exclusive'` and with durable storage granted over CDP. So the
+long rung isolates the export from the disk and the ten-minute rung writes a
+real file and reads it back. Neither answers the other's question and both say
+which one they are answering.
+
+**Read back, the ten-minute file is a clip.** 18,000 frames, 599.99 seconds, 600
+keyframes, first and last decoded through the product's own `FrameProvider`, and
+its boxes are `ftyp`, `moov`, `free`, `mdat` in that order. The index is at the
+front, which a stream target does not do by default and which is why the room
+for it is reserved before the first frame and seeked back to at the end. The
+`free` box is what the reservation over-estimated by, and it is under a megabyte
+on an 829 MB file.
+
+### What a download can be handed, which is not unbounded either
+
+A browser with nowhere to write ends by handing the browser a blob. Asked for
+one byte back, in a clean tab, one size at a time with the buffer dropped and
+the heap collected first:
+
+| blob    | made | one byte read back |
+| ------- | ---- | ------------------ |
+| 128 MB  | yes  | yes                |
+| 256 MB  | yes  | yes                |
+| 512 MB  | yes  | yes                |
+| 768 MB  | yes  | yes                |
+| 1024 MB | yes  | yes                |
+| 1536 MB | yes  | yes                |
+| 2048 MB | no   | `RangeError`       |
+
+**In a clean tab that is fine, and it is not the state a finished export leaves
+the tab in.** Holding the buffer the file was assembled in AND the blob made
+from it, which is exactly what the sink does at the moment it hands one over, a
+790 MB blob comes back `NotReadableError` on every attempt. As a download that
+is a file that never arrives and no word about why, which is why the download
+path asks for one byte before handing the blob to an anchor: the answer can then
+be a sentence.
+
+### So the in-memory path stops at a budget
+
+Four times the file is what has to fit at the moment it is finished: up to twice
+in the buffer it is assembled in, since that buffer grows by doubling, once more
+for the copy sliced out of it, and once more for the blob. So the budget is the
+heap limit over four, which is 1048 MB here.
+
+Asked for thirty minutes with nowhere to write it, the export stops at 12.6
+minutes and 1049 MB, peaks at 3182 MB, and produces `ftyp`, `moov`, `free`,
+`mdat`: a valid clip of the part that was rendered, which is the same thing
+pressing Stop produces and for the same reason.
+
+**It is not a guarantee and nothing can make it one.** How much a tab can hold
+depends on what else the machine is doing: the blob table above was taken twice
+an hour apart and read a gigabyte and a half the first time and refused half of
+that the second, with a browser that had been running exports in between. What
+the budget buys is that the common case ends in a file rather than in a dead
+tab.
+
+---
+
 ## What follows
 
 1. **Decode is free and seeking is not.** Scrubbing is a decoder kept alive and
@@ -659,7 +827,13 @@ to fetch them from and would leave an error where every other number is.
 6. **Capture the canvas.** The alternative costs a millisecond a frame at 1080p
    and a de-padding loop, and buys nothing.
 7. **The container writer is bigger than the application.** It gets its own
-   dynamic import, and a second container inside it costs twelve bytes.
+   dynamic import, and a second container inside it costs eleven bytes.
 8. **A tracked mask has to be compressed, and the log does not have to change.**
    Folding eighteen thousand commands costs 0.3 ms; holding eighteen thousand
    masks costs 1.2 GB, and a run-length encoding of one is a sixteenth of it.
+9. **A clip export needs somewhere to put the bytes.** Given a file handle the
+   heap does not grow with the length of the clip and there is no ceiling to
+   quote; given none it grows one for one with the file and stops at twenty
+   minutes of 1080p on this machine. Which browser somebody is in decides which
+   of those they get, so it is asked at the click rather than discovered at the
+   end.

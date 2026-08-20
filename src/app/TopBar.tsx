@@ -127,6 +127,14 @@ export function TopBar({
  * two, and an operation that cannot be called off is a hang with a progress
  * bar on it. It replaces the buttons rather than sitting beside them because
  * there is exactly one thing to do while it runs.
+ *
+ * AND STOPPING KEEPS WHAT WAS WRITTEN, which the button has to say rather than
+ * leave in a comment. It used to abandon, which was honest while the file
+ * existed only in memory and nothing had been promised; once the bytes are
+ * going into a file the user named, abandoning leaves an empty file where they
+ * asked for a video. The label stays one word because the button is pressed
+ * under time pressure, and the sentence lives where a button's second sentence
+ * lives here, in the title every other control in this product uses.
  */
 function ExportControl({
   onExport,
@@ -143,7 +151,12 @@ function ExportControl({
 }): JSX.Element {
   if (exporting) {
     return (
-      <button type="button" class="export-button export-button--stop" onClick={onCancel}>
+      <button
+        type="button"
+        class="export-button export-button--stop"
+        title="Stop, and keep what has been written"
+        onClick={onCancel}
+      >
         Stop
       </button>
     );

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFile } from 'node:fs/promises';
@@ -231,14 +231,34 @@ test('offers the research page from the empty state, and generates it from the r
   ]);
   await expect(page.getByRole('cell', { name: `${upload.toFixed(1)} ms` }).first()).toBeVisible();
 
-  // And out of the results file that has its own command, which the page reads
-  // as well: a bundle size needs a build and no browser, so it is not part of
-  // the run the timings come from.
+  // And out of the results files that have their own commands, which the page
+  // reads as well: a bundle size needs a build and no browser, so it is not part
+  // of the run the timings come from.
   await page.goto('/research/the-clip.html');
-  await expect(page.getByRole('cell', { name: '30.5 KB' }).first()).toBeVisible();
+  const packets = await medianAt('tools/video-bench/results-bundle.json', [
+    'cases',
+    'write MP4, packets only',
+    'gzip',
+  ]);
+  await expect(page.getByRole('cell', { name: `${(packets / 1024).toFixed(1)} KB` }).first()).toBeVisible();
   // Stated in bytes rather than as 0.0 KB, which would read as a rounding error
   // rather than as the finding it is.
-  await expect(page.getByText('costs 12 bytes')).toBeVisible();
+  const second = await medianAt('tools/video-bench/results-bundle.json', [
+    'deltas',
+    'a second container to write',
+  ]);
+  await expect(page.getByText(`costs ${String(second)} bytes`)).toBeVisible();
+
+  // The measurement with the longest command of all, on its own page: how long
+  // a clip export can be is twenty minutes of encoding to find out, so it is
+  // neither part of the timings run nor something a page may quietly omit.
+  await page.goto('/research/a-long-clip.html');
+  const budgeted = await medianAt('tools/video-bench/results-long-clip.json', [
+    'long-clip',
+    'in memory, past the budget',
+    'file_mb',
+  ]);
+  await expect(page.getByText(`${String(budgeted)} MB`).first()).toBeVisible();
 
   await page.goto('/research/trials.html');
   await expect(page.getByRole('cell', { name: /59.5 KB gzipped/ })).toBeVisible();
@@ -747,8 +767,18 @@ test('exports the frame on screen, named for it', async ({ page }) => {
  * are a video, that they are the RIGHT number of frames, or that the container
  * is one anything can open, and all three of those are ways this can be broken
  * while still producing a file.
+ *
+ * WITH NO SAVE DIALOG, which is what Safari and Firefox are. The picker is
+ * removed rather than left alone, because in the browser this suite runs in it
+ * is there, and a native dialog is the one thing Playwright cannot drive. So
+ * this is the path those two browsers take, tested where it can be tested, and
+ * the path the others take is the test below it.
  */
-test('exports the whole clip as a video', async ({ page }) => {
+test('exports the whole clip as a video, with nowhere to write it', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.assign(window, { showSaveFilePicker: undefined });
+  });
+  await page.goto('/');
   await page.locator('input[type=file]').setInputFiles(clip);
   const canvas = page.locator('canvas');
   await expect(canvas).toBeVisible();
@@ -870,6 +900,236 @@ test('exports the whole clip as a video', async ({ page }) => {
   // by the codec's error alone being small.
   expect(difference.corner).toBeLessThan(4);
   expect(difference.selected).toBeGreaterThan(difference.corner * 2);
+});
+
+/**
+ * A save dialog Playwright can drive, which is the one thing it cannot.
+ *
+ * The origin private file system hands back a real `FileSystemFileHandle` with
+ * a real `createWritable` that seeks, which is everything the streaming export
+ * asks of the one a picker returns. So the only thing replaced is the dialog
+ * itself, and every line below it, the stream target, the reserved index, the
+ * seek back at the end, is the code that runs for a user who picked a file.
+ *
+ * Installed rather than merely present, because a test that relied on the real
+ * picker would open a native window and stop.
+ */
+async function stubSavePicker(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Object.assign(window, {
+      showSaveFilePicker: async (options: { suggestedName?: string }): Promise<FileSystemFileHandle> => {
+        const root = await navigator.storage.getDirectory();
+        const name = options.suggestedName ?? 'picked.mp4';
+        // A picker hands back an empty file, and so does this: an export that
+        // stopped early has to overwrite rather than append to what was there.
+        await root.removeEntry(name).catch(() => undefined);
+        return root.getFileHandle(name, { create: true });
+      },
+    });
+  });
+  await page.goto('/');
+}
+
+/** Whatever the stubbed picker wrote, brought back out of the page. */
+async function readPickedFile(page: Page, name: string): Promise<Uint8Array<ArrayBuffer>> {
+  const encoded = await page.evaluate(async (wanted) => {
+    const root = await navigator.storage.getDirectory();
+    const file = await (await root.getFileHandle(wanted)).getFile();
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    // In blocks, because a character at a time is minutes on a megabyte and
+    // spreading the array into apply() overflows the argument list.
+    const parts: string[] = [];
+    for (let at = 0; at < bytes.length; at += 8192) {
+      parts.push(String.fromCharCode(...bytes.subarray(at, at + 8192)));
+    }
+    return btoa(parts.join(''));
+  }, name);
+  const decoded = Buffer.from(encoded, 'base64');
+  // Copied into a buffer of its own rather than handed over as the Buffer: a
+  // Buffer's backing store is typed as possibly shared, which a Blob will not
+  // take. Byte by byte in a loop, never spread, for the reason the unit suite
+  // gives: a spread of a megabyte is an argument list of a million.
+  const out = new Uint8Array(new ArrayBuffer(decoded.length));
+  for (let at = 0; at < decoded.length; at++) out[at] = decoded[at] ?? 0;
+  return out;
+}
+
+/** The top-level box types, in order, which is where the index is. */
+function boxOrder(bytes: Uint8Array<ArrayBuffer>): string[] {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const out: string[] = [];
+  let pos = 0;
+  while (pos + 16 <= bytes.length && out.length < 8) {
+    let size = view.getUint32(pos);
+    const type = String.fromCharCode(
+      view.getUint8(pos + 4),
+      view.getUint8(pos + 5),
+      view.getUint8(pos + 6),
+      view.getUint8(pos + 7),
+    );
+    if (size === 1) size = Number(view.getBigUint64(pos + 8));
+    if (size < 8) break;
+    out.push(type);
+    pos += size;
+  }
+  return out;
+}
+
+/**
+ * The clip written straight into a file, which is the whole point of this
+ * chapter: nothing is held, so there is no length at which it stops working.
+ *
+ * What is asserted beyond "a file exists" is the property that decides whether
+ * streaming was worth doing at all. The index has to stay at the FRONT of the
+ * file, before the media, which a stream target does not do by default and
+ * which needs the room reserved before the first frame and seeked back to at
+ * the end. A file with its index at the end is a different file: nothing plays
+ * it until the last byte has arrived.
+ */
+test('writes the clip into a file the user chose, index first', async ({ page }) => {
+  await stubSavePicker(page);
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  await expect(page.getByText('1 / 60')).toBeVisible();
+
+  // Nothing should be downloaded: the bytes went to the file, and a browser
+  // that did both would be writing the clip twice.
+  let downloaded = 0;
+  page.on('download', () => {
+    downloaded++;
+  });
+
+  await page.getByRole('button', { name: 'Clip' }).click();
+  // Waited for by the sentence rather than by the buttons coming back, which
+  // they have not yet left. A file written to a path the user chose leaves no
+  // trace in the browser at all, so the product says it did, and that sentence
+  // is both the signal this test needs and a thing worth asserting.
+  await expect(page.getByText('Wrote sample-rotyl.mp4.')).toBeVisible({ timeout: 60_000 });
+
+  const bytes = await readPickedFile(page, 'sample-rotyl.mp4');
+  expect(bytes.length).toBeGreaterThan(1024);
+  // ftyp, then the index, then the room left over, then the media. The order is
+  // the assertion; the free box is what reserving costs when the count is known
+  // exactly rather than guessed.
+  expect(boxOrder(bytes).slice(0, 2)).toEqual(['ftyp', 'moov']);
+  expect(boxOrder(bytes)).toContain('mdat');
+
+  const input = new Input({ formats: [MP4], source: new BlobSource(new Blob([bytes])) });
+  const track = await input.getPrimaryVideoTrack();
+  expect(track).not.toBeNull();
+  if (!track) return;
+  expect(track.displayWidth).toBe(320);
+  expect(track.displayHeight).toBe(240);
+
+  let frames = 0;
+  let keyframes = 0;
+  const sink = new EncodedPacketSink(track);
+  for await (const packet of sink.packets(undefined, undefined, { metadataOnly: true })) {
+    frames++;
+    if (packet.type === 'key') keyframes++;
+  }
+  input.dispose();
+  expect(frames).toBe(60);
+  // More than one, for the reason the other export test gives: seek cost is set
+  // by keyframe spacing and by nothing else.
+  expect(keyframes).toBeGreaterThan(1);
+
+  expect(downloaded).toBe(0);
+  // And the editor is usable afterwards rather than left on the last frame of
+  // its own export.
+  await expect(page.getByText('1 / 60')).toBeVisible();
+});
+
+/**
+ * Dismissing the dialog does nothing at all, which is the reason it is asked
+ * before the work rather than after.
+ *
+ * Somebody who changes their mind about where a clip goes has changed their
+ * mind about exporting it, and the cost of finding that out first is one dialog
+ * against minutes of encoding.
+ */
+test('does no work when the save dialog is dismissed', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.assign(window, {
+      rotylDismissed: 0,
+      showSaveFilePicker: () => {
+        Object.assign(window, { rotylDismissed: Number(Reflect.get(window, 'rotylDismissed')) + 1 });
+        return Promise.reject(new DOMException('The user aborted a request.', 'AbortError'));
+      },
+    });
+  });
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles(clip);
+  await expect(page.locator('canvas')).toBeVisible();
+
+  let downloaded = 0;
+  page.on('download', () => {
+    downloaded++;
+  });
+
+  await page.getByRole('button', { name: 'Clip' }).click();
+  // Waited for, so "nothing happened" is asserted after the dialog was answered
+  // rather than before it was asked. An assertion that passes because it ran
+  // too early is worse than no assertion.
+  await page.waitForFunction(() => Reflect.get(window, 'rotylDismissed') === 1);
+  // No Stop, because nothing started.
+  await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0);
+  // And no complaint: they were asked a question and declined to answer it.
+  await expect(page.locator('.notice')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Clip' })).toBeEnabled();
+  expect(downloaded).toBe(0);
+});
+
+/**
+ * Stopping keeps what was written, which is the rule this whole path turns on.
+ *
+ * It used to abandon, and that was right while the file existed only in memory:
+ * nothing had been promised and nothing was lost. Once the bytes are going into
+ * a file the user named it is not, because abandoning leaves an empty file
+ * where they asked for a video. So a stopped export finishes the file at the
+ * frame it reached, and what comes out has to be a file anything can open,
+ * which is what is asserted here rather than merely that it exists.
+ *
+ * The stop lands wherever it lands. What makes that a test rather than a race
+ * is that the progress hairline only appears once an export has been running
+ * for 220 ms, so waiting for it is waiting for a run that is genuinely under
+ * way, and if the clip is ever short enough to finish inside that this fails
+ * rather than passing without having tested anything.
+ */
+test('stops where it is told, and keeps what it wrote', async ({ page }) => {
+  await stubSavePicker(page);
+  await page.locator('input[type=file]').setInputFiles(clip);
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.getByText('1 / 60')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Clip' }).click();
+  await expect(page.locator('.activity__fill')).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('button', { name: 'Stop' }).click();
+  await expect(page.getByRole('button', { name: 'Clip' })).toBeVisible({ timeout: 30_000 });
+
+  // Said in the interface rather than left for the user to discover by opening
+  // the file: a shorter clip than the one they asked for needs a sentence.
+  await expect(page.getByText(/^Stopped at /)).toBeVisible();
+
+  const bytes = await readPickedFile(page, 'sample-rotyl.mp4');
+  expect(boxOrder(bytes).slice(0, 2)).toEqual(['ftyp', 'moov']);
+
+  const input = new Input({ formats: [MP4], source: new BlobSource(new Blob([bytes])) });
+  const track = await input.getPrimaryVideoTrack();
+  expect(track).not.toBeNull();
+  if (!track) return;
+  let frames = 0;
+  const sink = new EncodedPacketSink(track);
+  for await (const packet of sink.packets(undefined, undefined, { metadataOnly: true })) {
+    if (packet.byteLength >= 0) frames++;
+  }
+  input.dispose();
+
+  // Shorter than the clip, and a real clip: the point is that the work up to
+  // where it stopped is worth what it would have been had the clip ended there.
+  expect(frames).toBeGreaterThan(0);
+  expect(frames).toBeLessThan(60);
 });
 
 test('undo goes to the frame it undid', async ({ page }) => {

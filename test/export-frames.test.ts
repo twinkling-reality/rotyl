@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { exportFilename } from '../src/platform/export/export.ts';
+import { chooseFile } from '../src/platform/export/destination.ts';
 import { clipSource, videoSource } from '../src/platform/export/export-source.ts';
 import type { VideoTimeline } from '../src/platform/video/frame-provider.ts';
 
@@ -98,5 +99,59 @@ describe('what an export is called', () => {
   it('survives a name with no extension, and one that is only an extension', () => {
     expect(exportFilename('screenshot', 'png')).toBe('screenshot-rotyl.png');
     expect(exportFilename('.hidden', 'png')).toBe('image-rotyl.png');
+  });
+});
+
+/**
+ * Where an export is sent, which is a decision taken before any of the work.
+ *
+ * No DOM here either, and it needs none: what this module does is ask a global
+ * that may not exist and turn one exception into a value. Both of those are
+ * exactly the kind of thing that is written once and then quietly stops being
+ * true, and neither needs a browser to check.
+ */
+function setPicker(value: typeof globalThis.showSaveFilePicker): void {
+  globalThis.showSaveFilePicker = value;
+}
+
+describe('where an export is sent', () => {
+  afterEach(() => {
+    setPicker(undefined);
+  });
+
+  it('takes the downloads folder where there is no picker to ask', async () => {
+    expect(globalThis.showSaveFilePicker).toBeUndefined();
+    // Safari and Firefox. Not an error and not a question: there is one place a
+    // file can go, so it goes there.
+    await expect(chooseFile('clip-rotyl.mp4', 'mp4')).resolves.toEqual({ kind: 'download' });
+  });
+
+  it('takes the file that was picked, by the name the picker gave it', async () => {
+    // The user may rename it in the dialog, so the suggested name is a
+    // suggestion and the handle's name is the fact.
+    // A real handle is not available in Node and is not needed: what a
+    // destination asks of one is a name and a way to open a writable, and this
+    // answers the half the picker decides.
+    setPicker(() =>
+      Promise.resolve({
+        name: 'somewhere else.mp4',
+        createWritable: () => Promise.resolve(new WritableStream<FileSystemWriteChunkType>()),
+      }),
+    );
+    const chosen = await chooseFile('clip-rotyl.mp4', 'mp4');
+    expect(chosen?.kind).toBe('file');
+    expect(chosen?.kind === 'file' ? chosen.name : undefined).toBe('somewhere else.mp4');
+  });
+
+  it('says nothing at all when the dialog is dismissed', async () => {
+    // They were asked a question and declined to answer it. Reported as a
+    // failure it would be the product arguing with a decision the user made.
+    setPicker(() => Promise.reject(new DOMException('The user aborted a request.', 'AbortError')));
+    await expect(chooseFile('clip-rotyl.mp4', 'mp4')).resolves.toBeUndefined();
+  });
+
+  it('lets a real failure through rather than reading it as a dismissal', async () => {
+    setPicker(() => Promise.reject(new DOMException('Not allowed', 'SecurityError')));
+    await expect(chooseFile('clip-rotyl.mp4', 'mp4')).rejects.toThrow('Not allowed');
   });
 });

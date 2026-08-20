@@ -1,5 +1,5 @@
 import type { Dimensions } from '../../core/render/resolution.ts';
-import type { ExportFrame, FrameSink } from './export.ts';
+import type { ExportFrame, FrameSink, SinkState, Written } from './export.ts';
 
 const JPEG_QUALITY = 0.92;
 
@@ -25,7 +25,7 @@ export function stillSink(type: 'image/png' | 'image/jpeg'): FrameSink {
       return Promise.resolve(size);
     },
 
-    async accept(canvas: OffscreenCanvas, _frame: ExportFrame): Promise<void> {
+    async accept(canvas: OffscreenCanvas, _frame: ExportFrame): Promise<SinkState> {
       const blob = await canvas.convertToBlob(
         type === 'image/jpeg' ? { type, quality: JPEG_QUALITY } : { type },
       );
@@ -33,11 +33,15 @@ export function stillSink(type: 'image/png' | 'image/jpeg'): FrameSink {
       // PNG, which would otherwise ship a .jpg file containing PNG bytes.
       if (blob.type !== type) throw new Error(`This browser cannot encode ${type}.`);
       picture = blob;
+      // A picture is never the sink that runs out of room: one frame of it is
+      // the whole document, and a photograph that did not fit in memory could
+      // not have been opened.
+      return 'ready';
     },
 
-    finish(): Promise<Blob> {
+    finish(): Promise<Written> {
       if (!picture) throw new Error('Nothing was rendered to export.');
-      return Promise.resolve(picture);
+      return Promise.resolve({ to: 'download', blob: picture });
     },
 
     cancel(): Promise<void> {

@@ -15,30 +15,30 @@
       "gzip": 50537
     },
     "write MP4, packets only": {
-      "raw": 132380,
-      "gzip": 31202
+      "raw": 137780,
+      "gzip": 32609
     },
     "write MP4": {
-      "raw": 211467,
-      "gzip": 49650
+      "raw": 216903,
+      "gzip": 50996
     },
     "write MP4 MOV": {
-      "raw": 211502,
-      "gzip": 49662
+      "raw": 216938,
+      "gzip": 51007
     },
     "write MP4 WEBM": {
-      "raw": 249458,
-      "gzip": 58291
+      "raw": 254894,
+      "gzip": 59652
     },
     "read MP4 QTFF + write MP4": {
-      "raw": 337997,
-      "gzip": 78614
+      "raw": 343185,
+      "gzip": 79919
     }
   },
   "deltas": {
-    "writing, on top of reading": 42568,
-    "a second container to write": 12,
-    "Matroska to write": 8641,
-    "the encoder wrapper": 18448
+    "writing, on top of reading": 43873,
+    "a second container to write": 11,
+    "Matroska to write": 8656,
+    "the encoder wrapper": 18387
   }
 }

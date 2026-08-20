@@ -4,6 +4,7 @@
 //   node tools/video-bench/run.mjs all
 //   node tools/video-bench/run.mjs log     # its own file; see APART below
 //   node tools/video-bench/run.mjs tracked-frame   # needs VITE_TRACKING_HOST
+//   node tools/video-bench/run.mjs long-clip       # twenty minutes; see below
 //
 // Headed, and channel:'chrome', for the same reason playwright.config.ts uses
 // them: bundled Chromium falls back to SwiftShader, which reports success while
@@ -26,8 +27,13 @@ import { writeFileSync } from 'node:fs';
  * `tracked-frame` needs a dev server started with VITE_TRACKING_HOST pointing
  * at the two graphs `tools/edgetam-export` produces, which most machines will
  * not have. In `all` it would leave an error where every other number is.
+ *
+ * `long-clip` deliberately runs the tab out of memory, which is the measurement
+ * rather than a hazard of it, and it takes twenty minutes where `all` takes
+ * three. Neither belongs in the middle of a run with nine other measurements
+ * still to take.
  */
-const APART = ['log', 'tracked-frame'];
+const APART = ['log', 'tracked-frame', 'long-clip'];
 
 const ALL = [
   'readback',
@@ -49,9 +55,43 @@ if (which.length === 0) {
   process.exit(1);
 }
 
-const browser = await chromium.launch({ channel: 'chrome', headless: false });
+/**
+ * A collectable heap, only where a measurement needs one.
+ *
+ * `long-clip` walks a ladder of exports, each holding a gigabyte or more, and
+ * without a way to drop the last rung before the next one starts each rung
+ * measures the one before it as well. Not passed otherwise: a browser told to
+ * expose gc is not the browser anybody runs, and every other figure here is
+ * taken in the one that is.
+ */
+const NEEDS_GC = which.includes('long-clip');
+
+const browser = await chromium.launch({
+  channel: 'chrome',
+  headless: false,
+  ...(NEEDS_GC ? { args: ['--js-flags=--expose-gc'] } : {}),
+});
 const page = await browser.newPage();
 page.on('pageerror', (error) => console.error(`  [page] ${error.message}`));
+
+/**
+ * What the page said before it stopped answering.
+ *
+ * A measurement that runs the tab out of memory takes its own return value with
+ * it, and the checkpoints it logged on the way are then the only evidence of
+ * how far it got. Kept for every run and written out only when the evaluate
+ * fails, so nothing changes for the runs that finish.
+ */
+const checkpoints = [];
+page.on('console', (message) => {
+  const text = message.text();
+  if (!text.startsWith('bench: ')) return;
+  try {
+    checkpoints.push(JSON.parse(text.slice(7)));
+  } catch {
+    checkpoints.push({ line: text.slice(7) });
+  }
+});
 
 const url = process.env.ROTYL_URL ?? 'http://localhost:5180';
 await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -65,10 +105,21 @@ await page
   .catch(() => undefined);
 await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-const result = await page.evaluate(async (names) => {
-  const bench = await import('/tools/video-bench/index.ts');
-  return bench.run(names);
-}, which);
+let result;
+try {
+  result = await page.evaluate(async (names) => {
+    const bench = await import('/tools/video-bench/index.ts');
+    return bench.run(names);
+  }, which);
+} catch (error) {
+  // The page died rather than the measurement failing. That IS a result for
+  // long-clip, so it is written out with everything the checkpoints saw rather
+  // than lost to a stack trace on a terminal.
+  result = {
+    'the page stopped answering': String(error),
+    checkpoints,
+  };
+}
 
 const json = JSON.stringify(result, null, 2);
 console.log(json);

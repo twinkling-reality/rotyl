@@ -1,0 +1,272 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "long-clip": {
+    "what": "how long a clip export can be, what stops it, and what a file handle changes",
+    "size": "1920x1080",
+    "fps": 30,
+    "style": "poster",
+    "heap_limit_mb": 4192,
+    "storage_quota_mb": 4096,
+    "gc_available": true,
+    "save_picker": true,
+    "writable_streams": true,
+    "handing it over": {
+      "what": "the largest blob a download can be handed",
+      "largest_readable_mb": 1536,
+      "rows": [
+        {
+          "mb": 128,
+          "made": true,
+          "read": true
+        },
+        {
+          "mb": 256,
+          "made": true,
+          "read": true
+        },
+        {
+          "mb": 512,
+          "made": true,
+          "read": true
+        },
+        {
+          "mb": 768,
+          "made": true,
+          "read": true
+        },
+        {
+          "mb": 1024,
+          "made": true,
+          "read": true
+        },
+        {
+          "mb": 1536,
+          "made": true,
+          "read": true
+        },
+        {
+          "mb": 2048,
+          "made": false,
+          "read": false,
+          "error": "RangeError: Array buffer allocation failed"
+        }
+      ]
+    },
+    "into a file, discarded at the writer": {
+      "minutes": 25,
+      "ok": true,
+      "frames": 45000,
+      "asked": 45000,
+      "ended": "complete",
+      "seconds": 216.478,
+      "ms_per_frame": 4.811,
+      "heap_while_writing_mb": 84,
+      "peak_heap_mb": 103,
+      "heap_mb_per_1000_frames": 0.597,
+      "finalize_seconds": 0.083,
+      "heap_limit_mb": 4192,
+      "file_mb": 2071,
+      "peak_over_file": 0.05
+    },
+    "into a file": {
+      "minutes": 10,
+      "ok": true,
+      "frames": 18000,
+      "asked": 18000,
+      "ended": "complete",
+      "seconds": 86.026,
+      "ms_per_frame": 4.779,
+      "heap_while_writing_mb": 71,
+      "peak_heap_mb": 98,
+      "heap_mb_per_1000_frames": 0.121,
+      "finalize_seconds": 0.074,
+      "heap_limit_mb": 4192,
+      "file_mb": 829,
+      "peak_over_file": 0.119,
+      "boxes": [
+        {
+          "type": "ftyp",
+          "mb": 0
+        },
+        {
+          "type": "moov",
+          "mb": 0
+        },
+        {
+          "type": "free",
+          "mb": 1
+        },
+        {
+          "type": "mdat",
+          "mb": 828
+        }
+      ]
+    },
+    "decoded back": {
+      "frames": 18000,
+      "expected": 18000,
+      "width": 1920,
+      "height": 1080,
+      "first_frame": true,
+      "last_frame": true,
+      "keyframes": 600,
+      "seconds": 599.994
+    },
+    "in memory": {
+      "minutes": 10,
+      "ok": true,
+      "frames": 18000,
+      "asked": 18000,
+      "ended": "complete",
+      "seconds": 86.938,
+      "ms_per_frame": 4.83,
+      "heap_while_writing_mb": 1149,
+      "peak_heap_mb": 1982,
+      "heap_mb_per_1000_frames": 67.596,
+      "finalize_seconds": 0.981,
+      "heap_limit_mb": 4192,
+      "file_mb": 829,
+      "peak_over_file": 2.392,
+      "boxes": [
+        {
+          "type": "ftyp",
+          "mb": 0
+        },
+        {
+          "type": "moov",
+          "mb": 0
+        },
+        {
+          "type": "free",
+          "mb": 1
+        },
+        {
+          "type": "mdat",
+          "mb": 828
+        }
+      ]
+    },
+    "in memory, past the budget": {
+      "minutes": 30,
+      "ok": true,
+      "frames": 22761,
+      "asked": 54000,
+      "ended": "full",
+      "seconds": 109.644,
+      "ms_per_frame": 4.817,
+      "heap_while_writing_mb": 2128,
+      "peak_heap_mb": 3182,
+      "heap_mb_per_1000_frames": 56.848,
+      "finalize_seconds": 0.97,
+      "heap_limit_mb": 4192,
+      "file_mb": 1049,
+      "peak_over_file": 3.035,
+      "minutes_written": 12.645,
+      "boxes": [
+        {
+          "type": "ftyp",
+          "mb": 0
+        },
+        {
+          "type": "moov",
+          "mb": 0
+        },
+        {
+          "type": "free",
+          "mb": 2
+        },
+        {
+          "type": "mdat",
+          "mb": 1047
+        }
+      ]
+    },
+    "held in memory, the ladder": [
+      {
+        "minutes": 5,
+        "ok": true,
+        "frames": 9000,
+        "asked": 9000,
+        "ended": "complete",
+        "seconds": 43.516,
+        "ms_per_frame": 4.835,
+        "heap_while_writing_mb": 464,
+        "peak_heap_mb": 1382,
+        "heap_mb_per_1000_frames": 47.839,
+        "finalize_seconds": 0.225,
+        "heap_limit_mb": 4192,
+        "file_mb": 414,
+        "peak_over_file": 3.338
+      },
+      {
+        "minutes": 10,
+        "ok": true,
+        "frames": 18000,
+        "asked": 18000,
+        "ended": "complete",
+        "seconds": 87.945,
+        "ms_per_frame": 4.886,
+        "heap_while_writing_mb": 885,
+        "peak_heap_mb": 2193,
+        "heap_mb_per_1000_frames": 46.596,
+        "finalize_seconds": 1.109,
+        "heap_limit_mb": 4192,
+        "file_mb": 828,
+        "peak_over_file": 2.649
+      },
+      {
+        "minutes": 15,
+        "ok": true,
+        "frames": 27000,
+        "asked": 27000,
+        "ended": "complete",
+        "seconds": 130.916,
+        "ms_per_frame": 4.849,
+        "heap_while_writing_mb": 1305,
+        "peak_heap_mb": 3535,
+        "heap_mb_per_1000_frames": 46.793,
+        "finalize_seconds": 2.051,
+        "heap_limit_mb": 4192,
+        "file_mb": 1242,
+        "peak_over_file": 2.846
+      },
+      {
+        "minutes": 20,
+        "ok": true,
+        "frames": 36000,
+        "asked": 36000,
+        "ended": "complete",
+        "seconds": 175.428,
+        "ms_per_frame": 4.873,
+        "heap_while_writing_mb": 1752,
+        "peak_heap_mb": 4361,
+        "heap_mb_per_1000_frames": 47.022,
+        "finalize_seconds": 3.384,
+        "heap_limit_mb": 4192,
+        "file_mb": 1656,
+        "peak_over_file": 2.634
+      },
+      {
+        "minutes": 25,
+        "ok": false,
+        "asked": 45000,
+        "seconds": 219.187,
+        "heap_while_writing_mb": 2211,
+        "peak_heap_mb": 2211,
+        "heap_mb_per_1000_frames": 47.203,
+        "heap_limit_mb": 4192,
+        "failed_at": "finalize",
+        "error": "RangeError: Array buffer allocation failed",
+        "reached_frames": 45000
+      }
+    ]
+  },
+  "long-clip:wall-seconds": 1162.3
+}

@@ -14,6 +14,48 @@ import type { Trial } from './page.ts';
  */
 export const TRIALS: readonly Trial[] = [
   {
+    what: 'Asking where a clip goes after it has been encoded, rather than before',
+    verdict: 'rejected',
+    evidence:
+      'By then the whole file is in the tab, which is the thing a file handle exists to avoid, and the answer might be "nowhere": a dismissed dialog after three minutes of encoding throws three minutes away',
+    where: 'src/platform/export/destination.ts',
+  },
+  {
+    what: 'Letting a streaming export put the index at the end of the file, which is what a stream does by default',
+    verdict: 'rejected',
+    evidence:
+      'A different file: nothing plays it until the last byte has arrived and nothing seeks it without reading to the end. Reserving room for it costs under a megabyte on a ten minute clip and needs an exact packet count, which an export has before it renders a frame',
+    where: 'src/platform/export/clip-sink.ts',
+  },
+  {
+    what: 'AppendOnlyStreamTarget, which needs no seeking at all',
+    verdict: 'rejected',
+    evidence:
+      'It refuses a non-fragmented MP4 outright, by name, so what it leaves is the index at the end or a fragmented file, and both are files with different properties from the one this has always written',
+    where: 'tools/video-bench, measurement 10',
+  },
+  {
+    what: 'Holding every encoded packet until finalize, which is what a buffer target does by default',
+    verdict: 'rejected',
+    evidence:
+      'The media exists twice at the moment it is assembled, the heap grows one for one with the file, and twenty-five minutes of 1080p fails with a RangeError after three and a half minutes of encoding. Reserving the index writes each packet as its chunk closes instead, which also makes the size so far readable',
+    where: 'tools/video-bench, measurement 10',
+  },
+  {
+    what: 'Abandoning a clip export when it is stopped, which is what it used to do',
+    verdict: 'rejected',
+    evidence:
+      'A save dialog creates the file the moment it is chosen, so abandoning leaves an empty video file where somebody asked for a video. Finishing at the frame it reached gives a clip anything can open, which is the rule a stopped tracking run already follows',
+    where: 'src/platform/export/export.ts',
+  },
+  {
+    what: 'The origin private file system as somewhere to stage a clip in a browser with no save dialog',
+    verdict: 'rejected',
+    evidence:
+      'Its quota is not a disk: estimate() reports three gigabytes on this machine and a write fails just past one, with and without exclusive mode and with durable storage granted. It is also a second full write of the file, and it would still land in the downloads folder afterwards',
+    where: 'tools/video-bench, measurement 10',
+  },
+  {
     what: 'Fetching a real input by URL and hash, rather than publishing a number nobody can re-take',
     verdict: 'adopted',
     evidence:
@@ -142,14 +184,14 @@ export const TRIALS: readonly Trial[] = [
     what: 'Writing Matroska as well as MP4',
     verdict: 'rejected',
     evidence:
-      '8.4 KB gzipped for a second container writer, where QuickTime is 12 bytes, and it carries codecs whose encode has not been measured here',
+      '8.5 KB gzipped for a second container writer, where QuickTime is 11 bytes, and it carries codecs whose encode has not been measured here',
     where: 'tools/video-bench, measurement 6',
   },
   {
     what: 'Putting the container writer in the video chunk',
     verdict: 'rejected',
     evidence:
-      '41.6 KB gzipped, the size of the entire application bundle, paid by everyone who opens a video rather than by everyone who exports a clip',
+      '42.8 KB gzipped, the size of the entire application bundle, paid by everyone who opens a video rather than by everyone who exports a clip',
     where: 'tools/video-bench, measurement 6',
   },
   {

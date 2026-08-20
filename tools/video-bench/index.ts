@@ -18,6 +18,7 @@ import { colour, encodeColour } from './colour.ts';
 import { encode } from './encode.ts';
 import { log } from './log.ts';
 import { trackedFrame } from './tracked-frame.ts';
+import { longClip } from './long-clip.ts';
 
 const CLIP_SET: Clip[] = [
   { name: '1080p30-gop30', url: `${CLIPS}/1080p30-gop30.mp4` },
@@ -42,6 +43,11 @@ export const MEASUREMENTS = [
   // No GPU and no clip: a measurement about the command log, which is core
   // code and runs anywhere.
   'log',
+  // Its own command, and out of `all`, because one rung of it deliberately runs
+  // the tab out of memory and because it is twenty minutes where `all` is
+  // three. Neither belongs in the middle of a run with nine other measurements
+  // still to take.
+  'long-clip',
 ] as const;
 
 export type Measurement = (typeof MEASUREMENTS)[number];
@@ -74,6 +80,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('encode', () => encode(dev, CLIPS));
   await step('encode-colour', () => encodeColour(dev, CLIPS));
   await step('tracked-frame', () => trackedFrame(dev, CLIPS, import.meta.env.VITE_TRACKING_HOST));
+  await step('long-clip', () => longClip(dev, CLIPS));
   // LAST, AND NOT BY ACCIDENT. It assigns to `ort.env.webgpu.device` and
   // destroys the devices it made, which leaves that global pointing at a dead
   // device. Anything creating a session afterwards hangs rather than failing.

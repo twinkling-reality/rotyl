@@ -300,7 +300,7 @@ class Pipeline {
  * forward walk costs with nothing else in the way, and the provider's seek
  * logic, request supersession and queue would all be measured with it.
  */
-class Frames {
+export class Frames {
   readonly count: number;
 
   readonly #input: Input;

@@ -124,10 +124,14 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // the decode and encode figures come from would re-date every one of them for
   // a measurement that shares nothing with any of them.
   const log = read('tools/video-bench/results-log.json');
+  // And the same again for how long a clip can be, which takes twenty minutes
+  // and ends by running the tab out of memory. Not a thing to do in the middle
+  // of the run every other figure here comes from.
+  const long = read('tools/video-bench/results-long-clip.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
-    ...entries({ style, real, video, tracking, tracked, host, shrink, bundle, log }),
+    ...entries({ style, real, video, tracking, tracked, host, shrink, bundle, log, long }),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',
