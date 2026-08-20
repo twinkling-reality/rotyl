@@ -432,8 +432,10 @@ millisecond, so whatever a muxer costs, it is not per frame.
 **And rate control had to be said out loud.** A qualitative quality level
 resolves to a quantizer where the codec supports one, which is constant quality
 and an unbounded file: measured on a styled 1080p frame, the default asks for
-30 Mbit/s where the same level asked for as a bitrate is 12. Neither is faster.
-It is five times the size of every file anybody exports, for nothing.
+23 Mbit/s where the same level asked for as a bitrate is 6. Neither is faster.
+It is nearly four times the size of every file anybody exports, for nothing, and
+it is the one figure in that table that moves between runs, because constant
+quality prices the picture rather than the setting.
 
 Keyframes are written every second rather than every two, which costs some bytes
 and buys a file this editor can scrub: seek cost is set by keyframe spacing and

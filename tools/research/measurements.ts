@@ -1466,6 +1466,7 @@ function rateControl(exported: unknown): Section {
         rate('high, quantizer', 'bytes') / rate('high, bitrate', 'bytes')
       ).toFixed(1)} times the bytes for no time at all.`,
       'Asking for the same level as a bitrate is a predictable file and a variable picture. Rotyl asks for very-high as a bitrate, which is about 12 Mbit/s at 1080p and scales with resolution.',
+      'The first row is the one figure here that is not repeatable to the tenth, and for the reason the row is about: a quantizer is constant QUALITY, so what it costs in bits belongs to the picture rather than to the setting, and the same three seconds came back at 30.0 Mbit/s on one run and 23.4 on another. The three bitrate rows agree to a hundredth of a megabyte between runs, which is the point of them.',
     ],
     table: {
       columns: ['what was asked for', 'ms per frame', 'file', 'rate'],
@@ -1887,7 +1888,7 @@ function theCounterMetric(still: unknown): Section {
       'Every temporal method improves flicker trivially, and some of them do it by making the picture worse. Blend enough of the last frame in and a fixed camera is perfectly steady while a moving one smears. Neither of the clips this project had could catch that: one has a fixed camera and nothing in it can expose a ghost, and the other pans a still, so every pixel moves together, which is the one case a warp of the last frame gets right by construction.',
       'So this runs on a clip where five cars move against a city that does not, with a mask drawn from the same geometry as the picture saying which pixels a moving thing covered. And a straw man is measured beside every row, because a counter-metric with no failing case is not a check: the previous stylised frame blended in at a fixed weight, with no motion compensation, which is the cheapest thing anybody would try.',
       `It fails, and the shape of the failure is the point. Half of the last frame takes the residue from ${cell('per frame', ['residue', 'p99'])} codes to ${cell('blend 0.5', ['residue', 'p99'])}, which is the number everybody quotes, improved by two fifths. It pays for it with ${cell('blend 0.5', ['deviation', 'vacated', 'p99'])} codes of deviation in the band a car has just left and ${cell('blend 0.5', ['deviation', 'moving', 'p99'])} on the car itself, and with ${detail('blend 0.5')} of the gradient energy inside a moving car, against ${detail('per frame')} for the render it replaced.`,
-      'On the clip with no moving grain, where the residue is already at the codec floor, the same blend makes the residue flicker WORSE and still costs the same sixty codes of deviation. That is the cure being worse than the disease with nothing left to cure, in one row.',
+      'On the clip with no moving grain, where the residue is already at the codec floor, the same blend makes the residue flicker WORSE and still costs the same fifty-five codes of deviation. That is the cure being worse than the disease with nothing left to cure, in one row.',
     ],
     table: {
       columns: [
@@ -1963,8 +1964,11 @@ export function entries(results: Results): readonly Entry[] {
       ],
       hero: {
         name: 'styles',
-        caption:
-          'One frame through each style at full quality: 119 ms, 1.1 ms and 0.5 ms at 720p respectively.',
+        // Read from the table below it rather than typed above it, because a
+        // caption is exactly as capable of going stale as a cell is.
+        caption: `One frame through each style at full quality: ${STYLES.map((name) =>
+          ms(num(style, ['chain', '720p', `${name}, default`, 'full', 'median'])),
+        ).join(', ')} at 720p respectively.`,
       },
       sections: [
         styleCost(style),

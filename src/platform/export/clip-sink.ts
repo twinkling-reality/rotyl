@@ -68,10 +68,12 @@ const CODECS: readonly VideoCodec[] = ['avc'];
  *
  * A qualitative level resolves to a QUANTIZER where the codec supports one,
  * which is constant quality and an unbounded file: measured on a styled 1080p
- * frame, `high` that way produces 30 Mbit/s against 12 for the same level asked
- * for as a bitrate. Neither is faster than the other, so this is a decision
- * about the size of every file anybody exports and nothing else. `very-high`
- * as a bitrate is about 12 Mbit/s at 1080p and scales with resolution.
+ * frame, `high` that way produces 23 Mbit/s against 6 for the same level asked
+ * for as a bitrate, and it is the one figure in that table that moves between
+ * runs, because constant quality prices the picture rather than the setting.
+ * Neither is faster than the other, so this is a decision about the size of
+ * every file anybody exports and nothing else. `very-high` as a bitrate is
+ * about 12 Mbit/s at 1080p and scales with resolution.
  */
 const QUALITY = new Quality({ quality: 'very-high', preferBitrate: true });
 

@@ -345,7 +345,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'A bitrate for a clip export, rather than the encoder’s default quality level',
     verdict: 'adopted',
     evidence:
-      'A qualitative level resolves to a quantizer, which asked for 30 Mbit/s where the same level as a bitrate asked for 12, at identical speed',
+      'A qualitative level resolves to a quantizer, which asked for 23 Mbit/s where the same level as a bitrate asked for 6, at identical speed, and which is not repeatable to the tenth because constant quality prices the picture rather than the setting',
     where: 'tools/video-bench, measurement 5',
   },
   {
@@ -502,7 +502,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'An anisotropic Kuwahara for the poster flatten',
     verdict: 'rejected',
     evidence:
-      'O(radius²) and 119 ms at 720p; a separable bilateral iterated three times is O(radius) and 1.1',
+      'O(radius²) and 40 ms at 720p, which was 119 before its buffer was bounded below the picture; a separable bilateral iterated three times is O(radius) and 1.2',
     where: 'tools/style-bench, measurement 1',
   },
   {
