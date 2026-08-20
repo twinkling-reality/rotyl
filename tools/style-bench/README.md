@@ -5,8 +5,9 @@ What the styles cost, whether they hold still on video, and what they look like.
 **Nothing in Rotyl uses this.** It exists for the reason `video-bench` and
 `edgetam-export` do: it answered questions that decide a design, and a number
 nobody can reproduce is worth about as much as a guess. Three things were
-unknown when it was written, and one of the three turned out to be the opposite
-of what everyone assumed.
+unknown when it was written, one of the three turned out to be the opposite of
+what everyone assumed, and two of the measurements since exist to stop a fourth
+being built on a guess.
 
 Unlike its neighbours it also writes PNGs, because a style bench that reports
 only milliseconds and difference metrics can tell you a chain got faster and
@@ -23,11 +24,15 @@ node tools/style-bench/run.mjs real        # the same three, on photographs
 ```
 
 `run.mjs` takes any subset: `chain`, `perturbation`, `clips`, `stills`, `sweep`,
-`figures`, and the five that need `fetch-real.sh` to have run: `real-chain`,
-`real-perturbation`, `real-clips`, `real-lightness`, `real-flicker`. `all` is the
-first six and `real` is the last five, which are kept apart because only one of
-the two groups needs a network. The inputs are gitignored, `results.json` and `results-real.json`
-are not, and the pictures land in `out/`.
+`figures`, the five that need `fetch-real.sh` to have run: `real-chain`,
+`real-perturbation`, `real-clips`, `real-lightness`, `real-flicker`, and the
+three about what would hold a clip still: `motion`, `motion-pictures`,
+`attribution`. `all` is the first six, `real` is the next five and `motion` is
+the last three. They are kept apart because only one of the three groups needs a
+network and only one needs a clip with motion in it, and because re-taking one
+must not re-date the pages the others feed. The inputs are gitignored,
+`results.json`, `results-real.json` and `results-motion.json` are not, and the
+pictures land in `out/`.
 
 Real Chrome and headed, for the reason `playwright.config.ts` gives: bundled
 Chromium falls back to SwiftShader, which reports success while producing
@@ -406,8 +411,163 @@ than the argument for it.
 
 ---
 
+---
+
+## 4. The residue is the input, and a cleaner input does not touch what amplifies
+
+Measurement 2 said no style amplifies its input, measurement 0 said that was
+true of a drawn scene and false of a brick wall, and both left the same question
+open: what IS the flicker that softening a decision cannot reach. There were
+three stories about it, and they imply completely different features at
+completely different prices.
+
+**The input moves.** A fixed camera still delivers grain and encoder noise, and
+every stage downstream answers to it honestly. The fix is one pass BEFORE the
+chain and needs no motion estimation on a static shot.
+
+**A stage amplifies.** Something inside the chain moves more than its own input
+did. The fix is inside one stage of one chain and touches no architecture.
+
+**The decisions really are per frame.** The fix is the previous stylised frame,
+warped by motion, blended where the warp can be trusted. The expensive one, and
+the only one that breaks an invariant this product has promised: a render is a
+function of its frame, so scrubbing straight to frame 500 and playing up to it
+give the same picture.
+
+```bash
+./tools/style-bench/make-clips.sh        # traffic-720p and its mask
+./tools/style-bench/fetch-real.sh        # the four photographs
+node tools/style-bench/run.mjs motion
+```
+
+### The third story is empty, and it is empty structurally
+
+A chain is a pure function of its frame. Hand it the same picture twice and it
+gives the same answer twice, so there is nothing in a styled frame that was not
+in the source frame. That is not an argument, it is a row: on a clip encoded
+with no temporal grain the input moves 1.4 codes at the 99th percentile, which
+is the codec, and every chain answers with 1.0, which is the floor a difference
+of nearly nothing has.
+
+So a temporal method cannot remove anything the chain invented, because the
+chain invents nothing. Whatever it removed, a quieter input would have removed
+too, without a warp and without breaking the invariant.
+
+### The second story is where the residue is, and only on a real picture
+
+The amplification table is on `/research/holding-still.html`. Its shape is the
+finding: on the drawn scene every chain but print attenuates, and on
+photographs the poster chain amplifies a brick wall by 1.36 and foliage by 1.46,
+and the comic chain at full detail amplifies the wall by 2.02 where at no detail
+it attenuates by 0.62.
+
+**Both of those are already located.** Poster's is the outline, which is 1.36
+with it drawn and 0.95 without on the wall, 1.46 against 0.86 on foliage. That
+is the same stage measurement 0 rebuilt, and `docs/limits.md` already carries
+the gap it did not close. Comic's is the detail control: raising it shrinks the
+Kuwahara radius until the flatten stops flattening, and what survives is the
+grain the flatten was there to remove.
+
+**And the drawn scene hides all of it**, which is the second time that has
+happened and the reason the four photographs are in this run rather than beside
+it. A finding taken on the synthetic scene alone reversed sign once already and
+it cost a style an operator.
+
+### The first story is real and the cheap fix does less than it looks
+
+Averaging each frame against the one before it on the way IN is one pass, needs
+no motion estimation on a fixed camera, and is nothing like a temporal filter on
+the output. Measured rather than argued about, at the weakest weight worth
+measuring, a quarter of the last frame.
+
+It takes the input down by about a fifth and the styled output down with it,
+roughly in proportion, on every chain and every picture. **And it makes the
+amplification worse wherever the amplification was already above one**: poster
+on the wall goes from 1.36 to 1.52, on foliage from 1.46 to 1.62, and comic at
+full detail from 2.02 to 2.48.
+
+That was not what this expected and it is the useful half. What a denoise
+removes is the high-frequency part of the input, which is the part these chains
+attenuate hardest. What is left is the part they amplify. So a cleaner input
+lowers the number and leaves the mechanism exactly where it was, which makes it
+a way of reporting less flicker rather than a way of having less.
+
+---
+
+## 5. The counter-metric, built before the cure and failed by the cheapest cure
+
+Every temporal method improves flicker trivially, and some of them do it by
+making the picture worse. Blend enough of the last frame in and a fixed camera
+is perfectly steady while a moving one smears. **Neither clip this project had
+could catch that.** `static-720p` has a fixed camera and nothing in it can
+expose a ghost. `pan-720p` moves a still, so every pixel moves together, which
+is the one case a warp of the last frame gets right by construction. A smear
+needs something to move against something that does not, and ground that has
+just been uncovered.
+
+So `make-scene.mjs` gives its five cars speeds and sorts them by depth, and
+`make-clips.sh` writes `traffic-720p.mp4`, a clip with a fixed camera and five
+things moving at different rates in front of it, two of them closing on each
+other. Beside it goes `traffic-mask-720p.mp4`, which says which pixels a moving
+thing covered on each frame, drawn from the same geometry as the picture rather
+than inferred from it and encoded losslessly so the boundary survives.
+
+**The still this file has always written is unchanged to the byte**, which
+matters more than the clip does: every committed style number was taken against
+it. At time zero the cars are where they were and the sort is a no-op.
+
+### Four numbers, over three populations the mask defines
+
+`residue` is how much the styled frame moves where nothing moved, which is
+measurement 2's flicker restricted to the pixels that are honestly still.
+`honest` is how much it moves where something did, which is the control.
+`deviation` is how far a method's frame is from the per-frame render of the same
+frame, in each of the three populations, and it is zero everywhere for the
+per-frame row by construction. `detail` is the gradient energy inside a moving
+car against the per-frame render's, because a smear loses it.
+
+**The deviation is split three ways because the picture said so.** The first
+version measured it only in the band a car had just left, on the argument that a
+ghost can live nowhere else. The trail map the harness writes says otherwise:
+most of what a blend does is on and around the moving object itself, and a
+vacated-band figure alone would have missed the larger half. That is the same
+lesson `real-flicker` taught about the poster outline, learned again by looking
+at which pixels rather than at how many.
+
+### A metric with no failing case is not a check
+
+So a straw man is measured beside every row: the previous stylised frame blended
+in at a fixed weight, with no motion compensation, which is the cheapest thing
+anybody would try. It has to fail, and if it does not then the metric is wrong
+and nothing built on it can be believed.
+
+It fails. Half of the last frame takes the comic chain's residue from 3.6 codes
+to 2.0, which is the number everybody quotes, improved by two fifths. It pays
+with 58 codes of deviation in the band a car has just left, 53 on the car
+itself, and 13% of the gradient energy inside a moving car for the poster chain.
+
+**And on the clip with no moving grain it is worse than that.** There the
+residue is already at the codec floor, so the same blend has nothing left to
+remove: it makes the residue flicker WORSE and still costs the same sixty codes
+of deviation. The cure being worse than the disease with nothing left to cure,
+in one row, which is exactly what this measurement was built to be able to say.
+
+### What was built
+
+Nothing. The expensive answer solves a problem that does not exist, the cheap
+one lowers a number without touching what causes it, and what is left is in one
+stage of one chain, where measurement 0 has already been once and where the
+number it did not close is in `docs/limits.md` rather than in a plan.
+
 ## What follows
 
+0. **The residue that is left is the input, and the chain's own gain decides
+   what becomes of it.** A chain is a pure function of its frame, so nothing in
+   a styled frame was invented: on a clip with no moving grain every chain
+   answers the codec floor. What differs is the gain, and the gain depends on
+   the picture rather than on the chain. The drawn scene says every chain but
+   print attenuates; a brick wall says the poster outline is at 1.36 and the
+   comic chain at full detail is at 2.02.
 1. **Style cost is a choice, not a constraint.** Two of the three styles run in
    under 2 ms at 720p. The one that costs 119 ms spends all of it in a single
    stage whose look, on this scene, the cheap one matches or beats.
@@ -425,3 +585,13 @@ than the argument for it.
 5. **Fit the palette to the picture.** Imposing colour is what makes a result
    look chosen; imposing it on a range the picture does not occupy makes it look
    like one colour.
+6. **A cleaner input reports less flicker rather than causing less.** Averaging
+   frames on the way in takes the input down a fifth and the output with it, and
+   makes the amplification WORSE wherever it was above one, because what it
+   removes is the part the chain attenuates hardest.
+7. **Build the thing that catches a cure being worse than the disease first.**
+   The cheapest temporal filter improves the number everybody quotes by two
+   fifths and costs sixty codes of deviation around anything that moves. Without
+   a clip where something moves against something that does not, and a mask
+   saying which is which, that trade is invisible and the number looks like
+   progress.

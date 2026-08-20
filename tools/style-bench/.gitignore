@@ -7,3 +7,8 @@ results-real-flicker.json
 # numbers. results-motion.json IS committed, because a research page reads it
 # and a checkout without it cannot build the site.
 results-motion-pictures.json
+# And a run of one measurement out of the motion group, which writes its own
+# file that no page reads. The committed one is results-motion.json, written by
+# `run.mjs motion`, and a stray half of it beside that is how a reader ends up
+# looking at the wrong numbers.
+results-attribution.json

@@ -1359,6 +1359,130 @@ function whatItWillNotCarry(sound: unknown): Section {
   };
 }
 
+// --- what holds a clip still ------------------------------------------------
+
+/** One row of the attribution, by subject, condition and case. */
+function attributed(sound: unknown, subject: string, condition: string, item: string): unknown {
+  return at(sound, ['attribution', subject, condition, item]);
+}
+
+const ratio = (value: number): string => value.toFixed(2);
+const codes = (value: number): string => value.toFixed(1);
+
+const CHAINS = ['comic, default', 'comic, detail 1', 'poster, default', 'poster, no line', 'print, default'];
+
+function residueComesFrom(still: unknown): Section {
+  const amp = (subject: string, item: string): string =>
+    ratio(num(attributed(still, subject, 'as it is', item), ['amplification', 'p99']));
+  return {
+    heading: 'The residue is the input, and what a chain does with it depends on the picture',
+    prose: [
+      'Every stage runs per frame with no knowledge of the last one, so a chain is a pure function of its frame: hand it the same picture twice and it gives the same answer twice. That is not an argument, it is the second row of the table. On a clip encoded with no temporal grain the input moves by 1.4 codes at the 99th percentile, which is the codec, and every chain answers with 1.0, which is the floor. There is nothing in a styled frame that was not in the source frame.',
+      `So the question is only what a chain does with the change it was given, and the answer depends on the picture rather than on the chain. On the drawn scene every chain but print attenuates: comic ${amp('the synthetic scene, five cars moving', 'comic, default')}, poster ${amp('the synthetic scene, five cars moving', 'poster, default')}, print ${amp('the synthetic scene, five cars moving', 'print, default')}. On a photograph of a brick wall the same poster chain amplifies at ${amp('facade, fixed camera', 'poster, default')} and the comic chain at full detail at ${amp('facade, fixed camera', 'comic, detail 1')}.`,
+      `And where the amplification is has already been found once. Poster with its outline drawn is ${amp('facade, fixed camera', 'poster, default')} on the wall and ${amp('facade, fixed camera', 'poster, no line')} without it, ${amp('foliage, fixed camera', 'poster, default')} against ${amp('foliage, fixed camera', 'poster, no line')} on foliage. The comic chain's is the detail control: ${amp('facade, fixed camera', 'comic, detail 1')} at full detail against ${amp('facade, fixed camera', 'comic, detail 0')} at none, which is the Kuwahara radius falling until the flatten stops flattening.`,
+    ],
+    table: {
+      columns: ['amplification, p99', 'the drawn scene', 'facade', 'foliage', 'fog', 'portrait'],
+      rows: CHAINS.map((item) => [
+        item,
+        amp('the synthetic scene, five cars moving', item),
+        amp('facade, fixed camera', item),
+        amp('foliage, fixed camera', item),
+        amp('fog, fixed camera', item),
+        amp('portrait, fixed camera', item),
+      ]),
+    },
+    caveat:
+      'Measured over the pixels no moving thing touched, which on a photograph is the whole frame and on the drawn scene is everything the five cars did not cross. The two film shots are not here: an input denoise applied to a clip with actors in it smears the actors, so the row would report a shrinking input for the wrong reason, and there is no still population to restrict to. What the film says about amplification is on the real-footage page.',
+    command: 'node tools/style-bench/run.mjs motion',
+  };
+}
+
+function denoisingTheInput(still: unknown): Section {
+  const cell = (subject: string, condition: string, item: string, path: readonly string[]): number =>
+    num(attributed(still, subject, condition, item), path);
+  const row = (subject: string, item: string): readonly string[] => [
+    `${subject.split(',')[0] ?? subject}, ${item}`,
+    codes(cell(subject, 'as it is', item, ['input', 'p99'])),
+    codes(cell(subject, 'input denoised', item, ['input', 'p99'])),
+    codes(cell(subject, 'as it is', item, ['styled', 'p99'])),
+    codes(cell(subject, 'input denoised', item, ['styled', 'p99'])),
+    ratio(cell(subject, 'as it is', item, ['amplification', 'p99'])),
+    ratio(cell(subject, 'input denoised', item, ['amplification', 'p99'])),
+  ];
+  return {
+    heading: 'A cleaner input does not touch the thing that amplifies',
+    prose: [
+      'If the residue is the input, the cheapest fix is to give the chain a quieter one: average each frame against the one before it on the way IN, which is one pass, needs no motion estimation on a fixed camera, and is nothing like a temporal filter on the output. It was measured before it was argued about, at the weakest weight worth measuring, a quarter.',
+      'It works, and it works less than it looks. A quarter of the last frame takes the input down by about a fifth and the styled output down with it, roughly in proportion, on every chain and every picture.',
+      'The last two columns are the finding, and they were not what this expected. Amplification goes UP wherever it was already above one: the poster chain on a brick wall goes from 1.36 to 1.52, on foliage from 1.46 to 1.62, and the comic chain at full detail from 2.02 to 2.48. What a denoise removes is the high-frequency part of the input, which is the part these chains attenuate hardest; what is left is the part they amplify. So a cleaner input lowers the number and leaves the mechanism exactly where it was.',
+    ],
+    table: {
+      columns: [
+        'input p99, then styled p99, then amplification',
+        'in, as it is',
+        'in, denoised',
+        'out, as it is',
+        'out, denoised',
+        'amp, as it is',
+        'amp, denoised',
+      ],
+      rows: [
+        row('facade, fixed camera', 'poster, default'),
+        row('foliage, fixed camera', 'poster, default'),
+        row('facade, fixed camera', 'comic, detail 1'),
+        row('fog, fixed camera', 'print, default'),
+        row('the synthetic scene, five cars moving', 'comic, default'),
+      ],
+    },
+    command: 'node tools/style-bench/run.mjs motion',
+  };
+}
+
+/** One method's figures on the traffic clip, for the counter-metric table. */
+function method(still: unknown, clip: string, item: string, name: string): unknown {
+  return at(still, ['motion', clip, item, name]);
+}
+
+function theCounterMetric(still: unknown): Section {
+  const cell = (name: string, path: readonly string[]): string =>
+    codes(num(method(still, 'traffic-720p', 'comic, default', name), path));
+  const detail = (name: string): string =>
+    ratio(num(method(still, 'traffic-720p', 'poster, default', name), ['detail_against_per_frame']));
+  return {
+    heading: 'And the expensive answer is worse than the disease, measured before it was built',
+    prose: [
+      'Every temporal method improves flicker trivially, and some of them do it by making the picture worse. Blend enough of the last frame in and a fixed camera is perfectly steady while a moving one smears. Neither of the clips this project had could catch that: one has a fixed camera and nothing in it can expose a ghost, and the other pans a still, so every pixel moves together, which is the one case a warp of the last frame gets right by construction.',
+      'So this runs on a clip where five cars move against a city that does not, with a mask drawn from the same geometry as the picture saying which pixels a moving thing covered. And a straw man is measured beside every row, because a counter-metric with no failing case is not a check: the previous stylised frame blended in at a fixed weight, with no motion compensation, which is the cheapest thing anybody would try.',
+      `It fails, and the shape of the failure is the point. Half of the last frame takes the residue from ${cell('per frame', ['residue', 'p99'])} codes to ${cell('blend 0.5', ['residue', 'p99'])}, which is the number everybody quotes, improved by two fifths. It pays for it with ${cell('blend 0.5', ['deviation', 'vacated', 'p99'])} codes of deviation in the band a car has just left and ${cell('blend 0.5', ['deviation', 'moving', 'p99'])} on the car itself, and with ${detail('blend 0.5')} of the gradient energy inside a moving car, against ${detail('per frame')} for the render it replaced.`,
+      'On the clip with no moving grain, where the residue is already at the codec floor, the same blend makes the residue flicker WORSE and still costs the same sixty codes of deviation. That is the cure being worse than the disease with nothing left to cure, in one row.',
+    ],
+    table: {
+      columns: [
+        'comic, on five cars moving',
+        'residue p99',
+        'residue %',
+        'deviation, still',
+        'deviation, vacated',
+        'deviation, on the car',
+        'detail',
+      ],
+      rows: ['per frame', 'blend 0.25', 'blend 0.5'].map((name) => [
+        name,
+        cell(name, ['residue', 'p99']),
+        pct(num(method(still, 'traffic-720p', 'comic, default', name), ['residue', 'flicker'])),
+        cell(name, ['deviation', 'still', 'p99']),
+        cell(name, ['deviation', 'vacated', 'p99']),
+        cell(name, ['deviation', 'moving', 'p99']),
+        ratio(num(method(still, 'traffic-720p', 'comic, default', name), ['detail_against_per_frame'])),
+      ]),
+    },
+    caveat:
+      'The deviation is split three ways because the picture said so. The first version of this measured it only in the band a car had just left, on the argument that a ghost can live nowhere else. The trail map the harness writes says otherwise: most of what a blend does is on and around the moving object itself, and a vacated-band figure alone would have missed the larger half.',
+    command: 'node tools/style-bench/run.mjs motion',
+  };
+}
+
 // --- entries ----------------------------------------------------------------
 
 /**
@@ -1381,10 +1505,11 @@ export interface Results {
   readonly log: unknown;
   readonly long: unknown;
   readonly sound: unknown;
+  readonly still: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
-  const { style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound } = results;
+  const { style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound, still } = results;
   return [
     {
       slug: 'the-look',
@@ -1431,6 +1556,19 @@ export function entries(results: Results): readonly Entry[] {
         outlineAttempts(),
         realLightness(real),
       ],
+    },
+    {
+      slug: 'holding-still',
+      results: 'tools/style-bench/results-motion.json',
+      title: 'What holds a stylised clip still, and what would not',
+      standfirst:
+        'The flicker that softening a decision cannot reach, attributed to where it comes from, and the counter-metric that says the expensive answer would be worse than the disease. Nothing was built. This is why.',
+      harness: 'tools/style-bench',
+      lede: [
+        'Earlier chapters softened the individual decisions in each chain and the numbers moved a long way. What is left is the residue, and there were three stories about where it comes from: the input moves, a stage amplifies, or the decisions genuinely are per frame. They imply completely different features at completely different prices, and building the expensive one before finding out which dominates would have been this project’s first unforced error.',
+        'So the measurement came first, and so did the thing that catches a cure being worse than the disease. Both are here. Between them they say the expensive answer solves a problem that does not exist, the cheap one lowers a number without touching what causes it, and the residue that is left is in one stage of one chain, where this project has already been once.',
+      ],
+      sections: [residueComesFrom(still), denoisingTheInput(still), theCounterMetric(still)],
     },
     {
       slug: 'video',

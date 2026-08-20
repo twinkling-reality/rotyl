@@ -132,10 +132,14 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // a question about byte layout: taking it inside the run above would re-date
   // every decode and encode figure whenever somebody asked about audio.
   const sound = read('tools/video-bench/results-interleave.json');
+  // Its own file and its own command, because it needs a clip with motion in it
+  // that the other style measurements do not, and because it answers a question
+  // about a method rather than about a chain.
+  const still = read('tools/style-bench/results-motion.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
-    ...entries({ style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound }),
+    ...entries({ style, real, video, tracking, tracked, host, shrink, bundle, log, long, sound, still }),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',
