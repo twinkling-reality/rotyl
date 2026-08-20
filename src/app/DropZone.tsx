@@ -6,6 +6,15 @@ export interface DropZoneProps {
   readonly onFile: (file: File) => void;
   /** Shown beneath the zone; the reason the last attempt was refused. */
   readonly notice?: string | undefined;
+  /**
+   * A saved selection that arrived without the file it was made on.
+   *
+   * A browser has no paths, so a document names media it cannot open and the
+   * other half has to be supplied. Saying which file by name is the whole of
+   * the interface for that: the zone is already the control, and what changes
+   * is what it is asking for.
+   */
+  readonly waiting?: { readonly media: string } | undefined;
 }
 
 /**
@@ -14,7 +23,7 @@ export interface DropZoneProps {
  * One rectangle and two lines of text. No icon, no hero, no feature list. The
  * rectangle is the affordance, and the product is what happens after it.
  */
-export function DropZone({ onFile, notice }: DropZoneProps): JSX.Element {
+export function DropZone({ onFile, notice, waiting }: DropZoneProps): JSX.Element {
   const [isOver, setIsOver] = useState(false);
   const [browsing, setBrowsing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -70,7 +79,9 @@ export function DropZone({ onFile, notice }: DropZoneProps): JSX.Element {
           take(event.dataTransfer?.files);
         }}
       >
-        <span class="dropzone__primary">Drop a file, or click to browse</span>
+        <span class="dropzone__primary">
+          {waiting ? `Drop ${waiting.media}, or click to browse` : 'Drop a file, or click to browse'}
+        </span>
         {/* The feedback belongs where the click was, not in the top bar three
             hundred pixels away. It replaces the format list rather than pushing
             it down, so nothing on screen moves. */}
@@ -79,7 +90,11 @@ export function DropZone({ onFile, notice }: DropZoneProps): JSX.Element {
         ) : (
           /* Named exactly, and only what the loader accepts: WebM plays in the
              browser and is refused here, so listing "video" would be a lie. */
-          <span class="dropzone__secondary">PNG, JPEG, WebP, AVIF, GIF, MP4 or MOV</span>
+          <span class="dropzone__secondary">
+            {waiting
+              ? 'A saved selection is waiting for it'
+              : 'PNG, JPEG, WebP, AVIF, GIF, MP4, MOV or a saved .rotyl selection'}
+          </span>
         )}
       </button>
 
@@ -88,7 +103,7 @@ export function DropZone({ onFile, notice }: DropZoneProps): JSX.Element {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,video/mp4,video/quicktime"
+        accept="image/*,video/mp4,video/quicktime,.rotyl"
         class="visually-hidden"
         // Not a tab stop: the button above is the control, and a
         // visually-hidden input would otherwise be an invisible focus stop

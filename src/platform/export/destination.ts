@@ -1,7 +1,8 @@
 import type { ExportFormat } from './export.ts';
 
 /**
- * Where an export is going, asked before any of the work.
+ * Where bytes are going, asked before any of the work, and the one branch that
+ * has to finish the job itself.
  *
  * A clip export is minutes of encoding. Doing it and then asking where to put
  * the result is the worst possible order: the answer might be "nowhere", and by
@@ -14,6 +15,13 @@ import type { ExportFormat } from './export.ts';
  * slow: the sink is behind a dynamic import of 42.8 KB, and a picker asked for
  * after that is a picker asked for after a network fetch. This module imports
  * nothing, so it can be called first.
+ *
+ * ONE ANSWER TO "WHERE DO BYTES GO", FOR EVERYTHING THAT WRITES ANY. A clip, a
+ * picture and a saved selection are three sizes of the same question, and a
+ * product with two answers to it would ask two different ways in two different
+ * places. So a saved document is one row in the table below rather than a
+ * second module, and the download branch is finished here rather than by each
+ * caller repeating the anchor and the one-byte check.
  */
 
 /**
@@ -61,11 +69,25 @@ declare global {
   var showSaveFilePicker: ((options?: SavePickerOptions) => Promise<WritableFile>) | undefined;
 }
 
+/**
+ * Everything this product can be asked to write.
+ *
+ * A saved selection sits beside the export formats rather than in a module of
+ * its own, which is the whole of what "one destination path" means here: the
+ * picker, the fallback and the download handoff are the same three things
+ * whether the bytes are a clip, a picture or a command log.
+ */
+export type SaveFormat = ExportFormat | 'rotyl';
+
 /** What the picker offers to write, so the dialog's type list is not "all files". */
-const TYPES: Record<ExportFormat, { description: string; accept: Record<string, readonly string[]> }> = {
+const TYPES: Record<SaveFormat, { description: string; accept: Record<string, readonly string[]> }> = {
   mp4: { description: 'MPEG-4 video', accept: { 'video/mp4': ['.mp4'] } },
   png: { description: 'PNG image', accept: { 'image/png': ['.png'] } },
   jpeg: { description: 'JPEG image', accept: { 'image/jpeg': ['.jpg'] } },
+  // An opaque binary file to the operating system, which is what it is. A MIME
+  // type of this project's own would be a claim nothing else on the machine
+  // could check, and the extension is what the dialog filters on anyway.
+  rotyl: { description: 'Rotyl selection', accept: { 'application/octet-stream': ['.rotyl'] } },
 };
 
 /**
@@ -89,7 +111,7 @@ const TYPES: Record<ExportFormat, { description: string; accept: Record<string, 
  */
 export async function chooseFile(
   suggestedName: string,
-  format: ExportFormat,
+  format: SaveFormat,
 ): Promise<Destination | undefined> {
   const pick = globalThis.showSaveFilePicker;
   if (!pick) return { kind: 'download' };
@@ -100,4 +122,55 @@ export async function chooseFile(
     if (cause instanceof DOMException && cause.name === 'AbortError') return undefined;
     throw cause;
   }
+}
+
+/**
+ * A blob the browser refused to read back, which is a download that would never
+ * arrive and no word about why.
+ *
+ * Measured: a blob large enough for the browser to keep somewhere other than
+ * memory can be created and then refuse to be read, and the size at which that
+ * starts depends on what else the tab is holding. In a clean tab this browser
+ * gives a byte back out of 1.5 GB; with the buffer the file was assembled in
+ * still alive beside it, which is exactly the state a finished export leaves,
+ * it refuses at 790 MB.
+ *
+ * Carried as a type rather than as a sentence, because the sentence differs by
+ * what was being written and only the caller knows which. What is common is the
+ * question and its answer, and both live here.
+ */
+export class TooLargeToHandOver extends Error {
+  readonly megabytes: number;
+
+  constructor(bytes: number) {
+    super('The browser could not hold the finished file.');
+    this.name = 'TooLargeToHandOver';
+    this.megabytes = Math.round(bytes / 1e6);
+  }
+}
+
+/**
+ * Hand finished bytes to the browser's own downloads folder.
+ *
+ * The branch taken by every browser that cannot be given a file, and by the
+ * frame export in all of them. One byte is read back first, because the failure
+ * this catches is silent: an unreadable blob handed to an anchor produces
+ * nothing at all and says nothing about it.
+ */
+export async function handToBrowser(blob: Blob, name: string): Promise<void> {
+  try {
+    await blob.slice(0, 1).arrayBuffer();
+  } catch {
+    throw new TooLargeToHandOver(blob.size);
+  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
+  // Revoked on the next task so the download has taken the reference; a leaked
+  // object URL pins the whole file in memory.
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 0);
 }

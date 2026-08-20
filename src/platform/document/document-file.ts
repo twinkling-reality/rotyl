@@ -28,8 +28,18 @@
  * SO THE HEADER IS JSON AND THE PAYLOAD IS NOT, which is the shape every honest
  * container has. Everything small enough to read in a text editor stays legible
  * and extensible, and the one thing that is neither goes in a region the header
- * points into. It needs no library, which a document format in a 45.8 KB
+ * points into. It needs no library, which a document format in a 46 KB
  * application has to be able to say.
+ *
+ * AND IT IS NOT BEHIND A DYNAMIC IMPORT, which is the opposite of what the
+ * demuxer, the container writer and the inference runtime get, so it was
+ * measured rather than assumed. Split off, this module and the digest beside it
+ * are 2.46 KB gzipped across three chunks and take the application from 48.81
+ * to 47.23: 1.58 KB back for a session that never saves, and 0.9 KB more in
+ * total plus three round trips for one that does. The writer is split because
+ * it is 42.8 KB. This is not, and putting a network fetch in front of Save to
+ * recover a kilobyte and a half would be a failure mode invented for the one
+ * operation in the product that exists to keep somebody's afternoon.
  *
  *   0   magic          6 bytes, "ROTYL" and a zero
  *   6   version        u16, little endian

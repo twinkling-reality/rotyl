@@ -116,6 +116,34 @@ export class SelectionDocument {
     return end;
   }
 
+  /**
+   * Replace the whole log with one that was saved.
+   *
+   * ONE BUMP, NOT ONE PER COMMAND. Applying eighteen thousand commands in turn
+   * would be the same log at the end and would notify every listener eighteen
+   * thousand times on the way, which is eighteen thousand renders of a mask
+   * nobody has seen yet.
+   *
+   * The redo tail is empty afterwards, because a document holds work that was
+   * done rather than work that was undone. Undo still reaches everything in it:
+   * the cursor starts at the end of the loaded log, exactly as it would have if
+   * the commands had arrived one at a time.
+   *
+   * AND THE GROUP COUNTER MOVES PAST WHATEVER ARRIVED. Group ids are only ever
+   * compared for equality, so a counter left at zero would hand the next
+   * tracking run an id a loaded run already holds and weld two gestures into
+   * one undo. It is the same hazard `reset` refuses to create by not restarting
+   * the counter, arriving from the other direction.
+   */
+  load(commands: readonly SelectionCommand[]): void {
+    this.#commands = [...commands];
+    this.#applied = this.#commands.length;
+    for (const command of this.#commands) {
+      if (command.group !== undefined) this.#groups = Math.max(this.#groups, command.group);
+    }
+    this.#bump();
+  }
+
   /** Drop the entire history, for loading a new document. */
   reset(): void {
     this.#commands = [];

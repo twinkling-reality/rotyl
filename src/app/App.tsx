@@ -34,7 +34,24 @@ import {
 } from '../platform/export/export-source.ts';
 // Imports nothing, deliberately, so a file can be asked for while the click
 // that asked is still granting the right to ask. See destination.ts.
-import { chooseFile, type Destination } from '../platform/export/destination.ts';
+import {
+  chooseFile,
+  TooLargeToHandOver,
+  handToBrowser,
+  type Destination,
+} from '../platform/export/destination.ts';
+// Static, and deliberately so, for the reason the video sniff is: this decides
+// WHETHER a dropped file is a document at all, by reading six bytes, so it
+// cannot be behind the import it would be choosing.
+import {
+  describeDocumentReadError,
+  documentFilename,
+  looksLikeDocument,
+  readDocument,
+  type RotylDocument,
+} from '../platform/document/document-file.ts';
+import { compareMedia, digestMedia, type MediaIdentity } from '../platform/document/media-identity.ts';
+import { saveDocument } from '../platform/document/save-document.ts';
 import { defaultControls, type StyleControls, type StyleDefinition } from '../core/style/style.ts';
 import { editedFrames } from '../core/document/selection-command.ts';
 import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
@@ -139,6 +156,27 @@ function describePerception(
 /** The last frame's number, which is one less than how many there are. */
 const lastFrameOf = (file: LoadedFile): number => Math.max(0, (file.video?.frameCount ?? 1) - 1);
 
+/**
+ * What a document would record about the file that is open.
+ *
+ * Everything but the digest is already known, because the loader read it: the
+ * shape is free and the digest is two slices of a megabyte. Computed only when
+ * there is a document to save or a document to check, so an ordinary session
+ * that never saves never reads a byte for this.
+ */
+async function identityOf(media: LoadedFile): Promise<MediaIdentity> {
+  return {
+    name: media.name,
+    bytes: media.file.size,
+    width: media.width,
+    height: media.height,
+    // A photograph is a one-frame document here as everywhere else, so there is
+    // no branch anywhere below asking which kind of file this is.
+    frames: media.video?.frameCount ?? 1,
+    digest: await digestMedia(media.file),
+  };
+}
+
 /** Minutes and seconds, which is how long a clip is to anyone who has one. */
 function atTime(frames: number, frameRate: number): string {
   const seconds = Math.round(frames / (frameRate || 30));
@@ -186,6 +224,23 @@ function describeExport(
   }
   return `Stopped at ${got} of ${asked}. ${where} has what was written.${lost}`;
 }
+
+/**
+ * Why a document and the file somebody supplied do not belong together.
+ *
+ * Only the refusal needs a sentence this long. A file of a different shape
+ * cannot replay the log at all, and saying "that is the wrong file" without
+ * saying what the right one looks like leaves somebody guessing between two
+ * clips on a desk.
+ */
+function describeWrongMedia(saved: MediaIdentity, opened: MediaIdentity): string {
+  return `That selection was made on ${saved.name}, which is ${shapeOf(saved)}. This file is ${shapeOf(opened)}, so the selection does not describe it.`;
+}
+
+const shapeOf = (media: MediaIdentity): string =>
+  media.frames > 1
+    ? `${String(media.width)} × ${String(media.height)}, ${String(media.frames)} frames`
+    : `${String(media.width)} × ${String(media.height)}`;
 
 /**
  * What the Clip button will do, which is where the range and the sound are said.
@@ -277,6 +332,28 @@ export function App(): JSX.Element {
    * something changes it; this is an event and outlives itself.
    */
   const [report, setReport] = useState<string | undefined>(undefined);
+  /**
+   * A document that arrived before the file it was made on.
+   *
+   * A browser has no paths, so a saved selection names media it cannot open,
+   * and somebody who reloads the tab has to supply both. Holding the document
+   * and asking for the other half by name is the whole of that, and it is two
+   * drops rather than a dialog: this product has none anywhere and a document
+   * is not the place to introduce one.
+   */
+  const [waitingDocument, setWaitingDocument] = useState<RotylDocument | undefined>(undefined);
+  /**
+   * That the selection on screen was saved against a different copy of this
+   * file, or nothing.
+   *
+   * A STATE RATHER THAN AN EVENT, so it goes where the soundtrack warning goes:
+   * beside the file's name, for as long as the file is open. The shape matched,
+   * so every command replays and every frame number means what it meant; the
+   * bytes did not, so this may be a re-encode rather than the clip the
+   * selection was drawn on, and that is worth knowing for as long as somebody
+   * is looking at it.
+   */
+  const [restyledNote, setRestyledNote] = useState<string | undefined>(undefined);
 
   /**
    * The decoder, and the texture it uploads into.
@@ -383,8 +460,122 @@ export function App(): JSX.Element {
     [showFrame],
   );
 
+  /**
+   * Put a saved selection back on the file it was made on.
+   *
+   * REPLAYING IS THE WHOLE OF IT. The log is the source of truth, so restoring
+   * a document is handing the log back and letting the renderer do what it does
+   * on every frame anyway: fold to the frame being shown, unpack the one mask
+   * the fold cuts to, upload it. Measured at 0.3 ms on a ten-minute tracked run,
+   * which is why the file carries nothing a fold could recompute and there is
+   * no cached mask in it.
+   */
+  const restoreDocument = useCallback(
+    async (
+      target: RotylRuntime,
+      media: LoadedFile,
+      saved: RotylDocument,
+      restyled: boolean,
+    ): Promise<void> => {
+      const last = lastFrameOf(media);
+      // Clamped rather than trusted. The shape matched, so anything this build
+      // wrote is already in range, and a file on a disk is a file on a disk.
+      const at = Math.min(Math.max(0, saved.frame), last);
+
+      target.engine.document.load(saved.commands);
+      target.engine.setFrame(at);
+      setFrame(at);
+      await showFrame(target, at, true);
+
+      const saveRange = saved.range;
+      const restored: FrameRange | undefined = saveRange
+        ? {
+            from: Math.min(Math.max(0, saveRange.from), last),
+            to: Math.min(Math.max(0, saveRange.to), last),
+          }
+        : undefined;
+      // The same rule marking one by hand follows: a range covering the whole
+      // clip is not a range, and a timeline nobody has marked must not carry
+      // marks implying they have.
+      setRange(
+        restored && restored.from <= restored.to && !isWholeClip(restored, last) ? restored : undefined,
+      );
+
+      // An id from a document written by a build with a style this one does not
+      // have. Falling back is right rather than refusing: the selection is the
+      // work and the style is how the tool is set up, so an unknown style costs
+      // a palette rather than the afternoon.
+      const savedStyle = STYLES.find((candidate) => candidate.id === saved.style.id) ?? DEFAULT_STYLE;
+      setStyle(savedStyle);
+      // Merged onto the style's own defaults rather than replacing them, so a
+      // control added since the document was written arrives at its default
+      // instead of at undefined.
+      setControlsByStyle((byStyle) => ({
+        ...byStyle,
+        [savedStyle.id]: { ...defaultControls(savedStyle), ...saved.style.controls },
+      }));
+
+      setHistoryRevision(target.engine.document.revision);
+      setRestyledNote(
+        restyled ? 'this selection was saved against a different copy of this file' : undefined,
+      );
+    },
+    [showFrame],
+  );
+
+  /**
+   * Open a saved selection, which needs the file it was made on as well.
+   *
+   * Two orders, one path. Somebody who still has the media open drops the
+   * document on top of it and the selection comes back. Somebody who reloaded
+   * the tab drops the document first, and it waits, named, until the other half
+   * arrives.
+   */
+  const openDocument = useCallback(
+    async (file: File): Promise<void> => {
+      setError(undefined);
+      setReport(undefined);
+
+      let bytes: Uint8Array<ArrayBuffer>;
+      try {
+        bytes = new Uint8Array(await file.arrayBuffer());
+      } catch {
+        setError('That file could not be read. It may have been moved or renamed since you chose it.');
+        return;
+      }
+
+      const parsed = readDocument(bytes);
+      if (!parsed.ok) {
+        setError(describeDocumentReadError(parsed.error));
+        return;
+      }
+
+      // Nothing open yet: hold it, and ask for the file it names.
+      if (!runtime || !loaded) {
+        setWaitingDocument(parsed.value);
+        return;
+      }
+
+      const opened = await identityOf(loaded);
+      const match = compareMedia(parsed.value.media, opened);
+      if (match === 'wrong') {
+        setError(describeWrongMedia(parsed.value.media, opened));
+        return;
+      }
+      await restoreDocument(runtime, loaded, parsed.value, match === 'restyled');
+    },
+    [runtime, loaded, restoreDocument],
+  );
+
   const openFile = useCallback(
     async (file: File): Promise<void> => {
+      // Six bytes, before anything else looks at it. A document is not media
+      // and takes a completely different path, and deciding that from the
+      // signature is the rule every other format here follows.
+      if (await looksLikeDocument(file)) {
+        await openDocument(file);
+        return;
+      }
       if (!runtime) {
         // Device acquisition is fast but not instant, and a file dropped
         // during it must not be silently discarded.
@@ -442,11 +633,24 @@ export function App(): JSX.Element {
       // Never zero: a tiny or extreme-aspect image would give a brush that
       // paints nothing, and the grow key multiplies, so it could never recover.
       setBrushRadius(Math.max(1, Math.round(Math.min(width, height) * DEFAULT_BRUSH_FRACTION)));
-      setLoaded({ ...media, width, height });
+      const opened: LoadedFile = { ...media, width, height };
+      setLoaded(opened);
       setHistoryRevision(runtime.engine.document.revision);
+      setRestyledNote(undefined);
+
+      // The other half of a document that arrived first. Taken whichever way
+      // round the two files came, which is what stops "open the media, then the
+      // selection" and "open the selection, then the media" being two features.
+      if (waitingDocument) {
+        setWaitingDocument(undefined);
+        const identity = await identityOf(opened);
+        const match = compareMedia(waitingDocument.media, identity);
+        if (match === 'wrong') setError(describeWrongMedia(waitingDocument.media, identity));
+        else await restoreDocument(runtime, opened, waitingDocument, match === 'restyled');
+      }
       setBusy(undefined);
     },
-    [runtime, uploadInto],
+    [runtime, uploadInto, openDocument, waitingDocument, restoreDocument],
   );
 
   /**
@@ -482,6 +686,8 @@ export function App(): JSX.Element {
     setPromptAnchor(undefined);
     setPerception({ kind: 'idle' });
     setHistoryRevision(0);
+    // A claim about the file that is going, so it goes with it.
+    setRestyledNote(undefined);
   }, [runtime]);
 
   // Open a file that arrived before the device was ready.
@@ -693,6 +899,70 @@ export function App(): JSX.Element {
   );
 
   /**
+   * Keep the work.
+   *
+   * WHAT IS SAVED IS THE LOG, AND ONLY THE LOG. Not the media, which a browser
+   * cannot address and which would make a document either a few megabytes or
+   * two gigabytes depending on what somebody opened, and one path for both has
+   * been this project's answer to every other question of that shape. The
+   * document names the file instead and says how to recognise it.
+   *
+   * WHERE IT GOES IS THE EXPORT'S OWN QUESTION, asked the same way, because a
+   * product with two answers to "where do bytes go" would be asking two
+   * different ways in two different corners. What it does NOT inherit is the
+   * ordering argument: a clip asks first because minutes of encoding would
+   * otherwise be thrown away, and a document is ten milliseconds of work, so
+   * the picker is simply where the click goes.
+   */
+  const onSave = useCallback(async (): Promise<void> => {
+    if (!runtime || !loaded) return;
+
+    const name = documentFilename(loaded.name);
+    let destination: Destination | undefined;
+    try {
+      destination = await chooseFile(name, 'rotyl');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not ask where to save this.');
+      return;
+    }
+    // Dismissed, which is not a failure and gets no message.
+    if (!destination) return;
+
+    setBusy('Saving');
+    setError(undefined);
+    setReport(undefined);
+    try {
+      const written = await saveDocument(
+        {
+          media: await identityOf(loaded),
+          // The applied commands and never the redo tail: a document is work
+          // that was done.
+          commands: runtime.engine.document.appliedCommands,
+          frame,
+          ...(range ? { range } : {}),
+          style: { id: style.id, controls },
+        },
+        destination,
+        name,
+      );
+      // The browser announces a download and announces nothing else, which is
+      // the same rule an export follows: a file written to a path somebody
+      // chose leaves no trace anywhere else.
+      if (destination.kind === 'file') setReport(`Wrote ${written}.`);
+    } catch (cause) {
+      if (cause instanceof TooLargeToHandOver) {
+        setError(
+          `This browser could not hold the saved selection, which came to ${String(cause.megabytes)} MB. Chrome and Edge can be given a file to write into, which holds none of it.`,
+        );
+      } else {
+        setError(cause instanceof Error ? cause.message : 'Could not save the selection.');
+      }
+    } finally {
+      setBusy(undefined);
+    }
+  }, [runtime, loaded, frame, range, style, controls]);
+
+  /**
    * Write it out.
    *
    * ONE PATH FOR BOTH. A source hands over frames and a sink takes them; a
@@ -794,30 +1064,19 @@ export function App(): JSX.Element {
         });
 
         if (result.written.to === 'download') {
-          // A blob large enough for the browser to keep somewhere other than
-          // memory can be created and then refuse to be read. Measured: on a
-          // machine under load, one byte out of a 512 MB blob throws where the
-          // same read at 256 MB does not. As a download that is a file that
-          // never arrives and no word about why, so it is asked here, where the
-          // answer can be a sentence. One byte is enough to find out.
+          // The one-byte check and the anchor live in `destination.ts` with the
+          // picker, because they are the same question: where do these bytes
+          // go. What stays here is the sentence, which differs by what was
+          // being written and is the only part this knows more about.
           try {
-            await result.written.blob.slice(0, 1).arrayBuffer();
-          } catch {
-            const size = Math.round(result.written.blob.size / 1e6);
+            await handToBrowser(result.written.blob, name);
+          } catch (cause) {
+            if (!(cause instanceof TooLargeToHandOver)) throw cause;
             throw new Error(
-              `This browser could not hold the finished clip, which came to ${String(size)} MB. Chrome and Edge can be given a file to write into, which holds none of it, and In and Out on the timeline will write a shorter piece here.`,
+              `This browser could not hold the finished clip, which came to ${String(cause.megabytes)} MB. Chrome and Edge can be given a file to write into, which holds none of it, and In and Out on the timeline will write a shorter piece here.`,
+              { cause },
             );
           }
-          const url = URL.createObjectURL(result.written.blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = name;
-          link.click();
-          // Revoked on the next task so the download has taken the reference; a
-          // leaked object URL pins the whole encoded file in memory.
-          setTimeout(() => {
-            URL.revokeObjectURL(url);
-          }, 0);
         }
 
         // The browser announces a download and announces nothing else, so
@@ -866,6 +1125,16 @@ export function App(): JSX.Element {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
         event.preventDefault();
         stepHistory(event.shiftKey ? 'redo' : 'undo');
+        return;
+      }
+      // The binding everything else on the machine has for this, which is the
+      // whole argument for it: the modifier is already spent on undo here, and
+      // a product that took the key and did nothing with it would be the one
+      // surprise a save can afford least. Only where there is something to
+      // save, so the browser's own Save Page keeps working on the drop zone.
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        if (!runtime.engine.document.isEmpty) void onSave();
         return;
       }
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -956,21 +1225,41 @@ export function App(): JSX.Element {
       globalThis.removeEventListener('keyup', onKeyUp);
       globalThis.removeEventListener('blur', restoreOverlay);
     };
-  }, [runtime, loaded, stepHistory, play, pause, frame, range, onRangeChange]);
+  }, [runtime, loaded, stepHistory, play, pause, frame, range, onRangeChange, onSave]);
 
-  // A file dropped anywhere other than the drop zone would otherwise be opened
-  // by the browser itself, navigating away and discarding the session.
+  /**
+   * A file dropped anywhere other than the drop zone.
+   *
+   * It has to be swallowed whatever it is, because the browser would otherwise
+   * open it itself, navigate away and discard the session. What it can also be
+   * is a saved selection for the file that is already open, and that is the
+   * gesture: drop the document on the editor and the work comes back.
+   *
+   * DOCUMENTS AND NOTHING ELSE. A document is additive to the open media and a
+   * second photograph is not: taking one here would replace the file under
+   * somebody's hands and take the log with it, on a drop they may have meant
+   * for another window entirely.
+   */
   useEffect(() => {
     const swallow = (event: DragEvent): void => {
       event.preventDefault();
     };
+    const take = (event: DragEvent): void => {
+      event.preventDefault();
+      // Only once there is something to drop it onto. With nothing open the
+      // drop zone is the control and has already taken the file, and this would
+      // be the same drop opened twice.
+      const file = loaded ? event.dataTransfer?.files[0] : undefined;
+      if (!file) return;
+      void looksLikeDocument(file).then((yes) => (yes ? openDocument(file) : undefined));
+    };
     globalThis.addEventListener('dragover', swallow);
-    globalThis.addEventListener('drop', swallow);
+    globalThis.addEventListener('drop', take);
     return () => {
       globalThis.removeEventListener('dragover', swallow);
-      globalThis.removeEventListener('drop', swallow);
+      globalThis.removeEventListener('drop', take);
     };
-  }, []);
+  }, [openDocument, loaded]);
 
   if (state.status === 'unsupported') {
     return (
@@ -980,8 +1269,10 @@ export function App(): JSX.Element {
           canRedo={false}
           onUndo={noop}
           onRedo={noop}
+          onSave={noop}
           onExport={noop}
           exportDisabled
+          saveDisabled
           canExportClip={false}
           clipTitle=""
           exporting={false}
@@ -1007,8 +1298,10 @@ export function App(): JSX.Element {
           canRedo={false}
           onUndo={noop}
           onRedo={noop}
+          onSave={noop}
           onExport={noop}
           exportDisabled
+          saveDisabled
           canExportClip={false}
           clipTitle=""
           exporting={false}
@@ -1055,6 +1348,9 @@ export function App(): JSX.Element {
   // file rather than something that just happened.
   const audio = loaded?.video?.audio;
   const soundNote = audio && !audio.carried ? `its ${audio.codec} sound cannot go in an MP4` : undefined;
+  // Both of them, in the order they become true: what the file cannot carry
+  // out, and what the selection on it was saved against.
+  const notes = [soundNote, restyledNote].filter((note) => note !== undefined);
 
   return (
     <div class="app">
@@ -1065,7 +1361,7 @@ export function App(): JSX.Element {
                 name: loaded.name,
                 width: loaded.width,
                 height: loaded.height,
-                ...(soundNote ? { note: soundNote } : {}),
+                ...(notes.length > 0 ? { notes } : {}),
               },
             }
           : {})}
@@ -1078,8 +1374,10 @@ export function App(): JSX.Element {
         onRedo={() => {
           stepHistory('redo');
         }}
+        onSave={() => void onSave()}
         onExport={(what) => void onExport(what)}
         exportDisabled={!loaded || activity !== undefined}
+        saveDisabled={!loaded || activity !== undefined}
         canExportClip={loaded?.video !== undefined}
         clipTitle={describeClipButton(loaded?.video?.frameRate ?? 30, range, audio)}
         exporting={exportProgress !== undefined}
@@ -1202,7 +1500,11 @@ export function App(): JSX.Element {
           ) : null}
         </div>
       ) : (
-        <DropZone onFile={(file) => void openFile(file)} notice={notice} />
+        <DropZone
+          onFile={(file) => void openFile(file)}
+          notice={notice}
+          {...(waitingDocument ? { waiting: { media: waitingDocument.media.name } } : {})}
+        />
       )}
 
       {/*

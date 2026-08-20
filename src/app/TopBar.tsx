@@ -1,4 +1,4 @@
-import type { JSX } from 'preact';
+import { Fragment, type JSX } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { Activity } from './Activity.tsx';
 import { CloseIcon, DownloadIcon, RedoIcon, UndoIcon } from './icons.tsx';
@@ -9,15 +9,19 @@ export interface TopBarProps {
     readonly width: number;
     readonly height: number;
     /**
-     * A fact about this file that the export cannot honour, or nothing.
+     * Facts about this file that stay true for as long as it is open.
      *
-     * A STATE AND NOT AN EVENT, which is why it sits here beside the name and
-     * the size rather than in the line reports and failures share. A soundtrack
-     * an MP4 cannot carry is true for as long as the file is open, and the line
-     * below the canvas is for things that JUST happened and take themselves
-     * down again after ten seconds.
+     * STATES AND NOT EVENTS, which is why they sit here beside the name and the
+     * size rather than in the line reports and failures share. A soundtrack an
+     * MP4 cannot carry is one; a restored selection that was saved against a
+     * different copy of this file is the other. The line below the canvas is
+     * for things that JUST happened and take themselves down again after ten
+     * seconds, and neither of these is one of those.
+     *
+     * A LIST RATHER THAN ONE, because both can be true at once and the second
+     * one arriving must not silently replace the first.
      */
-    readonly note?: string;
+    readonly notes?: readonly string[];
   };
   readonly status?: string;
   /** 0 to 1 where the status has a real fraction behind it. */
@@ -26,9 +30,13 @@ export interface TopBarProps {
   readonly canRedo: boolean;
   readonly onUndo: () => void;
   readonly onRedo: () => void;
+  /** Write the command log out as a document. */
+  readonly onSave: () => void;
   /** What to write: the frame on screen, or every frame. */
   readonly onExport: (what: 'frame' | 'clip') => void;
   readonly exportDisabled: boolean;
+  /** Whatever else is going on, which a save must not run alongside. */
+  readonly saveDisabled: boolean;
   /** Whether there is a clip to write, as opposed to one picture. */
   readonly canExportClip: boolean;
   /** What pressing Clip will do, including the range and the sound. */
@@ -50,8 +58,10 @@ export function TopBar({
   canRedo,
   onUndo,
   onRedo,
+  onSave,
   onExport,
   exportDisabled,
+  saveDisabled,
   canExportClip,
   clipTitle,
   exporting,
@@ -81,14 +91,14 @@ export function TopBar({
               </span>
               {/* U+00D7, not the letter x. */}
               <span class="file-status__meta mono">{`${String(file.width)} × ${String(file.height)}`}</span>
-              {file.note ? (
-                <>
+              {(file.notes ?? []).map((note) => (
+                <Fragment key={note}>
                   <span class="file-status__separator" aria-hidden="true">
                     ·
                   </span>
-                  <span class="file-status__note">{file.note}</span>
-                </>
-              ) : null}
+                  <span class="file-status__note">{note}</span>
+                </Fragment>
+              ))}
             </>
           ) : null}
           {status ? (
@@ -115,6 +125,27 @@ export function TopBar({
           <button type="button" class="icon-button" onClick={onRedo} disabled={!canRedo} title="Redo">
             <RedoIcon />
             <span class="visually-hidden">Redo</span>
+          </button>
+          {/*
+            BESIDE UNDO RATHER THAN BESIDE EXPORT, because it belongs to the
+            work rather than to the result: undo, redo and save are the three
+            things somebody does to a selection, and export is what they do
+            with one. It is a text button for the reason Frame is one, which is
+            that the loud button in this corner is the thing a person opened the
+            file to make.
+          */}
+          <button
+            type="button"
+            class="text-button"
+            onClick={onSave}
+            disabled={!hasEdits || saveDisabled}
+            title={
+              hasEdits
+                ? 'Save the selection as a .rotyl document, to open again with this file'
+                : 'Nothing has been selected yet'
+            }
+          >
+            Save
           </button>
           <ExportControl
             onExport={onExport}
