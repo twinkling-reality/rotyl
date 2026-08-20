@@ -19,7 +19,7 @@
 // dependencies. PNG is written by hand because zlib is in the standard library
 // and an image encoder is not worth a package.
 
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { encodePng } from './png.mjs';
 
 const WIDTH = 1920;
@@ -119,14 +119,85 @@ function makeBuildings() {
 
 const BUILDINGS = makeBuildings();
 
-/** Cars, far to near along the road, the only saturated things in the frame. */
+/**
+ * Cars, far to near along the road, the only saturated things in the frame.
+ *
+ * `speed` is how far along the road one of them travels in a second, in the
+ * same units as `t`, and it is ZERO NOWHERE. It exists for the clip a temporal
+ * measurement needs and that this scene could not previously give: one where
+ * some things move and others do not.
+ *
+ * A PAN IS NOT MOTION, for this purpose. `pan-720p.mp4` moves the camera across
+ * a still, so every pixel moves together, nothing is ever revealed and nothing
+ * ever passes behind anything. That is the wrong test for a method that warps
+ * the last frame onto this one: a rigid shift is the case such a method gets
+ * right by construction. What catches it is differential motion, and occlusion,
+ * and ground that has just been uncovered, which is what these five give when
+ * they are allowed to drive.
+ *
+ * The speeds are chosen so that nothing wraps within two seconds, because a car
+ * reappearing at the horizon is a cut rather than motion, and so that the two
+ * left-lane cars close on each other and overlap: that overlap is the only
+ * occlusion event in the frame and it is the one a warp cannot invent.
+ */
 const CARS = [
-  { t: 0.06, lane: -0.55, body: [0.42, 0.11, 0.12], scale: 1 },
-  { t: 0.16, lane: 0.5, body: [0.16, 0.17, 0.2], scale: 1 },
-  { t: 0.3, lane: -0.62, body: [0.72, 0.68, 0.62], scale: 1 },
-  { t: 0.48, lane: 0.58, body: [0.11, 0.2, 0.3], scale: 0.95 },
-  { t: 0.72, lane: -0.5, body: [0.55, 0.5, 0.12], scale: 0.85 },
+  { t: 0.06, lane: -0.55, body: [0.42, 0.11, 0.12], scale: 1, speed: 0.05 },
+  { t: 0.16, lane: 0.5, body: [0.16, 0.17, 0.2], scale: 1, speed: -0.03 },
+  { t: 0.3, lane: -0.62, body: [0.72, 0.68, 0.62], scale: 1, speed: 0.07 },
+  { t: 0.48, lane: 0.58, body: [0.11, 0.2, 0.3], scale: 0.95, speed: -0.05 },
+  { t: 0.72, lane: -0.5, body: [0.55, 0.5, 0.12], scale: 0.85, speed: 0.08 },
 ];
+
+/**
+ * Where the cars are at a given moment, sorted far to near.
+ *
+ * SORTED, because the draw order in `shadeAt` is the occlusion order and the
+ * array's own order stops being the depth order the moment anything moves. At
+ * time zero it is already sorted, so the still this file has always written is
+ * unchanged to the byte, which matters: every committed style measurement was
+ * taken against it.
+ */
+function carsAt(seconds) {
+  return CARS.map((car) => ({ ...car, t: car.t + car.speed * seconds })).toSorted((a, b) => a.t - b.t);
+}
+
+/** The cars the current render is drawing. Set by `render`; time zero by default. */
+let cars = carsAt(0);
+
+/**
+ * Where a pixel falls inside a car's body, in that car's own units.
+ *
+ * ONE DEFINITION, TWO READERS. The shading below draws from it and the mask
+ * renderer measures from it, and a mask computed from a second copy of this
+ * arithmetic would be a mask that stops agreeing with the picture the first
+ * time somebody adjusts a car. The arithmetic is exactly what was inline here
+ * before, so the still this file has always written is unchanged to the byte.
+ */
+function carLocal(car, x, y) {
+  const chalf = roadHalfWidth(car.t);
+  const cx = roadCentre(car.t) + car.lane * chalf;
+  const cy = HORIZON + car.t * (HEIGHT - HORIZON);
+  const w = chalf * 0.34 * car.scale;
+  const h = w * 0.78;
+  const dx = (x - cx) / w;
+  const dy = (y - (cy - h * 0.5)) / h;
+  // A rounded body rather than a rectangle: a curved silhouette is a harder
+  // thing for an edge detector to draw cleanly than a straight one.
+  return { dx, dy, inside: Math.pow(Math.abs(dx), 2.4) + Math.pow(Math.abs(dy), 2.6) };
+}
+
+/** How much of a pixel the body covers, given how far inside it that pixel is. */
+const carCover = (inside) => Math.min(1, Math.max(0, (1 - inside) * 9));
+
+/** Whether any moving thing covers this pixel, which is what the mask records. */
+function movingCoverage(x, y) {
+  let cover = 0;
+  for (const car of cars) {
+    const { inside } = carLocal(car, x, y);
+    if (inside < 1.25) cover = Math.max(cover, carCover(inside));
+  }
+  return cover;
+}
 
 /** Half-width of the carriageway at a given depth, in pixels. */
 function roadHalfWidth(t) {
@@ -210,18 +281,8 @@ function shadeAt(x, y) {
     }
   }
 
-  for (const car of CARS) {
-    const ct = car.t;
-    const chalf = roadHalfWidth(ct);
-    const cx = roadCentre(ct) + car.lane * chalf;
-    const cy = HORIZON + ct * (HEIGHT - HORIZON);
-    const w = chalf * 0.34 * car.scale;
-    const h = w * 0.78;
-    const dx = (x - cx) / w;
-    const dy = (y - (cy - h * 0.5)) / h;
-    // A rounded body rather than a rectangle: a curved silhouette is a harder
-    // thing for an edge detector to draw cleanly than a straight one.
-    const inside = Math.pow(Math.abs(dx), 2.4) + Math.pow(Math.abs(dy), 2.6);
+  for (const car of cars) {
+    const { dx, dy, inside } = carLocal(car, x, y);
     if (inside < 1.25) {
       let body = car.body;
       // The greenhouse: its own smaller shape, so the glass meets the body on a
@@ -235,7 +296,7 @@ function shadeAt(x, y) {
       if (Math.abs(Math.abs(dx) - 0.66) < 0.11 && Math.abs(dy - 0.12) < 0.16) {
         body = mix(body, [0.92, 0.13, 0.09], 0.9);
       }
-      colour = mix(colour, body, Math.min(1, Math.max(0, (1 - inside) * 9)));
+      colour = mix(colour, body, carCover(inside));
     }
   }
 
@@ -243,7 +304,18 @@ function shadeAt(x, y) {
   return mix(HAZE, colour, 0.42 + 0.58 * Math.min(1, t * 2.2));
 }
 
-function render() {
+/**
+ * One frame, at a moment.
+ *
+ * THE GRAIN DOES NOT MOVE, and that is deliberate rather than an oversight. It
+ * is seeded once per frame with the same seed, so two frames of a sequence
+ * differ in the cars and in nothing else. That is the clip a per-stage
+ * attribution wants: the one input that changed is known exactly. Grain that
+ * differs between frames is what `make-clips.sh` asks ffmpeg for on top, so the
+ * two questions stay separable rather than arriving mixed.
+ */
+function render(seconds = 0) {
+  cars = carsAt(seconds);
   const rgb = Buffer.alloc(WIDTH * HEIGHT * 3);
   const grainRng = mulberry32(0xc0ffee);
   for (let y = 0; y < HEIGHT; y++) {
@@ -263,8 +335,59 @@ function render() {
   return rgb;
 }
 
-const rgb = render();
-const out = process.argv[2] ?? 'tools/style-bench/clips/scene.png';
-writeFileSync(out, encodePng(rgb, WIDTH, HEIGHT));
-if (process.argv.includes('--raw')) writeFileSync(`${out.replace(/\.png$/, '')}.rgb`, rgb);
-console.log(`${out}  ${WIDTH}x${HEIGHT}`);
+/**
+ * Which pixels a moving thing covers, as a picture.
+ *
+ * GEOMETRY RATHER THAN VISIBILITY. It records where a car is, not how well one
+ * can be seen: a car at the horizon is half haze and barely differs from the
+ * road behind it, and a metric that wants to know whether a moving object left
+ * a trail behind it is asking where the object was rather than how bright it
+ * was. No grain either, for the same reason.
+ *
+ * Grey rather than one bit, because the body's edge is antialiased in the
+ * picture and a mask with a hard edge would put the boundary pixels in whichever
+ * of the two populations rounded first.
+ */
+function renderMask(seconds) {
+  cars = carsAt(seconds);
+  const rgb = Buffer.alloc(WIDTH * HEIGHT * 3);
+  for (let y = 0; y < HEIGHT; y++) {
+    for (let x = 0; x < WIDTH; x++) {
+      const value = Math.round(movingCoverage(x + 0.5, y + 0.5) * 255);
+      const offset = (y * WIDTH + x) * 3;
+      rgb[offset] = value;
+      rgb[offset + 1] = value;
+      rgb[offset + 2] = value;
+    }
+  }
+  return rgb;
+}
+
+/** One flag's value, or a default. */
+function flag(name, fallback) {
+  const at = process.argv.indexOf(`--${name}`);
+  return at === -1 ? fallback : (process.argv[at + 1] ?? fallback);
+}
+
+const sequence = flag('sequence', undefined);
+if (sequence === undefined) {
+  const rgb = render();
+  const out = process.argv[2] ?? 'tools/style-bench/clips/scene.png';
+  writeFileSync(out, encodePng(rgb, WIDTH, HEIGHT));
+  if (process.argv.includes('--raw')) writeFileSync(`${out.replace(/\.png$/, '')}.rgb`, rgb);
+  console.log(`${out}  ${WIDTH}x${HEIGHT}`);
+} else {
+  // A sequence, and its mask beside it. Written as numbered PNGs because that
+  // is what ffmpeg reads without being told anything else, and because the two
+  // have to be encoded through exactly the same scale filter to stay aligned.
+  const frames = Number(flag('frames', '60'));
+  const fps = Number(flag('fps', '30'));
+  mkdirSync(sequence, { recursive: true });
+  for (let index = 0; index < frames; index++) {
+    const at = index / fps;
+    const number = String(index).padStart(4, '0');
+    writeFileSync(`${sequence}/f${number}.png`, encodePng(render(at), WIDTH, HEIGHT));
+    writeFileSync(`${sequence}/m${number}.png`, encodePng(renderMask(at), WIDTH, HEIGHT));
+  }
+  console.log(`${sequence}  ${String(frames)} frames and masks  ${WIDTH}x${HEIGHT}  ${String(fps)} fps`);
+}

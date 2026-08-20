@@ -136,8 +136,12 @@ export async function realPerturbation(device: GPUDevice): Promise<unknown> {
  *
  * Held one at a time on purpose: a second of 1080p is 90 MB of decoded planes,
  * and the measurement only ever needs this frame and the last one's bytes.
+ *
+ * A yielded frame is CLOSED when the consumer asks for the next one, which is
+ * what lets this hold one at a time. Anything that needs the pixels has to take
+ * them before then, which uploading to a texture does.
  */
-async function* frames(url: string, count: number): AsyncGenerator<VideoFrame> {
+export async function* clipFrames(url: string, count: number): AsyncGenerator<VideoFrame> {
   const blob = await (await fetch(url)).blob();
   const input = new Input({ formats: [MP4], source: new BlobSource(blob) });
   const track = await input.getPrimaryVideoTrack();
@@ -226,7 +230,7 @@ async function overClip(
     const source: Running = { mean: 0, p99: 0, flicker: 0, n: 0 };
     const styled: Running = { mean: 0, p99: 0, flicker: 0, n: 0 };
 
-    for await (const frame of frames(url, count)) {
+    for await (const frame of clipFrames(url, count)) {
       stage.uploadImage(frame);
       await stage.render(item.style, item.controls, 'full', true);
       const nowSource = await stage.readSource();

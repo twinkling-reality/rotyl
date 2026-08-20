@@ -3,3 +3,7 @@ out
 real
 # The flicker maps are the artefact; its results file holds only the adapter.
 results-real-flicker.json
+# And the same for the motion pictures, which are the evidence rather than the
+# numbers. results-motion.json IS committed, because a research page reads it
+# and a checkout without it cannot build the site.
+results-motion-pictures.json

@@ -14,6 +14,7 @@ import { sweep } from './sweep.ts';
 import { figures } from './figures.ts';
 import { lightnessStats } from './lightness.ts';
 import { flicker } from './flicker.ts';
+import { motion, motionPictures } from './motion.ts';
 
 export const MEASUREMENTS = [
   'chain',
@@ -30,6 +31,12 @@ export const MEASUREMENTS = [
   'real-lightness',
   // Pictures rather than numbers: which pixels move, not how many.
   'real-flicker',
+  // What a temporal method would cost, on a clip where things move against
+  // things that do not. Its own name because it needs its own clip, and out of
+  // `all` because it is the counter-metric rather than one of the six the
+  // existing tables come from: re-taking it must not re-date them.
+  'motion',
+  'motion-pictures',
 ] as const;
 
 export type Measurement = (typeof MEASUREMENTS)[number];
@@ -72,6 +79,8 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('real-clips', () => realClips(dev));
   await step('real-lightness', () => lightnessStats());
   await step('real-flicker', () => flicker(dev));
+  await step('motion', () => motion(dev));
+  await step('motion-pictures', () => motionPictures(dev));
 
   if (failures.length > 0) out['gpu-errors'] = failures;
   dev.destroy();
