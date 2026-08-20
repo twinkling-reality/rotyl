@@ -102,7 +102,7 @@ and no media to go with it.
 A JSON header and the packed masks behind it, which is the shape every honest
 container has. Everything small enough to read in a text editor stays legible
 and extensible, and the one thing that is neither goes in a region the header
-points into. It needs no library, which a document format in a 48.8 KB
+points into. It needs no library, which a document format in a 48.9 KB
 application has to be able to say.
 
 ```
@@ -176,15 +176,15 @@ colour this product spends on faults.
 
 ## What it cost
 
-**2.97 KB gzipped**, taking the application bundle from 45.8 KB to 48.8. About
+**3.0 KB gzipped**, taking the application bundle from 45.8 KB to 48.9. About
 half of that is the format and the digest and the other half is the interface
 around them, and it is not behind a dynamic import, which is the opposite of
 what the demuxer, the container writer and the inference runtime get.
 
 That was measured rather than assumed. Split off, the format and the digest are
-2.46 KB gzipped across three chunks and take the application to 47.23 KB: 1.58
-KB back for a session that never saves, and 0.9 KB more in total plus three
-round trips for one that does. The container writer is split because it is
+2.46 KB gzipped across three chunks and take 1.58 KB off the application: a
+kilobyte and a half back for a session that never saves, and 0.9 KB more in
+total plus three round trips for one that does. The container writer is split because it is
 42.8 KB. This is not, and putting a network fetch in front of Save to recover a
 kilobyte and a half would be a failure mode invented for the one operation in
 the product that exists to keep somebody's afternoon.

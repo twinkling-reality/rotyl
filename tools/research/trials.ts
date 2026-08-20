@@ -38,7 +38,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Putting the document format behind a dynamic import, the way the container writer is',
     verdict: 'rejected',
     evidence:
-      'Measured both ways through the real build: split off it is 2.46 KB gzipped across three chunks and takes the application from 48.81 KB to 47.23, so it buys 1.58 KB back for a session that never saves and costs 0.9 KB more plus three round trips for one that does. The writer is split because it is 42.8 KB. A network fetch in front of Save is a failure mode invented for the one operation that exists to keep somebody’s afternoon',
+      'Measured both ways through the real build: split off it is 2.46 KB gzipped across three chunks and takes 1.58 KB off the application bundle, so it buys a kilobyte and a half back for a session that never saves and costs 0.9 KB more plus three round trips for one that does. The writer is split because it is 42.8 KB. A network fetch in front of Save is a failure mode invented for the one operation that exists to keep somebody’s afternoon',
     where: 'src/platform/document/document-file.ts',
   },
   {

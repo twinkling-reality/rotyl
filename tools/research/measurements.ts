@@ -1900,7 +1900,7 @@ export function entries(results: Results): readonly Entry[] {
           table: {
             columns: ['gzipped', 'size', 'fetched'],
             rows: [
-              ['application', '48.8 KB', 'always'],
+              ['application', '48.9 KB', 'always'],
               ['subset fonts', '31 KB', 'always'],
               ['inference runtime', '36.2 KB', 'first object click'],
               ['demuxer', '42.2 KB', 'first video'],

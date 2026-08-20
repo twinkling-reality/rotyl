@@ -1859,3 +1859,58 @@ test('will not drop a document on top of unsaved edits', async ({ page }) => {
   expect(await selectionBytes(page)).toBe(nowOnScreen);
   await expect(page.locator('.notice--quiet')).toHaveCount(1);
 });
+
+/**
+ * Saving where the browser cannot be given a file, which is Safari and Firefox.
+ *
+ * The picker is removed rather than left alone, because in the browser this
+ * suite runs in it is there. One destination path means this is the same
+ * `chooseFile` answering "download" and the same handoff a picture export uses,
+ * so what is being checked is that a document goes down that branch at all and
+ * comes back readable.
+ */
+test('saves a document into the downloads folder where there is nowhere to write it', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.assign(window, { showSaveFilePicker: undefined });
+  });
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  await page.getByRole('button', { name: 'Area' }).click();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.7, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  const before = await selectionBytes(page);
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Save' }).click();
+  const saved = await download;
+  expect(saved.suggestedFilename()).toBe('sample.rotyl');
+  const path = await saved.path();
+  expect(path).toBeTruthy();
+  if (!path) return;
+
+  // The browser announced the download, so the product says nothing, which is
+  // the rule a whole clip going to the same place already follows.
+  await expect(page.locator('.notice--quiet')).toHaveCount(0);
+
+  // And what landed there is a document that reads back to the same mask.
+  const bytes = await readFile(path);
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles({
+    name: 'sample.rotyl',
+    mimeType: 'application/octet-stream',
+    buffer: bytes,
+  });
+  await expect(page.getByText('Drop sample.png, or click to browse')).toBeVisible();
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  expect(await selectionBytes(page)).toBe(before);
+});

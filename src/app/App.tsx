@@ -533,60 +533,71 @@ export function App(): JSX.Element {
    */
   const openDocument = useCallback(
     async (file: File): Promise<void> => {
+      // Not on top of something else. This can be reached by a drop onto the
+      // editor, and a drop that landed during a five minute clip export would
+      // otherwise take that export's own line down when it finished.
+      if (busy) return;
       setError(undefined);
       setReport(undefined);
-
-      let bytes: Uint8Array<ArrayBuffer>;
+      // Through the one indicator every other wait in the product goes through.
+      // It shows nothing under 220 ms, which is everything measured here, and it
+      // is set anyway for the document nobody has written yet.
+      setBusy('Opening');
       try {
-        bytes = new Uint8Array(await file.arrayBuffer());
-      } catch {
-        setError('That file could not be read. It may have been moved or renamed since you chose it.');
-        return;
-      }
+        let bytes: Uint8Array<ArrayBuffer>;
+        try {
+          bytes = new Uint8Array(await file.arrayBuffer());
+        } catch {
+          setError('That file could not be read. It may have been moved or renamed since you chose it.');
+          return;
+        }
 
-      const parsed = readDocument(bytes);
-      if (!parsed.ok) {
-        setError(describeDocumentReadError(parsed.error));
-        return;
-      }
+        const parsed = readDocument(bytes);
+        if (!parsed.ok) {
+          setError(describeDocumentReadError(parsed.error));
+          return;
+        }
 
-      // Nothing open yet: hold it, and ask for the file it names.
-      if (!runtime || !loaded) {
-        setWaitingDocument(parsed.value);
-        return;
-      }
+        // Nothing open yet: hold it, and ask for the file it names.
+        if (!runtime || !loaded) {
+          setWaitingDocument(parsed.value);
+          return;
+        }
 
-      /**
-       * NO DROP MAY DESTROY THE OPEN SESSION, which is a rule this product has
-       * always had and which a document is the first thing capable of breaking.
-       * A photograph dropped onto the editor is swallowed rather than opened for
-       * exactly this reason. Loading a selection over another one is a replace:
-       * the fold is sorted by frame, so the commands underneath cannot be left
-       * in place behind a clear and undone back to, and a saved log that
-       * silently ate an unsaved one would be this chapter causing the loss it
-       * exists to prevent.
-       *
-       * So it says what it would cost, and what to do about it, both of which
-       * are one click. An event rather than a failure, so it is in the quiet
-       * line and takes itself down: nothing broke, and the file they dropped is
-       * still on their disk.
-       */
-      if (!runtime.engine.document.isEmpty) {
-        setReport(
-          'That would replace the selection that is open. Save this one first, or close the file with the X beside its name.',
-        );
-        return;
-      }
+        /**
+         * NO DROP MAY DESTROY THE OPEN SESSION, which is a rule this product
+         * has always had and which a document is the first thing capable of
+         * breaking. A photograph dropped onto the editor is swallowed rather
+         * than opened for exactly this reason. Loading a selection over another
+         * one is a replace: the fold is sorted by frame, so the commands
+         * underneath cannot be left in place behind a clear and undone back to,
+         * and a saved log that silently ate an unsaved one would be this
+         * chapter causing the loss it exists to prevent.
+         *
+         * So it says what it would cost, and what to do about it, both of which
+         * are one click. An event rather than a failure, so it is in the quiet
+         * line and takes itself down: nothing broke, and the file they dropped
+         * is still on their disk.
+         */
+        if (!runtime.engine.document.isEmpty) {
+          setReport(
+            'That would replace the selection that is open. Save this one first, or close the file with the X beside its name.',
+          );
+          return;
+        }
 
-      const opened = await identityOf(loaded);
-      const match = compareMedia(parsed.value.media, opened);
-      if (match === 'wrong') {
-        setError(describeWrongMedia(parsed.value.media, opened));
-        return;
+        const opened = await identityOf(loaded);
+        const match = compareMedia(parsed.value.media, opened);
+        if (match === 'wrong') {
+          setError(describeWrongMedia(parsed.value.media, opened));
+          return;
+        }
+        await restoreDocument(runtime, loaded, parsed.value, match === 'restyled');
+      } finally {
+        setBusy(undefined);
       }
-      await restoreDocument(runtime, loaded, parsed.value, match === 'restyled');
     },
-    [runtime, loaded, restoreDocument],
+    [runtime, loaded, restoreDocument, busy],
   );
 
   const openFile = useCallback(
