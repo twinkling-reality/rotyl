@@ -1085,7 +1085,7 @@ function containerBytes(bundle: unknown): Section {
     prose: [
       'Measured through Rotyl’s own build, so the answer is what this bundler’s tree shaking actually produces rather than what a standalone one would.',
       `Writing costs ${delta('writing, on top of reading')} gzipped on top of a chunk that already reads, which is the size of the entire application bundle to the tenth of a kilobyte. So the writer is its own dynamic import, fetched by an export and by nothing else, the same treatment the demuxer and the model get.`,
-      `A second container to write costs ${delta('a second container to write')}: QuickTime is the same muxer with a different brand list, exactly as it is on the read side. The encoder wrapper is ${delta('the encoder wrapper')} of the writer, and driving the encoder by hand instead would save that and cost five per cent a frame.`,
+      `A second container to write costs ${delta('a second container to write')}: QuickTime is the same muxer with a different brand list, exactly as it is on the read side. A soundtrack copied across costs ${delta('a soundtrack copied across')}, which is a second track and a second source on a muxer that was already paid for. The encoder wrapper is ${delta('the encoder wrapper')} of the writer, and driving the encoder by hand instead would save that and cost five per cent a frame.`,
       'Shipped, there are two consumers of one library and the bundler puts what they share in a chunk of its own, so opening a video costs 8.8 KB more than it did for somebody who never exports one. The alternative arrangements are worse: one chunk makes every video session pay for the writer, and no split at all puts it in the application.',
     ],
     table: {
@@ -1094,6 +1094,7 @@ function containerBytes(bundle: unknown): Section {
         ['read MP4 and QuickTime', gzip('read MP4 QTFF')],
         ['write MP4, from packets', gzip('write MP4, packets only')],
         ['write MP4, encoding as well', gzip('write MP4')],
+        ['write MP4, and copy a soundtrack into it', gzip('write MP4, with sound')],
         ['read MP4 and QuickTime, and write MP4', gzip('read MP4 QTFF + write MP4')],
       ],
     },
@@ -1564,11 +1565,11 @@ export function entries(results: Results): readonly Entry[] {
           table: {
             columns: ['gzipped', 'size', 'fetched'],
             rows: [
-              ['application', '44.7 KB', 'always'],
+              ['application', '45.8 KB', 'always'],
               ['subset fonts', '31 KB', 'always'],
               ['inference runtime', '36.2 KB', 'first object click'],
-              ['demuxer', '40.5 KB', 'first video'],
-              ['container writer', '33.3 KB', 'first clip export'],
+              ['demuxer', '42.2 KB', 'first video'],
+              ['container writer', '33.5 KB', 'first clip export'],
               ['saved by stripping shader comments', '17 KB', ''],
             ],
           },

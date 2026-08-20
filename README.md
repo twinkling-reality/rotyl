@@ -75,7 +75,7 @@ compiles it with no `dom` library, so a stray `window` fails the build rather
 than being caught in review. The payoff is concrete: every shader is unit-tested
 by running it for real through Dawn in Node, with no browser and no mocks.
 
-It ships as 145 KB of JavaScript, 44.7 KB gzipped, plus 31 KB of subset fonts.
+It ships as 148 KB of JavaScript, 45.8 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches neither the inference runtime, nor the demuxer, nor the container writer.
 

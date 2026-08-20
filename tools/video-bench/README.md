@@ -445,6 +445,7 @@ actually produces. `node tools/video-bench/bundle-size.mjs`:
 | read MP4, QuickTime and Matroska      | 211.2 KB | 49.4 KB |
 | write MP4, from packets               | 134.6 KB | 31.8 KB |
 | write MP4, encoding as well           | 211.8 KB | 49.8 KB |
+| write MP4, and copy a soundtrack in   | 212.5 KB | 49.9 KB |
 | write MP4 and QuickTime               | 211.9 KB | 49.8 KB |
 | write MP4 and Matroska                | 248.9 KB | 58.3 KB |
 | read MP4 and QuickTime, and write MP4 | 335.1 KB | 78.0 KB |
@@ -458,6 +459,12 @@ The three numbers that decide the design:
 - **A second container to write costs 11 bytes.** QuickTime is the same muxer
   with a different brand list, exactly as it is on the read side. Matroska costs
   8.5 KB, because it is not.
+- **And a soundtrack copied across costs 146 bytes**, which is one more source
+  and one more track on a muxer already paid for. The real build agrees: the
+  export chunk went from 33.32 KB gzipped to 33.47 when audio was carried
+  through, and what this chapter cost the application bundle, which is the range
+  and the interface around it rather than anything to do with the container, is
+  1.1 KB.
 - **The encoder wrapper is 18.0 KB of the 49.8.** Driving `VideoEncoder`
   directly and piping packets in would save that and cost 5% a frame. Inside a
   chunk only a clip export fetches, 18 KB does not buy back codec-string
@@ -481,13 +488,13 @@ the table that the design turns on rather than the absolute numbers.
 
 The table above measures each module alone. Shipped, there are two consumers of
 one library, and the bundler puts what they share in a chunk of its own.
-Gzipped, before this chapter and after:
+Gzipped, before the export chunk existed, at the split that made it, and today:
 
-| chunk            | before  | after   |
-| ---------------- | ------- | ------- |
-| the application  | 41.6 KB | 42.5 KB |
-| opening a video  | 33.2 KB | 42.0 KB |
-| exporting a clip | none    | 32.0 KB |
+| chunk            | before writing | at the split | today   |
+| ---------------- | -------------- | ------------ | ------- |
+| the application  | 41.6 KB        | 42.5 KB      | 45.8 KB |
+| opening a video  | 33.2 KB        | 42.0 KB      | 42.2 KB |
+| exporting a clip | none           | 32.0 KB      | 33.5 KB |
 
 **Opening a video got 8.8 KB more expensive for somebody who never exports one**,
 and that is worth stating rather than burying. Chunks are assigned per module,
@@ -495,6 +502,12 @@ not per symbol, so a module both halves use lands in the shared chunk carrying
 the exports only the writer needs. The alternative arrangements are worse: one
 mediabunny chunk makes every video session pay 76.8 KB, and no split at all puts
 it in the application.
+
+**The third column is chapters of work since**, not drift: what carrying a
+soundtrack cost the export chunk is 0.15 KB, which agrees with the 146 bytes the
+table above measures in isolation, and what it cost anyone opening a video is
+0.2 KB for the packet cursor. The application's 3.3 KB is everything else those
+chapters added, of which 1.1 KB is this one's range and the interface around it.
 
 ## 7. The encoder is not what moves colour
 

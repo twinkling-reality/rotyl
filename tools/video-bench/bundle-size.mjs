@@ -130,6 +130,35 @@ export async function writePackets(packets: EncodedVideoChunk[], meta: EncodedVi
 }`,
 });
 
+/**
+ * Write a file with a soundtrack copied across as packets.
+ *
+ * A clip export re-encodes the picture because it re-drew it and copies the
+ * sound because it did not touch it, so the only thing this adds over the case
+ * above is one more source and one more track. What it answers is whether
+ * carrying audio costs the chunk anything worth splitting: a second track is
+ * either nearly free, the way a second container is, or it is not.
+ */
+const muxWithSound = () => ({
+  imports: [...WRITE_MP4.imports, 'EncodedAudioPacketSource', 'EncodedPacket'],
+  body: `${WRITE_MP4.body}
+
+export async function writeSound(
+  output: Output,
+  packets: EncodedPacket[],
+  config: AudioDecoderConfig,
+): Promise<void> {
+  const source = new EncodedAudioPacketSource('aac');
+  output.addAudioTrack(source, { maximumPacketCount: packets.length });
+  let first = true;
+  for (const packet of packets) {
+    await source.add(packet, first ? { decoderConfig: config } : undefined);
+    first = false;
+  }
+  source.close();
+}`,
+});
+
 /** Both halves in one module, which is what a single video chunk would hold. */
 const both = (read, write) => ({
   imports: [...new Set([...read.imports, ...write.imports])],
@@ -146,6 +175,7 @@ const CASES = [
   ['read MP4 QTFF WEBM', demux(['MP4', 'QTFF', 'WEBM'])],
   ['write MP4, packets only', muxPackets()],
   ['write MP4', WRITE_MP4],
+  ['write MP4, with sound', muxWithSound()],
   ['write MP4 MOV', mux(['Mp4OutputFormat', 'MovOutputFormat'])],
   ['write MP4 WEBM', mux(['Mp4OutputFormat', 'WebMOutputFormat'])],
   ['read MP4 QTFF + write MP4', both(READ_BOTH, WRITE_MP4)],
@@ -187,6 +217,7 @@ const at = (name) => measured.find((row) => row.name === name)?.gzip ?? 0;
 const deltas = {
   'writing, on top of reading': at('read MP4 QTFF + write MP4') - at('read MP4 QTFF'),
   'a second container to write': at('write MP4 MOV') - at('write MP4'),
+  'a soundtrack copied across': at('write MP4, with sound') - at('write MP4'),
   'Matroska to write': at('write MP4 WEBM') - at('write MP4'),
   'the encoder wrapper': at('write MP4') - at('write MP4, packets only'),
 };

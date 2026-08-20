@@ -22,6 +22,10 @@
       "raw": 216903,
       "gzip": 50996
     },
+    "write MP4, with sound": {
+      "raw": 217602,
+      "gzip": 51142
+    },
     "write MP4 MOV": {
       "raw": 216938,
       "gzip": 51007
@@ -38,6 +42,7 @@
   "deltas": {
     "writing, on top of reading": 43873,
     "a second container to write": 11,
+    "a soundtrack copied across": 146,
     "Matroska to write": 8656,
     "the encoder wrapper": 18387
   }
