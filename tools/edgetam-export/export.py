@@ -135,16 +135,13 @@ class TrackedDecoderGraph(torch.nn.Module):
     frames, and without it a tracker comes back from an occlusion late and with
     no mask at all on the frames it is late by.
 
-    WHY IT TAKES NO PROMPT. A tracked frame has no click. The reference answers
-    one by padding an absent prompt into a single point at the origin labelled
-    -1, which the prompt encoder then replaces wholesale with two "not a point"
-    embeddings, and the dense half is the no-mask embedding expanded. All of
-    that is the same on every tracked frame of every clip, so tracing folds it
-    to constants and the graph takes the three feature maps and nothing else.
-    That is worth more than the bytes it saves: the published graph accepts
-    prompt tensors and gives a DIFFERENT answer for an empty one than for the
-    padded one it expects, which is a mistake this graph cannot be asked to
-    make. See the README.
+    WHY IT TAKES NO PROMPT. A tracked frame has no click, and what the reference
+    answers one with is the same on every tracked frame of every clip, so it is
+    evaluated once in the constructor and kept as a buffer. The graph takes the
+    three feature maps and nothing else. That is worth more than the bytes it
+    saves: the published graph accepts prompt tensors and gives a DIFFERENT
+    answer for an empty one than for the padded one it expects, which is a
+    mistake this graph cannot be asked to make. See the README.
 
     WHAT IT LEAVES TO THE HOST is what `memory_encoder` leaves it: the pointer
     comes back projected but not blended, so the host substitutes
@@ -159,19 +156,39 @@ class TrackedDecoderGraph(torch.nn.Module):
 
     def __init__(self, model: EdgeTamVideoModel):
         super().__init__()
-        self.prompt_encoder = model.prompt_encoder
         self.mask_decoder = model.mask_decoder
         self.object_pointer_proj = model.object_pointer_proj
         self.register_buffer("positions", model.get_image_wide_positional_embeddings())
 
+        # THE PROMPT, EVALUATED ONCE AND KEPT AS TWO BUFFERS, which is what
+        # makes "takes no prompt" true of the graph and not only of its
+        # signature. What the reference pads an absent prompt into is a single
+        # point at the origin labelled -1, and `input_boxes=None` is what makes
+        # the encoder append its trailing "not a point", so there are two of
+        # them; the dense half is the no-mask embedding expanded. None of it
+        # depends on the frame.
+        #
+        # Leaving the encoder in the graph instead works and costs three things:
+        # its weights, a handful of ops per frame, and eleven lines of
+        # "could not find a CPU kernel and hence can't constant fold" every time
+        # a session is created, because the runtime cannot fold what it has no
+        # kernel for.
+        #
+        # ONLY THE SPARSE HALF IS STORED. The dense half is one 256-dimensional
+        # embedding expanded across the whole 64 by 64 grid, so keeping it as a
+        # buffer writes the same value a million times and put 4.2 MB into the
+        # file. It is expanded here instead, which is what the reference does.
+        with torch.no_grad():
+            sparse, _ = model.prompt_encoder(
+                torch.zeros(1, 1, 1, 2), -torch.ones(1, 1, 1, dtype=torch.int32), None, None
+            )
+        self.register_buffer("sparse_prompt", sparse.clone())
+        self.register_buffer("no_mask", model.prompt_encoder.no_mask_embed.weight.reshape(1, -1, 1, 1))
+        self.grid = model.prompt_encoder.image_embedding_size
+
     def forward(self, image_embeddings_0, image_embeddings_1, image_embeddings_2):
-        batch = image_embeddings_2.shape[0]
-        # What the reference pads an absent prompt into, and the only prompt a
-        # tracked frame ever has. `input_boxes=None` is what makes the encoder
-        # append its trailing "not a point", so there are two of them.
-        points = torch.zeros(batch, 1, 1, 2, dtype=image_embeddings_2.dtype)
-        labels = -torch.ones(batch, 1, 1, dtype=torch.int32)
-        sparse, dense = self.prompt_encoder(points, labels, None, None)
+        sparse = self.sparse_prompt
+        dense = self.no_mask.expand(1, -1, self.grid[0], self.grid[1])
 
         masks, iou_scores, tokens, object_score_logits = self.mask_decoder(
             image_embeddings=image_embeddings_2,
