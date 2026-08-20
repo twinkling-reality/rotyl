@@ -224,6 +224,10 @@ export class SessionJournal {
   /** The file was given back, so there is nothing left to come back to. */
   discard(): void {
     this.#started = false;
+    // The journal it referred to is about to be empty, so there is nothing left
+    // to resume and a later open must begin rather than carry on writing at an
+    // offset that no longer means anything.
+    this.#stashed = undefined;
     if (this.#pending !== undefined) clearTimeout(this.#pending);
     this.#pending = undefined;
     this.#written = [];
