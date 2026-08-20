@@ -30,6 +30,7 @@ function clipOf(frameCount: number): VideoInfo {
     width: 8,
     height: 4,
     codec: 'avc1.640028',
+    audio: undefined,
     timeline: {
       timestamps: Float64Array.from({ length: frameCount }, (_, i) => i * 33333),
       keyTimestamps: Float64Array.from([0]),

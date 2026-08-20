@@ -29,7 +29,6 @@
 import {
   BlobSource,
   EncodedAudioPacketSource,
-  EncodedPacket,
   EncodedPacketSink,
   EncodedVideoPacketSource,
   Input,
@@ -39,6 +38,7 @@ import {
   QTFF,
   StreamTarget,
   type AudioCodec,
+  type EncodedPacket,
   type VideoCodec,
 } from 'mediabunny';
 import { mp4Index, type IndexedSample, type IndexedTrack } from './mp4-index.ts';

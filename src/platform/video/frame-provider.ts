@@ -1,4 +1,13 @@
-import { BlobSource, EncodedPacketSink, Input, MP4, QTFF, type EncodedPacket } from 'mediabunny';
+import {
+  BlobSource,
+  EncodedPacketSink,
+  Input,
+  MP4,
+  QTFF,
+  type AudioCodec,
+  type EncodedPacket,
+  type InputAudioTrack,
+} from 'mediabunny';
 import { looksLikeVideo, type VideoLoadError } from './video-file.ts';
 
 /**
@@ -51,11 +60,32 @@ export interface VideoTimeline {
   readonly frameRate: number;
 }
 
+/**
+ * The file's soundtrack, as much of it as an export needs to know.
+ *
+ * PACKETS AND NOT SAMPLES. A clip export copies the encoded packets across
+ * rather than decoding and re-encoding them, so what it needs is the codec, the
+ * config a decoder would want, and nothing else. There is no `AudioDecoder`
+ * anywhere in this product and this does not add one.
+ *
+ * Absent when the file has no audio track, and absent as well when it has one
+ * this demuxer cannot describe: a track whose codec or decoder config comes
+ * back null is one nothing downstream could do anything with, and reporting it
+ * as present would push that discovery into the middle of an export.
+ */
+export interface Soundtrack {
+  readonly codec: AudioCodec;
+  readonly config: AudioDecoderConfig;
+  readonly sampleRate: number;
+  readonly channels: number;
+}
+
 export interface VideoInfo {
   readonly width: number;
   readonly height: number;
   readonly codec: string;
   readonly timeline: VideoTimeline;
+  readonly audio: Soundtrack | undefined;
 }
 
 export type VideoOpenResult =
@@ -80,6 +110,16 @@ export class FrameProvider {
   readonly #input: Input;
   readonly #sink: EncodedPacketSink;
   readonly #config: VideoDecoderConfig;
+  /**
+   * The soundtrack's packets, if there are any.
+   *
+   * A SECOND CURSOR OVER THE SAME FILE, and deliberately not a second decoder.
+   * Two readers of one video track would cancel each other's seeks, which is
+   * why a tracking run opens a provider of its own; a packet sink on a
+   * different track shares nothing with the video decoder but the byte source
+   * underneath, which is what a byte source is for.
+   */
+  readonly #audio: EncodedPacketSink | undefined;
 
   #decoder: VideoDecoder | undefined;
   /** The next packet to submit, in decode order. */
@@ -97,11 +137,18 @@ export class FrameProvider {
   #queue: Promise<void> = Promise.resolve();
   #disposed = false;
 
-  private constructor(input: Input, sink: EncodedPacketSink, config: VideoDecoderConfig, info: VideoInfo) {
+  private constructor(
+    input: Input,
+    sink: EncodedPacketSink,
+    config: VideoDecoderConfig,
+    info: VideoInfo,
+    audio: EncodedPacketSink | undefined,
+  ) {
     this.#input = input;
     this.#sink = sink;
     this.#config = config;
     this.info = info;
+    this.#audio = audio;
   }
 
   static async open(file: Blob, maxDimension: number): Promise<VideoOpenResult> {
@@ -151,9 +198,20 @@ export class FrameProvider {
         return { ok: false, error: { kind: 'no-video-track' } };
       }
 
+      // Asked for once, here, so that everything downstream can be told about
+      // the soundtrack before any work starts rather than discovering it part
+      // way through an export. A file with no audio costs one null track.
+      const soundtrack = await describeAudio(input);
+
       return {
         ok: true,
-        value: new FrameProvider(input, sink, config, { width, height, codec, timeline }),
+        value: new FrameProvider(
+          input,
+          sink,
+          config,
+          { width, height, codec, timeline, audio: soundtrack?.info },
+          soundtrack?.sink,
+        ),
       };
     } catch {
       input.dispose();
@@ -200,6 +258,66 @@ export class FrameProvider {
       return true;
     } finally {
       admit();
+    }
+  }
+
+  /**
+   * How many soundtrack packets start inside this span, counted and not read.
+   *
+   * A packet count has to be known before the first frame is rendered, because
+   * the movie box is reserved at the front of the file and cannot be sized
+   * without one. `metadataOnly` reads the sample tables and none of the
+   * payload: measured, about a microsecond a packet, which is 50 ms on the
+   * twenty minutes of audio the last chapter's export ladder reached.
+   */
+  async countAudioPackets(fromMicros: number, toMicros: number): Promise<number> {
+    let count = 0;
+    for await (const _ of this.#walkAudio(fromMicros, toMicros, true)) count++;
+    return count;
+  }
+
+  /**
+   * The soundtrack's packets, in order, with their bytes.
+   *
+   * Handed over exactly as they were read. Nothing decodes them, nothing
+   * re-encodes them, and the only thing an export changes about one is the
+   * timestamp it is written at, which is what makes the sound in a written clip
+   * bit-identical to the sound in the file it came from.
+   */
+  audioPackets(fromMicros: number, toMicros: number): AsyncGenerator<EncodedPacket, void, unknown> {
+    return this.#walkAudio(fromMicros, toMicros, false);
+  }
+
+  /**
+   * Packets whose presentation STARTS inside the span.
+   *
+   * A packet straddling the in point is dropped rather than kept, and that is
+   * the decision rather than an oversight. Audio does not cut where video does:
+   * the packet holding the in point began before it, so keeping it means either
+   * a negative timestamp the container has no room for or the whole track
+   * shifted early by up to one packet. Dropping it costs at most one packet of
+   * sound at the head, 21 ms at 48 kHz and less than a frame, and it leaves
+   * every remaining packet at exactly the moment it was at in the source.
+   */
+  async *#walkAudio(
+    fromMicros: number,
+    toMicros: number,
+    metadataOnly: boolean,
+  ): AsyncGenerator<EncodedPacket, void, unknown> {
+    const sink = this.#audio;
+    if (!sink) return;
+    const from = fromMicros / 1e6;
+    const to = toMicros / 1e6;
+    // Located in the same mode as the walk, which is not an accident: a
+    // metadata-only packet is refused as a starting point for a walk that wants
+    // bytes. The seek itself is an index lookup either way, so locating a range
+    // that begins ten minutes in reads one packet rather than ten minutes.
+    const at = await sink.getPacket(from, { metadataOnly });
+    const start = at ?? (await sink.getFirstPacket({ metadataOnly }));
+    for await (const packet of sink.packets(start ?? undefined, undefined, { metadataOnly })) {
+      if (packet.timestamp < from) continue;
+      if (packet.timestamp >= to) return;
+      yield packet;
     }
   }
 
@@ -322,6 +440,33 @@ export class FrameProvider {
     if (this.#decoder && this.#decoder.state !== 'closed') this.#decoder.close();
     this.#decoder = undefined;
   }
+}
+
+/**
+ * What the file's soundtrack is, or nothing at all.
+ *
+ * Three ways of having no usable audio are one answer here: no audio track, a
+ * codec this demuxer does not recognise, and a track with no decoder config.
+ * The last two are files that exist, and a product that reported them as
+ * "there is sound" would go looking for it in the middle of an export.
+ */
+async function describeAudio(
+  input: Input,
+): Promise<{ info: Soundtrack; sink: EncodedPacketSink } | undefined> {
+  const track: InputAudioTrack | null = await input.getPrimaryAudioTrack();
+  if (!track) return undefined;
+  const codec = await track.getCodec();
+  const config = await track.getDecoderConfig();
+  if (!codec || !config) return undefined;
+  return {
+    info: {
+      codec,
+      config,
+      sampleRate: await track.getSampleRate(),
+      channels: await track.getNumberOfChannels(),
+    },
+    sink: new EncodedPacketSink(track),
+  };
 }
 
 /**

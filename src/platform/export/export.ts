@@ -12,6 +12,11 @@ import type { SelectionCommand } from '../../core/document/selection-command.ts'
 import type { StyleControls, StyleDefinition } from '../../core/style/style.ts';
 import type { CompositeRenderer } from '../../core/render/composite-renderer.ts';
 import type { MaskRefiner } from '../../core/mask/mask-refiner.ts';
+// Type-only, so nothing here pulls in a container library. A demuxed packet is
+// the currency between the source and the sink, and copying one into a shape of
+// this project's own would be the single thing capable of stopping the sound in
+// a written clip being the sound that was read.
+import type { AudioCodec, EncodedPacket } from 'mediabunny';
 
 /**
  * Writing the work out.
@@ -25,6 +30,20 @@ import type { MaskRefiner } from '../../core/mask/mask-refiner.ts';
  * The two seams are `ExportSource` and `FrameSink`, and everything that varies
  * lives behind one of them. A second container is an entry in the table at the
  * bottom of this file; a second codec is an entry in the one in `clip-sink.ts`.
+ *
+ * AND SOUND IS NOT MORE FRAMES. A soundtrack is a second stream whose packets
+ * do not land on frame boundaries and are not the same number as the frames, so
+ * it gets a cursor of its own on the source and a second method on the sink
+ * rather than being folded into `ExportFrame`. What it does NOT get is a loop
+ * of its own. Measured (`node tools/video-bench/run.mjs interleave`), a file
+ * whose video is one contiguous run and whose audio is another puts the sound
+ * of a given second a median of half the file away from its picture, growing
+ * with the length of the clip, which is not a progressive file whatever order
+ * the boxes are in. Worse, it is usually not a file at all: with the index
+ * reserved at the front, the muxer cannot size the movie box until it has seen
+ * a packet from every track, so a run of video with the audio behind it fails
+ * before a byte is written. Interleaved, the same distance is a constant of
+ * about two megabytes at every length measured.
  */
 
 /** One frame of the document, as the thing being written needs to see it. */
@@ -43,6 +62,32 @@ export interface ExportFrame {
 }
 
 /**
+ * The soundtrack, copied across rather than decoded.
+ *
+ * A CURSOR, NOT A LIST. The loop below asks on every frame whether the sound is
+ * behind, and hands over whatever is due; nothing holds more than one packet at
+ * a time, which is what keeps a twenty minute export holding nothing.
+ *
+ * `packetCount` has to be answered before the first frame is rendered, because
+ * the movie box is reserved at the front of the file and cannot be sized
+ * without a maximum for every track. That is a walk of the whole audio track's
+ * sample tables up front, measured at about a microsecond a packet, which is
+ * 50 ms on twenty minutes of 48 kHz audio. It is paid once and before anything
+ * slow, which is the same rule the destination follows.
+ */
+export interface ExportAudio {
+  readonly codec: AudioCodec;
+  readonly config: AudioDecoderConfig;
+  /** The most packets this will hand over. Fewer arrive if the export stops early. */
+  readonly packetCount: number;
+  /**
+   * The next packet, if it is due at or before `dueMicros`, in the export's own
+   * timeline. `Infinity` takes whatever is next regardless.
+   */
+  next(dueMicros: number): Promise<EncodedPacket | undefined>;
+}
+
+/**
  * Where the full-resolution pixels come from.
  *
  * Export does not re-read the preview texture, which may have been capped for
@@ -55,6 +100,13 @@ export interface ExportSource {
   readonly height: number;
   /** The frames to write, in order. A photograph has one. */
   readonly frames: readonly ExportFrame[];
+  /**
+   * The sound that goes under them, where there is any and the file can hold
+   * it. Absent for a photograph, for a clip with no audio track, and for one
+   * whose audio the container being written cannot carry, which is a decision
+   * taken before the picker is even shown.
+   */
+  readonly audio?: ExportAudio;
   /** Fill a texture of exactly these dimensions with `frame`. */
   fill(device: GPUDevice, texture: GPUTexture, frame: ExportFrame): Promise<void>;
   /** Always called, including when the render fails. */
@@ -84,7 +136,7 @@ export interface FrameSink {
    * is a function of how many frames there will be. A photograph's sink ignores
    * it, as it ignores everything about being one of many.
    */
-  open(size: Dimensions, frames: number): Promise<Dimensions>;
+  open(size: Dimensions, frames: number, audio?: ExportAudio): Promise<Dimensions>;
   /**
    * Take one frame, and say whether there is room for another.
    *
@@ -95,6 +147,14 @@ export interface FrameSink {
    * got to and the caller is handed what was written.
    */
   accept(canvas: OffscreenCanvas, frame: ExportFrame): Promise<SinkState>;
+  /**
+   * Take one soundtrack packet, written where it falls between the frames.
+   *
+   * Absent on a sink that cannot hold sound, which is how a photograph's sink
+   * says so: the loop only reads the source's audio when this is here, so a
+   * still is never handed a packet it would have to ignore.
+   */
+  acceptAudio?(packet: EncodedPacket): Promise<void>;
   finish(): Promise<Written>;
   /** Release everything. Called instead of `finish` when an export is abandoned. */
   cancel(): Promise<void>;
@@ -200,9 +260,13 @@ export async function runExport(request: ExportRequest): Promise<ExportResult> {
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
+    // Only where the sink can take it. A still's sink has no `acceptAudio`, so
+    // it is never told there is sound and never has to ignore any.
+    const audio = sink.acceptAudio ? source.audio : undefined;
     const outputSize = await sink.open(
       exportDimensions({ width, height }, maxTextureDimension),
       source.frames.length,
+      audio,
     );
     const canvas = new OffscreenCanvas(outputSize.width, outputSize.height);
     const context = canvas.getContext('webgpu');
@@ -225,6 +289,35 @@ export async function runExport(request: ExportRequest): Promise<ExportResult> {
       outputSize,
     });
 
+    /**
+     * Everything the soundtrack owes by `dueMicros`, and never more than `limit`.
+     *
+     * ONE LOOP, WITH A SECOND CURSOR IN IT. This is called from inside the frame
+     * loop rather than before or after it, and that is the measurement rather
+     * than a preference: audio added in one run after the video puts the sound
+     * of a given second half a file away from its picture and grows with the
+     * clip, and audio added in one run BEFORE the video does the same in
+     * reverse. Interleaved it is a constant two megabytes at every length
+     * measured. See `node tools/video-bench/run.mjs interleave`.
+     */
+    const pushAudio = async (dueMicros: number, limit = Infinity): Promise<void> => {
+      if (!audio) return;
+      for (let taken = 0; taken < limit; taken++) {
+        const packet = await audio.next(dueMicros);
+        if (!packet) return;
+        // Always taken: `audio` is only set where the sink has this method.
+        await sink.acceptAudio?.(packet);
+      }
+    };
+
+    // ONE PACKET BEFORE THE FIRST FRAME, whether or not it is due yet. The
+    // movie box is reserved at the front of the file, and the muxer cannot size
+    // it until it has seen a packet from every track it was told about, so
+    // until this lands nothing can be written at all and every rendered frame
+    // waits in memory. Measured: on a clip whose video carries B-frames the
+    // whole export fails rather than merely stalling.
+    await pushAudio(Infinity, 1);
+
     const total = source.frames.length;
     let written = 0;
     /**
@@ -239,11 +332,15 @@ export async function runExport(request: ExportRequest): Promise<ExportResult> {
      * and that work is worth what it would have been had the clip ended there.
      */
     let ended: ExportEnding = 'complete';
+    /** The last frame that landed, which is what the sound has to stop with. */
+    let lastFrame: ExportFrame | undefined;
     for (const frame of source.frames) {
       if (signal?.aborted) {
         ended = 'stopped';
         break;
       }
+      // The sound that is already due, before the picture it plays under.
+      await pushAudio(frame.timestampMicros);
       await source.fill(device, sourceTexture, frame);
 
       // Validation errors in WebGPU are asynchronous: createTexture returns an
@@ -262,6 +359,7 @@ export async function runExport(request: ExportRequest): Promise<ExportResult> {
 
       const state = await sink.accept(canvas, frame);
       written++;
+      lastFrame = frame;
       onProgress?.(written, total);
       // The frame landed; it is the next one there is no room for. Handled the
       // same way a stop is because it IS the same situation, and the only thing
@@ -275,7 +373,14 @@ export async function runExport(request: ExportRequest): Promise<ExportResult> {
     // The one case where stopping keeps nothing. Finalizing zero frames would
     // write a container with an empty track, which is a file that opens and
     // shows nothing, and that is worse than the download that never happened.
-    if (written === 0) throw new ExportCancelled();
+    if (written === 0 || !lastFrame) throw new ExportCancelled();
+
+    // The sound under the last frame, and not a moment more. Draining to the
+    // end of the SOURCE here would give an export that stopped four minutes
+    // into a fourteen minute clip a fourteen minute soundtrack over a four
+    // minute picture, which is the one way a stop could produce a file worse
+    // than the part that was rendered.
+    await pushAudio(lastFrame.timestampMicros + lastFrame.durationMicros);
 
     const outcome = await sink.finish();
     finished = true;
@@ -296,6 +401,43 @@ export async function runExport(request: ExportRequest): Promise<ExportResult> {
 }
 
 /**
+ * The audio codecs an MP4 can carry, written out rather than asked for.
+ *
+ * ASKING WOULD COST 42.8 KB TO EVERY VIDEO SESSION. The container writer knows
+ * this list and is behind a dynamic import that only a clip export fetches, and
+ * the question "will this file's sound survive" has to be answered while a
+ * video is merely open, so that it can be said BEFORE the work rather than
+ * discovered after it. Importing the writer to ask would put the whole muxer in
+ * the chunk that opens a video, which measurement 6 costed at the size of the
+ * entire application bundle.
+ *
+ * A COPIED LIST CAN DRIFT, so it is not left to be noticed: a unit test asserts
+ * this against `Mp4OutputFormat.getSupportedAudioCodecs()`, and a library
+ * upgrade that changes it fails the suite rather than silently telling somebody
+ * their soundtrack cannot be written when it can.
+ */
+const MP4_AUDIO = [
+  'aac',
+  'opus',
+  'mp3',
+  'vorbis',
+  'flac',
+  'ac3',
+  'eac3',
+  'dts',
+  'pcm-s16',
+  'pcm-s16be',
+  'pcm-s24',
+  'pcm-s24be',
+  'pcm-s32',
+  'pcm-s32be',
+  'pcm-f32',
+  'pcm-f32be',
+  'pcm-f64',
+  'pcm-f64be',
+] as const;
+
+/**
  * The formats this can write, and how to reach the code that writes them.
  *
  * A SECOND CONTAINER IS AN ENTRY HERE. The clip writer is behind a dynamic
@@ -305,10 +447,11 @@ export async function runExport(request: ExportRequest): Promise<ExportResult> {
  * inference runtime and the demuxer get and for the same reason.
  */
 const FORMATS = {
-  png: { extension: 'png', open: () => Promise.resolve(stillSink('image/png')) },
-  jpeg: { extension: 'jpg', open: () => Promise.resolve(stillSink('image/jpeg')) },
+  png: { extension: 'png', audio: [], open: () => Promise.resolve(stillSink('image/png')) },
+  jpeg: { extension: 'jpg', audio: [], open: () => Promise.resolve(stillSink('image/jpeg')) },
   mp4: {
     extension: 'mp4',
+    audio: MP4_AUDIO,
     open: async (destination: Destination): Promise<FrameSink> =>
       (await import('./clip-sink.ts')).clipSink(destination),
   },
@@ -327,6 +470,20 @@ export type ExportFormat = keyof typeof FORMATS;
 export function openSink(format: ExportFormat, destination: Destination): Promise<FrameSink> {
   return FORMATS[format].open(destination);
 }
+
+/**
+ * Whether a soundtrack in this codec survives being written into this format.
+ *
+ * Answered from the track and the format alone, with nothing decoded and
+ * nothing encoded, which is what lets the interface say it while the file is
+ * merely open. Measured at nothing at all: it is a list lookup.
+ */
+export function carriesAudio(format: ExportFormat, codec: string): boolean {
+  return (FORMATS[format].audio as readonly string[]).includes(codec);
+}
+
+/** The codecs this project claims an MP4 holds, so a test can check the claim. */
+export const MP4_AUDIO_CODECS: readonly string[] = MP4_AUDIO;
 
 /**
  * Filename for an export, derived from the original.

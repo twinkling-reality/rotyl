@@ -1,5 +1,9 @@
 import type { JSX } from 'preact';
 import { PauseIcon, PlayIcon } from './icons.tsx';
+// Type-only, and from the export rather than restated here: a range IS an
+// export concept, and two identical declarations of it would be two places for
+// somebody to decide whether the ends are inclusive.
+import type { FrameRange } from '../platform/export/export-source.ts';
 
 export interface TimelineProps {
   readonly frameCount: number;
@@ -11,12 +15,15 @@ export interface TimelineProps {
   readonly onPlayToggle: () => void;
   /** `settled` is false while the pointer is still down. */
   readonly onScrub: (frame: number, settled: boolean) => void;
+  /** The part a clip export writes, or the whole clip when nothing is set. */
+  readonly range: FrameRange | undefined;
+  readonly onRangeChange: (range: FrameRange | undefined) => void;
 }
 
 const pad = (value: number): string => String(value).padStart(2, '0');
 
 /** Frames as a timecode, which is what a person reading a timeline wants. */
-function timecode(frame: number, frameRate: number): string {
+export function timecode(frame: number, frameRate: number): string {
   const rate = frameRate > 0 ? frameRate : 30;
   const totalSeconds = frame / rate;
   const minutes = Math.floor(totalSeconds / 60);
@@ -26,6 +33,32 @@ function timecode(frame: number, frameRate: number): string {
   const within = Math.round(frame - Math.floor(totalSeconds) * rate);
   return `${pad(minutes)}:${pad(seconds)}.${pad(within)}`;
 }
+
+const percent = (frame: number, last: number): number => (last > 0 ? (frame / last) * 100 : 0);
+
+/**
+ * The range after moving one of its ends to `frame`.
+ *
+ * FORGIVING RATHER THAN REFUSING. Setting a start past the current end, or an
+ * end before the current start, is somebody re-marking the part they want
+ * rather than a mistake to be rejected: the other end goes back to the clip's
+ * own edge, which is the reading that leaves the frame they just marked inside
+ * the range. A control that silently did nothing there would look broken.
+ */
+export function movedEnd(
+  range: FrameRange | undefined,
+  which: 'from' | 'to',
+  frame: number,
+  last: number,
+): FrameRange {
+  const from = range?.from ?? 0;
+  const to = range?.to ?? last;
+  if (which === 'from') return { from: frame, to: frame > to ? last : to };
+  return { from: frame < from ? 0 : from, to: frame };
+}
+
+/** Whether a range is worth keeping, which the whole clip is not. */
+export const isWholeClip = (range: FrameRange, last: number): boolean => range.from <= 0 && range.to >= last;
 
 /**
  * The timeline.
@@ -46,9 +79,11 @@ export function Timeline({
   playing,
   onPlayToggle,
   onScrub,
+  range,
+  onRangeChange,
 }: TimelineProps): JSX.Element {
   const last = Math.max(0, frameCount - 1);
-  const fill = last > 0 ? (frame / last) * 100 : 0;
+  const fill = percent(frame, last);
 
   return (
     <div class="timeline">
@@ -72,12 +107,26 @@ export function Timeline({
         */}
         <div class="timeline__marks" aria-hidden="true">
           {edited.map((index) => (
-            <span
-              key={index}
-              class="timeline__mark"
-              style={{ left: `${String(last > 0 ? (index / last) * 100 : 0)}%` }}
-            />
+            <span key={index} class="timeline__mark" style={{ left: `${String(percent(index, last))}%` }} />
           ))}
+          {/*
+            And what a clip export would write.
+            NOTHING AT ALL WITH NO RANGE SET, which is the whole constraint on
+            this: a clip somebody has said nothing about must not carry marks
+            implying they have. Where there is one it is a bar under the track,
+            in the same language as the edit marks above it, where a mark means
+            something is there rather than something is missing. Under rather
+            than over, so it never dims the playhead it is being set with.
+          */}
+          {range ? (
+            <span
+              class="timeline__range-bar"
+              style={{
+                left: `${String(percent(range.from, last))}%`,
+                width: `${String(percent(range.to - range.from, last))}%`,
+              }}
+            />
+          ) : null}
         </div>
         <input
           class="slider timeline__track"
@@ -105,6 +154,55 @@ export function Timeline({
           }}
         />
       </div>
+      {/*
+        Marking the part to export.
+        Two words rather than two icons, because there is no drawing of a
+        bracket that anybody reads as "start the export here" without being
+        told, and the keys are the ones every editor uses. Clear appears only
+        when there is something to clear, which is what keeps the row from
+        carrying a control for a decision nobody has taken.
+      */}
+      <div class="timeline__range">
+        <button
+          type="button"
+          class="text-button text-button--quiet"
+          title="Start the exported range here (I)"
+          onClick={() => {
+            onRangeChange(movedEnd(range, 'from', frame, last));
+          }}
+        >
+          In
+        </button>
+        <button
+          type="button"
+          class="text-button text-button--quiet"
+          title="End the exported range here (O)"
+          onClick={() => {
+            onRangeChange(movedEnd(range, 'to', frame, last));
+          }}
+        >
+          Out
+        </button>
+        {range ? (
+          <button
+            type="button"
+            class="text-button text-button--quiet"
+            title="Export the whole clip again"
+            onClick={() => {
+              onRangeChange(undefined);
+            }}
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
+      {/*
+        Still the playhead, and deliberately not the range. Where the range is
+        was just drawn on the track and is in the export button's own sentence;
+        where the playhead is has nowhere else to be, and losing it the moment
+        somebody marks a range would be taking away the number they were using
+        to mark it.
+      */}
       <span class="timeline__count mono">
         {frame + 1} / {frameCount}
       </span>

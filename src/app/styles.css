@@ -261,6 +261,20 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Something about the file the export cannot honour.
+ *
+ * The primary text colour, which makes it the darkest thing in a row of greys
+ * and is the whole of the emphasis. Not the danger colour: nothing has failed,
+ * and this product spends its one saturated colour on failures. Not the
+ * secondary colour either, which would file a loss the user did not ask for
+ * under the same heading as the pixel dimensions.
+ */
+.file-status__note {
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
 .top-bar__actions {
   display: flex;
   align-items: center;
@@ -420,6 +434,14 @@ button {
    straight back, the same way closing over unsaved work asks. */
 .export-button--stop {
   background: var(--danger);
+}
+
+/* Quieter again, for a control that is present on every clip and asked for on
+   almost none. It has to be findable without reading as something to press. */
+.text-button--quiet {
+  padding: 0 var(--s-1);
+  font-size: var(--fs-xs);
+  color: var(--text-tertiary);
 }
 
 /* The quieter half of a pair. Smaller and lighter in colour, never lighter in
@@ -1001,6 +1023,30 @@ button {
   margin-left: -1px;
   border-radius: 1px;
   background: var(--accent);
+}
+
+/*
+ * The part a clip export would write.
+ *
+ * A bar under the track, below the edit marks, in the marks layer so it is
+ * inset to the track's own ends and lines up with the frames. Under rather than
+ * over: shading the rest would dim the playhead somebody is using to set it.
+ */
+.timeline__range-bar {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  min-width: 2px;
+  border-radius: 1px;
+  background: var(--text-tertiary);
+}
+
+/* In, Out and Clear. Grouped so the three read as one control rather than as
+   three buttons that happen to be adjacent. */
+.timeline__range {
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
 .timeline__time,

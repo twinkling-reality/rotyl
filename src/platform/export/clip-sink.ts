@@ -1,5 +1,6 @@
 import {
   BufferTarget,
+  EncodedAudioPacketSource,
   Mp4OutputFormat,
   Output,
   Quality,
@@ -7,12 +8,13 @@ import {
   VideoSample,
   VideoSampleSource,
   getFirstEncodableVideoCodec,
+  type EncodedPacket,
   type Target,
   type VideoCodec,
 } from 'mediabunny';
 import type { Dimensions } from '../../core/render/resolution.ts';
 import type { Destination } from './destination.ts';
-import type { ExportFrame, FrameSink, SinkState, Written } from './export.ts';
+import type { ExportAudio, ExportFrame, FrameSink, SinkState, Written } from './export.ts';
 
 /**
  * Every frame, as a video file.
@@ -38,6 +40,14 @@ import type { ExportFrame, FrameSink, SinkState, Written } from './export.ts';
  * control, the keyframe spacing and where the index sits, is the same for both,
  * because a file that changed shape depending on which browser wrote it would
  * be two products.
+ *
+ * AND THE SOUND IS COPIED, NOT ENCODED. The video is re-encoded because it was
+ * re-drawn; the audio was not touched, so it is written across as the packets
+ * it arrived as. There is no `AudioEncoder` and no `AudioDecoder` anywhere in
+ * this product, and passing packets through needs neither: what comes out is
+ * bit-identical to what went in, which is the one thing about a clip export
+ * that is exact. Whether the container can hold a given codec is decided in
+ * `export.ts` before the picker is shown, so nothing here has to refuse.
  */
 
 /**
@@ -153,11 +163,19 @@ export function clipSink(destination: Destination): FrameSink {
   let target: Target | undefined;
   let output: Output | undefined;
   let track: VideoSampleSource | undefined;
+  let sound: EncodedAudioPacketSource | undefined;
+  /**
+   * The decoder config, on the first packet and no other.
+   *
+   * The muxer wants it once, to write the sample description, and the source
+   * has it up front because it came off the file the packets came off.
+   */
+  let soundMeta: EncodedAudioChunkMetadata | undefined;
   /** How long the file is so far, which `reserve` makes knowable as it grows. */
   let size = 0;
 
   return {
-    async open(requested: Dimensions, frames: number): Promise<Dimensions> {
+    async open(requested: Dimensions, frames: number, audio?: ExportAudio): Promise<Dimensions> {
       // H.264 samples chroma at half resolution in each direction, so an odd
       // dimension has no representation. One pixel off a 4000 px edge is not
       // worth a message; silently producing a file the encoder refuses is.
@@ -202,6 +220,16 @@ export function clipSink(destination: Destination): FrameSink {
       // answer: one packet per frame, and the frames are known before the first
       // one is rendered.
       output.addVideoTrack(track, { maximumPacketCount: frames });
+
+      // EVERY track needs one, not just this one. `reserve` sizes the sample
+      // tables before the first sample lands, so a second track with no maximum
+      // is a table it cannot leave room for, and the source counted the audio
+      // packets up front for exactly this line.
+      if (audio) {
+        sound = new EncodedAudioPacketSource(audio.codec);
+        soundMeta = { decoderConfig: audio.config };
+        output.addAudioTrack(sound, { maximumPacketCount: audio.packetCount });
+      }
       await output.start();
       return fitted;
     },
@@ -225,8 +253,18 @@ export function clipSink(destination: Destination): FrameSink {
       return size < budget ? 'ready' : 'full';
     },
 
+    async acceptAudio(packet: EncodedPacket): Promise<void> {
+      if (!sound) throw new Error('The clip has no sound track to write into.');
+      // Awaited like a frame is, so the writer's backpressure is what limits
+      // the loop. The packet is the source's own bytes: nothing here rewrites
+      // them, and the only thing the export changed is when it plays.
+      await sound.add(packet, soundMeta);
+      soundMeta = undefined;
+    },
+
     async finish(): Promise<Written> {
       track?.close();
+      sound?.close();
       await output?.finalize();
       if (destination.kind === 'file') return { to: 'file', name: destination.name };
       const buffer = target instanceof BufferTarget ? target.buffer : undefined;

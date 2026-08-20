@@ -7,7 +7,7 @@ import { TopBar } from './TopBar.tsx';
 import { Toolbar } from './Toolbar.tsx';
 import { StylePanel } from './StylePanel.tsx';
 import { Viewport } from './Viewport.tsx';
-import { Timeline } from './Timeline.tsx';
+import { Timeline, isWholeClip, movedEnd, timecode } from './Timeline.tsx';
 import { decodeImageFile, describeImageLoadError } from '../platform/image-file.ts';
 import { uploadFrameToTexture, uploadImageToTexture } from '../platform/texture-upload.ts';
 // Static, and deliberately so: this decides WHICH loader to use, so it cannot
@@ -17,6 +17,7 @@ import { describeVideoLoadError, looksLikeVideo } from '../platform/video/video-
 import type { FrameProvider } from '../platform/video/frame-provider.ts';
 import {
   ExportCancelled,
+  carriesAudio,
   exportFilename,
   openSink,
   runExport,
@@ -24,7 +25,12 @@ import {
   type ExportResult,
   type ExportSource,
 } from '../platform/export/export.ts';
-import { clipSource, imageFileSource, videoSource } from '../platform/export/export-source.ts';
+import {
+  clipSource,
+  imageFileSource,
+  videoSource,
+  type FrameRange,
+} from '../platform/export/export-source.ts';
 // Imports nothing, deliberately, so a file can be asked for while the click
 // that asked is still granting the right to ask. See destination.ts.
 import { chooseFile, type Destination } from '../platform/export/destination.ts';
@@ -43,7 +49,19 @@ interface LoadedFile {
   readonly width: number;
   readonly height: number;
   /** Present for a video, absent for a photograph. */
-  readonly video?: { readonly frameCount: number; readonly frameRate: number };
+  readonly video?: {
+    readonly frameCount: number;
+    readonly frameRate: number;
+    /**
+     * The soundtrack, and whether a clip export can carry it.
+     *
+     * Decided at open rather than at export, because what the interface owes
+     * somebody whose sound will not survive is a warning BEFORE the minutes of
+     * encoding rather than a note afterwards. It costs a list lookup: see
+     * `carriesAudio`.
+     */
+    readonly audio?: { readonly codec: string; readonly carried: boolean };
+  };
 }
 
 const DEFAULT_BRUSH_FRACTION = 0.06;
@@ -117,6 +135,9 @@ function describePerception(
   }
 }
 
+/** The last frame's number, which is one less than how many there are. */
+const lastFrameOf = (file: LoadedFile): number => Math.max(0, (file.video?.frameCount ?? 1) - 1);
+
 /** Minutes and seconds, which is how long a clip is to anyone who has one. */
 function atTime(frames: number, frameRate: number): string {
   const seconds = Math.round(frames / (frameRate || 30));
@@ -139,17 +160,51 @@ function atTime(frames: number, frameRate: number): string {
  * of room is this browser rather than this clip, and saying only "stopped"
  * there would blame the user for a limit they did not choose.
  */
-function describeExport(result: ExportResult, frameRate: number): string | undefined {
+function describeExport(
+  result: ExportResult,
+  frameRate: number,
+  silent: string | undefined,
+): string | undefined {
   const where = result.written.to === 'file' ? result.written.name : 'The saved file';
+  // Said again at the end as well as before the work. The warning went up when
+  // the file was opened, minutes ago on a long clip, and a file that turns out
+  // to be silent when it is played is the one thing this chapter exists to stop
+  // being a surprise.
+  const lost = silent ? ` Its ${silent} soundtrack is one an MP4 cannot carry, so it has no sound.` : '';
   if (result.ended === 'complete') {
-    return result.written.to === 'file' ? `Wrote ${where}.` : undefined;
+    if (result.written.to === 'file') return `Wrote ${where}.${lost}`;
+    return lost ? `${where} has no sound:${lost.slice(5)}` : undefined;
   }
   const got = atTime(result.frames, frameRate);
   const asked = atTime(result.total, frameRate);
   if (result.ended === 'full') {
-    return `Ran out of room at ${got} of ${asked}: with nowhere to write the file, this browser has to hold all of it. ${where} has what was written.`;
+    return `Ran out of room at ${got} of ${asked}: with nowhere to write the file, this browser has to hold all of it. ${where} has what was written.${lost}`;
   }
-  return `Stopped at ${got} of ${asked}. ${where} has what was written.`;
+  return `Stopped at ${got} of ${asked}. ${where} has what was written.${lost}`;
+}
+
+/**
+ * What the Clip button will do, which is where the range and the sound are said.
+ *
+ * A BUTTON'S SECOND SENTENCE LIVES IN ITS TITLE HERE, which is the rule the Stop
+ * button already follows. What makes it worth having on this one is that a clip
+ * export takes minutes and two of its decisions are invisible until it is over:
+ * which part of the clip is being written, and whether the sound survives.
+ */
+function describeClipButton(
+  frameRate: number,
+  range: FrameRange | undefined,
+  audio: { readonly codec: string; readonly carried: boolean } | undefined,
+): string {
+  // The timeline's own timecode rather than the rounded minutes and seconds a
+  // duration is quoted in. This names two FRAMES, and a range of half a second
+  // read back as "0:01 to 0:01" would look like a control that had not worked.
+  const what = range
+    ? `Write ${timecode(range.from, frameRate)} to ${timecode(range.to, frameRate)} as an MP4`
+    : 'Write the whole clip as an MP4';
+  if (!audio) return `${what}.`;
+  if (audio.carried) return `${what}, with its sound.`;
+  return `${what}. Its ${audio.codec} soundtrack is one an MP4 cannot carry, so the clip will be silent.`;
 }
 
 export function App(): JSX.Element {
@@ -182,6 +237,15 @@ export function App(): JSX.Element {
   /** The runtime generation whose device currently holds the decoded pixels. */
   const [mediaGeneration, setMediaGeneration] = useState<number | undefined>(undefined);
   const [frame, setFrame] = useState(0);
+  /**
+   * Which frames a clip export writes, or nothing, which means all of them.
+   *
+   * A RANGE ON THE EXPORT AND NOT A TRIM OF THE DOCUMENT. Frame numbers stay
+   * absolute, so a selection made at frame 100 still applies at frame 500 and
+   * still applies to a range that starts at 400. See `FrameRange`, which says
+   * what a trim would have cost.
+   */
+  const [range, setRange] = useState<FrameRange | undefined>(undefined);
   const [scrubbing, setScrubbing] = useState(false);
   const [playing, setPlaying] = useState(false);
   /** Read by the playback loop, which must not be restarted to see a change. */
@@ -331,6 +395,7 @@ export function App(): JSX.Element {
       providerRef.current?.dispose();
       providerRef.current = undefined;
       setFrame(0);
+      setRange(undefined);
       setScrubbing(false);
 
       let media: LoadedFile = { file, name: file.name, width: 1, height: 1 };
@@ -348,13 +413,19 @@ export function App(): JSX.Element {
           return;
         }
         providerRef.current = opened.value;
-        const { width, height, timeline } = opened.value.info;
+        const { width, height, timeline, audio } = opened.value.info;
         media = {
           file,
           name: file.name,
           width,
           height,
-          video: { frameCount: timeline.frameCount, frameRate: timeline.frameRate },
+          video: {
+            frameCount: timeline.frameCount,
+            frameRate: timeline.frameRate,
+            // Asked here rather than at export, so a soundtrack that cannot
+            // survive is said before the minutes of encoding rather than after.
+            ...(audio ? { audio: { codec: audio.codec, carried: carriesAudio('mp4', audio.codec) } } : {}),
+          },
         };
       }
 
@@ -399,6 +470,7 @@ export function App(): JSX.Element {
     setReport(undefined);
     setBusy(undefined);
     setFrame(0);
+    setRange(undefined);
     setScrubbing(false);
     setPlaying(false);
     setCandidates([]);
@@ -601,6 +673,22 @@ export function App(): JSX.Element {
   );
 
   /**
+   * Move one end of the exported range, or drop it.
+   *
+   * A range that covers the whole clip is not a range, so marking one that
+   * reaches both ends puts it back to nothing: what is on screen then is a clip
+   * with no marks on it, which is what a clip with nothing said about it should
+   * look like.
+   */
+  const onRangeChange = useCallback(
+    (next: FrameRange | undefined): void => {
+      const last = Math.max(0, (loaded?.video?.frameCount ?? 1) - 1);
+      setRange(next && isWholeClip(next, last) ? undefined : next);
+    },
+    [loaded],
+  );
+
+  /**
    * Write it out.
    *
    * ONE PATH FOR BOTH. A source hands over frames and a sink takes them; a
@@ -647,6 +735,12 @@ export function App(): JSX.Element {
       // is not a failure and gets no message.
       if (!destination) return;
 
+      // The codec of a soundtrack this container cannot hold, or nothing. Read
+      // once here so the sentence at the end says the same thing the button's
+      // title said before any of the work.
+      const audio = loaded.video?.audio;
+      const silenced = audio && !audio.carried ? audio.codec : undefined;
+
       const controller = new AbortController();
       exportAbort.current = controller;
 
@@ -664,7 +758,10 @@ export function App(): JSX.Element {
       // so there is nothing to go back to the file for. A photograph is decoded
       // again, because the preview may have been capped for memory.
       const openSource = (): Promise<ExportSource> => {
-        if (clip) return Promise.resolve(clipSource(provider));
+        // A range narrows which frames go through the loop and changes nothing
+        // else: the numbers on them are the document's own, so a selection made
+        // before the range starts still applies to it.
+        if (clip) return clipSource(provider, format, range);
         if (provider) return Promise.resolve(videoSource(provider, [frame]));
         return imageFileSource(loaded.file, runtime.maxTextureDimension);
       };
@@ -721,7 +818,7 @@ export function App(): JSX.Element {
 
         // The browser announces a download and announces nothing else, so
         // everything else has to be announced here.
-        setReport(describeExport(result, loaded.video?.frameRate ?? 30));
+        setReport(describeExport(result, loaded.video?.frameRate ?? 30, clip ? silenced : undefined));
       } catch (cause) {
         // A file the user named exists from the moment they named it, whatever
         // happens next, and a page can neither delete one it was handed nor
@@ -747,7 +844,7 @@ export function App(): JSX.Element {
         setExportProgress(undefined);
       }
     },
-    [runtime, loaded, style, controls, frame, pause],
+    [runtime, loaded, style, controls, frame, range, pause],
   );
 
   // --- keyboard ---
@@ -808,6 +905,16 @@ export function App(): JSX.Element {
         case 'e':
           setTool('erase');
           break;
+        // Shifted, because the unshifted pair is taken: `o` is the Object tool
+        // and this product's tools come first. Every editor binds in and out to
+        // these two letters, so the letters are kept and the modifier is the
+        // cost of the collision.
+        case 'I':
+          if (loaded.video) onRangeChange(movedEnd(range, 'from', frame, lastFrameOf(loaded)));
+          break;
+        case 'O':
+          if (loaded.video) onRangeChange(movedEnd(range, 'to', frame, lastFrameOf(loaded)));
+          break;
         case '[':
           setBrushRadius((radius) => Math.max(1, Math.round(radius / BRUSH_STEP)));
           break;
@@ -845,7 +952,7 @@ export function App(): JSX.Element {
       globalThis.removeEventListener('keyup', onKeyUp);
       globalThis.removeEventListener('blur', restoreOverlay);
     };
-  }, [runtime, loaded, stepHistory, play, pause]);
+  }, [runtime, loaded, stepHistory, play, pause, frame, range, onRangeChange]);
 
   // A file dropped anywhere other than the drop zone would otherwise be opened
   // by the browser itself, navigating away and discarding the session.
@@ -872,6 +979,7 @@ export function App(): JSX.Element {
           onExport={noop}
           exportDisabled
           canExportClip={false}
+          clipTitle=""
           exporting={false}
           onCancelExport={noop}
           onClose={noop}
@@ -898,6 +1006,7 @@ export function App(): JSX.Element {
           onExport={noop}
           exportDisabled
           canExportClip={false}
+          clipTitle=""
           exporting={false}
           onCancelExport={noop}
           onClose={noop}
@@ -937,11 +1046,25 @@ export function App(): JSX.Element {
   // tracker configured folds no commands per render for a button it does not
   // draw.
   const hasSelection = tracking.available && runtime ? hasAnyCoverage(runtime.engine.frameCommands) : false;
+  // A soundtrack that will not survive an export, said while the file is merely
+  // open. It stays up as long as the file does, because it is a fact about the
+  // file rather than something that just happened.
+  const audio = loaded?.video?.audio;
+  const soundNote = audio && !audio.carried ? `its ${audio.codec} sound cannot go in an MP4` : undefined;
 
   return (
     <div class="app">
       <TopBar
-        {...(loaded ? { file: { name: loaded.name, width: loaded.width, height: loaded.height } } : {})}
+        {...(loaded
+          ? {
+              file: {
+                name: loaded.name,
+                width: loaded.width,
+                height: loaded.height,
+                ...(soundNote ? { note: soundNote } : {}),
+              },
+            }
+          : {})}
         {...(status ? { status: status.label, statusProgress: status.progress } : {})}
         canUndo={selection?.canUndo ?? false}
         canRedo={selection?.canRedo ?? false}
@@ -954,6 +1077,7 @@ export function App(): JSX.Element {
         onExport={(what) => void onExport(what)}
         exportDisabled={!loaded || activity !== undefined}
         canExportClip={loaded?.video !== undefined}
+        clipTitle={describeClipButton(loaded?.video?.frameRate ?? 30, range, audio)}
         exporting={exportProgress !== undefined}
         onCancelExport={() => {
           exportAbort.current?.abort();
@@ -1050,6 +1174,8 @@ export function App(): JSX.Element {
                   else play();
                 }}
                 onScrub={onScrub}
+                range={range}
+                onRangeChange={onRangeChange}
               />
             ) : null}
           </div>

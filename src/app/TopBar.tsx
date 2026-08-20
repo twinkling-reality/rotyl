@@ -4,7 +4,21 @@ import { Activity } from './Activity.tsx';
 import { CloseIcon, DownloadIcon, RedoIcon, UndoIcon } from './icons.tsx';
 
 export interface TopBarProps {
-  readonly file?: { readonly name: string; readonly width: number; readonly height: number };
+  readonly file?: {
+    readonly name: string;
+    readonly width: number;
+    readonly height: number;
+    /**
+     * A fact about this file that the export cannot honour, or nothing.
+     *
+     * A STATE AND NOT AN EVENT, which is why it sits here beside the name and
+     * the size rather than in the line reports and failures share. A soundtrack
+     * an MP4 cannot carry is true for as long as the file is open, and the line
+     * below the canvas is for things that JUST happened and take themselves
+     * down again after ten seconds.
+     */
+    readonly note?: string;
+  };
   readonly status?: string;
   /** 0 to 1 where the status has a real fraction behind it. */
   readonly statusProgress?: number | undefined;
@@ -17,6 +31,8 @@ export interface TopBarProps {
   readonly exportDisabled: boolean;
   /** Whether there is a clip to write, as opposed to one picture. */
   readonly canExportClip: boolean;
+  /** What pressing Clip will do, including the range and the sound. */
+  readonly clipTitle: string;
   /** A clip export in progress, which is the only one long enough to stop. */
   readonly exporting: boolean;
   readonly onCancelExport: () => void;
@@ -37,6 +53,7 @@ export function TopBar({
   onExport,
   exportDisabled,
   canExportClip,
+  clipTitle,
   exporting,
   onCancelExport,
   onClose,
@@ -64,6 +81,14 @@ export function TopBar({
               </span>
               {/* U+00D7, not the letter x. */}
               <span class="file-status__meta mono">{`${String(file.width)} × ${String(file.height)}`}</span>
+              {file.note ? (
+                <>
+                  <span class="file-status__separator" aria-hidden="true">
+                    ·
+                  </span>
+                  <span class="file-status__note">{file.note}</span>
+                </>
+              ) : null}
             </>
           ) : null}
           {status ? (
@@ -95,6 +120,7 @@ export function TopBar({
             onExport={onExport}
             disabled={exportDisabled}
             canExportClip={canExportClip}
+            clipTitle={clipTitle}
             exporting={exporting}
             onCancel={onCancelExport}
           />
@@ -140,12 +166,14 @@ function ExportControl({
   onExport,
   disabled,
   canExportClip,
+  clipTitle,
   exporting,
   onCancel,
 }: {
   onExport: (what: 'frame' | 'clip') => void;
   disabled: boolean;
   canExportClip: boolean;
+  clipTitle: string;
   exporting: boolean;
   onCancel: () => void;
 }): JSX.Element {
@@ -193,6 +221,7 @@ function ExportControl({
       <button
         type="button"
         class="export-button"
+        title={clipTitle}
         onClick={() => {
           onExport('clip');
         }}
