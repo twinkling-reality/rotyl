@@ -732,10 +732,21 @@ twelve megapixels nothing binds and nothing moved. The export ladder in
 1080p.
 
 **What it cost is 4.7% of the reference scene at detail 1 and 1.5% at the
-default**, moving more than eight codes, and 0.0% at detail 0. `figures/detail`
-is the control at all three settings, through the same compositor as every number
-here, so the question a bound raises, whether anybody was using the top of the
-control for anything but noise, can be looked at rather than argued about.
+default**, moving more than eight codes, and nothing at all at detail 0: that
+render is byte for byte the one it was, checked rather than assumed.
+
+And the counter-metric, because a chain that stops amplifying by making the
+picture worse is the failure measurement 5 exists to catch. A blend cannot be
+the failure here, since nothing about this is temporal and a per-frame render
+still is one, so what a bound can take is DETAIL: mean gradient magnitude over
+the whole styled frame, which is measurement 5's `detail` column read over a
+still. It costs **6.9% of it at detail 1**, 1.0% at the default and none at
+detail 0, against 12% off the amplification on a brick wall and 47% off it on
+the film. That is a real price and it is the price the control is named after.
+`figures/detail` is what it looks like at all three settings, through the same
+compositor as every number here, so the question a bound raises, whether anybody
+was using the top of the control for anything but noise, can be looked at rather
+than argued about.
 
 ### What is left, and what was rejected on the look
 

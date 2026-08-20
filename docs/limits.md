@@ -250,7 +250,11 @@ one, and the measurement behind it is on `/research.html`.
   frame turned the box downsample in front of the Kuwahara into a copy. The
   downsample is this chain's only grain rejection. It is bounded a root two
   below the picture now, which restores it at every setting, moves the apparent
-  scale by nothing, and makes the chain three times cheaper at 720p.
+  scale by nothing, and makes the chain three times cheaper at 720p. What it
+  costs is detail, which is what the control is named after: 6.9% of the
+  reference scene's gradient energy at detail 1 and 1.0% at the default, against
+  a quarter off the amplification on the wall and a half off it on the film.
+  Detail 0 is byte for byte the render it was.
 - **One of the two film shots was never the chain at all.** Both amplify as
   clips, including at detail 0 where the flatten is at its widest, and a clip of
   a film has actors in it. Rendered as stills, one frame twice with grain of a

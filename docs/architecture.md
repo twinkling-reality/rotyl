@@ -214,8 +214,10 @@ picture needed: that downsample is the only thing in the chain that removes
 grain before the stage that amplifies it. So the flatten now carries a second
 bound, a root two below the picture, and every flatten pixel is the mean of at
 least two source pixels at every setting. The apparent scale is untouched, only
-sample density moves, and the chain is three times cheaper at 720p. What that
-cost and what it did not fix is on `/research/the-detail-control.html`.
+sample density moves, and the chain is three times cheaper at 720p. What it
+costs is 6.9% of the reference scene's gradient energy at the top of the detail
+control and nothing at all at the bottom, and what it did not fix is on
+`/research/the-detail-control.html`.
 
 ## The selection is a command log
 

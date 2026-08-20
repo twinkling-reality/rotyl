@@ -262,7 +262,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Bounding the comic flatten’s buffer below the picture, so the downsample in front of it is always an average',
     verdict: 'adopted',
     evidence:
-      'A buffer derived to hold a radius can ask for 1356 px of a 720 px frame, and clamping that at the frame turned this chain’s only grain rejection into a copy. Bounded a root two below it, a brick wall goes from 2.00 times its input to 1.75 on a clip and the film’s exterior from 2.28 to 1.82, the apparent scale moves by nothing, and the chain is three times cheaper at 720p. A factor of two buys five more codes on the wall and moves 1.2% of the reference scene at the BOTTOM of the control, where a root two moves none',
+      'A buffer derived to hold a radius can ask for 1356 px of a 720 px frame, and clamping that at the frame turned this chain’s only grain rejection into a copy. Bounded a root two below it, a brick wall goes from 2.00 times its input to 1.75 on a clip and the film’s exterior from 2.28 to 1.82, the apparent scale moves by nothing, and the chain is three times cheaper at 720p. It costs 6.9% of the reference scene’s gradient energy at detail 1 and 1.0% at the default, and detail 0 is byte for byte the render it was. A factor of two buys five more codes on the wall and moves 1.2% of that scene at the BOTTOM of the control',
     where: 'src/core/style/comic/comic-params.ts',
   },
   {
