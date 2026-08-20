@@ -1168,8 +1168,9 @@ function intoAFile(long: unknown): Section {
   return {
     heading: 'Given a file to write into, nothing is held',
     prose: [
-      'The same loop, the same sink, the same settings, with a file handle behind it instead of a buffer. The last column is the finding: writing into a file grows the heap by half a megabyte per thousand frames, which is the noise of a decode loop rather than a trend, so the length of the clip stops being a variable and there is no ceiling to quote because there is nothing accumulating to hit one.',
+      'The same loop, the same sink, the same settings, with a file handle behind it instead of a buffer. The last column is the finding: writing into a file grows the heap by a fraction of a megabyte per thousand frames, which is the noise of a decode loop rather than a trend. One of the rungs fits a NEGATIVE slope, which is the same statement said more bluntly: there is nothing accumulating, so the length of the clip stops being a variable and there is no ceiling to quote.',
       `And it costs nothing per frame. ${row('into a file', 'ms_per_frame', (value) => `${value.toFixed(2)} ms`)} a frame at 1080p against the 5.0 the encode ladder committed to, which is the encoder's own cost with the disk underneath it disappearing into threads it was not using.`,
+      `A soundtrack changes neither. The last two rows are the same twenty-five minutes with and without one: ${row('into a file, with a soundtrack, discarded at the writer', 'ms_per_frame', (value) => `${value.toFixed(2)} ms`)} a frame against ${row('into a file, discarded at the writer', 'ms_per_frame', (value) => `${value.toFixed(2)} ms`)}, and ${mb(num(long, ['long-clip', 'into a file, with a soundtrack, discarded at the writer', 'peak_heap_mb']))} of peak heap against ${mb(num(long, ['long-clip', 'into a file, discarded at the writer', 'peak_heap_mb']))} on a file that is ${mb(num(long, ['long-clip', 'into a file, with a soundtrack, discarded at the writer', 'file_mb']))} rather than ${mb(num(long, ['long-clip', 'into a file, discarded at the writer', 'file_mb']))}. The eight megabytes are the second track's sample table in the reserved index, and they are a fact about the index rather than about the length: ${num(long, ['long-clip', 'into a file, with a soundtrack, discarded at the writer', 'audio_packets_written']).toLocaleString('en-GB')} packets went in, counted at the sink rather than predicted.`,
       `Read back through the product's own frame provider, the ten-minute file is a clip: ${num(long, ['long-clip', 'decoded back', 'frames']).toFixed(0)} frames, ${num(long, ['long-clip', 'decoded back', 'seconds']).toFixed(0)} seconds, ${num(long, ['long-clip', 'decoded back', 'keyframes']).toFixed(0)} keyframes, and its boxes are ftyp, moov, free, mdat in that order. The index is at the front, which a stream does not do by default: the room for it is reserved before the first frame and seeked back to at the end.`,
     ],
     table: {
@@ -1183,6 +1184,20 @@ function intoAFile(long: unknown): Section {
           row('into a file, discarded at the writer', 'peak_over_file', (value) => value.toFixed(2)),
           row(
             'into a file, discarded at the writer',
+            'heap_mb_per_1000_frames',
+            (value) => `${value.toFixed(1)} MB`,
+          ),
+        ],
+        [
+          'a file, with sound',
+          '25',
+          row('into a file, with a soundtrack, discarded at the writer', 'file_mb', mb),
+          row('into a file, with a soundtrack, discarded at the writer', 'peak_heap_mb', mb),
+          row('into a file, with a soundtrack, discarded at the writer', 'peak_over_file', (value) =>
+            value.toFixed(2),
+          ),
+          row(
+            'into a file, with a soundtrack, discarded at the writer',
             'heap_mb_per_1000_frames',
             (value) => `${value.toFixed(1)} MB`,
           ),

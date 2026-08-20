@@ -7,7 +7,8 @@ import { TopBar } from './TopBar.tsx';
 import { Toolbar } from './Toolbar.tsx';
 import { StylePanel } from './StylePanel.tsx';
 import { Viewport } from './Viewport.tsx';
-import { Timeline, isWholeClip, movedEnd, timecode } from './Timeline.tsx';
+import { Timeline, timecode } from './Timeline.tsx';
+import { isWholeClip, movedEnd } from './range.ts';
 import { decodeImageFile, describeImageLoadError } from '../platform/image-file.ts';
 import { uploadFrameToTexture, uploadImageToTexture } from '../platform/texture-upload.ts';
 // Static, and deliberately so: this decides WHICH loader to use, so it cannot
@@ -178,7 +179,10 @@ function describeExport(
   const got = atTime(result.frames, frameRate);
   const asked = atTime(result.total, frameRate);
   if (result.ended === 'full') {
-    return `Ran out of room at ${got} of ${asked}: with nowhere to write the file, this browser has to hold all of it. ${where} has what was written.${lost}`;
+    // AND IT CAN NOW SAY WHAT TO DO ABOUT IT. Until this chapter the only
+    // advice available was "use a different browser", which is not advice. In
+    // and Out are the thing that works here, in this browser, on this clip.
+    return `Ran out of room at ${got} of ${asked}: with nowhere to write the file, this browser has to hold all of it. ${where} has what was written. In and Out on the timeline will write a shorter piece at a time.${lost}`;
   }
   return `Stopped at ${got} of ${asked}. ${where} has what was written.${lost}`;
 }
@@ -801,7 +805,7 @@ export function App(): JSX.Element {
           } catch {
             const size = Math.round(result.written.blob.size / 1e6);
             throw new Error(
-              `This browser could not hold the finished clip, which came to ${String(size)} MB. Chrome and Edge can be given a file to write into instead, which holds none of it.`,
+              `This browser could not hold the finished clip, which came to ${String(size)} MB. Chrome and Edge can be given a file to write into, which holds none of it, and In and Out on the timeline will write a shorter piece here.`,
             );
           }
           const url = URL.createObjectURL(result.written.blob);

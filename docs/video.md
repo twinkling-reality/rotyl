@@ -332,6 +332,13 @@ all, because nothing is being held: measured over twenty-five minutes, the heap
 grows by half a megabyte per thousand frames, which is the noise of a decode
 loop. `tools/video-bench` has the ladder.
 
+**And it costs a long export nothing.** Twenty-five minutes of 1080p into a
+file, with a soundtrack and without, is 4.99 ms a frame against 5.00 and eight
+megabytes more peak heap on a two gigabyte file. Those eight megabytes are the
+second track's sample table in the reserved index rather than anything piling
+up, so the property the last chapter rests on, that a streaming export holds
+nothing however long the clip is, survives a second track.
+
 **The index still goes at the front with two tracks in the file**, which needs
 one more thing than it did with one: `reserve` sizes the sample tables before
 the first sample lands, so EVERY track needs a maximum packet count up front.

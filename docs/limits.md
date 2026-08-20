@@ -81,6 +81,12 @@ one, and the measurement behind it is on `/research.html`.
   is not an answer: it is storage with a quota rather than a disk, measured here
   refusing a write just past a gigabyte where it reports three, and a file
   staged in it still has to be copied out to the downloads folder afterwards.
+- **A soundtrack costs a long export nothing.** Measured over twenty-five
+  minutes of 1080p written into a file, with a soundtrack and without: 4.99 ms a
+  frame against 5.00, and eight megabytes more peak heap on a two gigabyte file,
+  which is the second track's sample table in the index at the front rather than
+  anything accumulating. So a clip with sound has the same ceiling as one
+  without, which on that path is no ceiling at all.
 - **Where it is built in the tab it stops at a budget, and hands over what it
   wrote.** Four times the file has to fit at the moment it is finished, so the
   budget is the browser's own heap limit over four, which is 1048 MB and about

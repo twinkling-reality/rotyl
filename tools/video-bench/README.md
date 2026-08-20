@@ -744,22 +744,42 @@ those is a number to design against.
 
 The same loop, the same sink, with a `FileSystemFileHandle` behind it:
 
-| where it went   | minutes | file    | peak heap | peak ÷ file | heap per 1000 frames |
-| --------------- | ------- | ------- | --------- | ----------- | -------------------- |
-| a file          | 25      | 2071 MB | 103 MB    | 0.05        | 0.6 MB               |
-| a file          | 10      | 829 MB  | 98 MB     | 0.12        | 0.1 MB               |
-| memory          | 10      | 829 MB  | 1982 MB   | 2.39        | 67.6 MB              |
-| memory, as sent | 10      | 828 MB  | 2193 MB   | 2.65        | 46.6 MB              |
+| where it went      | minutes | file    | peak heap | peak ÷ file | heap per 1000 frames |
+| ------------------ | ------- | ------- | --------- | ----------- | -------------------- |
+| a file             | 25      | 2071 MB | 113 MB    | 0.06        | 0.5 MB               |
+| a file, with sound | 25      | 2096 MB | 121 MB    | 0.06        | 0.2 MB               |
+| a file             | 10      | 829 MB  | 110 MB    | 0.13        | −0.3 MB              |
+| memory             | 10      | 829 MB  | 1992 MB   | 2.40        | 68.2 MB              |
 
-**The last column is the finding.** Writing into a file grows the heap by half a
-megabyte per thousand frames, which is the noise of a decode loop rather than a
-trend, so the length of the clip stops being a variable at all. There is no
-ceiling to quote because there is nothing accumulating to hit one.
+**The last column is the finding.** Writing into a file grows the heap by a
+fraction of a megabyte per thousand frames, which is the noise of a decode loop
+rather than a trend, and one rung fits a NEGATIVE slope, which is the same
+statement said more bluntly. There is no ceiling to quote because there is
+nothing accumulating to hit one.
 
-**And it costs nothing per frame.** 4.8 ms a frame at 1080p into a file against
-the 5.0 the encode ladder committed to, and the same 4.8 in memory, which is the
-encoder's own cost with everything else disappearing into the threads it is not
-using.
+**And it costs nothing per frame.** 5.0 ms a frame at 1080p into a file, which
+is the 5.0 the encode ladder committed to and is the encoder's own cost with
+everything else disappearing into the threads it is not using. An earlier take
+of this row read 4.8; re-taken it reads 4.97 and 4.99, so the two figures agree
+to a hundredth of a millisecond and the earlier gap was the machine.
+
+**A soundtrack changes neither, which is the row this measurement gained.** The
+first two rows are the same twenty-five minutes with and without one: 4.99 ms a
+frame against 5.00, and 121 MB of peak heap against 113 on a file that is 25 MB
+larger. The eight megabytes are the second track's sample table in the reserved
+index, which is a fact about the index rather than about the length, and the
+slope stays at noise. 70,349 packets went in, counted at the sink.
+
+**That count is there because the first run of this rung wrote none.** The
+wrapper this measurement puts around the sink to watch the heap was written
+before `acceptAudio` existed and forwarded `open`, `accept`, `finish` and
+`cancel` and nothing else. The export loop reads `sink.acceptAudio` to decide
+whether sound can be written at all, so the rung asked for a soundtrack, was
+told the sink could not take one, and produced a file identical to the row above
+it to the megabyte. That is exactly the failure the chapter it was added for
+exists to stop, committed by the harness measuring it. So the field is an
+observation rather than the prediction it used to be, and a rung asked for sound
+that writes none now throws rather than reporting a number.
 
 The twenty-five minute row counted its bytes and threw them away rather than
 keeping them, and that is the harness's limit rather than the export's. The

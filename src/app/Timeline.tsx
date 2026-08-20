@@ -4,6 +4,7 @@ import { PauseIcon, PlayIcon } from './icons.tsx';
 // export concept, and two identical declarations of it would be two places for
 // somebody to decide whether the ends are inclusive.
 import type { FrameRange } from '../platform/export/export-source.ts';
+import { movedEnd } from './range.ts';
 
 export interface TimelineProps {
   readonly frameCount: number;
@@ -35,30 +36,6 @@ export function timecode(frame: number, frameRate: number): string {
 }
 
 const percent = (frame: number, last: number): number => (last > 0 ? (frame / last) * 100 : 0);
-
-/**
- * The range after moving one of its ends to `frame`.
- *
- * FORGIVING RATHER THAN REFUSING. Setting a start past the current end, or an
- * end before the current start, is somebody re-marking the part they want
- * rather than a mistake to be rejected: the other end goes back to the clip's
- * own edge, which is the reading that leaves the frame they just marked inside
- * the range. A control that silently did nothing there would look broken.
- */
-export function movedEnd(
-  range: FrameRange | undefined,
-  which: 'from' | 'to',
-  frame: number,
-  last: number,
-): FrameRange {
-  const from = range?.from ?? 0;
-  const to = range?.to ?? last;
-  if (which === 'from') return { from: frame, to: frame > to ? last : to };
-  return { from: frame < from ? 0 : from, to: frame };
-}
-
-/** Whether a range is worth keeping, which the whole clip is not. */
-export const isWholeClip = (range: FrameRange, last: number): boolean => range.from <= 0 && range.to >= last;
 
 /**
  * The timeline.
