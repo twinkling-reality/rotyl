@@ -132,7 +132,16 @@ def lay_out_bank(anchor, recent, temporal, anchored=True):
 
 
 def mask_for_memory(logits, from_prompt, scale, bias):
-    decided = (logits > 0).astype(np.float32) if from_prompt else 1 / (1 + np.exp(-logits))
+    # Clipped only to keep numpy quiet: a frame the object is not in arrives as
+    # -1024 and exp(1024) overflows to a warning on the way to the zero it was
+    # always going to give. Sigmoid is 0 and 1 to double precision well inside
+    # this, so no value here differs from what the TypeScript computes, which
+    # gets the same answer from Math.exp returning Infinity.
+    decided = (
+        (logits > 0).astype(np.float32)
+        if from_prompt
+        else 1 / (1 + np.exp(-np.clip(logits, -80, 80)))
+    )
     return decided * scale + bias
 
 
@@ -825,14 +834,14 @@ def main() -> None:
 
     for scene in scenes:
         reference = Reference(scene)
-        print(f"\n=== {scene}: what each stage is worth, on the reference's own inputs ===")
+        print(f"\n=== {scene}: what each stage is worth, on the reference's own inputs ===", flush=True)
         rows, trouble = stages(reference, graphs, parameters, positions)
         for name, delta in rows.items():
-            print(f"  {name:52s} {delta:.3e}")
+            print(f"  {name:52s} {delta:.3e}", flush=True)
         for frame, note in trouble:
-            print(f"  !! frame {frame}: {note}")
+            print(f"  !! frame {frame}: {note}", flush=True)
 
-        print(f"\n=== {scene}: what each difference costs, end to end ===")
+        print(f"\n=== {scene}: what each difference costs, end to end ===", flush=True)
         costs = {}
         for name, flags in DIFFERENCES.items():
             result = run_host(reference, graphs, parameters, positions, flags)
@@ -871,12 +880,12 @@ def main() -> None:
             }
             path = HERE / "host-fixture.json"
             path.write_text(json.dumps(fixture) + "\n")
-            print(f"\n  written to {path} ({path.stat().st_size / 1024:.0f} KB)")
+            print(f"\n  written to {path} ({path.stat().st_size / 1024:.0f} KB)", flush=True)
 
     if arguments.sweep:
         path = HERE / "host.json"
         path.write_text(json.dumps(written, indent=2) + "\n")
-        print(f"\nwritten to {path}")
+        print(f"\nwritten to {path}", flush=True)
 
 
 if __name__ == "__main__":

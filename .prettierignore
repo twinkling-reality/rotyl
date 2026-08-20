@@ -20,3 +20,7 @@ tools/video-bench/results.json
 # line diff of values nobody reads by eye.
 tools/edgetam-export/host.json
 tools/edgetam-export/host-fixture.json
+# And the tracking sweep, which wraps its frame arrays differently at thirty
+# frames than at ten. Formatting it by hand would only fail again the next time
+# somebody re-takes it, which is the trap the entries above avoid.
+tools/edgetam-export/results.json
