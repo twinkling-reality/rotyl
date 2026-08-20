@@ -46,11 +46,14 @@ edit holds from the frame it was made on until something later changes it, and
 Track follows what is selected forward through the clip as a job the playhead is
 free to ignore. See [video](docs/video.md).
 
-**Exporting.** The frame on screen as a picture, or the whole clip as an MP4.
-Both are the preview's renderer at the preview's parameters stopping at the same
-pass, so a saved file cannot drift from what was on screen. A clip asks where it
-goes before it encodes anything, and in a browser that can answer that it is
-written into the file as it is made rather than held until the end.
+**Exporting.** The frame on screen as a picture, or the clip as an MP4, whole or
+between an In and an Out. Both are the preview's renderer at the preview's
+parameters stopping at the same pass, so a saved file cannot drift from what was
+on screen. A clip asks where it goes before it encodes anything, and in a
+browser that can answer that it is written into the file as it is made rather
+than held until the end. Its soundtrack goes with it, copied across as the
+packets it arrived as rather than re-encoded, and interleaved with the picture
+so the file still plays before it has finished arriving.
 
 ![The comic style with the Mural palette applied inside a dragged rectangle,
 with the style panel open](docs/media/styles.webp)
@@ -98,12 +101,15 @@ the code that produced it.
 
 Tracking needs two graphs that no published release contains, so a build says
 where they are hosted or there is no Track button; without one, a selection held
-across a moving subject still drifts off it. A clip is re-encoded, so outside the
-selection it is the source pixels written again rather than the source bytes.
-Only Chrome and Edge can give a page a file to write into, so everywhere else a
-clip export is built in the tab and stops at about twelve minutes of 1080p with
-what it wrote. Object selection needs the network once, for about 36 MB of
-model. The full list, which is longer and does not flatter the project, is in
+across a moving subject still drifts off it. A clip's picture is re-encoded, so
+outside the selection it is the source pixels written again rather than the
+source bytes; its sound is copied across rather than re-encoded, and a
+soundtrack an MP4 cannot carry is dropped, which the interface says before the
+work rather than after it. Playback has no sound at all. Only Chrome and Edge
+can give a page a file to write into, so everywhere else a clip export is built
+in the tab and stops at about twelve minutes of 1080p with what it wrote. Object
+selection needs the network once, for about 36 MB of model. The full list, which
+is longer and does not flatter the project, is in
 [known limits](docs/limits.md).
 
 ## Licence

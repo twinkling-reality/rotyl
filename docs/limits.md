@@ -106,16 +106,45 @@ one, and the measurement behind it is on `/research.html`.
   downloads folder in every browser. It is a couple of megabytes with no ceiling
   in sight, so a dialog in front of it would buy nothing and cost an interaction
   this product has always had.
-- Exporting a clip writes H.264 in MP4 and nothing else. HEVC and AV1 encode in
-  some browsers and have been measured in none here, and the codec list is one
-  array waiting for somebody with the numbers.
-- Audio is not written. There is no audio anywhere in the product yet, and a
-  clip that silently dropped a soundtrack it had been given would be worse than
-  one that never had it.
+- Exporting a clip writes H.264 in MP4 and nothing else, and re-encodes the
+  picture while copying the sound. HEVC and AV1 encode in some browsers and have
+  been measured in none here, and the codec list is one array waiting for
+  somebody with the numbers.
+- **A clip's sound is copied across rather than re-encoded, and two packets of
+  it can go missing.** The audio is written as the packets it arrived as, so
+  what comes out is bit-identical to what went in, which is the one thing about
+  a clip export that is exact. What that costs is the two edges. An AAC track
+  begins with a priming packet at a negative timestamp, whose samples a decoder
+  throws away, and MP4 has no way to say "before zero" except an edit list this
+  muxer only writes for positive offsets, so it is dropped. And a range's in
+  point lands inside a packet rather than between two, so the packet holding it
+  is dropped as well. Each is at most 21 ms at 48 kHz, which is less than a
+  frame at 30, and everything kept is at exactly the moment it was at in the
+  source. The alternative is re-encoding the first packet, which is exact and
+  is also the only thing that would stop the sound being the source's own bytes.
+- **A soundtrack an MP4 cannot carry is dropped, and said before the work rather
+  than after it.** QuickTime holds mu-law and MP4 does not, so a `.mov` off an
+  older camera is an ordinary file whose sound has nowhere to go. Which codecs
+  survive is decided from the track and the format alone while the file is
+  merely open, so it is in the row beside the file's name and in the export
+  button's own sentence, minutes before the encoding rather than after it. There
+  is no second container to offer instead: writing QuickTime costs eleven bytes
+  and has been measured on nothing.
+- Playback has no sound. What an export carries and what the editor plays are
+  separate questions, and a preview that played audio would need a clock the
+  render loop deliberately does not have: playback drops frames rather than
+  running slow, and sound cannot.
+- **An export range is a range on the export and not a trim of the document.**
+  In and Out mark which frames a clip export writes; every command in the log
+  keeps its own absolute frame number, so a selection made before the range
+  starts still applies to it and the timeline still means what it meant. What
+  that does not give you is a trim: there is no way to cut the middle out of a
+  clip, or to write two ranges into one file, and both would be reasonable
+  things to want.
 - Clear and Invert act from the frame being shown onward, like every other
   command. There is no way to say "this frame only" or "the whole clip", and
   both would be reasonable things to want.
-- Playback has no audio and no loop, and drops frames rather than running slow
+- Playback has no loop, and drops frames rather than running slow
   when the style chain cannot keep up. Which it only does for the comic style:
   the other two are around a millisecond a frame at 720p.
 - The print style twinkles on video. 3% of pixels move more than 8 codes

@@ -81,6 +81,23 @@ happened, so left up through a scrub and two brush strokes it would be
 describing something else by then. Ten seconds, which is long enough to read a
 sentence about a clip that stopped early.
 
+**One thing is a state rather than an event, and it goes somewhere else.** A
+soundtrack an MP4 cannot carry is true for as long as the file is open, so it
+sits in the row beside the file's name and its dimensions, in the darkest of the
+greys there rather than in the one saturated colour this product spends on
+failures. Nothing has failed. Something is going to be lost, the user is going
+to want to know before the minutes of encoding rather than after, and a line
+that took itself down after ten seconds would be a line they were not looking at
+when it mattered. It is said again when the file lands, because the warning went
+up minutes earlier and a file that turns out to be silent when it is played is
+the one thing this was built to stop being a surprise.
+
+**And a button's second sentence lives in its title**, which is the rule the
+Stop button already follows. The Clip button's is what pressing it will do:
+which part of the clip, and whether the sound goes with it. That is where the
+range says what it is, because the timeline shows where it is and the button
+shows what it means.
+
 ## Type and fonts
 
 Geist and Geist Mono, SIL OFL 1.1 (see `public/fonts/LICENSE.txt`). Subset to

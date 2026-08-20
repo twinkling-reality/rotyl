@@ -68,7 +68,10 @@ one: a source hands over frames, a sink takes them, and a photograph is a
 one-frame document that goes through it once. Whether those bytes end up in a
 file the user named or in a blob the browser downloads is one line inside the
 sink, which is why a browser that can be handed a file did not cost a second
-export. See [writing the clip out](video.md#writing-the-clip-out).
+export. A soundtrack is a second stream rather than more frames, so it has a
+cursor of its own and a second method on the sink, and it is still not a second
+loop: what the loop gained is one question per frame, asking whether the sound
+is behind. See [writing the clip out](video.md#writing-the-clip-out).
 
 **Boundaries have no seam.** Every stage before the composite runs over the
 whole image. Masking earlier would be cheaper but wrong: a style's kernels

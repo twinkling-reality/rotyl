@@ -2,8 +2,8 @@
 
 # Video, so far
 
-![A video frame with its right half stylised, the timeline below it, and Frame
-and Clip export buttons above](media/video.webp)
+![A video frame with its right half stylised, the timeline below it carrying In
+and Out beside the frame count, and Frame and Clip export buttons above](media/video.webp)
 
 Open an MP4 or a MOV, select a region, and play it. Every frame goes through the
 same renderer a photograph does, the same style chain, the same composite, the
@@ -92,7 +92,11 @@ there.
 
 Two smaller things, both the difference between honest and usable. The timeline
 marks the frames where an edit begins, because a selection whose origin cannot
-be found again cannot be corrected. And undo moves the playhead to whatever it
+be found again cannot be corrected. It also carries In and Out, which say which
+part of the clip an export writes, and nothing at all until one is set: a clip
+somebody has said nothing about must not carry marks implying they have. The
+letters are the ones every editor binds, shifted here because the unshifted
+pair is taken by the Object tool and the tools come first. And undo moves the playhead to whatever it
 undid: the log is one list with one cursor, so undo means the last thing you
 did, which may be somewhere you are not looking. An edit disappearing in front
 of you is undo, and an edit disappearing off screen is a bug report. Following
@@ -239,6 +243,51 @@ they were when export could only write a picture, and the only new decision is
 which pair the user asked for. A second container would be one entry in a table,
 and a second codec one entry in another.
 
+**Sound is not more frames, and it is still not a second loop.** A soundtrack is
+a second stream whose packets do not land on frame boundaries and are not the
+same number as the frames, so it gets a cursor of its own on the source and a
+second method on the sink. What it does not get is a pass of its own over the
+file, and that is a measurement rather than a preference. Written as one run
+after the video, the sound of a given second sits most of the file away from its
+picture and the distance grows with the clip, which is not a progressive file
+whatever order the boxes are in. Written that way it is usually not a file at
+all: with the index reserved, the muxer cannot size the movie box until it has
+seen a packet from every track, so a run of video with the audio behind it
+queues every frame in memory and, on a track carrying B-frames, fails before a
+byte is written. So the loop asks on every frame whether the sound is behind and
+hands over whatever is due, which is one comparison per frame and turns that
+distance into a constant. `tools/video-bench` has the three arrangements.
+
+**And the sound is copied rather than encoded.** The picture is re-encoded
+because it was re-drawn; the audio was not touched, so what goes into the file
+is the packets that came out of it, bit-identical, with nothing changed but the
+moment they play. There is no `AudioDecoder` and no `AudioEncoder` anywhere in
+this product and passing packets through needs neither. What that costs is two
+edges: an AAC track's own priming packet sits at a negative timestamp that MP4
+cannot express, and a range's in point lands inside a packet rather than between
+two. Both are dropped, each is at most 21 ms at 48 kHz against a 33 ms frame,
+and everything kept is at exactly the moment it was at in the source. The
+alternative is re-encoding the first packet, which is exact and is also the only
+thing that would stop the sound being the source's own bytes.
+
+**A soundtrack the container cannot hold is said before the work.** An MP4 holds
+eighteen audio codecs and QuickTime holds more, so a `.mov` with mu-law audio is
+an ordinary file whose sound has nowhere to go. Deciding that costs a list
+lookup on a track that is already open, so it is a fact about the open file
+rather than an outcome of the export: it is in the row beside the file's name
+and in the export button's own sentence, and it is said again when the file
+lands. The one thing it must not be is a discovery made by playing the result.
+
+**A range is a range on the export, not a trim of the document.** In and Out
+mark which frames a clip export writes, and that is all they change: every
+command in the log keeps its absolute frame number and still folds forward, so a
+selection made on frame 0 still applies to a range that starts at frame 400. A
+trim that renumbered frames would put the log and the timeline into
+disagreement about what frame 500 means, and every edit made before the in point
+would either move or stop applying. The one thing that is rebased is the
+presentation timestamp, so the written file starts at zero, and that is a
+property of the file rather than of the document.
+
 **Where the bytes go is asked before any of them exist.** A browser that can be
 handed a file writes each packet into it as the encoder makes one, so what the
 tab is holding does not depend on how long the clip is. A browser that cannot
@@ -282,6 +331,15 @@ and hands over a clip of that. Given a file to write into there is no budget at
 all, because nothing is being held: measured over twenty-five minutes, the heap
 grows by half a megabyte per thousand frames, which is the noise of a decode
 loop. `tools/video-bench` has the ladder.
+
+**The index still goes at the front with two tracks in the file**, which needs
+one more thing than it did with one: `reserve` sizes the sample tables before
+the first sample lands, so EVERY track needs a maximum packet count up front.
+The video's is free, since an export knows how many frames it is writing before
+it renders the first one. The audio's is a metadata-only walk of the whole
+track, which reads the sample tables and none of the payload, at about a
+microsecond a packet. Fifty milliseconds on twenty minutes of 48 kHz audio, paid
+once, before anything slow.
 
 **The composite reaches the encoder through the canvas it already renders into.**
 Measured, per frame at 1080p: capturing the canvas costs nothing detectable,
