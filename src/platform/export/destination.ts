@@ -74,10 +74,9 @@ const TYPES: Record<ExportFormat, { description: string; accept: Record<string, 
  * ONE ENTRY POINT RATHER THAN TWO. A caller that asked whether a picker existed
  * and then used it would have two chances to disagree with itself, and the
  * answer it wants in both cases is the same: where do the bytes go. Chrome and
- * Edge have `showSaveFilePicker`; Safari and Firefox have neither it nor any
- * other way to hand a page a writable file, and get the downloads folder and
- * the ceiling that comes with it, which is in `docs/limits.md` with the
- * measurement behind it.
+ * Edge have `showSaveFilePicker`; Safari and Firefox have no way to let somebody
+ * give a page a file, so they get the downloads folder and the ceiling that
+ * comes with it, which is in `docs/limits.md` with the measurement behind it.
  *
  * `undefined` means the user dismissed the dialog, which is not a failure and
  * must not be reported as one: they were asked a question and declined to

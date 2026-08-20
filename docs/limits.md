@@ -76,8 +76,11 @@ one, and the measurement behind it is on `/research.html`.
   as the encoder makes it: measured at 25 minutes of 1080p, the heap grows by
   half a megabyte per thousand frames, which is noise, so the length of the clip
   is not a variable and there is no ceiling to quote. Safari and Firefox have
-  neither that picker nor any other way to hand a page a writable file, so there
-  the whole file is built in the tab.
+  no way to let somebody give a page a file, so there the whole file is built in
+  the tab. The origin private file system is a writable file in both of them and
+  is not an answer: it is storage with a quota rather than a disk, measured here
+  refusing a write just past a gigabyte where it reports three, and a file
+  staged in it still has to be copied out to the downloads folder afterwards.
 - **Where it is built in the tab it stops at a budget, and hands over what it
   wrote.** Four times the file has to fit at the moment it is finished, so the
   budget is the browser's own heap limit over four, which is 1048 MB and about

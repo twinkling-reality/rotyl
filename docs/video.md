@@ -243,9 +243,9 @@ and a second codec one entry in another.
 handed a file writes each packet into it as the encoder makes one, so what the
 tab is holding does not depend on how long the clip is. A browser that cannot
 has to build the whole file first, and past some length that fails.
-`showSaveFilePicker` is Chrome and Edge; Safari and Firefox have neither it nor
-any other way to give a page somewhere to write. So this is two paths, and which
-one a session takes is settled at the click rather than discovered at the end.
+`showSaveFilePicker` is Chrome and Edge; Safari and Firefox have no way to let
+somebody give a page a file. So this is two paths, and which one a session takes
+is settled at the click rather than discovered at the end.
 Encoding for five minutes and then asking where to put it would be the worst
 possible order: by then the file is in memory, which is the thing a handle
 exists to avoid, and the answer might be "nowhere".
