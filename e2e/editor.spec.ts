@@ -1808,3 +1808,54 @@ test('opens a document against a re-encoded copy of its media, and says so', asy
   // Not a failure, so not in the colour this product spends on failures.
   await expect(page.locator('.notice')).toHaveCount(0);
 });
+
+/**
+ * A drop that would replace unsaved work does not, and says so.
+ *
+ * No drop has ever been able to destroy the open session here: a photograph
+ * dropped onto the editor is swallowed rather than opened, precisely so that a
+ * stray drag cannot take the log with it. A saved selection is the first thing
+ * capable of breaking that, and a chapter about not losing work is the wrong
+ * place to introduce a way of losing it.
+ */
+test('will not drop a document on top of unsaved edits', async ({ page }) => {
+  await stubSavePicker(page);
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  await page.getByRole('button', { name: 'Area' }).click();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.7, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Wrote sample.rotyl.')).toBeVisible();
+  const saved = await readPickedFile(page, 'sample.rotyl');
+
+  // A second, different selection over the top, which is the work that must
+  // not vanish.
+  await page.getByRole('button', { name: 'Invert' }).click();
+  const nowOnScreen = await selectionBytes(page);
+
+  const dropped = await page.evaluateHandle((encoded: string) => {
+    const binary = atob(encoded);
+    const bytes = new Uint8Array(binary.length);
+    for (let at = 0; at < binary.length; at++) bytes[at] = binary.charCodeAt(at);
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes], 'sample.rotyl', { type: 'application/octet-stream' }));
+    return transfer;
+  }, Buffer.from(saved).toString('base64'));
+  await canvas.dispatchEvent('drop', { dataTransfer: dropped });
+
+  await expect(page.getByText(/would replace the selection that is open/)).toBeVisible();
+  // Nothing moved, and nothing failed: the line is the quiet one rather than
+  // the colour this product spends on faults.
+  expect(await selectionBytes(page)).toBe(nowOnScreen);
+  await expect(page.locator('.notice--quiet')).toHaveCount(1);
+});

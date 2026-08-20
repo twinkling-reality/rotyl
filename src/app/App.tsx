@@ -556,6 +556,28 @@ export function App(): JSX.Element {
         return;
       }
 
+      /**
+       * NO DROP MAY DESTROY THE OPEN SESSION, which is a rule this product has
+       * always had and which a document is the first thing capable of breaking.
+       * A photograph dropped onto the editor is swallowed rather than opened for
+       * exactly this reason. Loading a selection over another one is a replace:
+       * the fold is sorted by frame, so the commands underneath cannot be left
+       * in place behind a clear and undone back to, and a saved log that
+       * silently ate an unsaved one would be this chapter causing the loss it
+       * exists to prevent.
+       *
+       * So it says what it would cost, and what to do about it, both of which
+       * are one click. An event rather than a failure, so it is in the quiet
+       * line and takes itself down: nothing broke, and the file they dropped is
+       * still on their disk.
+       */
+      if (!runtime.engine.document.isEmpty) {
+        setReport(
+          'That would replace the selection that is open. Save this one first, or close the file with the X beside its name.',
+        );
+        return;
+      }
+
       const opened = await identityOf(loaded);
       const match = compareMedia(parsed.value.media, opened);
       if (match === 'wrong') {

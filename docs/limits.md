@@ -121,6 +121,13 @@ one, and the measurement behind it is on `/research.html`.
   count. Digesting the whole file is the answer to that and is not available
   here: `crypto.subtle.digest` takes a buffer and the platform has no streaming
   form of it, so two gigabytes of clip would have to be resident to be hashed.
+- **A document dropped onto a session with unsaved edits is refused rather than
+  taken.** Loading a selection replaces the one that is open and cannot be made
+  undoable cheaply, because the fold is sorted by frame rather than by the order
+  edits were made, so the commands underneath cannot be left in place behind a
+  clear. The line says to save what is open or close the file first, both of
+  which are one click, and the cost is that going back to a saved selection
+  while holding unsaved work is three steps rather than one.
 - **A document does not contain the media, so it is not a way to move work
   between machines by itself.** The other half has to travel with it. Embedding
   it would make one feature a four megabyte file on a photograph and a two

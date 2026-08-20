@@ -56,7 +56,11 @@ in it.
 A document dropped onto the editor is taken and a photograph is not. A document
 is additive to the media that is open; a second photograph would replace the
 file under somebody's hands and take the log with it, on a drop they may have
-meant for another window.
+meant for another window. **Nor is one taken over unsaved edits**, which is the
+same rule reaching the one gesture capable of breaking it: loading a selection
+over another one is a replace, so the line says what it would cost and names the
+two ways out, Save and the X. That is the close button's rule arriving at a
+gesture with no button to arm.
 
 ## Saying that it is working
 

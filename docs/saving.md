@@ -163,6 +163,17 @@ deliberate. A document is additive to the open media; a second photograph would
 replace the file under somebody's hands and take the log with it, on a drop they
 may have meant for another window entirely.
 
+**And a document dropped over unsaved edits is not taken either.** No drop has
+ever been able to destroy the open session here, which is exactly why a
+photograph dropped onto the editor is swallowed rather than opened, and a
+chapter about not losing work is the wrong place to introduce a way of losing
+it. Loading a selection over another one is a replace and cannot be anything
+else: the fold is sorted by frame, so the commands underneath cannot be left in
+place behind a clear and undone back to. The line says what it would cost and
+what to do about it, both of which are one click. Nothing failed and the file
+they dropped is still on their disk, so it is the quiet line rather than the
+colour this product spends on faults.
+
 ## What it cost
 
 **2.97 KB gzipped**, taking the application bundle from 45.8 KB to 48.8. About
