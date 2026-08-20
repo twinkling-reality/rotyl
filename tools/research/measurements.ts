@@ -1568,6 +1568,11 @@ export function entries(results: Results): readonly Entry[] {
         'Earlier chapters softened the individual decisions in each chain and the numbers moved a long way. What is left is the residue, and there were three stories about where it comes from: the input moves, a stage amplifies, or the decisions genuinely are per frame. They imply completely different features at completely different prices, and building the expensive one before finding out which dominates would have been this project’s first unforced error.',
         'So the measurement came first, and so did the thing that catches a cure being worse than the disease. Both are here. Between them they say the expensive answer solves a problem that does not exist, the cheap one lowers a number without touching what causes it, and the residue that is left is in one stage of one chain, where this project has already been once.',
       ],
+      hero: {
+        name: 'smear',
+        caption:
+          'Half of the last stylised frame blended into this one, with no motion compensation, and where the two differ. The rim around every moving car is the ghost the residue figure would have called an improvement.',
+      },
       sections: [residueComesFrom(still), denoisingTheInput(still), theCounterMetric(still)],
     },
     {

@@ -43,7 +43,8 @@
 import { CONTENT_CASES, type Case } from './chain.ts';
 import { CLIPS, StyleStage, type Difference } from './harness.ts';
 import { clipFrames } from './stability.ts';
-import { toBase64, type Still } from './stills.ts';
+import type { Figure } from './figures.ts';
+import { halve, tile, toBase64 } from './sheet.ts';
 
 export const SIZE = { width: 1280, height: 720 };
 
@@ -328,22 +329,25 @@ export async function motion(device: GPUDevice): Promise<unknown> {
 }
 
 /**
- * A picture of the trail, because a number for it is not evidence of one.
+ * A picture of the smear, because a number for one is not evidence of it.
  *
- * The same argument `flicker.ts` makes: a scalar can say a method got steadier
- * while saying nothing about what it did to the picture, and the one thing a
- * reader wants to see about a smear is the smear. Three pictures rather than
- * two, because the first two do not show it. A recursive blend at a half is a
- * geometric decay, so on a car crossing two or three pixels a frame the ghost
- * is a thin bright annulus rather than a visible double image, and side by side
- * the two frames look almost the same. The third one paints where the
- * difference is, which is what the number is counting.
+ * The same argument `figures.ts` makes: an entry arguing about a look and
+ * showing none of it is asking to be taken on trust, and the look this page
+ * argues about is a ghost. Three tiles rather than two, because the first two
+ * do not show it. A recursive blend at a half is a geometric decay, so on a car
+ * crossing two or three pixels a frame the ghost is a thin bright rim rather
+ * than a visible double image, and side by side the two frames look almost the
+ * same. The third one paints where the difference is, which is what the number
+ * is counting.
+ *
+ * A FIGURE RATHER THAN A LOOSE PICTURE, so it is committed beside the styles
+ * sheet and the research page can carry it. It needs a GPU and a browser to
+ * produce, which is the reason figures are committed at all.
  */
-export async function motionPictures(device: GPUDevice): Promise<readonly Still[]> {
-  const out: Still[] = [];
+export async function motionPictures(device: GPUDevice): Promise<readonly Figure[]> {
   const stage = new StyleStage(device, SIZE);
   const item = CONTENT_CASES.find((candidate) => candidate.name === 'poster, default');
-  if (!item) throw new Error('style-bench: no poster case to draw a trail with');
+  if (!item) throw new Error('style-bench: no poster case to draw a smear with');
 
   const pictures = clipFrames(`${CLIPS}/traffic-720p.mp4`, FRAMES);
   const masks = clipFrames(`${CLIPS}/traffic-mask-720p.mp4`, FRAMES);
@@ -374,39 +378,62 @@ export async function motionPictures(device: GPUDevice): Promise<readonly Still[
   }
   stage.dispose();
 
-  if (!carried || !last || !where) return out;
-  out.push({
-    name: 'motion per frame',
-    width: SIZE.width,
-    height: SIZE.height,
-    rgb: toBase64(last),
-    labels: ['the last frame, rendered per frame'],
-  });
-  out.push({
-    name: 'motion blend 0.5',
-    width: SIZE.width,
-    height: SIZE.height,
-    rgb: toBase64(carried),
-    labels: ['the same frame with half of the last one blended in, and no motion compensation'],
-  });
-  out.push({
-    name: 'motion trail',
-    width: SIZE.width,
-    height: SIZE.height,
-    rgb: toBase64(trailMap(last, carried, where), 3),
-    labels: ['where the two differ: red is the band a car has just left, blue is everywhere else'],
-  });
+  if (!carried || !last || !where) return [];
+  const labels = [
+    'per frame, as it ships',
+    'half of the last frame blended in',
+    'where they differ, which is a rim around everything that moved',
+  ];
+  const tiles = [
+    halve(last, SIZE.width, SIZE.height),
+    halve(carried, SIZE.width, SIZE.height),
+    halveRgb(trailMap(last, carried, where), SIZE.width, SIZE.height),
+  ];
+  const laid = tile(tiles, SIZE.width >> 1, SIZE.height >> 1, 1);
+  return [
+    {
+      name: 'smear',
+      width: laid.width,
+      height: laid.height,
+      columns: 1,
+      tiles: labels,
+      rgb: toBase64(laid.rgb),
+    },
+  ];
+}
+
+/**
+ * `halve` for a picture that is already three channels.
+ *
+ * The trail map composes its own bytes rather than reading a texture, so it
+ * arrives without the alpha the harness's readback carries and cannot go
+ * through the same downsample.
+ */
+function halveRgb(rgb: Uint8Array, width: number, height: number): Uint8Array {
+  const w = width >> 1;
+  const h = height >> 1;
+  const out = new Uint8Array(w * h * 3);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      for (let c = 0; c < 3; c++) {
+        const at = (dx: number, dy: number): number => rgb[((y * 2 + dy) * width + x * 2 + dx) * 3 + c] ?? 0;
+        out[(y * w + x) * 3 + c] = (at(0, 0) + at(1, 0) + at(0, 1) + at(1, 1)) >> 2;
+      }
+    }
+  }
   return out;
 }
 
 /**
  * Where the blended frame differs from the per-frame one, over the frame.
  *
- * TWO COLOURS, because the difference between them is the whole finding. Red is
- * the vacated band, which is what the trail figure counts and where a ghost is
- * the only thing that can live. Blue is every other pixel, where a difference
- * is the method doing the job it was asked to do. A single colour would say a
- * temporal method changes the picture, which nobody doubted.
+ * TWO COLOURS, because the split is what the deviation table reports: red is
+ * ground a car has just left and blue is everywhere else. What the picture then
+ * shows is that the red is a sliver and the blue is a rim around every moving
+ * thing, which is the finding that made the table report three populations
+ * rather than one. The tile is labelled for the rim rather than for the red,
+ * because a caption naming something a reader cannot see is worse than no
+ * caption.
  */
 function trailMap(perFrame: Uint8Array, method: Uint8Array, where: Populations): Uint8Array {
   const pixels = perFrame.length / 4;

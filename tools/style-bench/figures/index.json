@@ -21,5 +21,16 @@
       "Mural",
       "Riso"
     ]
+  },
+  {
+    "name": "smear",
+    "width": 640,
+    "height": 1084,
+    "columns": 1,
+    "tiles": [
+      "per frame, as it ships",
+      "half of the last frame blended in",
+      "where they differ, which is a rim around everything that moved"
+    ]
   }
 ]

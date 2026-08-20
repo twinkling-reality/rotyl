@@ -14,7 +14,7 @@
 
 import { chromium } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { encodePng } from './png.mjs';
 
 const ALL = ['chain', 'perturbation', 'clips', 'stills', 'sweep', 'figures'];
@@ -61,16 +61,31 @@ const result = await page.evaluate(async (names) => {
 // the worst case a lossy codec can be handed and even so it is a third of the
 // PNG; cwebp ships with libwebp and is optional here, since a PNG left in place
 // is a larger file rather than a missing one.
-const figures = result.figures;
+//
+// MERGED INTO THE INDEX RATHER THAN OVERWRITING IT, because two groups produce
+// figures now and each one owns its own. `all` draws the styles and the
+// palettes off the still; `motion` draws the smear off a clip. A run of either
+// that replaced the index wholesale would leave the research page linking a
+// picture that is still on disk and no longer described, which the build turns
+// into a caption for the wrong thing.
+const figures = [result.figures, result['motion-pictures']].flatMap((set) => (Array.isArray(set) ? set : []));
 delete result.figures;
-if (Array.isArray(figures)) {
+delete result['motion-pictures'];
+if (figures.length > 0) {
   mkdirSync('tools/style-bench/figures', { recursive: true });
+  let index = [];
+  try {
+    index = JSON.parse(readFileSync('tools/style-bench/figures/index.json', 'utf8'));
+  } catch {
+    index = [];
+  }
+  const written = new Set(figures.map((figure) => figure.name));
   // What each tile is, written beside the pictures, so the caption on the
   // research page is composed from the figure rather than remembered about it.
   writeFileSync(
     'tools/style-bench/figures/index.json',
     `${JSON.stringify(
-      figures.map(({ name, width, height, columns, tiles }) => ({ name, width, height, columns, tiles })),
+      [...index.filter((entry) => !written.has(entry.name)), ...figures.map(described)],
       null,
       2,
     )}\n`,
@@ -89,7 +104,7 @@ if (Array.isArray(figures)) {
 }
 
 // Pictures out, so the look can be judged rather than only scored.
-for (const key of ['stills', 'sweep', 'real-flicker', 'motion-pictures']) {
+for (const key of ['stills', 'sweep', 'real-flicker']) {
   const images = result[key];
   delete result[key];
   if (!Array.isArray(images)) continue;
