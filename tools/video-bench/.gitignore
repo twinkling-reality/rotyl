@@ -22,3 +22,7 @@ results-*.json
 # as results-log.json and is kept apart from it so that re-taking one does not
 # re-date the other.
 !results-document.json
+# And what writing the log down on every edit costs, which is a question about
+# the origin private file system and shares nothing with either of the two
+# above.
+!results-recovery.json
