@@ -1,4 +1,4 @@
-"""Half-precision copies of the two tracking graphs.
+"""Half-precision copies of the three tracking graphs.
 
 Memory attention is the expensive half of tracking and half precision takes it
 from 61 ms to 38 ms on WebGPU, with the file going from 69.6 MB to 34.9 MB. See
@@ -6,8 +6,18 @@ tools/video-bench/README.md for both numbers and for why the memory encoder is
 NOT a safe conversion: its worst output element moves by half the signal, and
 that output goes into the bank and conditions every later frame.
 
-Both are written here anyway. Measuring the one you should not ship is how you
-know you should not ship it, and the conversion has a trap worth keeping.
+THE TRACKED-FRAME DECODER IS, and by a wide margin. Measured against its own
+fp32 graph on the conditioned maps of a real clip, every output moves by under
+three tenths of a per cent of its own scale: iou_scores 0.27%, pred_masks 0.09%,
+object_score_logits 0.06%, object_pointer 0.07%. Over twenty-nine tracked frames
+the head the host picks never changed and the present-or-absent gate never
+flipped. The output worth worrying about is the pointer, for the same reason the
+memory encoder's is: it goes into the bank and conditions every later frame. It
+is the one that moves least, by seven hundredths of a per cent against the
+encoder's fifty, and it halves the graph from 21.9 MB to 11.1.
+
+All three are written here anyway. Measuring the one you should not ship is how
+you know you should not ship it, and the conversion has a trap worth keeping.
 
     ./venv/bin/python half_precision.py
 """
@@ -22,7 +32,7 @@ from onnx import TensorProto
 from onnxconverter_common import float16
 
 HERE = Path(__file__).parent
-GRAPHS = ["memory_attention", "memory_encoder"]
+GRAPHS = ["memory_attention", "memory_encoder", "tracked_mask_decoder"]
 
 
 def convert(source: Path, destination: Path) -> int:
