@@ -34,13 +34,18 @@
 // for. The first two runs of this measurement lost a tab that way.
 
 import {
+  BlobSource,
   BufferTarget,
+  EncodedPacketSink,
+  Input,
+  MP4,
   Mp4OutputFormat,
   Output,
   Quality,
   VideoSample,
   VideoSampleSource,
   getFirstEncodableVideoCodec,
+  type EncodedPacket,
   type VideoCodec,
 } from 'mediabunny';
 import { CompositeRenderer } from '../../src/core/render/composite-renderer.ts';
@@ -49,6 +54,7 @@ import { POSTER_STYLE } from '../../src/core/style/poster/poster-style-pipeline.
 import { defaultControls } from '../../src/core/style/style.ts';
 import {
   runExport,
+  type ExportAudio,
   type ExportFrame,
   type ExportResult,
   type ExportSource,
@@ -165,6 +171,65 @@ async function settle(): Promise<void> {
 }
 
 /**
+ * A soundtrack, handed round again for as long as it is asked for.
+ *
+ * The same shape the product's own `clipSource` builds, with the same rule: a
+ * cursor rather than a list, nothing held but the packet that is not yet due,
+ * and packets clipped bit for bit out of a real AAC track. The DATA repeats and
+ * the timing does not, which is what `loopingSource` does with the picture.
+ *
+ * WHAT IT IS FOR. Everything else on this page was measured on a clip with no
+ * sound in it, and the property the whole design rests on is that a streaming
+ * export holds nothing however long the clip is. A second track is the first
+ * thing capable of undoing that: it has its own cursor, its own packet count
+ * walked before the first frame, and its own sample table in the reserved
+ * index. So one rung carries one and the rung above it does not, and the
+ * difference between the two rows is the soundtrack.
+ */
+function loopingAudio(packets: readonly EncodedPacket[], seconds: number): ExportAudio | undefined {
+  const first = packets[0];
+  if (!first) return undefined;
+  const span = packets.reduce((total, packet) => total + packet.duration, 0) / packets.length;
+  const count = Math.floor(seconds / span);
+  let index = 0;
+  let now = 0;
+  return {
+    codec: 'aac',
+    config: AUDIO_CONFIG,
+    packetCount: count,
+    next(dueMicros) {
+      if (index >= count) return Promise.resolve(undefined);
+      if (now * 1e6 > dueMicros) return Promise.resolve(undefined);
+      const packet = packets[index % packets.length];
+      if (!packet) return Promise.resolve(undefined);
+      const at = now;
+      now += packet.duration;
+      index++;
+      return Promise.resolve(packet.clone({ timestamp: at }));
+    },
+  };
+}
+
+/** Filled from the clip the packets come out of, before any rung runs. */
+let AUDIO_CONFIG: AudioDecoderConfig = { codec: 'mp4a.40.2', sampleRate: 48_000, numberOfChannels: 2 };
+
+/** Every packet of a real AAC track, read once and held. Two megabytes. */
+async function readSoundtrack(url: string): Promise<readonly EncodedPacket[]> {
+  const input = new Input({ formats: [MP4], source: new BlobSource(await (await fetch(url)).blob()) });
+  try {
+    const track = await input.getPrimaryAudioTrack();
+    if (!track) return [];
+    const config = await track.getDecoderConfig();
+    if (config) AUDIO_CONFIG = config;
+    const out: EncodedPacket[] = [];
+    for await (const packet of new EncodedPacketSink(track).packets()) out.push(packet);
+    return out;
+  } finally {
+    input.dispose();
+  }
+}
+
+/**
  * The clip, handed round again for as long as it is asked for.
  *
  * Timestamps come from the position in the export rather than from the frame,
@@ -172,10 +237,11 @@ async function settle(): Promise<void> {
  * rather than the same ten seconds stamped over itself. That is the only thing
  * this pretends about: the pixels repeat, the packets do not.
  */
-function loopingSource(frames: Frames, count: number): ExportSource {
+function loopingSource(frames: Frames, count: number, audio?: ExportAudio): ExportSource {
   return {
     width: SIZE.width,
     height: SIZE.height,
+    ...(audio ? { audio } : {}),
     frames: Array.from({ length: count }, (_, index) => ({
       index,
       timestampMicros: index * FRAME_MICROS,
@@ -341,6 +407,7 @@ interface Kit {
   readonly renderer: CompositeRenderer;
   readonly refiner: MaskRefiner;
   readonly frames: Frames;
+  readonly soundtrack: readonly EncodedPacket[];
   readonly maxTextureDimension: number;
 }
 
@@ -351,7 +418,13 @@ interface RungResult {
   readonly result?: ExportResult;
 }
 
-async function rung(kit: Kit, minutes: number, sink: FrameSink, label: string): Promise<RungResult> {
+async function rung(
+  kit: Kit,
+  minutes: number,
+  sink: FrameSink,
+  label: string,
+  withSound = false,
+): Promise<RungResult> {
   const asked = Math.round(minutes * 60 * FPS);
   const limit = heap().limit;
   let reached = 0;
@@ -375,7 +448,11 @@ async function rung(kit: Kit, minutes: number, sink: FrameSink, label: string): 
       maxTextureDimension: kit.maxTextureDimension,
       renderer: kit.renderer,
       refiner: kit.refiner,
-      source: loopingSource(kit.frames, asked),
+      source: loopingSource(
+        kit.frames,
+        asked,
+        withSound ? loopingAudio(kit.soundtrack, minutes * 60) : undefined,
+      ),
       sink: watcher,
       commands: COMMANDS,
       style: POSTER_STYLE,
@@ -428,8 +505,14 @@ async function rung(kit: Kit, minutes: number, sink: FrameSink, label: string): 
  * The ladder ends by running the tab out of memory, and a tab that dies takes
  * the return value of every rung before it as well as its own.
  */
-async function loggedRung(kit: Kit, minutes: number, sink: FrameSink, label: string): Promise<RungResult> {
-  const result = await rung(kit, minutes, sink, label);
+async function loggedRung(
+  kit: Kit,
+  minutes: number,
+  sink: FrameSink,
+  label: string,
+  withSound = false,
+): Promise<RungResult> {
+  const result = await rung(kit, minutes, sink, label, withSound);
   console.log(`bench: ${JSON.stringify({ measurement: 'long-clip', rung: label, ...result.row })}`);
   return result;
 }
@@ -690,6 +773,7 @@ export async function longClip(device: GPUDevice, base: string): Promise<unknown
     renderer: new CompositeRenderer(device),
     refiner: new MaskRefiner(device),
     frames: await Frames.fetch(`${base}/1080p30-gop30.mp4`),
+    soundtrack: await readSoundtrack(`${base}/1080p30-aac.mp4`),
     maxTextureDimension: device.limits.maxTextureDimension2D,
   };
 
@@ -742,6 +826,32 @@ export async function longClip(device: GPUDevice, base: string): Promise<unknown
         ...discarded.row,
         file_mb: mb(counted.bytes()),
         peak_over_file: round(discarded.peak / Math.max(counted.bytes(), 1)),
+      };
+    });
+
+    // --- the same again, carrying a soundtrack -----------------------------
+    //
+    // ONE ROW APART FROM THE ONE ABOVE, and the soundtrack is the only thing
+    // that differs: the same length, the same sink, the same handle that counts
+    // and discards. What it answers is whether a second track undoes the
+    // property this whole page is about, since it brings a cursor of its own, a
+    // packet count walked before the first frame, and a sample table of its own
+    // in the reserved index.
+    await settle();
+    await section('into a file, with a soundtrack, discarded at the writer', async () => {
+      const counted = countingHandle();
+      const withSound = await loggedRung(
+        kit,
+        longest,
+        clipSink({ kind: 'file', handle: counted.handle, name: 'counted.mp4' }),
+        `file ${String(longest)}m, with sound, discarded`,
+        true,
+      );
+      return {
+        ...withSound.row,
+        file_mb: mb(counted.bytes()),
+        peak_over_file: round(withSound.peak / Math.max(counted.bytes(), 1)),
+        audio_packets: Math.floor((longest * 60 * 48_000) / 1024),
       };
     });
 
