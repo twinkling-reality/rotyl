@@ -288,6 +288,19 @@ function string(value: unknown, what: string): string {
   return value;
 }
 
+/**
+ * A field that is only ever written when it is true, checked as that.
+ *
+ * `absent` is present or it is not, and `false` would be a third state meaning
+ * the same as the first: a reader that accepted one would let two documents say
+ * the same thing two ways. Refusing it now, while there is one version of this
+ * format, is cheaper than deciding later which of the two an old file meant.
+ */
+function flag(value: unknown, what: string): true {
+  if (value !== true) throw new Damaged(`${what} is not set`);
+  return true;
+}
+
 function oneOf<T extends string>(value: unknown, allowed: readonly T[], what: string): T {
   const found = string(value, what);
   const match = allowed.find((candidate) => candidate === found);
@@ -377,6 +390,12 @@ function asCommand(value: unknown, payload: Uint8Array<ArrayBuffer>): SelectionC
         mask: asMask(raw.mask, payload),
         op: oneOf(raw.op, ['replace', 'add', 'subtract'] as const, 'a mask operation'),
         ...(raw.refine === undefined ? {} : { refine: asRefine(raw.refine) }),
+        // The one field here that is about how the command came to be rather
+        // than about what it does, and the reason it is in the file at all:
+        // a mask the model said the object was not in is empty, an empty mask
+        // is what an erased selection also is, and a document that dropped the
+        // difference would reopen unable to say which of the two it held.
+        ...(raw.absent === undefined ? {} : { absent: flag(raw.absent, 'an absence') }),
       };
     default:
       throw new Damaged(`a command of kind ${String(raw.kind)}`);

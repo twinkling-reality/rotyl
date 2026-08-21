@@ -151,6 +151,11 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // is a question about the origin private file system rather than about the
   // log, and which writes tens of megabytes into one to find out.
   const kept = read('tools/video-bench/results-recovery.json');
+  // And once more for what one more optional field on a command costs. Kept out
+  // of results-document.json in particular rather than only out of the run
+  // above: three documents quote that file's ten-minute write and read, and
+  // taken inside it this moved both of them by noise.
+  const hidden = read('tools/video-bench/results-occlusion.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
@@ -170,6 +175,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
       still,
       saved,
       kept,
+      hidden,
     }),
     {
       slug: 'trials',

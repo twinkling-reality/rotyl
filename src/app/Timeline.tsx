@@ -4,14 +4,19 @@ import { PauseIcon, PlayIcon } from './icons.tsx';
 // export concept, and two identical declarations of it would be two places for
 // somebody to decide whether the ends are inclusive.
 import type { FrameRange } from '../platform/export/export-source.ts';
+// Type-only, and from core, for the same reason a range comes from the export:
+// what the log amounts to per frame is the log's question, and restating the
+// shape here would be a second place for somebody to decide whether `to` is
+// inclusive.
+import type { EditSpan } from '../core/document/selection-command.ts';
 import { movedEnd } from './range.ts';
 
 export interface TimelineProps {
   readonly frameCount: number;
   readonly frame: number;
   readonly frameRate: number;
-  /** Frames carrying an edit, ascending. */
-  readonly edited: readonly number[];
+  /** What the log has to say, per stretch of the clip, ascending. */
+  readonly spans: readonly EditSpan[];
   readonly playing: boolean;
   readonly onPlayToggle: () => void;
   /** `settled` is false while the pointer is still down. */
@@ -38,6 +43,20 @@ export function timecode(frame: number, frameRate: number): string {
 const percent = (frame: number, last: number): number => (last > 0 ? (frame / last) * 100 : 0);
 
 /**
+ * Half of one frame, as a percentage of the track.
+ *
+ * A mark is CENTRED on its frame, so a frame occupies the track from half a
+ * frame before its position to half a frame after it. A band therefore runs
+ * from half a frame before its first frame to half a frame after its last, and
+ * not from one position to the other: measured that way every segment of a run
+ * comes up one frame short, and on a sixty-frame clip that is seventeen pixels
+ * of daylight between the end of one stretch and the start of the next. Which
+ * is the one thing a run must not look like, since a gap is what "the run never
+ * got here" looks like.
+ */
+const halfFrame = (last: number): number => (last > 0 ? 50 / last : 0);
+
+/**
  * The timeline.
  *
  * A track and a knob, and the same instrument weight as the style sliders
@@ -52,7 +71,7 @@ export function Timeline({
   frameCount,
   frame,
   frameRate,
-  edited,
+  spans,
   playing,
   onPlayToggle,
   onScrub,
@@ -61,6 +80,7 @@ export function Timeline({
 }: TimelineProps): JSX.Element {
   const last = Math.max(0, frameCount - 1);
   const fill = percent(frame, last);
+  const half = halfFrame(last);
 
   return (
     <div class="timeline">
@@ -77,15 +97,49 @@ export function Timeline({
       <div class="timeline__scrubber">
         {/*
           Where the edits are.
-          A selection belongs to the frame it was made on and to no other, which
-          is honest and, without this, invisible: scrub away and the work is
-          gone from the screen with nothing to say it still exists. These are
-          the only marks on the track, and they are the whole affordance.
+          A selection holds from the frame it was made on until something later
+          changes it, so the frame it was made on is the only place it can be
+          found again, and without this it is invisible: scrub away and the work
+          is gone from the screen with nothing to say it still exists.
+
+          THREE THINGS RATHER THAN ONE, because the log has always known three
+          and this layer used to be handed a list of frame numbers. An edit
+          somebody made is a mark. A tracking run is a bar, because it is ONE
+          gesture that happens to touch three hundred frames, and drawing it as
+          three hundred marks said the opposite of what `group` has recorded
+          since the day tracking landed. And a stretch a run found nothing in is
+          the same bar drawn faintly: the run reached those frames and the model
+          said the object was behind something, which is the difference between
+          a tracker that failed and a tracker that worked and is telling the
+          truth. That difference is the whole of what this chapter carried.
         */}
         <div class="timeline__marks" aria-hidden="true">
-          {edited.map((index) => (
-            <span key={index} class="timeline__mark" style={{ left: `${String(percent(index, last))}%` }} />
-          ))}
+          {spans.map((span) =>
+            span.kind === 'edit' ? (
+              <span
+                key={span.from}
+                class="timeline__mark"
+                style={{ left: `${String(percent(span.from, last))}%` }}
+              />
+            ) : (
+              <span
+                key={span.from}
+                class={span.kind === 'absent' ? 'timeline__run timeline__run--absent' : 'timeline__run'}
+                // Clamped at the ends of the track and nowhere else. A run
+                // reaching the last frame would otherwise put half a frame of
+                // itself past the end, which the marks layer does not clip; the
+                // interior boundaries keep the extension, so two stretches of
+                // one run still meet with nothing between them.
+                style={{
+                  left: `${String(Math.max(0, percent(span.from, last) - half))}%`,
+                  width: `${String(
+                    Math.min(100, percent(span.to, last) + half) -
+                      Math.max(0, percent(span.from, last) - half),
+                  )}%`,
+                }}
+              />
+            ),
+          )}
           {/*
             And what a clip export would write.
             NOTHING AT ALL WITH NO RANGE SET, which is the whole constraint on

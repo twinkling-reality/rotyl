@@ -128,7 +128,10 @@ there.
 
 Two smaller things, both the difference between honest and usable. The timeline
 marks the frames where an edit begins, because a selection whose origin cannot
-be found again cannot be corrected. It also carries In and Out, which say which
+be found again cannot be corrected, and it says which KIND of thing began there:
+a mark for an edit somebody made, a bar for a run, and a faint stretch of that
+bar where the model said the object was behind something. It also carries In and
+Out, which say which
 part of the clip an export writes, and nothing at all until one is set: a clip
 somebody has said nothing about must not carry marks implying they have. The
 letters are the ones every editor binds, shifted here because the unshifted
@@ -203,7 +206,41 @@ rather than three hundred frames later where it stopped. That is one field on
 **Stopping keeps what it found.** A run abandoned half way has followed the
 object as far as it got, and that work is worth what it would have been had the
 clip ended there. Making Stop mean undo would be a second, worse button for
-something the first button already does.
+something the first button already does. A stop is a field on what the run hands
+back rather than an exception thrown out of it, which it was until the run had
+anything to hand back at all.
+
+**And a run says what it found, on the two occasions it is not what was asked
+for.** A run that walked to the end of the clip and found the object on every
+frame of it says nothing: the marks are the whole story and a line congratulating
+a button on having worked would be the product talking over itself. A run that
+was stopped says where it got to and that the frames it followed are kept, which
+is the part nobody can see. And a run that lost the object behind something says
+on how many frames, because a stretch of clip with no selection on it is exactly
+what a tracker that failed looks like and is the opposite of one. It is the rule
+a clip export already follows, in the same line, for the same reason.
+
+**The model is asked, on every frame, whether the object is in it at all**, and
+the answer used to reach nobody. An occluded frame gets an empty mask, which is
+the reference's behaviour and is right, and an empty mask is also what a
+selection erased down to nothing looks like: the log could not tell them apart,
+so nothing downstream of it could either. The command carries the verdict now.
+That is one optional field, the second thing in the log that says how a command
+came to be rather than what it does, and the first was `group`. What it buys is
+that the timeline can draw the occlusion, that a frame the model gave up on
+stops reporting a selection nobody made, and that all of it survives a save and
+a reload, which a fact about the run would not. What it costs is on
+`/research/the-occlusion.html`.
+
+**The timeline draws a run as a run.** Three hundred frames is one gesture, and
+until this chapter it was three hundred marks that looked exactly like three
+hundred separate strokes, on a projection that was handed the frame numbers and
+nothing else. It is one bar over the frames the run reached now, with the
+stretches the object was hidden in drawn faintly inside it rather than left as
+gaps, since a gap and a run that never got there are the same picture. The
+anchor keeps its own mark, because where somebody chose and where the run
+started are two facts and the track can carry both. Ten minutes of tracking went
+from eighteen thousand elements to two.
 
 **Tracking a second object is a second seed.** `runTracking` takes a list of
 masks, builds one track per mask, and advances all of them against one

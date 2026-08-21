@@ -1026,6 +1026,40 @@ button {
 }
 
 /*
+ * A tracking run: one gesture, drawn as one thing.
+ *
+ * The same two pixels the marks are, at the same height and in the same colour,
+ * run along the frames the run reached. That is deliberate rather than lazy: a
+ * run IS an edit, and giving it a colour of its own would make it read as a
+ * different kind of thing rather than as the same kind at length.
+ */
+.timeline__run {
+  position: absolute;
+  bottom: 4px;
+  height: 5px;
+  /*
+   * A run of one frame is still a run, and on a ten-minute clip one frame is a
+   * thirtieth of a pixel. No centring offset: the band is already positioned
+   * half a frame either side of the frames it covers, which is what makes two
+   * of them meet rather than leave a gap.
+   */
+  min-width: 2px;
+  background: var(--accent);
+}
+
+/*
+ * And the stretch of it the object was behind something.
+ *
+ * Faint rather than absent, because both facts have to survive: the run reached
+ * these frames, AND there is no selection on them. Drawn as a gap it would be
+ * indistinguishable from the run not having got there; drawn at full weight it
+ * would claim a selection the frames do not have.
+ */
+.timeline__run--absent {
+  opacity: 0.28;
+}
+
+/*
  * The part a clip export would write.
  *
  * A bar under the track, below the edit marks, in the marks layer so it is

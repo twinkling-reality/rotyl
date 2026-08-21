@@ -1,0 +1,141 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "occlusion": {
+    "commands": 18000,
+    "frames_hidden": 300,
+    "a_packed_mask_bytes": 3448,
+    "an_empty_packed_mask_bytes": 1024,
+    "the_field": {
+      "with_it_bytes": 64725365,
+      "without_it_bytes": 64721165,
+      "bytes": 4200,
+      "bytes_per_command": 14,
+      "per_cent_of_the_file": 0.0065
+    },
+    "the_occlusion": {
+      "nothing_hidden_bytes": 65448365,
+      "hidden_bytes": 64725365,
+      "megabytes_saved": 0.72
+    },
+    "writing": {
+      "nothing_hidden_ms": {
+        "n": 5,
+        "median": 11,
+        "min": 10.6,
+        "max": 17.3
+      },
+      "hidden_and_said_ms": {
+        "n": 5,
+        "median": 11.4,
+        "min": 10.3,
+        "max": 12.7
+      }
+    },
+    "timeline": {
+      "300 frames, nothing hidden": {
+        "commands": 300,
+        "marks": 300,
+        "elements": 2,
+        "projection_ms": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.2
+        },
+        "first": {
+          "from": 0,
+          "to": 0,
+          "kind": "edit"
+        }
+      },
+      "300 frames, hidden once": {
+        "commands": 300,
+        "marks": 300,
+        "elements": 4,
+        "projection_ms": {
+          "n": 15,
+          "median": 0,
+          "min": 0,
+          "max": 0.1
+        },
+        "first": {
+          "from": 0,
+          "to": 0,
+          "kind": "edit"
+        }
+      },
+      "3000 frames, nothing hidden": {
+        "commands": 3000,
+        "marks": 3000,
+        "elements": 2,
+        "projection_ms": {
+          "n": 15,
+          "median": 0.2,
+          "min": 0.2,
+          "max": 0.5
+        },
+        "first": {
+          "from": 0,
+          "to": 0,
+          "kind": "edit"
+        }
+      },
+      "3000 frames, hidden three times": {
+        "commands": 3000,
+        "marks": 3000,
+        "elements": 8,
+        "projection_ms": {
+          "n": 15,
+          "median": 0.1,
+          "min": 0.1,
+          "max": 0.3
+        },
+        "first": {
+          "from": 0,
+          "to": 0,
+          "kind": "edit"
+        }
+      },
+      "18000 frames, nothing hidden": {
+        "commands": 18000,
+        "marks": 18000,
+        "elements": 2,
+        "projection_ms": {
+          "n": 15,
+          "median": 1.1,
+          "min": 1,
+          "max": 1.6
+        },
+        "first": {
+          "from": 0,
+          "to": 0,
+          "kind": "edit"
+        }
+      },
+      "18000 frames, hidden three times": {
+        "commands": 18000,
+        "marks": 18000,
+        "elements": 8,
+        "projection_ms": {
+          "n": 15,
+          "median": 1.1,
+          "min": 0.9,
+          "max": 1.3
+        },
+        "first": {
+          "from": 0,
+          "to": 0,
+          "kind": "edit"
+        }
+      }
+    }
+  },
+  "occlusion:wall-seconds": 0.3
+}

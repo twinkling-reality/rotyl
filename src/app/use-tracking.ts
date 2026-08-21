@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { TrackingStore, type TrackingStatus } from '../core/perception/tracking-store.ts';
 import { trackingHost } from '../platform/perception/tracking-host.ts';
+import type { TrackingResult } from '../core/perception/tracking-job.ts';
 import type { RotylRuntime } from './use-rotyl.ts';
 
 /**
@@ -33,13 +34,28 @@ export interface TrackingOptions {
   readonly runtime: RotylRuntime | undefined;
   /** The open video, or undefined for a photograph or nothing. */
   readonly file: File | undefined;
+  /**
+   * What the run found, once it is over. Not called when there was no run.
+   *
+   * The status line says what is HAPPENING and takes itself down when it stops;
+   * this is what happened, which is the other line and the other lifetime. It
+   * is the same split a clip export already makes, and for the same reason: a
+   * run that followed the object through two hundred frames and lost it behind
+   * a lorry for forty of them looks exactly like one that did not.
+   */
+  readonly onFinished?: (result: TrackingResult) => void;
 }
 
-export function useTracking({ runtime, file }: TrackingOptions): TrackingHandle {
+export function useTracking({ runtime, file, onFinished }: TrackingOptions): TrackingHandle {
   const [status, setStatus] = useState<TrackingStatus>({ kind: 'idle' });
   const [running, setRunning] = useState(false);
   const storeRef = useRef<TrackingStore | undefined>(undefined);
   const host = trackingHost();
+  // Through a ref, because the store is built in an effect keyed on the file
+  // and the runtime. A callback in that dependency list would throw away the
+  // tracker and its nineteen megabytes every time App re-rendered.
+  const finished = useRef(onFinished);
+  finished.current = onFinished;
 
   useEffect(() => {
     if (!runtime || !file || !host) {
@@ -104,8 +120,14 @@ export function useTracking({ runtime, file }: TrackingOptions): TrackingHandle 
           setRunning(false);
           return;
         }
-        await store.track(frame, [seed]);
+        const result = await store.track(frame, [seed]);
         setRunning(store.running);
+        // AND ONLY IF THIS IS STILL THE RUN THE SESSION IS HAVING. Closing the
+        // file disposes the store, which aborts the run, which resolves this a
+        // frame later with a perfectly good result about a clip that is no
+        // longer open. Reported, that is a sentence about somebody else's work
+        // arriving over whatever they opened next.
+        if (result && storeRef.current === store) finished.current?.(result);
       })();
     },
     [runtime],

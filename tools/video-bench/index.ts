@@ -19,6 +19,7 @@ import { encode } from './encode.ts';
 import { log } from './log.ts';
 import { documentCost } from './document.ts';
 import { recovery } from './recovery.ts';
+import { occlusion } from './occlusion.ts';
 import { trackedFrame } from './tracked-frame.ts';
 import { longClip } from './long-clip.ts';
 import { interleave } from './interleave.ts';
@@ -53,6 +54,12 @@ export const MEASUREMENTS = [
   // And the same again for what it costs to write down on every edit, which is
   // a question about the origin private file system rather than about the log.
   'recovery',
+  // And once more, for what ONE MORE optional field on a command costs. It is
+  // the same class again and it is kept out of `document` for the reason that
+  // file exists to serve: three documents quote measurement 12's ten-minute
+  // write and read, and taken inside that run this moved both of them by noise
+  // on a code path it does not touch.
+  'occlusion',
   // Its own command, and out of `all`, because one rung of it deliberately runs
   // the tab out of memory and because it is twenty minutes where `all` is
   // three. Neither belongs in the middle of a run with nine other measurements
@@ -87,6 +94,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('log', () => log());
   await step('document', () => documentCost());
   await step('recovery', () => recovery());
+  await step('occlusion', () => occlusion());
   await step('readback', () => readback(dev));
   await step('ort-device', () => ortDevice(dev, `${ONNX}/memory_encoder.onnx`));
   await step('attention', () => attention(ONNX));

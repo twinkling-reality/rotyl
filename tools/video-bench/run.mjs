@@ -4,6 +4,7 @@
 //   node tools/video-bench/run.mjs all
 //   node tools/video-bench/run.mjs log     # its own file; see APART below
 //   node tools/video-bench/run.mjs document        # its own file; see APART below
+//   node tools/video-bench/run.mjs occlusion       # its own file; see APART below
 //   node tools/video-bench/run.mjs recovery        # its own file; see APART below
 //   node tools/video-bench/run.mjs tracked-frame   # needs VITE_TRACKING_HOST
 //   node tools/video-bench/run.mjs long-clip       # twenty minutes; see below
@@ -32,6 +33,13 @@ import { writeFileSync } from 'node:fs';
  * findings answered in two chapters, and folding them into one file would
  * re-date the first one every time the second is re-taken.
  *
+ * `occlusion` is the same again and is kept out of `document` in particular
+ * rather than only out of `all`. It asks what one more optional field on a
+ * command costs, which is the same class of question and shares helpers with
+ * it, and that is exactly why it must not share a file: measurement 12's
+ * ten-minute write and read are quoted in three documents, and taken inside
+ * that run this moved both of them by noise on a path it does not touch.
+ *
  * `recovery` is the same again, one chapter further on. It writes tens of
  * megabytes into the origin private file system and cleans up after itself,
  * which is not a thing to have running in the middle of an export measurement.
@@ -49,7 +57,7 @@ import { writeFileSync } from 'node:fs';
  * inside `all` would re-date every decode and encode figure beside it whenever
  * somebody asked where the sound goes.
  */
-const APART = ['log', 'document', 'recovery', 'tracked-frame', 'long-clip', 'interleave'];
+const APART = ['log', 'document', 'occlusion', 'recovery', 'tracked-frame', 'long-clip', 'interleave'];
 
 /**
  * The export ladder, apart from `all` for a reason this file learned the hard

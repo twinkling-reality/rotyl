@@ -29,8 +29,43 @@ interface ProviderModule {
   };
 }
 
+/** The packing a mask goes into the log as, which is all a run's commands need. */
+interface CoverageModule {
+  readonly packCoverage: (
+    width: number,
+    height: number,
+    data: Uint8Array,
+  ) => {
+    readonly width: number;
+    readonly height: number;
+    readonly packed: Uint8Array<ArrayBuffer>;
+  };
+}
+
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, 'fixtures');
+
+/**
+ * How far along the track a tracking run has drawn to, as a fraction.
+ *
+ * A run is ONE bar rather than one element per frame, so how far it has got is
+ * an extent rather than a count. That is the point of the drawing and it is
+ * also why these tests measure it this way: counting elements would report 1
+ * for a run of three hundred frames and 1 for a run of two.
+ *
+ * Zero when there is no run drawn yet.
+ */
+async function trackedTo(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const layer = document.querySelector('.timeline__marks');
+    const bars = [...document.querySelectorAll('.timeline__run')];
+    const last = bars.at(-1);
+    if (!layer || !last) return 0;
+    const track = layer.getBoundingClientRect();
+    if (track.width === 0) return 0;
+    return (last.getBoundingClientRect().right - track.left) / track.width;
+  });
+}
 
 /**
  * A figure out of a harness's own results, by path.
@@ -263,6 +298,23 @@ test('offers the research page from the empty state, and generates it from the r
     'file_mb',
   ]);
   await expect(page.getByText(`${String(budgeted)} MB`).first()).toBeVisible();
+
+  // And out of the newest of those files, which exists BECAUSE it has its own
+  // command: what one more field on a command costs is the same class of
+  // question as what a document costs and shares its helpers, and folding the
+  // two together moved a figure three documents quote.
+  await page.goto('/research/the-occlusion.html');
+  const perCommand = await medianAt('tools/video-bench/results-occlusion.json', [
+    'occlusion',
+    'the_field',
+    'bytes_per_command',
+  ]);
+  await expect(page.getByText(`at ${perCommand.toFixed(0)} bytes each`)).toBeVisible();
+  const hiddenFrames = await medianAt('tools/video-bench/results-occlusion.json', [
+    'occlusion',
+    'frames_hidden',
+  ]);
+  await expect(page.getByRole('cell', { name: `hidden ${String(hiddenFrames)} frames, said` })).toBeVisible();
 
   await page.goto('/research/trials.html');
   await expect(page.getByRole('cell', { name: /59.5 KB gzipped/ })).toBeVisible();
@@ -611,6 +663,120 @@ test('carries a selection forward through the clip', async ({ page }) => {
   }).toPass();
 });
 
+/**
+ * What a run leaves on the timeline, without a model.
+ *
+ * The two tests that drive a real tracker need nineteen megabytes of graphs
+ * that no published release contains, so they skip on most machines. What a run
+ * leaves BEHIND is a command log, and a command log can be written directly:
+ * the shape of it is the product's own type and the projection over it is the
+ * product's own code, so everything below the model is exercised for real.
+ *
+ * It is a Playwright test rather than a unit one because the thing being
+ * asserted is elements on a track. `editSpans` is unit-tested in
+ * `test/selection-document.test.ts`; this is the half that only a browser has.
+ */
+test('draws a tracked run as one run, with the frames it lost the object faint', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  const timeline = page.getByRole('slider', { name: 'Frame' });
+
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  const park = async (): Promise<void> => {
+    await page.mouse.move(box.x + box.width / 2, box.y - 30);
+  };
+
+  // A baseline per frame, because the clip's own picture differs between them:
+  // comparing frame 35 against a frame 30 capture would report a difference
+  // whatever the selection did.
+  await timeline.fill('35');
+  await expect(page.getByText('36 / 60')).toBeVisible();
+  await park();
+  const clean35 = await canvas.screenshot();
+
+  await timeline.fill('30');
+  await expect(page.getByText('31 / 60')).toBeVisible();
+  await park();
+  const clean30 = await canvas.screenshot();
+
+  // A run exactly as `runTracking` writes one: the user's own command on the
+  // anchor, then one grouped `replace` per frame after it, with the frames the
+  // model said the object was not in carrying an empty mask that says so.
+  await page.evaluate(async (coverageModule) => {
+    // Through the dev server, the way the export test reaches the frame
+    // provider: the specifier is a runtime string, so the shape it is expected
+    // to have is declared rather than asserted.
+    const loaded: CoverageModule = await import(coverageModule);
+    const { packCoverage } = loaded;
+    const size = 256;
+    const filled = new Uint8Array(size * size);
+    for (let y = 64; y < 192; y++) for (let x = 64; x < 192; x++) filled[y * size + x] = 255;
+    const object = packCoverage(size, size, filled);
+    const empty = packCoverage(size, size, new Uint8Array(size * size));
+
+    const document = globalThis.rotyl?.engine.document;
+    if (!document) throw new Error('no document');
+    document.apply({
+      kind: 'paint',
+      stroke: { points: [{ x: 100, y: 100 }], radius: 40, hardness: 1 },
+      frame: 20,
+    });
+    const group = document.beginGroup();
+    for (let frame = 21; frame <= 40; frame++) {
+      const hidden = frame >= 28 && frame <= 32;
+      document.apply({
+        kind: 'applyMask',
+        mask: hidden ? empty : object,
+        op: 'replace',
+        frame,
+        group,
+        ...(hidden ? { absent: true as const } : {}),
+      });
+    }
+  }, '/src/core/document/coverage-mask.ts');
+
+  // ONE MARK AND THREE BARS, where the projection this replaced would have
+  // produced twenty-one marks that all said the same thing. The mark is the
+  // anchor, which the run writes no command for: where somebody chose and where
+  // the run started are two facts and the track can afford both.
+  await expect(page.locator('.timeline__mark')).toHaveCount(1);
+  await expect(page.locator('.timeline__run')).toHaveCount(3);
+  await expect(page.locator('.timeline__run--absent')).toHaveCount(1);
+
+  // And the faint one is inside the run rather than at either end of it, which
+  // is the only arrangement that says "it got here and found nothing".
+  const bars = await page.locator('.timeline__run').all();
+  const boxes = await Promise.all(bars.map(async (bar) => bar.boundingBox()));
+  const [first, hidden, last] = boxes;
+  expect(first && hidden && last).toBeTruthy();
+  if (!first || !hidden || !last) return;
+  expect(hidden.x).toBeGreaterThan(first.x);
+  expect(last.x).toBeGreaterThan(hidden.x);
+  const faint = await page
+    .locator('.timeline__run--absent')
+    .evaluate((element) => Number(getComputedStyle(element).opacity));
+  expect(faint).toBeGreaterThan(0);
+  expect(faint).toBeLessThan(1);
+
+  // The picture agrees with the track, which is the whole reason the faint bar
+  // is not a bug report. Frame 30 is inside the occlusion and has no selection
+  // on it; frame 35 is past it and has one back.
+  await park();
+  await expect(async () => {
+    expect(Buffer.compare(await canvas.screenshot(), clean30)).toBe(0);
+  }).toPass();
+
+  await timeline.fill('35');
+  await expect(page.getByText('36 / 60')).toBeVisible();
+  await park();
+  await expect(async () => {
+    expect(Buffer.compare(await canvas.screenshot(), clean35)).not.toBe(0);
+  }).toPass();
+});
+
 test('follows a selection forward through the clip, and stops where it is told', async ({ page }) => {
   // THE ONE TEST HERE THAT NEEDS WEIGHTS, and it skips itself rather than
   // asking to be remembered. Tracking fetches nineteen megabytes of graph from
@@ -651,25 +817,31 @@ test('follows a selection forward through the clip, and stops where it is told',
   // are nineteen megabytes and arrive before any of it starts.
   const stop = page.getByRole('button', { name: 'Stop' });
   const marks = page.locator('.timeline__mark');
+  const runs = page.locator('.timeline__run');
   await expect(stop).toBeVisible({ timeout: 120_000 });
 
-  // At least one frame nobody selected on now carries a mask, which is the
-  // whole of what tracking is. Counted with a floor rather than exactly: a
-  // tracked frame is about 135 ms and an exact count races a moving number.
-  await expect.poll(() => marks.count(), { timeout: 120_000 }).toBeGreaterThan(1);
-  const before = await marks.count();
+  // Frames nobody selected on now carry a mask, which is the whole of what
+  // tracking is. Measured as how far the run's bar has reached rather than as a
+  // count of elements, because a run is one bar however many frames it covers,
+  // and with a floor rather than exactly: a tracked frame is about 135 ms and
+  // an exact figure races a moving number.
+  await expect(runs.first()).toBeVisible({ timeout: 120_000 });
+  await expect.poll(() => trackedTo(page), { timeout: 120_000 }).toBeGreaterThan(0.1);
+  const before = await trackedTo(page);
 
   await stop.click();
   await expect(track).toBeVisible();
   // Stopping keeps what it found. There is already a button for taking it back,
   // and it did not reach the end of the clip.
-  const kept = await marks.count();
+  const kept = await trackedTo(page);
   expect(kept).toBeGreaterThanOrEqual(before);
-  expect(kept).toBeLessThan(60);
+  expect(kept).toBeLessThan(0.98);
 
   // And it is one gesture: one press of undo takes the whole run, and lands the
-  // playhead on the frame after the one the selection was made on.
+  // playhead on the frame after the one the selection was made on. What is left
+  // is the anchor, which the run never wrote a command for.
   await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(runs).toHaveCount(0);
   await expect(marks).toHaveCount(1);
   await expect(page.getByText('2 / 60')).toBeVisible();
 });
@@ -700,7 +872,6 @@ test('leaves the playhead free while it tracks', async ({ page }) => {
   await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.65, { steps: 10 });
   await page.mouse.up();
 
-  const marks = page.locator('.timeline__mark');
   const park = async (): Promise<void> => {
     await page.mouse.move(box.x + box.width / 2, box.y - 30);
   };
@@ -709,12 +880,12 @@ test('leaves the playhead free while it tracks', async ({ page }) => {
 
   await track.click();
   await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible({ timeout: 120_000 });
-  await expect.poll(() => marks.count(), { timeout: 120_000 }).toBeGreaterThan(1);
+  await expect.poll(() => trackedTo(page), { timeout: 120_000 }).toBeGreaterThan(0.1);
 
   // The picture moves, while the run carries on behind it. Slowly, because the
   // arithmetic between the graphs is eighteen milliseconds of main-thread
   // JavaScript per tracked frame.
-  const started = await marks.count();
+  const started = await trackedTo(page);
   await page.getByRole('slider', { name: 'Frame' }).fill('40');
   await expect(page.getByText('41 / 60')).toBeVisible({ timeout: 60_000 });
   await park();
@@ -725,8 +896,10 @@ test('leaves the playhead free while it tracks', async ({ page }) => {
   // And it ran to the end of the clip regardless of where the playhead went,
   // which is what makes the set of frames it tracked a property of the request
   // rather than of how somebody happened to scrub.
-  expect(started).toBeGreaterThan(1);
-  await expect(marks).toHaveCount(60, { timeout: 120_000 });
+  expect(started).toBeGreaterThan(0.1);
+  // All the way to the end of the track, which is a run that reached the last
+  // frame of the clip: the bar's right edge and the track's are the same place.
+  await expect.poll(() => trackedTo(page), { timeout: 120_000 }).toBeGreaterThan(0.999);
   await expect(track).toBeEnabled();
 });
 

@@ -3,7 +3,7 @@ import { SelectionDocument } from '../src/core/document/selection-document.ts';
 import { packCoverage } from '../src/core/document/coverage-mask.ts';
 import {
   commandsForFrame,
-  editedFrames,
+  editSpans,
   hasAnyCoverage,
   type BrushStroke,
   type SelectionCommand,
@@ -100,6 +100,31 @@ describe('coverage detection', () => {
     expect(hasAnyCoverage([paint, { kind: 'clear', frame: 0 }])).toBe(false);
     expect(hasAnyCoverage([paint, { kind: 'clear', frame: 0 }, paint])).toBe(true);
   });
+
+  it('is exact about a mask the model said the object was not in', () => {
+    // The one case that used to be approximate and is not. An empty mask
+    // applied with `replace` decides the frame, and what it decides is that
+    // there is nothing on it: the overlay lifting everything toward paper there
+    // would be claiming a selection the frame does not have.
+    expect(hasAnyCoverage([paint, absent('replace')])).toBe(false);
+    // Applied any other way it contributes nothing, so the scan carries on past
+    // it to whatever was underneath. A second tracked object writes `add`, and
+    // its going behind something must not blank the first one's region.
+    expect(hasAnyCoverage([paint, absent('add')])).toBe(true);
+    expect(hasAnyCoverage([absent('add')])).toBe(false);
+    // And a stroke made afterwards is a selection whatever the model thought.
+    expect(hasAnyCoverage([absent('replace'), paint])).toBe(true);
+  });
+});
+
+/** A frame the model said the object is not in, which is what a tracker writes. */
+const absent = (op: 'replace' | 'add', frame = 0, group?: number): SelectionCommand => ({
+  kind: 'applyMask',
+  mask: packCoverage(1, 1, new Uint8Array([0])),
+  op,
+  absent: true,
+  frame,
+  ...(group === undefined ? {} : { group }),
 });
 
 /**
@@ -158,8 +183,89 @@ describe('a log spanning frames', () => {
   });
 
   it('reports which frames carry an edit, in order and without repeats', () => {
-    expect(editedFrames([at(9), at(0), at(5), at(5)])).toEqual([0, 5, 9]);
-    expect(editedFrames([])).toEqual([]);
+    expect(editSpans([at(9), at(0), at(5), at(5)])).toEqual([
+      { from: 0, to: 0, kind: 'edit' },
+      { from: 5, to: 5, kind: 'edit' },
+      { from: 9, to: 9, kind: 'edit' },
+    ]);
+    expect(editSpans([])).toEqual([]);
+  });
+
+  it('draws a run as one stretch rather than as one edit per frame', () => {
+    // What `group` has recorded since tracking landed and what the projection
+    // feeding the timeline used to discard. The anchor is the user's own
+    // command and stays its own mark: where the run started and where somebody
+    // chose are two different facts.
+    const tracked = (frame: number): SelectionCommand => ({ ...replace(frame), group: 7 });
+    expect(editSpans([at(4), tracked(5), tracked(6), tracked(7)])).toEqual([
+      { from: 4, to: 4, kind: 'edit' },
+      { from: 5, to: 7, kind: 'tracked' },
+    ]);
+
+    // Two runs are two stretches even where they touch, because they are two
+    // gestures and one undo each.
+    const second = (frame: number): SelectionCommand => ({ ...replace(frame), group: 8 });
+    expect(editSpans([tracked(1), tracked(2), second(3), second(4)])).toEqual([
+      { from: 1, to: 2, kind: 'tracked' },
+      { from: 3, to: 4, kind: 'tracked' },
+    ]);
+
+    // And a gap in the frames breaks it, so a run that skipped frames is not
+    // drawn as covering them.
+    expect(editSpans([tracked(1), tracked(2), tracked(9)])).toEqual([
+      { from: 1, to: 2, kind: 'tracked' },
+      { from: 9, to: 9, kind: 'tracked' },
+    ]);
+  });
+
+  it('breaks a run where the model said the object was not there', () => {
+    const tracked = (frame: number): SelectionCommand => ({ ...replace(frame), group: 3 });
+    expect(
+      editSpans([tracked(10), tracked(11), absent('replace', 12, 3), absent('replace', 13, 3), tracked(14)]),
+    ).toEqual([
+      { from: 10, to: 11, kind: 'tracked' },
+      { from: 12, to: 13, kind: 'absent' },
+      { from: 14, to: 14, kind: 'tracked' },
+    ]);
+  });
+
+  it('answers a frame the same way the fold does, in the same order', () => {
+    // ORDER MATTERS, and it is the whole of what makes this agree with the
+    // picture. A frame the tracker gave up on and the user then brushed has a
+    // selection on it, whatever the model thought.
+    expect(editSpans([absent('replace', 12, 3), { ...at(12), group: 3 }])).toEqual([
+      { from: 12, to: 12, kind: 'tracked' },
+    ]);
+    // And the other way round it does not. Someone who painted at 12 and then
+    // tracked over it sees nothing on that frame, because the tracker's replace
+    // is what decides it and everything before one of those is discarded. A
+    // timeline that drew it solid would be claiming a selection the frame does
+    // not have, which is this chapter's own point upside down.
+    expect(editSpans([{ ...at(12), group: 3 }, absent('replace', 12, 3)])).toEqual([
+      { from: 12, to: 12, kind: 'absent' },
+    ]);
+    // The same test the fold passes, on the same commands.
+    const both: SelectionCommand[] = [{ ...at(12), group: 3 }, absent('replace', 12, 3)];
+    expect(hasAnyCoverage(commandsForFrame(both, 12))).toBe(false);
+
+    // A clear empties the frame too and is not an absence: somebody emptied it.
+    expect(editSpans([absent('replace', 4, 3), { kind: 'clear', frame: 4, group: 3 }])).toEqual([
+      { from: 4, to: 4, kind: 'tracked' },
+    ]);
+    // An erase leaves the answer where it was, because it can only remove.
+    expect(editSpans([absent('replace', 4, 3), { ...erase, frame: 4, group: 3 }])).toEqual([
+      { from: 4, to: 4, kind: 'absent' },
+    ]);
+  });
+
+  it('keeps two hand edits on neighbouring frames as two marks', () => {
+    // The join is along a run and only along a run. Without that guard two
+    // strokes a frame apart would fuse into a bar claiming a gesture nobody
+    // made, and every other case in this file has a gap in it.
+    expect(editSpans([at(4), at(5)])).toEqual([
+      { from: 4, to: 4, kind: 'edit' },
+      { from: 5, to: 5, kind: 'edit' },
+    ]);
   });
 
   it('answers coverage per frame, not for the log', () => {

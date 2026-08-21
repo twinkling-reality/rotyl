@@ -8,7 +8,7 @@ src/platform/  browser adapters: decode, texture upload, encode, mux, inference
 src/app/       Preact UI
 ```
 
-It ships as 163 KB of JavaScript, 50.8 KB gzipped, plus 31 KB of subset fonts.
+It ships as 165 KB of JavaScript, 51.4 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches none of the other two: the inference runtime arrives on the first object
 click, the demuxer on the first video, the container writer on the first clip
@@ -237,6 +237,20 @@ What tracking did add is a group. One run is three hundred commands and one
 gesture, so commands carry the id of the gesture that made them and undo takes
 the whole run. It is one optional field and two loops, and it is the only thing
 in the log that knows more than one command can belong together.
+
+**There is now a second field of that kind, and it is the only other thing here
+that says how a command came to be rather than what it does.** A tracker asks
+the model, per frame, whether the object is in it at all, and a frame it is not
+in gets an empty mask. That is right and it is also indistinguishable from a
+selection erased down to nothing, so the verdict travels on the command: written
+only where it is true, 14 bytes on each of the frames that carry it, and read
+back by the one decoder both the document and the crash journal share. The
+alternative was to put it on the result the run hands back, which is where it
+already was and where it dies with the session. A log is what gets saved,
+reloaded and undone, and "why is there no selection on frame 412" is a question
+about a document rather than about a job. What both fields cost, and what the
+other three things the perception layer computes and drops are still doing
+there, is on `/research/the-occlusion.html`.
 
 **And it made the mask's shape matter.** One a frame at 64 KB is a gigabyte for
 ten minutes, so a mask is packed rather than held plainly, which takes it to

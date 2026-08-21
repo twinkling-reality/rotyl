@@ -395,8 +395,12 @@ describe('a result the user has moved past', () => {
 
     expect(recorded.prompts.length).toBe(2);
     expect(appliedMasks(document).length).toBe(1);
-    // The surviving command is the one the second click asked for.
-    expect(store.promptPoints[0]?.x).toBe(90);
+    // The surviving command is the one the second click asked for. Read off
+    // what the engine was asked rather than off a getter on the store: the
+    // store used to expose its prompt points and nothing outside this line
+    // ever read them, which is a public surface that exists to be asserted
+    // about rather than an interface anything needs.
+    expect(recorded.prompts.at(-1)?.points[0]?.x).toBe(90);
   });
 
   it('does not pay for the frame twice when clicks overlap', async () => {

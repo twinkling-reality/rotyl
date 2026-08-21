@@ -14,6 +14,83 @@ import type { Trial } from './page.ts';
  */
 export const TRIALS: readonly Trial[] = [
   {
+    what: 'An occlusion as a field on the command, rather than on the run that produced it',
+    verdict: 'adopted',
+    evidence:
+      'The model answers per frame whether the object is in it, the tracker acts on that three times, and the answer then reached nobody: what got into the log was an applyMask with an empty mask, which is the same shape as a selection erased down to nothing. A run is a thing that happened once in a session that ends and the question is asked of a document that was saved and reloaded, so the run was the wrong carrier. On the command it is 14 bytes on each of the 300 commands that carry it, 4.1 KB of a 64 MB ten-minute document, and it makes hasAnyCoverage exact for that case rather than approximate. The whole chapter is 0.60 KB gzipped on an application bundle whose size decided this project’s framework, and it adds no button',
+    where: 'src/core/document/selection-command.ts, and "What the tracker knew and the log could not say"',
+  },
+  {
+    what: 'A stop as an exception thrown out of a tracking run, which is what it was',
+    verdict: 'rejected',
+    evidence:
+      'A stop keeps everything it found and is a button somebody pressed, so the only caller had to recognise the exception in order to say nothing about it. What made throwing defensible was that a stopped run had nothing to hand back; it has, which is how far it got and what it found, and that is what the interface owes anybody who pressed Stop. It is a field on the result instead and one catch arm shorter',
+    where: 'src/core/perception/tracking-job.ts',
+  },
+  {
+    what: 'An Inspect mode, off by default, showing what the perception layer knows',
+    verdict: 'rejected',
+    evidence:
+      'It answers the wrong question by putting five unlike facts behind one switch. What a head scored and what a candidate covers are the same on every file anybody opens; where a tracked object went behind something is a numbered frame of THIS clip that somebody has to act on. The first belongs on /research/ and the second belongs where per-frame facts already are, which is a mark on a track that costs no button. A mode is also the one shape that cannot be judged: nobody turns it on, so nothing about it is ever wrong in front of anybody',
+    where: '"What the tracker knew and the log could not say"',
+  },
+  {
+    what: 'The model’s confidence in the interface, on the candidates or anywhere else',
+    verdict: 'rejected',
+    evidence:
+      'Re-asked rather than assumed, and the answer written in docs/selection.md holds: confidence is not a quantity anyone can see, so it decides which of three silhouettes is drawn first and the candidates are offered smallest first, which is the axis a person chooses along. Two readings agreeing to within a tenth are shown as one for the same reason. A number beside a silhouette invites somebody to pick the higher one, which is the model’s own preference rendered as advice',
+    where: 'src/core/perception/mask-candidates.ts',
+  },
+  {
+    what: 'Drawing the candidates orderCandidates dropped, and what each one covers',
+    verdict: 'rejected',
+    evidence:
+      'Two are dropped per click at most, one for covering less than 0.0005 of the frame, which is a head that produced nothing rather than a small object, and one for landing within 0.9 IoU of a better answer, which is the same answer twice. Both are the picker refusing to offer a choice that is not there. Area survives as the ORDER, which is the visible form of it: a candidate list already sorted by size says what the numbers would say and needs no digits',
+    where: 'src/core/perception/mask-candidates.ts',
+  },
+  {
+    what: 'PerceptionStore.promptPoints, a public getter with no consumer outside its own test',
+    verdict: 'rejected',
+    evidence:
+      'Deleted rather than drawn. The prompt is the QUESTION and the candidates are the answer, and this product has argued since object selection landed that what it offers is the answer; the points also end on the next brush stroke, so nothing about them survives long enough to be in a document. One test read it, to check which of two overlapping clicks won, and reads what the engine was asked instead',
+    where: 'src/core/perception/perception-store.ts',
+  },
+  {
+    what: 'A cost display: frames dropped, the quality tier in use, and whether the preview is a downscale',
+    verdict: 'rejected',
+    evidence:
+      'All three are known. Playback counts advanced and skipped over each twenty-frame window and uses them only to move the tier, and the tier is a public getter whose comment says the dev console reads it. They are facts about the tool rather than about the document: the same clip on a faster machine reports different numbers and is the same work. The one that is about the file, that a preview over 4096 px is a downscale of the export, is a property of its dimensions, which the row beside the file’s name already gives',
+    where: 'src/core/render/rotyl-engine.ts',
+  },
+  {
+    what: 'A style declaring named views, so its structure tensor and streamlines can be drawn as a flow field',
+    verdict: 'rejected',
+    evidence:
+      'Re-argued against the entry above it rather than around it, and it loses on the same sentence: src/core/style/style.ts holds that nothing upstream knows what a cel band or a halftone dot is. A declared view is a weaker breach than handing out a working buffer and it is the same breach, because the names ARE what a style does. It also has no reader: an orientation field is a fact about the chain and identical on every photograph anybody opens, which is a figure on a research page rather than a thing to put over somebody’s work',
+    where: 'src/core/style/style.ts',
+  },
+  {
+    what: 'Drawing the occlusion on the canvas, where the user is actually looking',
+    verdict: 'rejected',
+    evidence:
+      'The display pass carries two floats in a uniform buffer that is exactly full at 48 bytes, and it lifts and contours rather than drawing anything with an edge of its own. Saying "the object is behind something here" means a glyph, and src/core is compiled with no dom lib, so an atlas would have to be made in platform and handed in as a texture. The product has never written on the picture and has no dialogs; a sentence about a frame goes where sentences already are',
+    where: 'src/core/render/display-renderer.ts',
+  },
+  {
+    what: 'Drawing a tracked run’s occluded frames as a gap in the bar rather than as a faint one',
+    verdict: 'rejected',
+    evidence:
+      'A gap is indistinguishable from the run not having reached those frames, which is the one thing it must not be confused with: a run that stopped and a run that got there and found nothing want opposite reactions from the user. Both facts have to survive at once, so the bar is continuous and the stretch is drawn at 0.28 opacity',
+    where: 'src/app/Timeline.tsx',
+  },
+  {
+    what: 'Reaching multi-object tracking from the interface, which core has always supported',
+    verdict: 'open',
+    evidence:
+      'runTracking takes a list of seeds, N tracks advance against one embedding per frame so a second object is 91 ms rather than another 135, and the first writes replace while the rest add. use-tracking passes exactly one seed, so none of it is reachable. What is missing is not the loop, it is a way to say WHICH objects: the product has one selection and no concept of a set of them, and a second seed with no way to name, re-select or undo one of them separately would be a capability with no handle on it',
+    where: 'src/app/use-tracking.ts',
+  },
+  {
     what: 'Writing the whole document on every edit, so a crash journal needs no second format',
     verdict: 'rejected',
     evidence:

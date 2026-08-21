@@ -81,6 +81,14 @@ describe('a crash journal', () => {
       { kind: 'applyMask', mask: packCoverage(MASK, MASK, coverage(1)), op: 'replace', frame: 1, group: 4 },
       {
         kind: 'applyMask',
+        mask: packCoverage(MASK, MASK, new Uint8Array(MASK * MASK)),
+        op: 'replace',
+        absent: true,
+        frame: 3,
+        group: 4,
+      },
+      {
+        kind: 'applyMask',
         mask: packCoverage(MASK, MASK, coverage(2)),
         op: 'replace',
         refine: DEFAULT_REFINE_SETTINGS,
@@ -96,7 +104,7 @@ describe('a crash journal', () => {
     ]);
 
     const walked = walkJournal(bytes);
-    expect(walked).toHaveLength(4);
+    expect(walked).toHaveLength(5);
     expect(walked[0]?.kind).toBe(STATE_RECORD);
     expect(documentStateFromWire(walked[0]?.wire)).toEqual(STATE);
 
@@ -113,6 +121,9 @@ describe('a crash journal', () => {
       expect(after.group).toBe(before.group);
       if (before.kind === 'applyMask' && after.kind === 'applyMask') {
         expect(sameBytes(after.mask.packed, before.mask.packed)).toBe(true);
+        // The occlusion too, on the same read path the document uses: one
+        // decoder for both formats is why this is one field and not two.
+        expect(after.absent).toBe(before.absent);
       }
     }
   });

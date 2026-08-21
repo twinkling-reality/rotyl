@@ -39,7 +39,23 @@ one, and the measurement behind it is on `/research.html`.
   rather than worse.
 - **An object the model says is not in a frame gets an empty mask on that
   frame**, which is the reference's behaviour and means a tracked clip shows no
-  selection at all while the subject is behind something.
+  selection at all while the subject is behind something. That is still what
+  happens and it is no longer silent: the command carries the model's own
+  verdict, so the timeline draws those frames as a faint stretch inside the run
+  rather than as more of it, and a run that finished says on how many frames the
+  object was behind something. What it cannot do is put a selection there.
+  Nothing in the product invents a mask for a frame the model was asked about
+  and answered, and the alternative, holding the last one forward across the
+  gap, is the drift tracking exists to remove.
+- **A second tracked object going behind something leaves the first one's
+  region standing, and nothing marks the difference.** The first track's command
+  replaces and the rest add, so an empty mask from the first blanks the frame
+  and an empty mask from any other is a no-op. Both are recorded as absent, and
+  the timeline answers a frame the way the fold does: an absence that replaces
+  decides it and an absence that only adds leaves the answer where it was, which
+  is right. What it does not do is say which of several objects went behind
+  something. The interface passes one seed, so there is no way to reach the case
+  yet, and it is in the trials ledger as open rather than rejected.
 - **Tracking fetches a mask decoder of its own, which is thirty megabytes rather
   than nineteen.** The published decoder does not expose `object_pointer`, the
   token that carries an object's identity between frames, so a tracker built on

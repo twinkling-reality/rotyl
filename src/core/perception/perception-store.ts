@@ -130,10 +130,6 @@ export class PerceptionStore {
     return this.#chosen;
   }
 
-  get promptPoints(): readonly PromptPoint[] {
-    return this.#points;
-  }
-
   /**
    * Where the current prompt is, in image pixels, for anything that has to
    * point at it.

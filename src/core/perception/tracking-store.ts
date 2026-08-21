@@ -1,4 +1,4 @@
-import { runTracking, TrackingCancelled, type StopSignal, type TrackedScene } from './tracking-job.ts';
+import { runTracking, type StopSignal, type TrackedScene, type TrackingResult } from './tracking-job.ts';
 import type { CoverageMask } from '../document/coverage-mask.ts';
 import type { SelectionDocument } from '../document/selection-document.ts';
 import type { TrackingEngine } from './tracking-engine.ts';
@@ -95,10 +95,17 @@ export class TrackingStore {
    * Resolves when the run is over, whether it reached the end of the clip or
    * was stopped. It does not reject on either, because neither is a failure:
    * stopping is a button somebody pressed, and finishing is what it was for.
+   *
+   * AND IT HANDS BACK WHAT THE RUN FOUND, which for most of this file's life it
+   * did not: `runTracking` has always returned how many frames it reached and
+   * how many of those the model said the object was not in, and this method
+   * awaited it and returned nothing. Undefined means there was no run rather
+   * than a run with nothing to report: disposed, already running, or a clip
+   * with nothing ahead of the anchor.
    */
-  async track(from: number, seeds: readonly CoverageMask[]): Promise<void> {
-    if (this.#stop || this.#disposed) return;
-    if (seeds.length === 0) return;
+  async track(from: number, seeds: readonly CoverageMask[]): Promise<TrackingResult | undefined> {
+    if (this.#stop || this.#disposed) return undefined;
+    if (seeds.length === 0) return undefined;
 
     const stop: Stop = { aborted: false };
     this.#stop = stop;
@@ -106,16 +113,16 @@ export class TrackingStore {
     let scene: (TrackedScene & { dispose: () => void }) | undefined;
     try {
       const engine = await this.#ensureEngine();
-      if (stop.aborted || this.#disposed) return;
+      if (stop.aborted || this.#disposed) return undefined;
 
       scene = await this.#openScene(from);
       // One frame is the anchor and nothing else, so there is nothing ahead to
       // follow the object into. Over rather than failed: it is what tracking
       // from the last frame of a clip means.
-      if (scene.frames.length < 2) return;
+      if (scene.frames.length < 2) return undefined;
 
       this.#setStatus({ kind: 'running', tracked: 0, total: scene.frames.length - 1 });
-      await runTracking({
+      return await runTracking({
         scene,
         engine,
         document: this.#document,
@@ -126,15 +133,15 @@ export class TrackingStore {
         signal: stop,
       });
     } catch (cause) {
-      // Stopping keeps what it found and says nothing. Making Stop report a
-      // failure would be the product arguing with a button it just watched
-      // somebody press.
-      if (!(cause instanceof TrackingCancelled)) {
-        this.#setStatus({
-          kind: 'failed',
-          message: cause instanceof Error ? cause.message : 'Tracking is unavailable.',
-        });
-      }
+      // Only a failure reaches here now. Stopping used to as well, as an
+      // exception this had to recognise in order to stay quiet about it, which
+      // was the product arguing with a button it had just watched somebody
+      // press. A stop is a field on the result instead.
+      this.#setStatus({
+        kind: 'failed',
+        message: cause instanceof Error ? cause.message : 'Tracking is unavailable.',
+      });
+      return undefined;
     } finally {
       // Every way out lands here, including the two early returns above, which
       // is the point: a run that left `#stop` set would leave the button saying

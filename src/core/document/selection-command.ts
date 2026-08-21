@@ -70,12 +70,23 @@ export interface BrushStroke {
  * mask back from the GPU on the render path, which is a real per-frame cost to
  * pay for an edge case; over-reporting merely leaves the overlay on, while
  * under-reporting would hide a selection the user actually made.
+ *
+ * ONE OF THOSE CASES IS NOT APPROXIMATE ANY MORE, and it is the case a tracked
+ * clip meets most often. A mask the model said the object was not in covers
+ * nothing and now says so, so it needs no readback to be recognised: applied
+ * with `replace` it decides the frame and the frame has nothing on it, which is
+ * exactly what `clear` means here. Applied with anything else it contributes
+ * nothing and the scan carries on past it, which is also what it means.
  */
 export function hasAnyCoverage(commands: readonly SelectionCommand[]): boolean {
   for (let i = commands.length - 1; i >= 0; i--) {
     const command = commands[i];
     if (!command) continue;
     if (command.kind === 'clear') return false;
+    if (command.kind === 'applyMask' && command.absent === true) {
+      if (command.op === 'replace') return false;
+      continue;
+    }
     if (
       command.kind === 'paint' ||
       command.kind === 'invert' ||
@@ -139,9 +150,141 @@ export function commandsForFrame(
   return held;
 }
 
-/** Which frames an edit was made on, ascending. What a timeline marks. */
-export function editedFrames(commands: readonly SelectionCommand[]): readonly number[] {
-  return [...new Set(commands.map((command) => command.frame))].toSorted((a, b) => a - b);
+/**
+ * One stretch of the clip the log has something to say about.
+ *
+ * A single edit is a span of one frame. A tracking run is a span of however
+ * many frames it reached, because a run IS one stretch: `group` has said so
+ * since tracking landed, and the projection that fed the timeline threw it away
+ * and handed over three hundred frame numbers that looked exactly like three
+ * hundred separate strokes.
+ *
+ * `absent` is the third, and it is the one this exists for. A frame the model
+ * said the object was not in carries an `applyMask` with an empty mask, which
+ * is indistinguishable by shape from a selection that legitimately covers
+ * nothing. The command says which it is now, so a run can be drawn with the
+ * occlusion in it rather than as an unbroken bar over frames that show nothing.
+ */
+export interface EditSpan {
+  /** First frame, inclusive. */
+  readonly from: number;
+  /** Last frame, inclusive. The same as `from` for a single edit. */
+  readonly to: number;
+  /** A hand edit, a stretch a run followed, or a stretch it found nothing in. */
+  readonly kind: 'edit' | 'tracked' | 'absent';
+}
+
+/** What one frame's commands amount to, before consecutive frames are joined. */
+interface FrameKind {
+  group: number | undefined;
+  /** What this frame is left showing, by the same rule the fold answers with. */
+  absent: boolean;
+}
+
+/**
+ * What one more command on a frame does to whether that frame shows nothing.
+ *
+ * THE SAME RULE `hasAnyCoverage` ANSWERS WITH, in log order, because the two
+ * have to agree: one decides what the picture shows and this decides what the
+ * timeline draws over it, and a track that says a frame is empty while the
+ * frame has a selection on it is worse than a track that says nothing.
+ *
+ * Order matters here and it is the whole of the correction. A frame painted at
+ * 12 and then tracked over, with the tracker finding nothing, shows nothing:
+ * the tracker's `replace` decides the frame and everything before it is
+ * discarded, which is exactly what the fold does. Answered by asking whether
+ * ANY command on the frame put something there, the same frame comes out solid,
+ * which is this chapter's own claim drawn upside down.
+ */
+function afterOne(was: boolean, command: SelectionCommand): boolean {
+  switch (command.kind) {
+    // An erase can only ever remove coverage, so it never turns a frame the
+    // model gave up on into one it did not.
+    case 'erase':
+      return was;
+    // Absolute, and a hand edit: the frame is empty because somebody emptied
+    // it, which is not the model saying the object is behind something.
+    case 'clear':
+      return false;
+    case 'applyMask':
+      // An absent mask decides the frame only when it REPLACES it. Applied any
+      // other way it contributes nothing and leaves the answer where it was,
+      // which is how a second tracked object going behind something leaves the
+      // first one's region standing.
+      if (command.absent === true) return command.op === 'replace' ? true : was;
+      return false;
+    case 'paint':
+    case 'invert':
+      return false;
+    // A rectangle, which is the only kind left. Written as the default so that
+    // a seventh command kind fails to compile here rather than falling quietly
+    // into the answer for a sixth: `mode` belongs to this one alone.
+    default:
+      return command.mode === 'paint' ? false : was;
+  }
+}
+
+/**
+ * The log as spans, ascending. What a timeline marks.
+ *
+ * This used to be `editedFrames`, which returned the frame numbers and nothing
+ * else, and it is a projection rather than a formatting decision: the timeline
+ * takes numbers, so anything the timeline is not given cannot be drawn however
+ * the marks layer is styled.
+ *
+ * IT ALSO DRAWS FEWER THINGS THAN IT USED TO. One mark per edited frame is one
+ * absolutely positioned element per edited frame, and a ten-minute tracked run
+ * is eighteen thousand of them on a track six hundred pixels wide. Joined, that
+ * run is one element, or a handful where the object went behind something. The
+ * measurement is on `/research/the-occlusion.html`.
+ *
+ * A run's anchor is not part of it, and that is right rather than a rounding
+ * error: the tracker writes no command on the frame the selection was made on,
+ * so the user's own edit is an `edit` span of its own immediately before the
+ * band. Where the run started and where somebody chose are two different facts
+ * and the timeline can afford both.
+ */
+export function editSpans(commands: readonly SelectionCommand[]): readonly EditSpan[] {
+  const byFrame = new Map<number, FrameKind>();
+  // ONE PASS, IN LOG ORDER, which is the order the fold replays a frame's own
+  // commands in: it sorts by frame and the sort is stable, so commands sharing
+  // a frame keep the order they were applied in.
+  for (const command of commands) {
+    const seen = byFrame.get(command.frame);
+    if (!seen) {
+      byFrame.set(command.frame, { group: command.group, absent: afterOne(false, command) });
+      continue;
+    }
+    // A frame carrying any command from a run belongs to that run. Brushwork
+    // applied to a frame during a run does not take it back out of one.
+    seen.group ??= command.group;
+    seen.absent = afterOne(seen.absent, command);
+  }
+
+  const spans: EditSpan[] = [];
+  let openGroup: number | undefined;
+  for (const frame of [...byFrame.keys()].toSorted((a, b) => a - b)) {
+    const at = byFrame.get(frame);
+    if (!at) continue;
+    const kind = at.group === undefined ? 'edit' : at.absent ? 'absent' : 'tracked';
+    const open = spans.at(-1);
+    // Joined only along a run, only while it stays the same run, only across
+    // consecutive frames and only while the answer stays the same. Two hand
+    // edits on neighbouring frames are two edits and are drawn as two.
+    if (
+      open !== undefined &&
+      at.group !== undefined &&
+      at.group === openGroup &&
+      open.kind === kind &&
+      open.to === frame - 1
+    ) {
+      spans[spans.length - 1] = { from: open.from, to: frame, kind };
+      continue;
+    }
+    spans.push({ from: frame, to: frame, kind });
+    openGroup = at.group;
+  }
+  return spans;
 }
 
 export type SelectionCommand = {
@@ -201,5 +344,32 @@ export type SelectionCommand = {
       readonly mask: CoverageMask;
       readonly op: 'replace' | 'add' | 'subtract';
       readonly refine?: RefineSettings;
+      /**
+       * The model said the object is not in this frame at all.
+       *
+       * A tracker with nothing to report answers with an empty mask, which is
+       * the reference's own behaviour and is right: an object behind something
+       * is not an object that got smaller, and a decoder told there is nothing
+       * there still draws something. What that costs is that the empty mask is
+       * the same shape as a selection which legitimately covers nothing, so
+       * everything downstream of the log had no way to tell a frame the model
+       * gave up on from a frame somebody erased. `TrackedMask.present` knew,
+       * crossed two files and died at the third.
+       *
+       * IT IS A PROPERTY OF THE COMMAND AND NOT OF THE RUN, which is the whole
+       * decision. A run is a thing that happened once, in a session that ends;
+       * the log is the thing that is saved, reloaded, replayed and undone, and
+       * the question "why is there no selection on frame 412" is asked of a
+       * document rather than of a job. `group` is already a fact about how a
+       * command came to be rather than about what it does, so this is the
+       * second of those and not the first.
+       *
+       * PRESENT ONLY WHEN IT IS TRUE. Eighteen thousand commands saying the
+       * ordinary thing is eighteen thousand times the width of the word, and
+       * absence is the case worth writing down. See `hasAnyCoverage`, which is
+       * exact for it rather than approximate, and `editSpans`, which is what
+       * lets a timeline draw a run with the occlusion in it.
+       */
+      readonly absent?: true;
     }
 );

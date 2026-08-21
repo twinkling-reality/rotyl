@@ -1916,6 +1916,107 @@ function theCounterMetric(still: unknown): Section {
   };
 }
 
+// --- what the tracker knew ---------------------------------------------------
+
+function whatDied(): Section {
+  return {
+    heading: 'The model answers the question and the answer stopped three files short',
+    prose: [
+      'A tracker is asked, on every frame, whether the object is in it at all. EdgeTAM answers with an object score rather than with a pixel count, which is the right shape: an object behind something is not an object that got smaller. edgetam-tracker.ts reads that score and does three things with it. It swaps the mask for an empty one, so a decoder told there is nothing there cannot draw something anyway. It swaps the memory entry for a large negative placeholder, so an occlusion cannot teach the tracker what the occluder looks like. And it swaps the object pointer for the checkpoint’s own stand-in, so identity survives the gap.',
+      'Then it puts the verdict on the value it returns, and that is where it used to stop. tracking-job.ts read it once, to add one to a counter, and wrote an ordinary applyMask with op replace and an all-zero mask. The counter went into a TrackingResult that the store awaited and discarded. So what reached the log was a command that is indistinguishable, by shape, from a selection somebody erased down to nothing: hasAnyCoverage said the frame had a selection on it, the overlay lifted the whole picture toward paper on a frame with nothing selected, and the timeline drew a mark saying an edit was made there.',
+      'That is a defect in the log rather than in the interface, and it is worth separating the two, because the answer is different. Every other question this chapter could have asked, how confident the model was, how large each rejected candidate is, how many frames playback dropped, is a fact about the tool, the same on every file anybody opens, and this project has put every one of those on these pages. An occlusion is a fact about THIS clip, on a numbered frame, that somebody has to act on: the selection is gone there, and the only way to know whether that is a tracker failing or a tracker answering was to have been watching when it happened.',
+      'So it is a field on the command. Not on the run, which is the other candidate and the one that loses: a run is a thing that happened once in a session that ends, and the question "why is there no selection on frame 412" is asked of a document that was saved, reloaded and undone. group already established that a command may carry a fact about how it came to be rather than about what it does. This is the second of those, and it is the only shape that survives the file.',
+    ],
+    caveat:
+      'One consequence arrived for nothing. hasAnyCoverage is documented as deliberately approximate in one direction, because answering exactly would mean reading the mask back from the GPU on the render path. The occlusion case no longer needs a readback to be exact: a mask that says it is empty on purpose, applied with replace, means the frame has nothing on it, which is what clear already means there. Erasing a selection away by hand is still approximate, and still for the reason it always was.',
+  };
+}
+
+function whatTheTimelineDrew(hidden: unknown): Section {
+  const marks = (run: string): string => num(hidden, ['occlusion', 'timeline', run, 'marks']).toFixed(0);
+  const elements = (run: string): string =>
+    num(hidden, ['occlusion', 'timeline', run, 'elements']).toFixed(0);
+  const projection = (run: string): string =>
+    `${num(hidden, ['occlusion', 'timeline', run, 'projection_ms', 'median']).toFixed(1)} ms`;
+  return {
+    heading: 'The timeline was drawing one gesture as three hundred edits, and one element each',
+    prose: [
+      'The marks under the timeline exist because a selection that leaves no trace cannot be found again, and they were fed by a projection that returned the frame numbers an edit was made on and nothing else. That is exactly right for a stroke. For a tracking run it says the opposite of what happened: a run is ONE gesture, group has recorded that since the day tracking landed so that undo could take the whole thing back in one press, and the projection threw it away.',
+      `It also drew one absolutely positioned element per entry, so a ten-minute run put ${marks(
+        '18000 frames, nothing hidden',
+      )} of them on a track six hundred pixels wide, every one saying the same thing. Joined along the group it is ${elements(
+        '18000 frames, nothing hidden',
+      )}: the user’s own command on the anchor frame, which the run deliberately writes nothing for, and the run itself. With the object going behind something three times it is ${elements(
+        '18000 frames, hidden three times',
+      )}, because each occlusion is a stretch the run reached and found nothing in, drawn faintly rather than left as a gap.`,
+      `So the projection that carries more information draws fewer things, which is the only reason it needed no argument about cost. It is run on every render of the editor, which is why it is timed at all: ${projection(
+        '18000 frames, hidden three times',
+      )} at ten minutes of tracking, against the 33 ms frame the same log is folded inside.`,
+    ],
+    table: {
+      columns: ['a run', 'commands', 'marks, as it was', 'elements, joined', 'the projection'],
+      rows: [
+        [
+          '10 seconds, hidden once',
+          num(hidden, ['occlusion', 'timeline', '300 frames, hidden once', 'commands']).toFixed(0),
+          marks('300 frames, hidden once'),
+          elements('300 frames, hidden once'),
+          projection('300 frames, hidden once'),
+        ],
+        [
+          '100 seconds, hidden three times',
+          num(hidden, ['occlusion', 'timeline', '3000 frames, hidden three times', 'commands']).toFixed(0),
+          marks('3000 frames, hidden three times'),
+          elements('3000 frames, hidden three times'),
+          projection('3000 frames, hidden three times'),
+        ],
+        [
+          '10 minutes, hidden three times',
+          num(hidden, ['occlusion', 'timeline', '18000 frames, hidden three times', 'commands']).toFixed(0),
+          marks('18000 frames, hidden three times'),
+          elements('18000 frames, hidden three times'),
+          projection('18000 frames, hidden three times'),
+        ],
+      ],
+    },
+    caveat:
+      'Every row above has the object going behind something, so the element counts are the interesting case rather than the flattering one; each occlusion is two seconds, and how many fit is a property of the clip rather than a setting. With none at all a run of any length is two elements, because there is nothing to break it. What does not depend on any of that is the marks column, which is one element per edited frame whatever produced it.',
+    command: 'node tools/video-bench/run.mjs occlusion',
+  };
+}
+
+function whatSayingSoCost(hidden: unknown): Section {
+  const asFile = (path: readonly string[]): string => `${(num(hidden, path) / 1e6).toFixed(2)} MB`;
+  const carrying = num(hidden, ['occlusion', 'frames_hidden']).toFixed(0);
+  const perCommand = num(hidden, ['occlusion', 'the_field', 'bytes_per_command']).toFixed(0);
+  const flagBytes = num(hidden, ['occlusion', 'the_field', 'bytes']);
+  const share = num(hidden, ['occlusion', 'the_field', 'per_cent_of_the_file']);
+  const saved = num(hidden, ['occlusion', 'the_occlusion', 'megabytes_saved']).toFixed(2);
+  const silhouette = (num(hidden, ['occlusion', 'a_packed_mask_bytes']) / 1024).toFixed(1);
+  const nothing = num(hidden, ['occlusion', 'an_empty_packed_mask_bytes']).toFixed(0);
+  return {
+    heading: 'What it costs to write down, in the file and in the application',
+    prose: [
+      `A document is a JSON object per command with the packed masks in a region behind it, so a field added to a command is added as many times as there are commands, and a ten-minute tracked run is eighteen thousand of them. That is a fair objection and it is answered with arithmetic: the same log written twice, once with the field and once without, at one occlusion of two seconds every hundred. ${carrying} of the eighteen thousand commands carry it, at ${perCommand} bytes each, which is ${asBytes(flagBytes)} and ${share.toFixed(3)}% of the file.`,
+      `The field is written only where it is true, which is why it is absent rather than false. It also has to be measured that way rather than read off two file sizes, because the frames it lands on differ from ordinary tracked frames in a second way at the same time and in the opposite direction: an occluded frame’s mask is empty, and an empty mask packs to ${nothing} bytes against a silhouette’s ${silhouette} KB. So the run WITH occlusions in it is the smaller document by ${saved} MB, and a comparison of the two files alone would price the field at better than free.`,
+      `A mask of nothing costing a kilobyte is worth a sentence of its own, because the obvious guess is a byte or two and this was written down as three before it was run. The packing caps a repeat at 128, so sixty-five thousand zeroes are five hundred and twelve repeats rather than one, and the number is three hundred times the guess. It is still under a third of what a silhouette costs, which is the claim this makes; it is not nothing, which is the claim the guess would have made.`,
+      'The application bundle is the other price and it is the one that had to be argued for, because this product’s position on its own interface is load-bearing enough to have decided a framework: React was rejected at 59.5 KB gzipped against Preact’s 6.1 for an application whose interface is a canvas and eight buttons. It is still eight buttons. Nothing here is a mode, a panel or a control, and the two things that changed were already on the screen: a mark on a track, and the line a finished export writes into.',
+      'Measured through the real build rather than asserted, the application goes from 50.8 KB gzipped to 51.4. Built twice to say which half: carrying the fact through the log, the file and the projection the marks are drawn from is 0.38 KB, and saying what a run found when it is over is the other 0.22. The second is nearly all sentence, and it is a sentence with three cases in it, because a run that walked to the end of the clip and found the object on every frame says nothing at all. The stylesheet is 0.02 KB, which is two rules.',
+    ],
+    table: {
+      columns: ['ten minutes of tracking, as a file', 'bytes'],
+      rows: [
+        ['nothing hidden', asFile(['occlusion', 'the_occlusion', 'nothing_hidden_bytes'])],
+        [`hidden ${carrying} frames, not said`, asFile(['occlusion', 'the_field', 'without_it_bytes'])],
+        [`hidden ${carrying} frames, said`, asFile(['occlusion', 'the_field', 'with_it_bytes'])],
+      ],
+    },
+    caveat:
+      'Its own command and its own results file, for both halves of this page, which is the harness’s own rule rather than a preference. Either would have fitted somewhere else: the file cost beside what a document costs, the projection beside what the fold costs. Measured there they re-took those measurements and moved figures six documents quote, by noise, on code paths neither touches.',
+    command: 'node tools/video-bench/run.mjs occlusion',
+  };
+}
+
 // --- entries ----------------------------------------------------------------
 
 /**
@@ -1925,6 +2026,14 @@ function theCounterMetric(still: unknown): Section {
  * Four harnesses now write six files between them, and a positional list of
  * them is a shape where adding a measurement edits three call sites and where
  * two `unknown`s can be swapped without the compiler noticing.
+ */
+/**
+ * What the perception layer computed and dropped, and where the one fact that
+ * mattered ended up.
+ *
+ * Three sections, and the first one carries no table on purpose: it is the
+ * shape of a code path rather than a quantity, and a page that put a number
+ * under it would be dressing an argument as a measurement.
  */
 export interface Results {
   readonly style: unknown;
@@ -1943,6 +2052,11 @@ export interface Results {
   readonly still: unknown;
   readonly saved: unknown;
   readonly kept: unknown;
+  /**
+   * What one more optional field on a command costs, in its own file for the
+   * reason the section that reads it gives.
+   */
+  readonly hidden: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
@@ -1950,6 +2064,7 @@ export function entries(results: Results): readonly Entry[] {
     results;
   const { saved } = results;
   const { kept } = results;
+  const { hidden } = results;
   return [
     {
       slug: 'the-look',
@@ -2150,6 +2265,19 @@ export function entries(results: Results): readonly Entry[] {
         'It needs somewhere to fetch two graphs from, so unlike everything else here it is not part of a run anybody can take without setting one up. What it drives is the product’s own code and not a reimplementation of it, which is the only way the number is about the product.',
       ],
       sections: [trackedCost(tracked), trackedArithmetic(tracked)],
+    },
+    {
+      slug: 'the-occlusion',
+      results: 'tools/video-bench/results-occlusion.json',
+      title: 'What the tracker knew and the log could not say',
+      standfirst:
+        'The model answers, on every frame, whether the object is in it. That answer crossed two files and died at the third, so a clip with a subject behind a lorry was indistinguishable from a clip where the selection had been erased. What it cost to carry, and why the other three facts the perception layer drops are still dropped.',
+      harness: 'tools/video-bench',
+      lede: [
+        'Everything measured in this project so far has been about what it draws. This one is about what it knows and never says. Five things the perception layer computes reached nobody: the model’s own occlusion verdict, each candidate’s area, each candidate’s confidence, a store’s prompt points, and the result a completed tracking run hands back. Two of them are carried now. The verdict is a field on a command, which is what this page is mostly about, and the run’s own result is a sentence in the line a finished export already writes into. The other three are still dropped, on purpose and with the reason written down.',
+        'What separates them is not how interesting they are. It is whether they are true of the tool or true of the document somebody has open. An occlusion is a numbered frame of this clip with no selection on it that somebody has to act on; a confidence score is the same thing on every file anybody ever opens. The first belongs in the editor. The second belongs on a page like this one, which is where it has stayed.',
+      ],
+      sections: [whatDied(), whatTheTimelineDrew(hidden), whatSayingSoCost(hidden)],
     },
     {
       slug: 'the-host',

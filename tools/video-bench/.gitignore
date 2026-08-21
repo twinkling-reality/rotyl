@@ -26,6 +26,11 @@ results-*.json
 # the origin private file system and shares nothing with either of the two
 # above.
 !results-recovery.json
+# And what ONE MORE optional field on a command costs, which is the same class
+# as the two above and shares helpers with results-document.json, which is
+# exactly why it has a file of its own: three documents quote that one's
+# ten-minute write and read, and taken inside it this moved both by noise.
+!results-occlusion.json
 # And the export ladder, which is the only measurement in `all` that puts a
 # STYLE CHAIN under the encoder: a change to a style makes it stale and makes
 # nothing else in that run stale, so re-taking it together with the rest meant

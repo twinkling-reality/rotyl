@@ -108,14 +108,17 @@ export interface TrackingResult {
   readonly absent: number;
   /** Where it got to, which is the last frame it wrote. */
   readonly lastFrame: number;
-}
-
-/** Thrown when a run was stopped on purpose, so a caller can stay quiet about it. */
-export class TrackingCancelled extends Error {
-  constructor() {
-    super('Tracking stopped.');
-    this.name = 'TrackingCancelled';
-  }
+  /**
+   * Whether somebody stopped it, rather than it reaching the end of the clip.
+   *
+   * A FIELD RATHER THAN AN EXCEPTION, which it was until this chapter. A stop
+   * is not a failure: it keeps everything it found, it is a button the user
+   * just pressed, and the store that caught the exception had to special-case
+   * it in order to say nothing about it. What made throwing defensible was that
+   * a stopped run had nothing to hand back. It has: how far it got and what it
+   * found on the way is exactly what a run cut short has to be able to say.
+   */
+  readonly stopped: boolean;
 }
 
 /**
@@ -138,6 +141,7 @@ export async function runTracking(request: TrackingRequest): Promise<TrackingRes
   let tracked = 0;
   let absent = 0;
   let lastFrame = anchor;
+  let stopped = false;
 
   try {
     const first = await scene.understand(anchor);
@@ -148,7 +152,10 @@ export async function runTracking(request: TrackingRequest): Promise<TrackingRes
     }
 
     for (const frame of rest) {
-      if (signal?.aborted) throw new TrackingCancelled();
+      if (signal?.aborted) {
+        stopped = true;
+        break;
+      }
 
       const embedding = await scene.understand(frame);
       try {
@@ -158,6 +165,12 @@ export async function runTracking(request: TrackingRequest): Promise<TrackingRes
           document.apply({
             kind: 'applyMask',
             mask: found.mask,
+            // AND THE MODEL'S OWN VERDICT GOES WITH IT. The mask is empty on a
+            // frame the object is not in, and an empty mask is what a selection
+            // erased down to nothing also looks like. Written here, the
+            // difference survives a save, a reload and an undo, because the log
+            // is what gets saved and a run is not.
+            ...(found.present ? {} : { absent: true as const }),
             // THE FIRST TRACK REPLACES AND THE REST ADD. Replacing is the point
             // of tracking: what was held forward onto this frame is the
             // selection at the coordinates it had several frames ago, which is
@@ -182,7 +195,7 @@ export async function runTracking(request: TrackingRequest): Promise<TrackingRes
       onProgress?.(tracked, rest.length);
     }
 
-    return { tracked, absent, lastFrame };
+    return { tracked, absent, lastFrame, stopped };
   } finally {
     // Stopping keeps what it found. A run abandoned half way has followed the
     // object as far as it got and that work is worth exactly as much as it

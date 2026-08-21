@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SelectionDocument } from '../src/core/document/selection-document.ts';
 import { commandsForFrame, hasAnyCoverage } from '../src/core/document/selection-command.ts';
 import { expandCoverage, packCoverage, type CoverageMask } from '../src/core/document/coverage-mask.ts';
-import { runTracking, TrackingCancelled, type TrackedScene } from '../src/core/perception/tracking-job.ts';
+import { runTracking, type TrackedScene } from '../src/core/perception/tracking-job.ts';
 import type { SceneEmbedding } from '../src/core/perception/segmentation-engine.ts';
 import type { ObjectTrack, TrackingEngine } from '../src/core/perception/tracking-engine.ts';
 
@@ -175,25 +175,30 @@ describe('a tracking run', () => {
     expect(scene.live).toBe(0);
   });
 
-  it('keeps what it found when it is stopped, and releases the tracks', async () => {
+  it('keeps what it found when it is stopped, and says how far it got', async () => {
     const document = new SelectionDocument();
     const frames = [0, 1, 2, 3, 4, 5, 6, 7];
     const engine = new FakeEngine(frames);
     const controller = new AbortController();
 
-    await expect(
-      runTracking({
-        scene: fakeScene(frames),
-        engine,
-        document,
-        seeds: [mask(255)],
-        signal: controller.signal,
-        onProgress: (tracked) => {
-          if (tracked === 3) controller.abort();
-        },
-      }),
-    ).rejects.toBeInstanceOf(TrackingCancelled);
+    // A RESULT RATHER THAN AN EXCEPTION. A stop is a button somebody pressed
+    // and keeps everything it found, so the honest thing to hand back is what
+    // that was. It used to throw, which meant the only caller had to recognise
+    // the exception in order to say nothing about it.
+    const result = await runTracking({
+      scene: fakeScene(frames),
+      engine,
+      document,
+      seeds: [mask(255)],
+      signal: controller.signal,
+      onProgress: (tracked) => {
+        if (tracked === 3) controller.abort();
+      },
+    });
 
+    expect(result.stopped).toBe(true);
+    expect(result.tracked).toBe(3);
+    expect(result.lastFrame).toBe(3);
     // Stop is not undo. Three frames were followed and three frames are kept;
     // there is already a button for taking them back.
     expect(document.appliedCommands.map((command) => command.frame)).toEqual([1, 2, 3]);
@@ -203,18 +208,34 @@ describe('a tracking run', () => {
     expect(document.appliedCommands).toHaveLength(0);
   });
 
-  it('counts the frames the object was not in', async () => {
+  it('says so on the command when the model puts the object behind something', async () => {
     const frames = [0, 1, 2, 3, 4, 5];
     const engine = new FakeEngine(frames);
     // Hidden for the middle of the run, which is what an occlusion looks like.
     engine.absentAt = new Set([1, 2]);
+    const document = new SelectionDocument();
     const result = await runTracking({
       scene: fakeScene(frames),
       engine,
-      document: new SelectionDocument(),
+      document,
       seeds: [mask(255)],
     });
     expect(result.absent).toBe(2);
+    expect(result.stopped).toBe(false);
+
+    // AND THE COUNT IS NOT THE ONLY PLACE IT SURVIVES, which is the point. The
+    // masks on those frames are empty, and an empty mask is what an erased
+    // selection is too, so without this nothing downstream of the log could
+    // tell a tracker that gave up from a tracker that was asked and answered.
+    expect(
+      document.appliedCommands.map((command) =>
+        command.kind === 'applyMask' ? (command.absent ?? false) : 'not a mask',
+      ),
+    ).toEqual([false, true, true, false, false]);
+
+    // And the frames it says nothing is on genuinely have nothing on them.
+    expect(hasAnyCoverage(commandsForFrame(document.appliedCommands, 2))).toBe(false);
+    expect(hasAnyCoverage(commandsForFrame(document.appliedCommands, 4))).toBe(true);
   });
 
   it('leaves frames it has not reached showing what they showed before', async () => {

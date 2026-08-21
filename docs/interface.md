@@ -122,6 +122,19 @@ of room, which is a different sentence because it is a limit of the browser
 rather than a button anybody pressed. And nothing at all about a whole clip that
 went to the downloads folder, which the browser has already said.
 
+**A finished tracking run goes in the same line, under the same rule.** It is
+the same shape of job: minutes of work over frames nobody was watching, whose
+result is invisible unless somebody says so. A run that walked to the end of the
+clip and found the object on every frame of it says nothing, which is the fourth
+case again, because the bar it drew on the timeline is already the whole story.
+A run that was stopped says where it got to and that the frames it followed are
+kept, which is the half nobody can see. And a run that lost the object behind
+something says on how many frames, because a stretch of clip with no selection
+on it is precisely what a tracker that failed looks like, and this one did not
+fail: it was asked and it answered. Until the model's verdict could reach the
+command log, this sentence could not have been written, because nothing outside
+the run knew. See [video](video.md#tracking-and-where-it-runs).
+
 **It also goes away by itself, which a failure does not.** A failure is a state
 and stays until something changes it. This is an event: it says what JUST
 happened, so left up through a scrub and two brush strokes it would be

@@ -25,7 +25,7 @@ the only thing in here whose answer depends on what a STYLE costs, so a change
 to a style makes it stale and makes nothing else stale: taken together, the run
 that re-timed a comic chain also re-timed an ONNX session and a readback ladder
 that had not moved, and the diff was forty numbers of noise around the one that
-had changed. Six more measurements sit outside both runs and write their own
+had changed. Seven more measurements sit outside both runs and write their own
 files, because they share nothing with either and re-taking one of them should
 not re-date every figure it would otherwise have landed beside. The bundle sizes
 need a build and no browser: `node tools/video-bench/bundle-size.mjs`. The
@@ -33,7 +33,9 @@ command log needs neither, since it is arithmetic over a data structure:
 `node tools/video-bench/run.mjs log`. What the same log costs once it has to
 become a file needs neither either, and has a command of its own so that
 re-taking one of the two does not re-date the other:
-`node tools/video-bench/run.mjs document`. A tracked frame needs a dev server
+`node tools/video-bench/run.mjs document`. What ONE MORE optional field on a
+command costs is a third of the same kind, kept apart from the second in
+particular: `node tools/video-bench/run.mjs occlusion`. A tracked frame needs a dev server
 started with `VITE_TRACKING_HOST` pointing at the two graphs, which most
 machines will not have: `node tools/video-bench/run.mjs tracked-frame`. And how
 long a clip export can be takes twenty minutes and ends by running the tab out
@@ -43,7 +45,7 @@ needs no GPU at all, answering a question about byte layout that shares nothing
 with a timing: `node tools/video-bench/run.mjs interleave`. The clips are
 gitignored, `results.json`, `results-export.json`, `results-bundle.json`,
 `results-log.json`, `results-document.json`, `results-tracked-frame.json`,
-`results-long-clip.json` and `results-interleave.json` are not, and the graphs come from
+`results-long-clip.json`, `results-occlusion.json` and `results-interleave.json` are not, and the graphs come from
 `tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
 
 **Nothing under `src/` may be edited while a run is going.** The dev server
@@ -61,7 +63,7 @@ appears nowhere: it throttles when the pane is hidden, which silently turns a
 3 ms number into a 16 ms one. Medians of 15 to 30 runs after warm-up, on an
 Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 
-**Twelve findings, each with the command that re-takes it:**
+**Fourteen findings, each with the command that re-takes it:**
 
 1. [The 12 MB readback does not bind](#1-the-12-mb-readback-does-not-bind-and-it-is-avoidable-anyway)
 2. [Memory attention is 60 ms](#2-memory-attention-is-60-ms-and-38-at-half-precision)
@@ -75,6 +77,7 @@ Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 10. [Ten minutes was never the problem, and twenty was](#10-ten-minutes-was-never-the-problem-and-twenty-was)
 11. [Sound in one run is not a file anybody can stream](#11-sound-in-one-run-is-not-a-file-anybody-can-stream)
 12. [Ten minutes of tracking is a 65 MB file that writes in eleven milliseconds](#12-ten-minutes-of-tracking-is-a-65-mb-file-that-writes-in-eleven-milliseconds)
+13. [One more optional field on a command is 14 bytes](#14-one-more-optional-field-on-a-command-is-14-bytes-where-it-is-true)
 
 ---
 
@@ -269,7 +272,7 @@ QuickTime, which is what a phone or a camera writes, costs 64 bytes gzipped: it
 is the same demuxer with a different brand list. Matroska costs 15.4 KB, because
 it is not.
 
-The current application bundle is 50.8 KB gzipped, so this is not
+The current application bundle is 51.4 KB gzipped, so this is not
 going in it. It gets the same treatment as the inference runtime, a dynamic
 import and its own chunk, and a session that never opens a video never fetches
 it.
@@ -511,7 +514,7 @@ Gzipped, before the export chunk existed, at the split that made it, and today:
 
 | chunk            | before writing | at the split | today   |
 | ---------------- | -------------- | ------------ | ------- |
-| the application  | 41.6 KB        | 42.5 KB      | 50.8 KB |
+| the application  | 41.6 KB        | 42.5 KB      | 51.4 KB |
 | opening a video  | 33.2 KB        | 42.0 KB      | 42.2 KB |
 | exporting a clip | none           | 32.0 KB      | 33.5 KB |
 
@@ -525,8 +528,14 @@ it in the application.
 **The third column is chapters of work since**, not drift: what carrying a
 soundtrack cost the export chunk is 0.15 KB, which agrees with the 146 bytes the
 table above measures in isolation, and what it cost anyone opening a video is
-0.2 KB for the packet cursor. The application's 3.3 KB is everything else those
-chapters added, of which 1.1 KB is this one's range and the interface around it.
+0.2 KB for the packet cursor. The application's 8.9 KB is everything else those
+chapters added, of which 4.8 KB is saving a selection and writing it down as it
+is made, 1.1 KB is the export range and the interface around it, and 0.60 KB is
+carrying the tracker's occlusion verdict as far as the timeline and the line
+that says what a run found. That last figure is split the same way, by building
+it twice: 0.38 KB for the fact itself, through the command, the file and the
+projection the marks layer is drawn from, and 0.22 KB for saying what a run
+found when it is over, which is nearly all sentence.
 
 ## 7. The encoder is not what moves colour
 
@@ -613,7 +622,11 @@ The cheap alternative to all of it, one command a second with the hold-forward
 rule covering the gap, is 2.1 MB packed and is still the wrong trade: the gap it
 leaves held is exactly the drift tracking exists to remove.
 
-The numbers are on `/research/tracking.html`, out of `results-log.json`.
+The numbers are on `/research/tracking.html`, out of `results-log.json`. What
+the OTHER projection over the same log costs, which is the one the timeline is
+drawn from, is [measurement 14](#14-one-more-optional-field-on-a-command-is-14-bytes-where-it-is-true):
+it is kept there rather than here because measuring it here re-took, and moved,
+the compression figures above.
 
 ---
 
@@ -1074,6 +1087,101 @@ perfectly and may be a re-encode of the same clip, so it opens and says so.
 What neither can see is a file agreeing at both ends and in length and differing
 in the middle. That is in `docs/limits.md` rather than left implied.
 
+## 14. One more optional field on a command is 14 bytes where it is true
+
+Thirteen is `recovery.ts`, which has no numbered section here and is cited as
+measurement 13 from the trials ledger. Taking its number would have made two
+pointers resolve to the wrong finding, which is the failure this whole file is
+arranged to prevent.
+
+A tracker asks the model, on every frame, whether the object is in it at all,
+and a frame it is not in gets an empty mask. That is the reference's own
+behaviour and it is right; what it costs is that an empty mask is also what a
+selection erased down to nothing looks like, so nothing downstream of the log
+could tell a tracker that gave up from a tracker that was asked and answered.
+The verdict is a field on the command now.
+
+The fair objection to that is arithmetic, so it is answered with arithmetic. A
+document is a JSON object per command with the packed masks in a region behind
+it, so a field added to a command is added as many times as there are commands,
+and ten minutes of tracking is eighteen thousand of them.
+
+| ten minutes of tracking, as a file | bytes    |
+| ---------------------------------- | -------- |
+| nothing hidden                     | 65.45 MB |
+| hidden 300 frames, not said        | 64.72 MB |
+| hidden 300 frames, said            | 64.73 MB |
+
+**The field is the difference between the last two rows and nothing else**: the
+same log written twice, one field apart. 300 of the eighteen thousand commands
+carry it, at 14 bytes each, 4.1 KB and six thousandths of a per cent of the
+file. It is written only where it is true, which is why it is absent rather than
+false.
+
+**And it has to be measured that way rather than read off two file sizes**,
+because the frames it lands on differ from ordinary tracked frames in a second
+way at the same time and in the opposite direction. An occluded frame's mask is
+empty, and an empty mask packs to a kilobyte against a silhouette's three and a
+half, so the run WITH occlusions in it is the smaller document by 0.72 MB. The
+first and last rows compared alone would price the field at better than free.
+
+**A mask of nothing costing a kilobyte is the part that had to be run rather
+than reasoned about.** It was written down as three bytes first, on the grounds
+that a run length and a value is all an empty picture needs. PackBits caps a
+repeat at 128, so sixty-five thousand zeroes are five hundred and twelve repeats
+rather than one, and the guess was out by three hundred times. It is still under
+a third of what a silhouette costs, which is the claim this makes; it is not
+nothing, which is the claim the guess would have made.
+
+### The other projection over the same log, which nobody had priced either
+
+The fold is what the RENDERER asks of the log. The timeline asks something else,
+and until this chapter what it asked for was the frame numbers an edit was made
+on and nothing else. That is exactly right for a stroke and says the opposite of
+what happened for a run: a run is one gesture, `group` has recorded that since
+the day tracking landed so that undo could take it back in one press, and the
+projection discarded it. It also produced one absolutely positioned element per
+entry, so a ten-minute run put eighteen thousand of them on a track six hundred
+pixels wide, every one of them saying the same thing.
+
+| a run                       | commands | marks, as it was | joined | the projection |
+| --------------------------- | -------- | ---------------- | ------ | -------------- |
+| 10 seconds, hidden once     | 300      | 300              | 4      | 0.0 ms         |
+| 100 seconds, hidden 3 times | 3000     | 3000             | 8      | 0.1 ms         |
+| 10 minutes, hidden 3 times  | 18000    | 18000            | 8      | 1.1 ms         |
+
+Joined along the group a run of any length is two elements, the user's own
+command on the anchor frame and the run itself, and each occlusion adds two: the
+faint stretch, and the rest of the run after it. So the projection that carries
+MORE information draws FEWER things, which is the only reason it needed no
+argument about cost. It runs on every render of the editor, which is why it is
+timed at all: 1.1 ms at ten minutes of tracking, against the 33 ms frame the
+same log is folded inside.
+
+Each occlusion here is two seconds, and how many of them fit is a property of
+the clip rather than a setting, which is why the short row carries one rather
+than three: three two-second occlusions in a ten-second run is a subject hidden
+for most of it, and that is a different measurement wearing this one's clothes.
+
+### Its own command, which is this file's own rule arriving at its own door
+
+`node tools/video-bench/run.mjs occlusion`, and its own results file, for both
+halves above. Either would have fitted somewhere else. The file cost is the same
+class of question as measurement 12 and shares that measurement's helpers; the
+projection is a projection over the command log, which is measurement 8. Both
+were written there first and both had to move.
+
+Three documents quote "eleven milliseconds to write and twelve to read" from
+`results-document.json`, and taken as a row inside measurement 12 this moved
+both of them, to ten and ten, by noise, on a code path nothing in this chapter
+touches. Measurement 8's unpacking figure, which three more documents quote,
+moved from 10.5 ms to 11.0 the same way. A number nobody changed should not move
+because somebody asked a neighbouring question, and topical fit is the argument
+FOR folding two measurements together, which makes it exactly the wrong one.
+
+The rest of what it cost, and the argument for where a fact like this belongs at
+all, is on `/research/the-occlusion.html`.
+
 ## What follows
 
 1. **Decode is free and seeking is not.** Scrubbing is a decoder kept alive and
@@ -1116,3 +1224,21 @@ in the middle. That is in `docs/limits.md` rather than left implied.
     so a document recognises a file by its shape and by its two ends, and the
     two failures want opposite treatment: a different shape is refused, and
     different bytes at the same shape open with a sentence.
+12. **A projection is a decision about what can be drawn, whatever the drawing
+    does afterwards.** The timeline was handed the frame numbers an edit was
+    made on, so a run of three hundred frames could only ever be three hundred
+    separate marks however the marks were styled. Joined along the group it is
+    one element and two more per occlusion, at 1.1 ms over eighteen thousand
+    commands: more information, fewer things drawn.
+13. **One optional field on a command is 14 bytes where it is true.** Written
+    only on the frames the model said the object was not in, that is 4.1 KB and
+    six thousandths of a per cent of a 64 MB ten-minute document. It has to be
+    priced against the same log written without it rather than against a run
+    with no occlusions in it, because an occluded frame's mask is empty and an
+    empty mask packs to a kilobyte: the second comparison makes the field look
+    better than free.
+14. **A measurement that shares helpers with another needs its own file more
+    than one that shares nothing.** Topical fit is the argument for folding two
+    together and it is the wrong one. Adding this row inside measurement 12
+    moved that measurement's ten-minute write and read, which three documents
+    quote, by noise, on a code path it does not touch.

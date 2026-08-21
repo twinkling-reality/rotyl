@@ -11,7 +11,11 @@ import {
 import { compareMedia, digestMedia, type MediaIdentity } from '../src/platform/document/media-identity.ts';
 import { packCoverage } from '../src/core/document/coverage-mask.ts';
 import { SelectionDocument } from '../src/core/document/selection-document.ts';
-import { commandsForFrame, type SelectionCommand } from '../src/core/document/selection-command.ts';
+import {
+  commandsForFrame,
+  hasAnyCoverage,
+  type SelectionCommand,
+} from '../src/core/document/selection-command.ts';
 import { DEFAULT_REFINE_SETTINGS } from '../src/core/mask/refine-params.ts';
 
 /**
@@ -191,6 +195,50 @@ describe('a saved document', () => {
     }
   });
 
+  it('brings back which frames the model said the object was not in', () => {
+    // The one field on a command that is about what the model thought rather
+    // than about what to draw, and the one that a reload used to lose. An empty
+    // mask survives a round trip on its own; what does not is the difference
+    // between an empty mask and an erased one, which is the whole question a
+    // clip with a gap in it raises.
+    const group = 11;
+    const empty = packCoverage(MASK_SIZE, MASK_SIZE, new Uint8Array(MASK_SIZE * MASK_SIZE));
+    const commands: SelectionCommand[] = [
+      {
+        kind: 'applyMask',
+        mask: packCoverage(MASK_SIZE, MASK_SIZE, coverage(1)),
+        op: 'replace',
+        frame: 1,
+        group,
+      },
+      { kind: 'applyMask', mask: empty, op: 'replace', absent: true, frame: 2, group },
+      {
+        kind: 'applyMask',
+        mask: packCoverage(MASK_SIZE, MASK_SIZE, coverage(3)),
+        op: 'replace',
+        frame: 3,
+        group,
+      },
+    ];
+
+    const back = roundTrip(documentWith(commands));
+    expect(
+      back.commands.map((command) =>
+        command.kind === 'applyMask' ? (command.absent ?? false) : 'not a mask',
+      ),
+    ).toEqual([false, true, false]);
+
+    // Absent rather than false on the ordinary ones, because a field written on
+    // every command of an eighteen thousand frame run to say the unremarkable
+    // thing is eighteen thousand times the width of the word.
+    expect(Object.hasOwn(back.commands[0] ?? {}, 'absent')).toBe(false);
+
+    // And the frame it landed on still has nothing on it after the trip, which
+    // is the behaviour the field exists to make knowable without a readback.
+    expect(hasAnyCoverage(commandsForFrame(back.commands, 2))).toBe(false);
+    expect(hasAnyCoverage(commandsForFrame(back.commands, 3))).toBe(true);
+  });
+
   it('loads into a command log that undoes a tracked run as one gesture', () => {
     const group = 3;
     const commands: SelectionCommand[] = [
@@ -297,6 +345,37 @@ describe('a saved document', () => {
       expect(parsed.error.kind).toBe('damaged');
       expect(describeDocumentReadError(parsed.error)).toContain('scribble');
     }
+  });
+
+  it('refuses an absence written as anything but set', () => {
+    // The field is present or it is not, and `false` would be a third state
+    // meaning the same as the first. Refused now, while there is one version of
+    // this format, rather than left for somebody to decide later which of the
+    // two an old file meant.
+    const chunks = writeDocument(
+      documentWith([
+        {
+          kind: 'applyMask',
+          mask: packCoverage(1, 1, new Uint8Array([0])),
+          op: 'replace',
+          absent: true,
+          frame: 0,
+        },
+      ]),
+    );
+    const prefix = chunks[0];
+    const header = chunks[1];
+    if (!prefix || !header) throw new Error('unreachable');
+    const text = new TextDecoder().decode(header).replace('"absent":true', '"absent":false');
+    const replaced = new TextEncoder().encode(text);
+    const bytes = new Uint8Array(new ArrayBuffer(prefix.length + replaced.length));
+    bytes.set(prefix, 0);
+    bytes.set(replaced, prefix.length);
+    new DataView(bytes.buffer).setUint32(8, replaced.length, true);
+
+    const parsed = readDocument(bytes);
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.error.kind).toBe('damaged');
   });
 
   it('names itself after the file it was made on', () => {

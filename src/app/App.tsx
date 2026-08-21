@@ -54,12 +54,13 @@ import { compareMedia, digestMedia, type MediaIdentity } from '../platform/docum
 import { saveDocument } from '../platform/document/save-document.ts';
 import { SessionJournal, type SessionState } from '../platform/document/journal.ts';
 import { defaultControls, type StyleControls, type StyleDefinition } from '../core/style/style.ts';
-import { editedFrames } from '../core/document/selection-command.ts';
+import { editSpans } from '../core/document/selection-command.ts';
 import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
 import { isPrompt, type Tool } from './tool.ts';
 import type { PerceptionStatus, SelectIntent } from '../core/perception/perception-store.ts';
 import type { MaskCandidate } from '../core/perception/mask-candidates.ts';
 import type { TrackingStatus } from '../core/perception/tracking-store.ts';
+import type { TrackingResult } from '../core/perception/tracking-job.ts';
 import { hasAnyCoverage } from '../core/document/selection-command.ts';
 
 interface LoadedFile {
@@ -131,6 +132,44 @@ function describeTracking(
       return undefined;
   }
 }
+
+/**
+ * What a tracking run FOUND, once it is over, if anything needs saying.
+ *
+ * The rule is the one `describeExport` already follows and it says the same
+ * thing about a different job: a result that came out as asked for announces
+ * itself by existing, and a result that came out differently is invisible
+ * unless somebody says so. A run that walked to the end of the clip and found
+ * the object in every frame of it is the first case, and it says nothing at
+ * all: the band on the timeline is already the whole story, and a line
+ * congratulating a button on having worked would be the product talking over
+ * itself.
+ *
+ * The other two are the surprise this chapter exists to stop. A stopped run
+ * kept everything it found, which is the part that cannot be seen. And an
+ * occlusion is a stretch of clip with no selection on it, which looks exactly
+ * like a tracker that failed and is the opposite of one: the model was asked
+ * and said the object was not there. Until the command could carry that, this
+ * function could not have been written, because nothing outside the run knew.
+ */
+function describeTrackingRun(result: TrackingResult, frameRate: number): string | undefined {
+  if (!result.stopped && result.absent === 0) return undefined;
+  // A stop can land before the first frame is written, in the seconds a run
+  // spends opening its own decoder, and "the 0 frames it followed are kept" is
+  // a sentence about nothing. It is the same case the export path already
+  // names, and for the same reason: there is nothing to keep.
+  if (result.stopped && result.tracked === 0) return 'Tracking stopped before the first frame.';
+  const followed = result.stopped
+    ? `Tracking stopped at ${timecode(result.lastFrame, frameRate)}, and the ${someFrames(result.tracked)} it followed ${result.tracked === 1 ? 'is' : 'are'} kept.`
+    : `Tracking followed ${someFrames(result.tracked)}.`;
+  if (result.absent === 0) return followed;
+  // Named as the model's own answer rather than as a failure, because it is
+  // one: the frames are empty because it was asked and said so.
+  return `${followed} The object is behind something on ${String(result.absent)} of them, which the timeline shows faintly and which carry no selection.`;
+}
+
+/** A count of frames, which is one often enough for "1 frames" to reach a user. */
+const someFrames = (count: number): string => `${String(count)} ${count === 1 ? 'frame' : 'frames'}`;
 
 /**
  * What the perception layer is doing, in the status line.
@@ -394,6 +433,18 @@ export function App(): JSX.Element {
   const tracking = useTracking({
     runtime,
     ...(loaded?.video ? { file: loaded.file } : { file: undefined }),
+    // The same line a finished export writes into, for the same reason: this is
+    // an event rather than a state, so it says what just happened and takes
+    // itself down again before it starts describing a different moment.
+    onFinished: (result) => {
+      // Only when there is something to say. A run with nothing to report must
+      // not take down whatever the line was already showing: it is shared with
+      // a finished export and a saved document, and unlike those this one is
+      // not held behind `busy`, so a document dropped mid-run can have its
+      // refusal wiped by a tracker finishing quietly behind it.
+      const said = describeTrackingRun(result, loaded?.video?.frameRate ?? 30);
+      if (said !== undefined) setReport(said);
+    },
   });
 
   // Long enough to read a sentence about a clip that stopped early, short enough
@@ -1472,9 +1523,11 @@ export function App(): JSX.Element {
     (perception.kind === 'failed' ? perception.message : undefined);
   // historyRevision is read so that undo and redo re-evaluate when the log moves.
   void historyRevision;
-  // Which frames carry an edit. A per-frame selection that leaves no trace on
-  // the timeline is a selection nobody can find again.
-  const edited = selection ? editedFrames(selection.appliedCommands) : [];
+  // What the log has to say about the clip, as stretches. A per-frame selection
+  // that leaves no trace on the timeline is a selection nobody can find again,
+  // and a run of three hundred frames drawn as three hundred separate edits is
+  // a trace that says the wrong thing about how it got there.
+  const spans = selection ? editSpans(selection.appliedCommands) : [];
   // Closing is only worth asking about when there is something to lose.
   const hasEdits = (selection?.appliedCommands.length ?? 0) > 0;
   // And tracking needs something on THIS frame to follow, which is the fold's
@@ -1609,7 +1662,7 @@ export function App(): JSX.Element {
                 frameCount={loaded.video.frameCount}
                 frameRate={loaded.video.frameRate}
                 frame={frame}
-                edited={edited}
+                spans={spans}
                 playing={playing}
                 onPlayToggle={() => {
                   if (playingRef.current) pause();
