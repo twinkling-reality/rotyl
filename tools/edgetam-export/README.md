@@ -344,7 +344,20 @@ constants below, so a host serves one small file beside the graphs:
 | `no_object_pointer`                   | 1×256    | what stands in for an object that is not there |
 | `memory_temporal_positional_encoding` | 7×1×1×64 | how long ago an entry in the bank is from      |
 
-The first is the trap the section below describes. The published vision encoder
+**And the decoder has to be the re-export, which the product now asks rather
+than assumes.** It is the third graph a host serves and the only one with a
+plausible substitute: every EdgeTAM release contains a mask decoder, and serving
+that one is the obvious mistake. It is missing both of the outputs a tracked
+frame needs. `object_pointer` fails on the first frame, loudly, because the
+product reads it the way it reads everything else. `object_score_logits` used to
+fail into nothing at all: the product fell back to the best head's predicted
+IoU, which is a different quantity compared against the same zero and is
+essentially always positive, so the tracker ran, and reported the object present
+on every frame of every clip including the ones it is behind something on.
+`loadEdgeTamTracker` now asks the session for its output names and refuses a
+graph without either, naming which one is missing.
+
+The first parameter above is the trap the section below describes. The published vision encoder
 ADDS it, which is right for a single image and wrong for a tracked frame, where
 memory attention replaces it.
 

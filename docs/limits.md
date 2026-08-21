@@ -63,7 +63,11 @@ one, and the measurement behind it is on `/research.html`.
   was late by. `tools/edgetam-export` re-exports that decoder with the pointer
   on it, at half precision, which is 11 MB on top of the 19 the two memory
   graphs cost. Everything the published pair does for a click is unchanged: the
-  re-export is only ever used for a tracked frame.
+  re-export is only ever used for a tracked frame. Which decoder a host actually
+  served is asked of the graph at load and refused by name if it is the wrong
+  one, because the published decoder is also missing the model's own account of
+  whether the object is in a frame, and that one used to fail into a tracker
+  that reported it present on every frame of every clip.
 - A tracked run holds one mask per frame in the command log. Held plainly that
   is 64 KB each, 20 MB for ten seconds and 1.2 GB for ten minutes; packed, which
   is how they are held, it is 3.4 KB each and 62 MB for ten minutes. Folding

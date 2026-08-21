@@ -21,6 +21,13 @@ export const TRIALS: readonly Trial[] = [
     where: 'src/core/document/selection-command.ts, and "What the tracker knew and the log could not say"',
   },
   {
+    what: 'Falling back to the head’s predicted IoU when a mask decoder has no object score',
+    verdict: 'rejected',
+    evidence:
+      'A silent wrong answer, and the only one of the two outputs the re-exported decoder exists for that had one: a missing object_pointer throws on the first frame because it is read like everything else, and a missing object_score_logits fell back to a different quantity compared against the same zero. A predicted IoU is essentially always positive, so the published decoder would track perfectly and report the object present on every frame of every clip, including the ones it is behind something on. Asked of the session’s output names at load instead, and refused by the name of whichever is missing',
+    where: 'src/platform/perception/edgetam-tracker.ts',
+  },
+  {
     what: 'A stop as an exception thrown out of a tracking run, which is what it was',
     verdict: 'rejected',
     evidence:

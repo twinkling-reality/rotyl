@@ -44,13 +44,17 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
  * download.
  *
  * FIVE SESSIONS MAKE A TRACKED FRAME, and the fifth is the reason this file
- * fetches a mask decoder of its own. The published one does not expose
- * `object_pointer`, the token carrying an object's identity between frames, so
- * the bank's pointer block used to stay empty and the tracker came back from an
- * occlusion late and with no mask at all on the frames it was late by.
- * `tools/edgetam-export` re-exports that decoder with the output on it, and
- * with the prompt a tracked frame never varies baked in, so this graph cannot
- * be handed the nearly-right prompt the published one accepts.
+ * fetches a mask decoder of its own. The published one exposes neither of the
+ * two outputs a tracked frame needs: `object_pointer`, the token carrying an
+ * object's identity between frames, without which the bank's pointer block
+ * stays empty and the tracker comes back from an occlusion late and with no
+ * mask at all on the frames it was late by, and `object_score_logits`, which is
+ * the model's own account of whether the object is in this frame at all.
+ * `tools/edgetam-export` re-exports that decoder with both on it, and with the
+ * prompt a tracked frame never varies baked in, so this graph cannot be handed
+ * the nearly-right prompt the published one accepts. Which decoder arrived is
+ * asked of the graph at load, because serving the published one is an ordinary
+ * mistake and used to be a silent one.
  *
  * A TRACKED FRAME IS 135 MS, of which 44 is reading it and 91 is advancing one
  * track against what was read. Two objects is 226 rather than 270, because the
@@ -130,6 +134,28 @@ const ENCODER = { graph: 'memory_encoder.onnx', bytes: 6_700_000 };
  * against twenty-two decides it.
  */
 const DECODER = { graph: 'tracked_mask_decoder_fp16.onnx', bytes: 11_100_000 };
+
+/**
+ * The two outputs this file fetches a decoder of its own to get.
+ *
+ * `object_pointer` carries an object's identity between frames, and
+ * `object_score_logits` is the model's own account of whether the object is in
+ * this frame at all. Neither is on the published decoder, which is the entire
+ * reason `tools/edgetam-export` re-exports one.
+ */
+const DECODER_OWES = ['object_pointer', 'object_score_logits'] as const;
+
+/**
+ * Which of them a graph does not have, so a host that served the wrong file can
+ * be told which one.
+ *
+ * Exported because it is the whole of a check that would otherwise only run
+ * against a graph no test can hold: nineteen megabytes, fetched from a host
+ * most machines do not have.
+ */
+export function decoderIsMissing(outputs: readonly string[]): readonly string[] {
+  return DECODER_OWES.filter((name) => !outputs.includes(name));
+}
 
 /** A model output, checked rather than assumed to be float data. */
 function floatsOf(tensor: EdgeTamTensor | undefined, name: string): Float32Array {
@@ -262,6 +288,31 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
   const encoder: Session = await ort.InferenceSession.create(await graphOf(ENCODER), common);
   const decoder: Session = await ort.InferenceSession.create(await graphOf(DECODER), common);
 
+  // AND IT IS THE RIGHT DECODER, asked of the graph rather than assumed.
+  //
+  // The published one is missing both of the outputs this file fetches thirty
+  // megabytes rather than nineteen to get, and pointing a build at it is an
+  // ordinary mistake: it is the file every EdgeTAM release contains and the
+  // only one anybody who has not read `tools/edgetam-export` would think to
+  // serve. What that used to produce was not an error. `object_pointer` would
+  // have failed on the first frame, loudly, but the occlusion verdict fell back
+  // to the best head's predicted IoU, which is a different quantity compared
+  // against the same zero and is essentially always positive. So the tracker
+  // would have run, and reported the object present on every frame of every
+  // clip, including the ones it is behind something on.
+  //
+  // Checked here rather than on the first frame because it is a fact about the
+  // graph rather than about a frame, and because failing before a run starts is
+  // one sentence where failing during one is a sentence plus a half-written
+  // gesture in the log.
+  const missing = decoderIsMissing(decoder.outputNames);
+  if (missing.length > 0) {
+    await Promise.all([attention.release(), encoder.release(), decoder.release()]);
+    throw new Error(
+      `That mask decoder has no ${missing.join(' and no ')}, so it is the published one rather than the re-export tools/edgetam-export produces. Tracking needs both.`,
+    );
+  }
+
   // The same on every frame of every clip, so it is built once rather than
   // served: four megabytes that a loop produces in a millisecond.
   const visionPositions = visionPositionEncoding(FEATURE_GRID, FEATURE_GRID, FEATURE_DIM);
@@ -353,7 +404,7 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
           // The model's own account of whether the object is in this frame,
           // rather than a count of pixels: an object behind something is not an
           // object that got smaller.
-          const present = (decoded.objectScore ?? 0) > 0;
+          const present = decoded.objectScore > 0;
           // AND SAYING SO REACHES THE MASK, not just the flag. A decoder told
           // there is nothing there still draws something, and a run that wrote
           // it would replace the held-forward selection with a shape belonging
@@ -440,11 +491,15 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
       if ((scores[head] ?? 0) > (scores[best] ?? 0)) best = head;
     }
     const stride = MASK_SIZE * MASK_SIZE;
-    const objectLogits = outputs.object_score_logits?.data;
+    // Read the same way as the two outputs above it, which is the point: this
+    // used to fall back to `scores[best]` when the graph had no such output,
+    // and a predicted IoU compared against zero is a tracker that never sees an
+    // occlusion. `loadEdgeTamTracker` refuses a graph without it, so reaching
+    // here without one is a graph that changed shape between load and frame.
     return {
       mask: coverageFrom(masks, best * stride),
       logits: masks.slice(best * stride, (best + 1) * stride),
-      objectScore: objectLogits instanceof Float32Array ? (objectLogits[0] ?? 0) : (scores[best] ?? 0),
+      objectScore: floatsOf(outputs.object_score_logits, 'object_score_logits')[0] ?? 0,
       pointer: pointers.slice(best * POINTER_DIM, (best + 1) * POINTER_DIM),
     };
   }
