@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SelectionDocument } from '../src/core/document/selection-document.ts';
-import { commandsForFrame, hasAnyCoverage } from '../src/core/document/selection-command.ts';
+import { commandsForFrame, editSpans, hasAnyCoverage } from '../src/core/document/selection-command.ts';
 import { expandCoverage, packCoverage, type CoverageMask } from '../src/core/document/coverage-mask.ts';
 import { runTracking, type TrackedScene } from '../src/core/perception/tracking-job.ts';
 import type { SceneEmbedding } from '../src/core/perception/segmentation-engine.ts';
@@ -27,6 +27,8 @@ class FakeEngine implements TrackingEngine {
   disposed = 0;
   /** Frames the object is not in, by index into the advance sequence. */
   absentAt = new Set<number>();
+  /** The same, per track, for a run following more than one object. */
+  absentByTrack: Set<number>[] = [];
 
   #frames: number[];
 
@@ -35,13 +37,15 @@ class FakeEngine implements TrackingEngine {
   }
 
   begin(_embedding: SceneEmbedding, seed: CoverageMask): Promise<ObjectTrack> {
+    const which = this.begun.length;
     this.begun.push(seed);
+    const absent = this.absentByTrack[which] ?? this.absentAt;
     let step = 0;
     const track: ObjectTrack = {
       advance: (): Promise<{ mask: CoverageMask; present: boolean }> => {
         const at = step++;
         this.advanced.push(this.#frames[at + 1] ?? -1);
-        const present = !this.absentAt.has(at);
+        const present = !absent.has(at);
         return Promise.resolve({ mask: mask(present ? 200 : 0), present });
       },
       dispose: (): void => {
@@ -149,6 +153,41 @@ describe('a tracking run', () => {
     expect(document.appliedCommands).toHaveLength(0);
   });
 
+  it('counts each object being behind something separately', async () => {
+    // Three objects and nine absences is one object hidden for nine frames or
+    // three hidden for three, and those are different things to tell somebody.
+    // It was a single number while only one seed could ever arrive.
+    const frames = [0, 1, 2, 3];
+    const engine = new FakeEngine(frames);
+    // Advance steps 0, 1 and 2 are frames 1, 2 and 3. The first object misses
+    // two of them, the middle one misses only the frame they all miss, and the
+    // last misses that one and the one after.
+    engine.absentByTrack = [new Set([0, 1]), new Set([1]), new Set([1, 2])];
+    const document = new SelectionDocument();
+
+    const result = await runTracking({
+      scene: fakeScene(frames),
+      engine,
+      document,
+      seeds: [mask(255), mask(200), mask(128)],
+    });
+
+    expect(result.absent).toEqual([2, 1, 2]);
+
+    // AND A FRAME IS ONLY EMPTY WHERE EVERY OBJECT IS MISSING FROM IT, which is
+    // the rule the fold and the timeline both already answered with and which
+    // nothing could reach until a run could follow more than one thing. The
+    // first object's command replaces, so its absence blanks the frame, and the
+    // ones after it add themselves back.
+    expect(hasAnyCoverage(commandsForFrame(document.appliedCommands, 1))).toBe(true);
+    expect(hasAnyCoverage(commandsForFrame(document.appliedCommands, 2))).toBe(false);
+    expect(hasAnyCoverage(commandsForFrame(document.appliedCommands, 3))).toBe(true);
+    // And the timeline draws exactly that: one faint frame inside the run.
+    expect(editSpans(document.appliedCommands).filter((span) => span.kind === 'absent')).toEqual([
+      { from: 2, to: 2, kind: 'absent' },
+    ]);
+  });
+
   it('reads each frame once however many objects are followed', async () => {
     const frames = [0, 1, 2, 3];
     const scene = fakeScene(frames);
@@ -220,7 +259,7 @@ describe('a tracking run', () => {
       document,
       seeds: [mask(255)],
     });
-    expect(result.absent).toBe(2);
+    expect(result.absent).toEqual([2]);
     expect(result.stopped).toBe(false);
 
     // AND THE COUNT IS NOT THE ONLY PLACE IT SURVIVES, which is the point. The

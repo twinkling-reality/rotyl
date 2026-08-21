@@ -838,6 +838,7 @@ function trackedCost(tracked: unknown): Section {
       'The figure this project designed tracking around was summed from four graphs measured separately, and published saying plainly that nothing had been run end to end because there was nothing to run. There is now, so this drives the product’s own code: the two engines it loads, the scene it walks, the loop it runs, writing into a real command log.',
       'The conclusion survives and gets firmer. Playback is thirty frames a second and this is seven, so tracking is a job, the playhead is free to ignore it, and no amount of tidying makes it a render-loop activity.',
       'Frame size does not enter into it, exactly as predicted: the vision encoder always works at 1024 square, and 720p and 1080p differ by two tenths of a millisecond.',
+      'The two-object row was a property of the loop when this was taken and is a thing the product does now. A selection made of two model answers is two objects to follow, which the command log has recorded since object selection landed, so the second row is what somebody who clicked two things waits for rather than a capability nothing could reach. What it costs is the row: not another frame, one more advance.',
     ],
     table: {
       columns: ['a tracked frame', '720p', '1080p'],

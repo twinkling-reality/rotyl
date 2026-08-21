@@ -71,7 +71,7 @@ describe('a tracking run, from the interface side', () => {
 
     const result = await store.track(4, [mask(255)]);
 
-    expect(result).toEqual({ tracked: 3, absent: 1, lastFrame: 7, stopped: false });
+    expect(result).toEqual({ tracked: 3, absent: [1], lastFrame: 7, stopped: false });
     // The same fact in the two places it has to be in: a count for the sentence
     // that gets said, and a field on the command that outlives the session.
     expect(

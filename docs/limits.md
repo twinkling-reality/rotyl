@@ -59,15 +59,34 @@ one, and the measurement behind it is on `/research.html`.
   it has been established here. What it means for somebody with real footage is
   that a clip this tracker is marginal about is a clip whose re-encode it may
   follow differently. `e2e/fixtures/README.md` has the ladder.
-- **A second tracked object going behind something leaves the first one's
-  region standing, and nothing marks the difference.** The first track's command
-  replaces and the rest add, so an empty mask from the first blanks the frame
-  and an empty mask from any other is a no-op. Both are recorded as absent, and
-  the timeline answers a frame the way the fold does: an absence that replaces
-  decides it and an absence that only adds leaves the answer where it was, which
-  is right. What it does not do is say which of several objects went behind
-  something. The interface passes one seed, so there is no way to reach the case
-  yet, and it is in the trials ledger as open rather than rejected.
+- **The timeline cannot say WHICH of several objects went behind something, and
+  the line beside it can only count them.** The first track's command replaces
+  and the rest add, so an empty mask from the first blanks the frame and an
+  empty mask from any other is a no-op. The timeline answers a frame the way the
+  fold does, which is right: a stretch is faint only where every object is
+  missing from it. A run hands back one absence count per object, so the report
+  can say two of three went behind something and on how many frames each, and
+  neither it nor the track can say which two. A track is six hundred pixels
+  wide, and naming them would need names, which is the thing this feature
+  deliberately does not have.
+- **Two brushed blobs are one object, and there is no way to say otherwise.** A
+  run follows one object per answer the model gave to a prompt somebody started,
+  because that is what the log records; a brush stroke and a dragged rectangle
+  are regions somebody drew, and nothing anywhere says whether two of them are
+  two things. They go to the first object, which is what already happened when
+  there was only ever one seed. Two things that have to be followed separately
+  therefore have to be clicked separately, with the Object or Box tool, which is
+  the gesture that says "a different thing" in the first place.
+- **How many objects the button promises comes from the log, so it can be one
+  more than the run follows.** It counts the answers in the fold, which is the
+  same source and the same known inexactness as the coverage question below: a
+  click whose whole region was later erased away still counts, because answering
+  exactly would mean reading the mask back on the render path. The run sees the
+  coverage and drops such an object. Whenever it says anything at all it says
+  how many it followed, so the correction is there in every case but one: a run
+  left with a single object that it found on every frame says nothing, which is
+  the rule everywhere else here, and that is the case where the difference goes
+  unmentioned.
 - **Tracking fetches a mask decoder of its own, which is thirty megabytes rather
   than nineteen.** The published decoder does not expose `object_pointer`, the
   token that carries an object's identity between frames, so a tracker built on

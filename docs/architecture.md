@@ -8,7 +8,7 @@ src/platform/  browser adapters: decode, texture upload, encode, mux, inference
 src/app/       Preact UI
 ```
 
-It ships as 165 KB of JavaScript, 51.4 KB gzipped, plus 31 KB of subset fonts.
+It ships as 166 KB of JavaScript, 51.9 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches none of the other two: the inference runtime arrives on the first object
 click, the demuxer on the first video, the container writer on the first clip

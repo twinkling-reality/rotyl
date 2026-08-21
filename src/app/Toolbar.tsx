@@ -32,6 +32,12 @@ export interface ToolbarProps {
   readonly tracking?: {
     readonly running: boolean;
     readonly disabled: boolean;
+    /**
+     * What pressing it will do, which is now a question with more than one
+     * answer: a selection made of three model answers is three objects to
+     * follow, and the label cannot say so without becoming a sentence.
+     */
+    readonly title: string;
     readonly onTrack: () => void;
     readonly onStop: () => void;
   };
@@ -39,6 +45,8 @@ export interface ToolbarProps {
 
 interface ToolButtonProps {
   readonly label: string;
+  /** What pressing it does, where that is more than the label can carry. */
+  readonly title?: string;
   readonly icon: JSX.Element;
   readonly onClick: () => void;
   readonly className?: string;
@@ -54,6 +62,7 @@ interface ToolButtonProps {
  */
 function ToolButton({
   label,
+  title,
   icon,
   onClick,
   className,
@@ -67,7 +76,7 @@ function ToolButton({
       class={`tool${className ? ` ${className}` : ''}`}
       onClick={onClick}
       aria-label={label}
-      title={label}
+      title={title ?? label}
       {...(disabled === undefined ? {} : { disabled })}
       {...(pressed === undefined ? {} : { 'aria-pressed': pressed })}
       {...(expanded === undefined ? {} : { 'aria-expanded': expanded })}
@@ -159,6 +168,7 @@ export function Toolbar({
         ) : (
           <ToolButton
             label="Track"
+            title={tracking.title}
             icon={<RouteIcon />}
             disabled={tracking.disabled}
             onClick={tracking.onTrack}

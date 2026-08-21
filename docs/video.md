@@ -266,9 +266,53 @@ from eighteen thousand elements to two.
 **Tracking a second object is a second seed.** `runTracking` takes a list of
 masks, builds one track per mask, and advances all of them against one
 embedding per frame, so reading the frame, which is the expensive half, does not
-scale with the number of objects. The first track's command replaces what was
-held forward, which is the drift being removed, and the rest add. A second
+scale with the number of objects: measured end to end, one object is 135 ms a
+frame and two are 226 rather than 270. The first track's command replaces what
+was held forward, which is the drift being removed, and the rest add. A second
 tracker is a second implementation of four methods and nothing else changes.
+
+**The interface reaches that now, and what was missing was never the loop.** It
+was a way to say WHICH objects. This product has one selection and no concept of
+a set of them, and a second seed with no way to name, re-select or undo one of
+them separately would have been a capability with no handle on it.
+
+**It does not need one, because the log has been recording the answer since
+object selection landed.** `SelectIntent` has three values and the first is
+`object`, documented in its own type as "a different thing; starts a fresh
+prompt". A fresh prompt clears the committed revision, so the model's answer to
+it is a NEW `applyMask` command, where shift-click and alt-click refine the
+prompt in place and replace the last one. Clicking two cars therefore leaves two
+commands and clicking one car twice leaves one, which is exactly the distinction
+a tracker needs and exactly the one the interface was already drawing. Nobody
+had read it back.
+
+So a run follows one object per answer the selection is made of, and the Track
+button says how many before it is pressed: from the log rather than from the
+GPU, which is where the button's own existence is decided from and where
+coverage is inferred from for the same reason. There is no ninth button, no
+mode, and no list for anybody to manage. Measured through the real build, the
+whole of it is 0.56 KB gzipped on the application bundle, which is the one
+number a feature in this product has to answer for: the framework was chosen at
+59.5 KB against 6.1 for an interface that is a canvas and eight buttons, and it
+is still eight buttons.
+
+**Coverage no answer claims belongs to the first object.** A brush stroke and a
+dragged rectangle are regions somebody drew rather than things a model was asked
+about, so nothing in the log says whether two brushed blobs are two objects or
+one. Giving them a track of their own would invent an object nobody named;
+giving them to the first is what already happens, because until now there was
+exactly one seed and everything was in it. That rule is what leaves a
+single-object run byte for byte the run it was.
+
+**And an occlusion stops being a fact about the clip and becomes a fact about an
+object.** A run hands back one absence count per object rather than one number,
+because three objects and nine absences is one object hidden for nine frames or
+three hidden for three. The timeline needed nothing: it already answers a frame
+the way the fold does, so a stretch is drawn faintly only where every object is
+missing from it. On the fixture clip where one disc goes behind a bar and an
+identical one stands beside it, following both draws no faint stretch at all
+where following one draws the whole occlusion, and both pictures are correct:
+the standing disc is selected on every frame of it.
 
 **Two cursors need two decoders.** A run opens a second `FrameProvider` over the
 same file and a full-resolution texture of its own. Sharing the playhead's would

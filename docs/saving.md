@@ -107,7 +107,7 @@ and no media to go with it.
 A JSON header and the packed masks behind it, which is the shape every honest
 container has. Everything small enough to read in a text editor stays legible
 and extensible, and the one thing that is neither goes in a region the header
-points into. It needs no library, which a document format in a 51.4 KB
+points into. It needs no library, which a document format in a 51.9 KB
 application has to be able to say.
 
 ```

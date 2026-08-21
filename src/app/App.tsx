@@ -61,6 +61,7 @@ import type { PerceptionStatus, SelectIntent } from '../core/perception/percepti
 import type { MaskCandidate } from '../core/perception/mask-candidates.ts';
 import type { TrackingStatus } from '../core/perception/tracking-store.ts';
 import type { TrackingResult } from '../core/perception/tracking-job.ts';
+import { objectsInSelection } from '../core/perception/tracking-seeds.ts';
 import { hasAnyCoverage } from '../core/document/selection-command.ts';
 
 interface LoadedFile {
@@ -125,7 +126,7 @@ function describeTracking(
       return { label: 'Downloading the tracker', progress: status.progress };
     case 'running':
       return {
-        label: `Tracking, frame ${String(status.tracked)} of ${String(status.total)}`,
+        label: `${manyObjects(status.objects) ? `Tracking ${String(status.objects)} objects` : 'Tracking'}, frame ${String(status.tracked)} of ${String(status.total)}`,
         progress: status.total > 0 ? status.tracked / status.total : undefined,
       };
     default:
@@ -151,25 +152,69 @@ function describeTracking(
  * like a tracker that failed and is the opposite of one: the model was asked
  * and said the object was not there. Until the command could carry that, this
  * function could not have been written, because nothing outside the run knew.
+ *
+ * THERE IS A FOURTH NOW, and it is a run that followed more than one thing.
+ * Nobody pressed a button for three objects: the count is this product's
+ * reading of a selection somebody made with clicks, and a reading is exactly
+ * the kind of thing that has to be said out loud once. So the silent case is
+ * narrowed to one object found on every frame, which is what it always meant.
+ *
+ * AND THE OCCLUSION SENTENCE MEANS SOMETHING ELSE WITH SEVERAL. One object
+ * behind something leaves the others selected, so the frames it names are no
+ * longer the frames the timeline draws faintly: that stretch is only where none
+ * of them was there at all. Saying the old sentence about a run of three would
+ * be pointing at a band that is not on the track.
  */
 function describeTrackingRun(result: TrackingResult, frameRate: number): string | undefined {
-  if (!result.stopped && result.absent === 0) return undefined;
+  const objects = result.absent.length;
+  const hidden = result.absent.filter((count) => count > 0);
+  if (!result.stopped && hidden.length === 0 && objects < 2) return undefined;
   // A stop can land before the first frame is written, in the seconds a run
   // spends opening its own decoder, and "the 0 frames it followed are kept" is
   // a sentence about nothing. It is the same case the export path already
   // names, and for the same reason: there is nothing to keep.
   if (result.stopped && result.tracked === 0) return 'Tracking stopped before the first frame.';
-  const followed = result.stopped
-    ? `Tracking stopped at ${timecode(result.lastFrame, frameRate)}, and the ${someFrames(result.tracked)} it followed ${result.tracked === 1 ? 'is' : 'are'} kept.`
-    : `Tracking followed ${someFrames(result.tracked)}.`;
-  if (result.absent === 0) return followed;
+
+  const frames = someFrames(result.tracked);
+  const kept = result.tracked === 1 ? 'is' : 'are';
+  const at = timecode(result.lastFrame, frameRate);
+  const followed = manyObjects(objects)
+    ? result.stopped
+      ? `Tracking followed ${String(objects)} objects and stopped at ${at}. The ${frames} it reached ${kept} kept.`
+      : `Tracking followed ${String(objects)} objects through ${frames}.`
+    : result.stopped
+      ? `Tracking stopped at ${at}, and the ${frames} it followed ${kept} kept.`
+      : `Tracking followed ${frames}.`;
+  if (hidden.length === 0) return followed;
   // Named as the model's own answer rather than as a failure, because it is
   // one: the frames are empty because it was asked and said so.
-  return `${followed} The object is behind something on ${String(result.absent)} of them, which the timeline shows faintly and which carry no selection.`;
+  if (!manyObjects(objects)) {
+    return `${followed} The object is behind something on ${String(hidden[0] ?? 0)} of them, which the timeline shows faintly and which carry no selection.`;
+  }
+  return `${followed} ${String(hidden.length)} of them went behind something, on ${someFramesEach(hidden)}. The timeline is faint only where none of them was there.`;
 }
+
+/** Whether a run is the several-objects case, in one place rather than four. */
+const manyObjects = (objects: number): boolean => objects > 1;
 
 /** A count of frames, which is one often enough for "1 frames" to reach a user. */
 const someFrames = (count: number): string => `${String(count)} ${count === 1 ? 'frame' : 'frames'}`;
+
+/**
+ * Several counts of frames, as a list a sentence can end on.
+ *
+ * The unit is said once and the rest are bare, because "9 frames and 4 frames"
+ * is a sentence nobody speaks and the second number is plainly frames too.
+ */
+function someFramesEach(counts: readonly number[]): string {
+  const [first, ...rest] = counts;
+  const head = someFrames(first ?? 0);
+  const last = rest.at(-1);
+  if (last === undefined) return head;
+  const middle = rest.slice(0, -1);
+  if (middle.length === 0) return `${head} and ${String(last)}`;
+  return `${head}, ${middle.map(String).join(', ')} and ${String(last)}`;
+}
 
 /**
  * What the perception layer is doing, in the status line.
@@ -1534,8 +1579,14 @@ export function App(): JSX.Element {
   // question rather than the log's.
   // Only asked where there is a Track button to disable, so a build with no
   // tracker configured folds no commands per render for a button it does not
-  // draw.
-  const hasSelection = tracking.available && runtime ? hasAnyCoverage(runtime.engine.frameCommands) : false;
+  // draw. Folded once and asked twice, because the second question is how MANY
+  // things are selected, and that is the same fold read the same way: one
+  // object per answer the model gave to a prompt somebody started, which the
+  // log has recorded since object selection landed. From the log rather than
+  // from the GPU, exactly as the coverage question is.
+  const frameCommands = tracking.available && runtime ? runtime.engine.frameCommands : undefined;
+  const hasSelection = frameCommands ? hasAnyCoverage(frameCommands) : false;
+  const trackedObjects = frameCommands && hasSelection ? objectsInSelection(frameCommands) : 1;
   // A soundtrack that will not survive an export, said while the file is merely
   // open. It stays up as long as the file does, because it is a fact about the
   // file rather than something that just happened.
@@ -1647,6 +1698,13 @@ export function App(): JSX.Element {
                         // inferred from the log rather than read back from the
                         // GPU, which is the same thing the overlay does.
                         disabled: !hasSelection || activity !== undefined,
+                        // And the title is what pressing it will do, which is
+                        // the rule the Clip button already follows: a selection
+                        // made of three answers is three objects to follow, and
+                        // a five-letter label cannot say so.
+                        title: manyObjects(trackedObjects)
+                          ? `Follow all ${String(trackedObjects)} selected objects forward through the clip`
+                          : 'Follow the selection forward through the clip',
                         onTrack: () => {
                           if (playingRef.current) pause();
                           tracking.track(runtime.engine.frame);

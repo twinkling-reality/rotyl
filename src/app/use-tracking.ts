@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { TrackingStore, type TrackingStatus } from '../core/perception/tracking-store.ts';
+import { seedsFrom } from '../core/perception/tracking-seeds.ts';
 import { trackingHost } from '../platform/perception/tracking-host.ts';
 import type { TrackingResult } from '../core/perception/tracking-job.ts';
 import type { RotylRuntime } from './use-rotyl.ts';
@@ -115,12 +116,18 @@ export function useTracking({ runtime, file, onFinished }: TrackingOptions): Tra
         // What gets followed is the answer rather than the question: the
         // selection as it stands on this frame, clicks, chosen reading,
         // brushwork and all.
-        const seed = await runtime.engine.readSelection();
-        if (!seed) {
+        const coverage = await runtime.engine.readSelection();
+        if (!coverage) {
           setRunning(false);
           return;
         }
-        const result = await store.track(frame, [seed]);
+        // AND IT IS FOLLOWED AS THE SEVERAL THINGS IT IS, which is the whole of
+        // what this line had to change for multi-object tracking to be
+        // reachable. `runTracking` has taken a list since it landed; the reason
+        // one was passed is that nobody had noticed the log already says which
+        // objects somebody pointed at. It does: a fresh prompt writes its own
+        // `applyMask` and a refinement replaces one. See `tracking-seeds.ts`.
+        const result = await store.track(frame, seedsFrom(coverage, runtime.engine.frameCommands));
         setRunning(store.running);
         // AND ONLY IF THIS IS STILL THE RUN THE SESSION IS HAVING. Closing the
         // file disposes the store, which aborts the run, which resolves this a

@@ -167,6 +167,19 @@ interface Run {
   readonly advance_ms: Stat;
   readonly frame_ms: Stat;
   readonly frames_per_second: number;
+  /**
+   * Frames the model said an object was not in, summed over the objects.
+   *
+   * A sanity field rather than a measurement: these clips have nothing going
+   * behind anything, so a run that is working reports zero and one that is not
+   * reports a number worth chasing before the timings are read at all.
+   *
+   * SUMMED, because `TrackingResult.absent` is one count per object now and
+   * this file's results are committed. Folding it here keeps the number that
+   * has always been in that file the number that is in it, rather than
+   * re-taking four medians six documents quote in order to change the shape of
+   * a field nothing reads.
+   */
   readonly absent: number;
 }
 
@@ -232,7 +245,7 @@ export async function trackedFrame(
             advance_ms: stats(advance),
             frame_ms: stats(wall),
             frames_per_second: Math.round(1000 / Math.max(1e-6, stats(wall).median)),
-            absent: result.absent,
+            absent: result.absent.reduce((total, count) => total + count, 0),
           });
         } finally {
           scene.dispose();

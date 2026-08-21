@@ -135,6 +135,23 @@ fail: it was asked and it answered. Until the model's verdict could reach the
 command log, this sentence could not have been written, because nothing outside
 the run knew. See [video](video.md#tracking-and-where-it-runs).
 
+**And a run that followed more than one thing always says so**, which narrows
+the silent case rather than widening it. Nobody presses a button for three
+objects: the count is this product's reading of a selection somebody made with
+clicks, and a reading is exactly the kind of thing that has to be said out loud
+once. The occlusion sentence changes with it, because with several objects the
+frames it names are no longer the frames the timeline draws faintly: one object
+behind something leaves the others selected, and the faint stretch is only where
+none of them was there. Saying the one-object sentence about a run of three
+would be pointing at a band that is not on the track.
+
+**The count is on the button before the run and on the status line during it**,
+for the same reason in two places. The button's title is what pressing it will
+do, which is the rule the Clip button already follows, and a five-letter label
+cannot carry "three objects". Then the button becomes Stop, so the count would
+leave the screen exactly while it is explaining why a frame is taking 226
+milliseconds instead of 135, and the status line picks it up.
+
 **It also goes away by itself, which a failure does not.** A failure is a state
 and stays until something changes it. This is an event: it says what JUST
 happened, so left up through a scrub and two brush strokes it would be

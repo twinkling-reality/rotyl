@@ -27,7 +27,20 @@ export type TrackingStatus =
   | { readonly kind: 'idle' }
   /** Fetching the two graphs, which is nineteen megabytes and happens once. */
   | { readonly kind: 'loading'; readonly progress: number }
-  | { readonly kind: 'running'; readonly tracked: number; readonly total: number }
+  | {
+      readonly kind: 'running';
+      readonly tracked: number;
+      readonly total: number;
+      /**
+       * How many objects it is following, which is how many seeds it was given.
+       *
+       * On the status line rather than only on the button, because the button
+       * says Stop while a run is in flight: the count leaves the screen exactly
+       * when it explains what somebody is watching, which is a frame every 226
+       * milliseconds instead of every 135.
+       */
+      readonly objects: number;
+    }
   | { readonly kind: 'failed'; readonly message: string };
 
 /** Loads the tracker, reporting progress from 0 to 1 while it does. */
@@ -121,14 +134,14 @@ export class TrackingStore {
       // from the last frame of a clip means.
       if (scene.frames.length < 2) return undefined;
 
-      this.#setStatus({ kind: 'running', tracked: 0, total: scene.frames.length - 1 });
+      this.#setStatus({ kind: 'running', tracked: 0, total: scene.frames.length - 1, objects: seeds.length });
       return await runTracking({
         scene,
         engine,
         document: this.#document,
         seeds,
         onProgress: (tracked, total) => {
-          this.#setStatus({ kind: 'running', tracked, total });
+          this.#setStatus({ kind: 'running', tracked, total, objects: seeds.length });
         },
         signal: stop,
       });

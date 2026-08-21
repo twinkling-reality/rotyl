@@ -44,10 +44,11 @@ See [how it is put together](docs/architecture.md).
 **Video.** Open an MP4 or a MOV, play it, scrub it, and select on any frame. An
 edit holds from the frame it was made on until something later changes it, and
 Track follows what is selected forward through the clip as a job the playhead is
-free to ignore. Every stage still runs per frame, and what that costs was
-measured rather than assumed: a chain invents nothing, so the flicker that is
-left is the input, and both ways of filtering it out were priced and neither is
-here. See [video](docs/video.md).
+free to ignore, one object per thing you clicked, because the log has recorded
+which things those were since object selection landed. Every stage still runs per
+frame, and what that costs was measured rather than assumed: a chain invents
+nothing, so the flicker that is left is the input, and both ways of filtering it
+out were priced and neither is here. See [video](docs/video.md).
 
 **Exporting.** The frame on screen as a picture, or the clip as an MP4, whole or
 between an In and an Out. Both are the preview's renderer at the preview's
@@ -88,7 +89,7 @@ compiles it with no `dom` library, so a stray `window` fails the build rather
 than being caught in review. The payoff is concrete: every shader is unit-tested
 by running it for real through Dawn in Node, with no browser and no mocks.
 
-It ships as 165 KB of JavaScript, 51.4 KB gzipped, plus 31 KB of subset fonts.
+It ships as 166 KB of JavaScript, 51.9 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph
 fetches neither the inference runtime, nor the demuxer, nor the container writer.
 One Web Worker, which appends the crash journal because the API that can do that

@@ -22,7 +22,8 @@ import type { SceneEmbedding } from './segmentation-engine.ts';
  * whole reason a track is a value here rather than a state the engine is in:
  * `runTracking` advances a list of them against one embedding per frame, so two
  * objects cost two mask decodes and two memory banks and share the expensive
- * part. Nothing above this file counts them.
+ * part. Nothing in here counts them: how many there are is a question about a
+ * selection, and `tracking-seeds.ts` answers it from the command log.
  *
  * A SECOND TRACKER IS A SECOND `TrackingEngine`. Nothing in `tracking-job.ts`
  * mentions a model, a runtime or a memory bank, so a different one is a

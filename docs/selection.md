@@ -6,6 +6,15 @@ Click one with the Object tool and the whole thing is selected. Shift-click adds
 another region to the same object; Alt-click carves one away. Dragging pans, so
 there is no modifier to learn for the common case.
 
+**That "the same object" is exact rather than loose, and something depends on
+it.** A plain click starts a fresh prompt about a different thing and its answer
+is a new command; shift-click and alt-click refine the prompt that is open and
+replace the command it already wrote. So clicking two cars leaves two commands
+in the log and clicking one car twice leaves one, and that is how tracking knows
+a selection is two objects rather than one region in two pieces. Nothing else in
+the product says it, and nothing had read it until tracking needed to. See
+[video](video.md).
+
 Or draw around it with the Box tool. A box says something a click cannot, where
 the thing _ends_, which makes it the better prompt for anything without an
 unambiguous middle. It composes with clicks rather than replacing them: draw a

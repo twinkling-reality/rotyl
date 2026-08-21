@@ -92,6 +92,11 @@ export interface TrackingRequest {
    * than a second entry point because everything downstream of it already
    * composes: N tracks advance against one embedding, and their commands fold
    * on each frame in the order they are listed.
+   *
+   * What fills it is `tracking-seeds.ts`, which reads one selection as the
+   * several model answers it is already made of. That was the missing half for
+   * as long as this was a list with one thing in it: not the loop, but a way to
+   * say which objects, and the command log had been recording it all along.
    */
   readonly seeds: readonly CoverageMask[];
   /** Carried into every command, so replaying an old log rebuilds these masks. */
@@ -104,8 +109,18 @@ export interface TrackingRequest {
 export interface TrackingResult {
   /** Frames a command was written for, which excludes the anchor. */
   readonly tracked: number;
-  /** Of those, how many the model said the object was not in. */
-  readonly absent: number;
+  /**
+   * Of the frames it reached, how many the model said each object was not in.
+   *
+   * ONE ENTRY PER OBJECT, in the order the seeds were given, so its length is
+   * how many objects the run followed and nothing else has to carry that. It
+   * was a single number while the interface could only pass one seed, and a
+   * single number is the wrong shape now: three objects and nine absences is
+   * one object hidden for nine frames or three hidden for three, and those are
+   * different things to tell somebody. A frame is only empty when every entry
+   * covers it, which is the same rule the fold and the timeline answer with.
+   */
+  readonly absent: readonly number[];
   /** Where it got to, which is the last frame it wrote. */
   readonly lastFrame: number;
   /**
@@ -138,8 +153,10 @@ export async function runTracking(request: TrackingRequest): Promise<TrackingRes
 
   const group = document.beginGroup();
   const tracks: ObjectTrack[] = [];
+  // One counter per seed, sized before the first track exists, so a run that
+  // fails to start its third object still says how many it was asked for.
+  const absent: number[] = Array.from({ length: seeds.length }, () => 0);
   let tracked = 0;
-  let absent = 0;
   let lastFrame = anchor;
   let stopped = false;
 
@@ -161,7 +178,7 @@ export async function runTracking(request: TrackingRequest): Promise<TrackingRes
       try {
         for (const [index, track] of tracks.entries()) {
           const found = await track.advance(embedding);
-          if (!found.present) absent++;
+          if (!found.present) absent[index] = (absent[index] ?? 0) + 1;
           document.apply({
             kind: 'applyMask',
             mask: found.mask,

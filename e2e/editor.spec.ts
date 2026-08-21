@@ -94,6 +94,8 @@ async function medianAt(results: string, path: readonly string[]): Promise<numbe
 interface TruthFrame {
   readonly frame: number;
   readonly target: readonly [number, number];
+  /** The identical disc that stands still, and that the bar never covers. */
+  readonly distractor: readonly [number, number];
   /** Any of the target is in view, which is false only where the bar covers it. */
   readonly visible: boolean;
   /** All of it is, which is false on the frames it is entering or leaving behind. */
@@ -131,14 +133,24 @@ function truthFrame(value: unknown): TruthFrame {
   const frame = field(value, 'frame');
   const visible = field(value, 'visible');
   const whole = field(value, 'whole');
-  const target = field(value, 'target');
   if (typeof frame !== 'number' || typeof visible !== 'boolean' || typeof whole !== 'boolean')
     throw new Error('occlusion.json: a frame is missing its verdict');
-  const x = Array.isArray(target) ? (target[0] as unknown) : undefined;
-  const y = Array.isArray(target) ? (target[1] as unknown) : undefined;
+  return {
+    frame,
+    visible,
+    whole,
+    target: centre(field(value, 'target'), frame, 'target'),
+    distractor: centre(field(value, 'distractor'), frame, 'distractor'),
+  };
+}
+
+/** One recorded centre, checked rather than cast. */
+function centre(value: unknown, frame: number, name: string): readonly [number, number] {
+  const x = Array.isArray(value) ? (value[0] as unknown) : undefined;
+  const y = Array.isArray(value) ? (value[1] as unknown) : undefined;
   if (typeof x !== 'number' || typeof y !== 'number')
-    throw new Error(`occlusion.json: frame ${String(frame)} is missing its target`);
-  return { frame, visible, whole, target: [x, y] };
+    throw new Error(`occlusion.json: frame ${String(frame)} is missing its ${name}`);
+  return [x, y];
 }
 
 /**
@@ -179,6 +191,46 @@ async function absentFrames(page: Page): Promise<readonly number[]> {
     return log.appliedCommands
       .filter((command) => command.kind === 'applyMask' && command.group !== undefined && command.absent)
       .map((command) => command.frame);
+  });
+}
+
+/** How many model answers the selection is made of, which the log records. */
+async function modelAnswers(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const log = globalThis.rotyl?.engine.document;
+    if (!log) throw new Error('no document');
+    return log.appliedCommands.filter(
+      (command) => command.kind === 'applyMask' && command.group === undefined,
+    ).length;
+  });
+}
+
+/**
+ * The frames each object of a run was reported absent on, in seed order.
+ *
+ * A run writes its objects in seed order on every frame it reaches, and the
+ * first of them replaces while the rest add. So the commands of one frame, in
+ * log order, ARE the objects in order, and nothing else has to be recorded for
+ * a test to tell them apart. That is the same fact `tracking-job.ts` relies on
+ * to make a second object a region rather than a race.
+ */
+async function absentByObject(page: Page): Promise<readonly (readonly number[])[]> {
+  return page.evaluate(() => {
+    const log = globalThis.rotyl?.engine.document;
+    if (!log) throw new Error('no document');
+    const run = log.appliedCommands.filter(
+      (command) => command.kind === 'applyMask' && command.group !== undefined,
+    );
+    const byFrame = new Map<number, typeof run>();
+    for (const command of run) byFrame.set(command.frame, [...(byFrame.get(command.frame) ?? []), command]);
+    const objects = Math.max(0, ...[...byFrame.values()].map((commands) => commands.length));
+    const absent: number[][] = Array.from({ length: objects }, () => []);
+    for (const [frame, commands] of byFrame) {
+      commands.forEach((command, index) => {
+        if (command.kind === 'applyMask' && command.absent) absent[index]?.push(frame);
+      });
+    }
+    return absent.map((frames) => frames.toSorted((a, b) => a - b));
   });
 }
 
@@ -1093,6 +1145,96 @@ test('reports the object behind something on the frames it is behind something o
   // the thing a run hands back being the same thing it wrote down.
   await expect(
     page.getByText(`The object is behind something on ${String(absent.length)} of them`, { exact: false }),
+  ).toBeVisible();
+});
+
+test('follows two objects at once, because the log already said there were two', async ({ page }) => {
+  // THE CAPABILITY THE ENGINE HAD AND THE INTERFACE COULD NOT REACH.
+  // `runTracking` has taken a list of seeds since the day it landed and the
+  // hook passed exactly one, because the product has one selection and no
+  // concept of a set of them. It does not need one. `SelectIntent`'s first
+  // value is `object`, documented as "a different thing; starts a fresh
+  // prompt", and a fresh prompt writes its own `applyMask` where a shift-click
+  // replaces the last one. So two clicks on two things have always left two
+  // commands, and that is which objects somebody pointed at.
+  //
+  // This clip is the one that can prove it: a disc that goes behind a bar for
+  // eight known frames, and an identical disc that stands still and is never
+  // covered by anything. Two objects, one of which is occluded and one of which
+  // is not, is the case a single seed cannot express at all.
+  test.setTimeout(180_000);
+  await page.locator('input[type=file]').setInputFiles(occlusion);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const track = page.getByRole('button', { name: 'Track' });
+  test.skip((await track.count()) === 0, 'no VITE_TRACKING_HOST: nothing to fetch a tracker from');
+
+  const truth = await occlusionTruth();
+  const start = truth.frames[0];
+  if (!start) throw new Error('occlusion.json: no first frame');
+  const hidden = truth.frames.filter((each) => !each.visible).map((each) => each.frame);
+  const whole = new Set(truth.frames.filter((each) => each.whole).map((each) => each.frame));
+
+  // Two plain clicks with the Object tool, which is the gesture that means "a
+  // different thing" and the only one this needs. The model answers each of
+  // them, so this is the one test here that puts its opinion in front of the
+  // tracker; the discs are a flat colour on a blurred ground and it is not a
+  // hard question.
+  await page.keyboard.press('o');
+  for (const [index, [x, y]] of [start.target, start.distractor].entries()) {
+    const at = await atSource(page, x, y);
+    await page.mouse.click(at.x, at.y);
+    // One more answer in the log per click, which is the claim: a plain click
+    // is a fresh prompt and a fresh prompt does not replace the last answer.
+    await expect.poll(() => modelAnswers(page), { timeout: 120_000 }).toBe(index + 1);
+  }
+
+  // And the button says so before it is pressed, from the log rather than from
+  // the GPU: what it will do is follow two things, and a five-letter label
+  // cannot carry that.
+  await expect(track).toHaveAttribute('title', /\b2 selected objects\b/);
+
+  await track.click();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible({ timeout: 120_000 });
+  // And says it again while it runs, because the button that said it has become
+  // Stop: the count leaves the screen exactly when it explains why a frame is
+  // taking 226 milliseconds instead of 135.
+  await expect(page.getByText('Tracking 2 objects', { exact: false })).toBeVisible({ timeout: 120_000 });
+  await expect.poll(() => trackedTo(page), { timeout: 120_000 }).toBeGreaterThan(0.999);
+  await expect(track).toBeEnabled({ timeout: 120_000 });
+
+  // The run's commands come in seed order on every frame, so the one that
+  // replaces is the first object and the ones that add are the rest. That is
+  // not a convention this test invented: it is what makes a second object a
+  // region rather than a race, and `tracking-job.ts` names it.
+  const perObject = await absentByObject(page);
+  expect(perObject).toHaveLength(2);
+  const [first, second] = perObject;
+  expect(first && second).toBeTruthy();
+  if (!first || !second) return;
+
+  // THE ONE THAT WENT BEHIND THE BAR, on every frame the bar covers.
+  expect(first).toEqual(expect.arrayContaining(hidden));
+  expect(first.filter((frame) => whole.has(frame))).toEqual([]);
+  // AND THE ONE THAT DID NOT, on none of them. The distractor never moves and
+  // nothing ever crosses it, so an absence here would be the two objects
+  // sharing a verdict rather than each having one.
+  expect(second).toEqual([]);
+
+  // So the timeline draws no faint stretch at all on the clip that produced one
+  // with a single object, and both pictures are right: a frame is empty only
+  // where every object is missing from it, and the standing disc is on all of
+  // them. One mark for the two clicks, one unbroken bar for the run.
+  await expect(page.locator('.timeline__mark')).toHaveCount(1);
+  await expect(page.locator('.timeline__run')).toHaveCount(1);
+  await expect(page.locator('.timeline__run--absent')).toHaveCount(0);
+
+  // And the line says which of those two things happened, because a run that
+  // read one selection as two objects is a reading nobody pressed a button for.
+  await expect(page.getByText('Tracking followed 2 objects', { exact: false })).toBeVisible();
+  await expect(
+    page.getByText(`1 of them went behind something, on ${String(first.length)} frames`, { exact: false }),
   ).toBeVisible();
 });
 

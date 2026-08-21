@@ -105,11 +105,32 @@ export const TRIALS: readonly Trial[] = [
     where: 'src/app/Timeline.tsx',
   },
   {
-    what: 'Reaching multi-object tracking from the interface, which core has always supported',
-    verdict: 'open',
+    what: 'One tracked object per model answer the selection is made of, read back out of the command log',
+    verdict: 'adopted',
     evidence:
-      'runTracking takes a list of seeds, N tracks advance against one embedding per frame so a second object is 91 ms rather than another 135, and the first writes replace while the rest add. use-tracking passes exactly one seed, so none of it is reachable. What is missing is not the loop, it is a way to say WHICH objects: the product has one selection and no concept of a set of them, and a second seed with no way to name, re-select or undo one of them separately would be a capability with no handle on it',
-    where: 'src/app/use-tracking.ts',
+      'The engine has taken a list of seeds since tracking landed and the interface passed one, so the missing half was never the loop: it was a way to say WHICH objects, in a product with one selection and no set of them. The log had been recording it since object selection landed. A fresh prompt writes its own applyMask and a refinement replaces one, so two clicks on two things leave two commands and two clicks on one leave one. Reading that back is one core function and 0.56 KB gzipped on the bundle, with no new gesture, no mode and no ninth button, and a selection with fewer than two answers in it comes back as the single seed it has always been. Driven end to end against the real model on the fixture clip where one disc goes behind a bar for eight frames and an identical one stands beside it: the first is reported absent on the frames the bar covers and the second on none, and the timeline draws no faint stretch at all, because a frame is empty only where every object is missing from it',
+    where: 'src/core/perception/tracking-seeds.ts',
+  },
+  {
+    what: 'A set of selections in the interface, so a run can be told which objects to follow',
+    verdict: 'rejected',
+    evidence:
+      'It was the obvious answer to the one thing multi-object tracking was missing, which was never the loop: runTracking has taken a list of seeds since it landed, N tracks advance against one embedding so two objects are 226 ms a frame rather than 270, and the first writes replace while the rest add. What a set costs is a way to start one, a way to see which is active, a way to switch and a way to undo one separately, in a product whose interface is a canvas and eight buttons. None of it is needed. SelectIntent’s first value is `object`, documented as "a different thing; starts a fresh prompt", and a fresh prompt writes its own applyMask where shift-click and alt-click replace the last one. So the log has recorded which objects somebody pointed at since object selection landed, and reading it back is one core function, no new state and no ninth button',
+    where: 'src/core/perception/tracking-seeds.ts',
+  },
+  {
+    what: 'Splitting a selection into connected components, so two blobs are two objects',
+    verdict: 'rejected',
+    evidence:
+      'The other way to get several objects out of one selection, and it cannot tell the two cases apart that matter: two cars are two components and one car behind a lamppost is also two, so it over-splits exactly where a seed is already hard. It also needs a threshold and a minimum area that nothing in the log justifies, where the answers a model gave are a partition somebody actually made. Kept in mind for the case the answers cannot express, which is two brushed blobs, and that case is in known limits rather than solved',
+    where: 'src/core/perception/tracking-seeds.ts',
+  },
+  {
+    what: 'A track of its own for coverage no model answer claims, rather than giving it to the first object',
+    verdict: 'rejected',
+    evidence:
+      'It changes what Track does for people who never asked for several objects. A brushed region beside a clicked one would become a second object where today the whole selection is one seed, so a single-object run would silently start following two things and costing 226 ms a frame instead of 135. Given to the first object instead, a selection with no answers in it is one seed of the whole coverage, which is byte for byte every run this product had made',
+    where: 'src/core/perception/tracking-seeds.ts',
   },
   {
     what: 'Writing the whole document on every edit, so a crash journal needs no second format',
