@@ -6,6 +6,7 @@
 //   node tools/video-bench/run.mjs document        # its own file; see APART below
 //   node tools/video-bench/run.mjs occlusion       # its own file; see APART below
 //   node tools/video-bench/run.mjs objects         # its own file; see APART below
+//   node tools/video-bench/run.mjs range           # its own file; see APART below
 //   node tools/video-bench/run.mjs recovery        # its own file; see APART below
 //   node tools/video-bench/run.mjs tracked-frame   # needs VITE_TRACKING_HOST
 //   node tools/video-bench/run.mjs long-clip       # twenty minutes; see below
@@ -49,6 +50,13 @@ import { writeFileSync } from 'node:fs';
  * added to any of them re-takes that measurement and moves figures nobody
  * changed, which is the cost this list already records having paid once.
  *
+ * `range` is the same again, and is the one whose sharing is most obvious: it
+ * uses the same two probe clips, the same sixteen patches and the same upload
+ * path as `colour`, which sits inside `all`. That is the argument for putting
+ * it there and therefore the argument against: `all` writes the file the decode
+ * ladder, the readback ladder and two ONNX timings are read from, and none of
+ * them has anything to do with whether a full-range clip decodes correctly.
+ *
  * `recovery` is the same again, one chapter further on. It writes tens of
  * megabytes into the origin private file system and cleans up after itself,
  * which is not a thing to have running in the middle of an export measurement.
@@ -71,6 +79,7 @@ const APART = [
   'document',
   'occlusion',
   'objects',
+  'range',
   'recovery',
   'tracked-frame',
   'long-clip',

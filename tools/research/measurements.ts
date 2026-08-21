@@ -629,6 +629,7 @@ function colour(video: unknown): Section {
       'A video frame belongs in the same source texture a photograph does, sampled through the same sRGB view. Nothing downstream needed a special case, and the colour contract survived video with no shader changes at all.',
       'Both ways of being wrong here are silent, so it was measured rather than assumed: sixteen flat patches with known sRGB bytes, encoded to H.264 and brought back. What an external texture samples turns out to be sRGB-encoded, exactly like the bytes of a decoded image.',
       'Writing it through an sRGB view instead encodes it twice. The second row is what that costs, and it is the kind of mistake that is obvious in a measurement and invisible in a review.',
+      'The 4:2:0 column here is the limited-range clip. Whether the full-range one needs anything of its own was left open on this page for four chapters and is answered on its own: it does not, and the flag was in the bitstream the whole time.',
     ],
     table: {
       columns: ['worst error, written through', '4:4:4 lossless', '4:2:0'],
@@ -2106,6 +2107,127 @@ function foldsToN(perObject: unknown): Section {
   };
 }
 
+// --- whether a full-range clip needs a path of its own -----------------------
+
+/** A boolean out of the results, which `num` cannot read and a table needs. */
+function flag(source: unknown, path: readonly string[]): boolean {
+  const value = at(source, path);
+  if (typeof value !== 'boolean') throw new Error(`research: ${path.join(' / ')} is not a boolean`);
+  return value;
+}
+
+const CLIP = { tv: 'probe-420-tv', pc: 'probe-420-pc' } as const;
+
+function theClipWasAlwaysRight(perRange: unknown): Section {
+  const of = (clip: string, path: readonly string[]): number =>
+    num(perRange, ['range', 'clips', clip, ...path]);
+  const said = (clip: string): string =>
+    flag(perRange, ['range', 'reported_full_range', clip]) ? 'full' : 'limited';
+  const row = (label: string, render: (clip: string) => string): readonly string[] => [
+    label,
+    render(CLIP.tv),
+    render(CLIP.pc),
+  ];
+  return {
+    heading: 'Two files that differ in the flag and in the bytes, and one answer',
+    prose: [
+      'The colour probe has always had two 4:2:0 clips in it, the same sixteen patches encoded limited range and full range. The measurement that owns them reported that both came back at the same values and that the browser called both of them limited, concluded that the range path had never been exercised, and asked for a clip whose flag is verifiably in the bitstream and actually differs.',
+      `It already was that clip. Read out of the decoder configuration the browser is handed, rather than off the command line that produced the file, one carries video_full_range_flag ${of(
+        CLIP.tv,
+        ['sps', 'video_full_range_flag'],
+      ).toFixed(0)} and the other ${of(CLIP.pc, ['sps', 'video_full_range_flag']).toFixed(
+        0,
+      )}. The files are ${of(CLIP.tv, ['file_bytes']).toLocaleString('en-GB')} and ${of(CLIP.pc, [
+        'file_bytes',
+      ]).toLocaleString('en-GB')} bytes, so they are not one clip measured twice.`,
+      `So two files that genuinely differ come back through the product’s own upload path within ${num(
+        perRange,
+        ['range', 'worst_between_the_two_codes', 'copyExternalImageToTexture'],
+      ).toFixed(
+        0,
+      )} code of each other. That is not a measurement which failed to run. It is the answer for these two clips, and it went unread for four chapters because nothing in the harness had ever looked inside either file. What it is not is the answer for every clip, which is the section below.`,
+    ],
+    table: {
+      columns: ['the same patches, encoded', 'limited range', 'full range'],
+      rows: [
+        row('the file, in bytes', (clip) => of(clip, ['file_bytes']).toLocaleString('en-GB')),
+        row('video_full_range_flag, in the SPS', (clip) =>
+          of(clip, ['sps', 'video_full_range_flag']).toFixed(0),
+        ),
+        row('luma a page reads back, at black', (clip) => of(clip, ['luma_at_the_greys', '0']).toFixed(0)),
+        row('luma a page reads back, at white', (clip) => of(clip, ['luma_at_the_greys', '9']).toFixed(0)),
+        row('what VideoFrame.colorSpace says', said),
+        row('worst error, sRGB round trip', (clip) => `${of(clip, ['srgb_back', 'worst']).toFixed(0)} codes`),
+      ],
+    },
+    caveat:
+      'The luma row is not the clip, it is what a page can see of it. Stored, the full-range clip’s luma runs 0 to 255 where the other runs 16 to 235, which is what ffprobe reads out of either file. copyTo hands a page the same limited range for both, so the browser has applied the flag and normalised before a frame exists to look at. That reading was written to prove the two clips differ and cannot; the byte comparison in the row above it does that instead.',
+    command: 'node tools/video-bench/run.mjs range',
+  };
+}
+
+/** A difference in output codes, which is how every colour figure here reads. */
+const inCodes = (value: number): string => `${value.toFixed(0)} codes`;
+
+function whichDecoder(perRange: unknown): Section {
+  const rung = (size: string): number =>
+    num(perRange, ['range', 'the_ladder', size, 'worst_against_its_twin']);
+  const asked = (key: string): number =>
+    num(perRange, ['range', 'which_decoder', key, 'worst_against_its_twin']);
+  return {
+    heading: 'The answer is not the same at every size, and the size is not the reason',
+    prose: [
+      `One pair of clips at one size cannot see this, and that is how it stayed open. On the 1920x1080 probes the flag is honoured and there is nothing to do. The same eight greys at 320x180 come back ${inCodes(
+        rung('320x180'),
+      )} from their limited-range twin, contrast-stretched exactly as a full-range payload read as limited would be. The probe that owns the colour contract is 1080p, and 1080p is on the working side of the line.`,
+      `Four sizes put that line between 480x270 and 640x360 on this machine, which is a number about this machine. Asked directly, hardwareAcceleration says what it is really about: told to prefer hardware, a 320x180 full-range clip is ${inCodes(
+        asked('320x180, prefer-hardware'),
+      )} from its twin; told to prefer software, a 1280x720 one is ${inCodes(
+        asked('1280x720, prefer-software'),
+      )}. The hardware decoder honours the flag at every size and the software decoder ignores it at every size. Frame size only decides which one the browser picks.`,
+      'That is worth having as a mechanism rather than as a threshold. Where the line falls belongs to this Mac and this build of Chrome; "the software decoder does not implement it" is a sentence somebody on other hardware can check, and it says why the boundary moves.',
+    ],
+    table: {
+      columns: ['a full-range clip, against its limited-range twin', 'worst'],
+      rows: [
+        ...(['320x180', '480x270', '640x360', '1280x720'] as const).map((size) => [
+          `${size}, whichever decoder the browser picks`,
+          inCodes(rung(size)),
+        ]),
+        ['320x180, told to prefer hardware', inCodes(asked('320x180, prefer-hardware'))],
+        ['1280x720, told to prefer software', inCodes(asked('1280x720, prefer-software'))],
+      ],
+    },
+    caveat:
+      'Every figure here is against the limited-range encode of the same picture and never against the source, because the GPU upload puts eleven codes into the midtones of any 4:2:0 frame whichever range it is. That is Chrome\u2019s BT.709 transfer conversion, it is already measured and attributed on the decode page, and it has nothing to do with the flag. Two encodes of one picture cancel it and leave only what the flag decided.',
+    command: 'node tools/video-bench/run.mjs range',
+  };
+}
+
+function theMetadataIsNoHelp(perRange: unknown): Section {
+  const of = (clip: string, path: readonly string[]): number =>
+    num(perRange, ['range', 'clips', clip, ...path]);
+  return {
+    heading: 'And nothing in the frame says which of the two you got',
+    prose: [
+      `VideoFrame.colorSpace reports fullRange false on a full-range file, both where the decode was right and where it was wrong, so it is not a signal a page could branch on. Two more of that object\u2019s four fields are inventions rather than readings: both probes declare colour_primaries ${of(
+        CLIP.pc,
+        ['sps', 'colour_primaries'],
+      ).toFixed(0)} and transfer_characteristics ${of(CLIP.pc, ['sps', 'transfer_characteristics']).toFixed(
+        0,
+      )} in their SPS, which is "unspecified" for both, and the browser reports bt709 for both. Only matrix_coefficients, at ${of(
+        CLIP.pc,
+        ['sps', 'matrix_coefficients'],
+      ).toFixed(0)}, is a value anybody wrote down.`,
+      'The flag itself is readable, out of the SPS in the avcC, which is how the rows above know the two clips differ. What is not readable is whether the decoder acted on it, and that is the one thing a correction would need. So what is left is a limit rather than a fix: a full-range clip small enough to land on the software decoder comes back contrast-stretched, and this product cannot tell that it did.',
+      'It is a narrow limit and it is worth saying how narrow. Camera and phone footage is limited range; full range on H.264 is mostly screen recordings and synthetic output, and it has to be small as well. What it is not is invisible: thirteen codes across the whole picture is a contrast error somebody would see and would have no way to explain.',
+    ],
+    caveat:
+      'Its own command and its own results file, sharing its clips, its patches and its upload path with the colour probe, which is the reason rather than an objection to it: that probe is inside the run that writes the results the decode ladder, the readback ladder and two ONNX timings are read from. Adding a row there by re-running it would re-date every one of them for a question none of them touches.',
+    command: 'node tools/video-bench/run.mjs range',
+  };
+}
+
 // --- entries ----------------------------------------------------------------
 
 /**
@@ -2153,6 +2275,12 @@ export interface Results {
    * re-takes a measurement this chapter did not change.
    */
   readonly perObject: unknown;
+  /**
+   * Whether a full-range clip needs a colour path of its own. Its own file
+   * because it shares its clips and its patches with the colour probe, which
+   * sits inside the run that writes results.json.
+   */
+  readonly perRange: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
@@ -2162,6 +2290,7 @@ export function entries(results: Results): readonly Entry[] {
   const { kept } = results;
   const { hidden } = results;
   const { perObject } = results;
+  const { perRange } = results;
   return [
     {
       slug: 'the-look',
@@ -2254,6 +2383,19 @@ export function entries(results: Results): readonly Entry[] {
         'Four things were unknown before video could be built, all of them capable of forcing a different design. These settled the shape of the frame provider and the colour contract; the model’s side of it is on its own page.',
       ],
       sections: [decode(video), upload(video), colour(video)],
+    },
+    {
+      slug: 'full-range',
+      results: 'tools/video-bench/results-range.json',
+      title: 'The clip was always the right clip',
+      standfirst:
+        'The one colour question this project left open, answered by looking inside the two files it had been asking it with, and then answered properly by asking it at more than one size. This browser\u2019s hardware decoder applies the range flag and its software decoder ignores it, so which answer a clip gets depends on which decoder it lands on.',
+      harness: 'tools/video-bench',
+      lede: [
+        'A decoded frame needs no colour path of its own, which is measured, and there was one case the measurement could not reach: a clip tagged full range rather than limited. Both probes came back identical and the browser called both of them limited, so the conclusion written down was that the range path had never been exercised and that a better clip was needed.',
+        'The clip was fine. What was missing was somebody reading the flag out of it, and what reading it turned up is that the reassuring answer was only half of one: the same picture at 320x180 is thirteen codes out where at 1080p it is exact, because this browser has two H.264 decoders and only one of them implements the flag.',
+      ],
+      sections: [theClipWasAlwaysRight(perRange), whichDecoder(perRange), theMetadataIsNoHelp(perRange)],
     },
     {
       slug: 'the-clip',

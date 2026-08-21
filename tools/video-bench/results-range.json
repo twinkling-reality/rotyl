@@ -1,0 +1,792 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "range": {
+    "what": "the same sRGB patches encoded limited range and full range, and brought back",
+    "patches": 16,
+    "the_bitstream_differs": true,
+    "the_flag_differs": true,
+    "the_readback_is_normalised": true,
+    "worst_between_the_two_codes": {
+      "importExternalTexture, and a pass": 1,
+      "copyExternalImageToTexture": 1,
+      "drawImage, onto a 2D canvas": 1
+    },
+    "the_answer_differs": false,
+    "reported_full_range": {
+      "probe-420-tv": false,
+      "probe-420-pc": false
+    },
+    "the_ladder": {
+      "320x180": {
+        "full_range": [
+          0,
+          19,
+          56,
+          93,
+          130,
+          168,
+          205,
+          255
+        ],
+        "limited_range": [
+          0,
+          31,
+          64,
+          95,
+          128,
+          160,
+          192,
+          255
+        ],
+        "worst_against_its_twin": 13,
+        "worst_against_the_source": 13
+      },
+      "480x270": {
+        "full_range": [
+          0,
+          19,
+          56,
+          93,
+          130,
+          168,
+          205,
+          255
+        ],
+        "limited_range": [
+          0,
+          31,
+          64,
+          95,
+          128,
+          160,
+          192,
+          255
+        ],
+        "worst_against_its_twin": 13,
+        "worst_against_the_source": 13
+      },
+      "640x360": {
+        "full_range": [
+          0,
+          35,
+          73,
+          107,
+          139,
+          169,
+          199,
+          255
+        ],
+        "limited_range": [
+          0,
+          35,
+          73,
+          107,
+          139,
+          169,
+          199,
+          255
+        ],
+        "worst_against_its_twin": 0,
+        "worst_against_the_source": 11
+      },
+      "1280x720": {
+        "full_range": [
+          0,
+          35,
+          73,
+          107,
+          139,
+          169,
+          199,
+          255
+        ],
+        "limited_range": [
+          0,
+          35,
+          73,
+          107,
+          139,
+          169,
+          199,
+          255
+        ],
+        "worst_against_its_twin": 0,
+        "worst_against_the_source": 11
+      }
+    },
+    "which_decoder": {
+      "1280x720, no-preference": {
+        "full_range": [
+          0,
+          35,
+          73,
+          107,
+          139,
+          169,
+          199,
+          255
+        ],
+        "worst_against_its_twin": 0,
+        "honoured": true
+      },
+      "1280x720, prefer-hardware": {
+        "full_range": [
+          0,
+          35,
+          73,
+          107,
+          139,
+          169,
+          199,
+          255
+        ],
+        "worst_against_its_twin": 0,
+        "honoured": true
+      },
+      "1280x720, prefer-software": {
+        "full_range": [
+          0,
+          19,
+          56,
+          93,
+          130,
+          168,
+          205,
+          255
+        ],
+        "worst_against_its_twin": 13,
+        "honoured": false
+      },
+      "320x180, no-preference": {
+        "full_range": [
+          0,
+          19,
+          56,
+          93,
+          130,
+          168,
+          205,
+          255
+        ],
+        "worst_against_its_twin": 13,
+        "honoured": false
+      },
+      "320x180, prefer-hardware": {
+        "full_range": [
+          0,
+          35,
+          73,
+          107,
+          139,
+          169,
+          199,
+          255
+        ],
+        "worst_against_its_twin": 0,
+        "honoured": true
+      },
+      "320x180, prefer-software": {
+        "full_range": [
+          0,
+          19,
+          56,
+          93,
+          130,
+          168,
+          205,
+          255
+        ],
+        "worst_against_its_twin": 13,
+        "honoured": false
+      }
+    },
+    "clips": {
+      "probe-420-tv": {
+        "sps": {
+          "profile_idc": 100,
+          "video_signal_type_present_flag": 1,
+          "video_full_range_flag": 0,
+          "colour_description_present_flag": 1,
+          "colour_primaries": 2,
+          "transfer_characteristics": 2,
+          "matrix_coefficients": 1
+        },
+        "file_bytes": 4800,
+        "format": "NV12",
+        "frame_says": {
+          "primaries": "bt709",
+          "transfer": "bt709",
+          "matrix": "bt709",
+          "fullRange": false
+        },
+        "luma_at_the_greys": [
+          16,
+          30,
+          43,
+          71,
+          98,
+          126,
+          153,
+          181,
+          218,
+          235
+        ],
+        "srgb_back": {
+          "worst": 11,
+          "median_abs": 2,
+          "rows": [
+            {
+              "want": "0,0,0",
+              "got": "0,0,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "16,16,16",
+              "got": "14,14,14",
+              "delta": "-2,-2,-2"
+            },
+            {
+              "want": "32,32,32",
+              "got": "35,35,35",
+              "delta": "3,3,3"
+            },
+            {
+              "want": "64,64,64",
+              "got": "73,73,73",
+              "delta": "9,9,9"
+            },
+            {
+              "want": "96,96,96",
+              "got": "107,107,107",
+              "delta": "11,11,11"
+            },
+            {
+              "want": "128,128,128",
+              "got": "139,139,139",
+              "delta": "11,11,11"
+            },
+            {
+              "want": "160,160,160",
+              "got": "169,169,169",
+              "delta": "9,9,9"
+            },
+            {
+              "want": "192,192,192",
+              "got": "199,199,199",
+              "delta": "7,7,7"
+            },
+            {
+              "want": "235,235,235",
+              "got": "238,238,238",
+              "delta": "3,3,3"
+            },
+            {
+              "want": "255,255,255",
+              "got": "255,255,255",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "255,0,0",
+              "got": "255,0,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "0,255,0",
+              "got": "0,255,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "0,0,255",
+              "got": "0,0,255",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "255,255,0",
+              "got": "254,255,0",
+              "delta": "-1,0,0"
+            },
+            {
+              "want": "0,255,255",
+              "got": "0,254,255",
+              "delta": "0,-1,0"
+            },
+            {
+              "want": "255,0,255",
+              "got": "255,0,254",
+              "delta": "0,0,-1"
+            }
+          ]
+        },
+        "srgb_back_uploaded": {
+          "worst": 11,
+          "median_abs": 2,
+          "rows": [
+            {
+              "want": "0,0,0",
+              "got": "0,0,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "16,16,16",
+              "got": "14,14,14",
+              "delta": "-2,-2,-2"
+            },
+            {
+              "want": "32,32,32",
+              "got": "35,35,35",
+              "delta": "3,3,3"
+            },
+            {
+              "want": "64,64,64",
+              "got": "73,73,73",
+              "delta": "9,9,9"
+            },
+            {
+              "want": "96,96,96",
+              "got": "107,107,107",
+              "delta": "11,11,11"
+            },
+            {
+              "want": "128,128,128",
+              "got": "139,139,139",
+              "delta": "11,11,11"
+            },
+            {
+              "want": "160,160,160",
+              "got": "169,169,169",
+              "delta": "9,9,9"
+            },
+            {
+              "want": "192,192,192",
+              "got": "199,199,199",
+              "delta": "7,7,7"
+            },
+            {
+              "want": "235,235,235",
+              "got": "238,238,238",
+              "delta": "3,3,3"
+            },
+            {
+              "want": "255,255,255",
+              "got": "255,255,255",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "255,0,0",
+              "got": "255,0,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "0,255,0",
+              "got": "0,255,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "0,0,255",
+              "got": "0,0,255",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "255,255,0",
+              "got": "254,255,0",
+              "delta": "-1,0,0"
+            },
+            {
+              "want": "0,255,255",
+              "got": "0,254,255",
+              "delta": "0,-1,0"
+            },
+            {
+              "want": "255,0,255",
+              "got": "255,0,254",
+              "delta": "0,0,-1"
+            }
+          ]
+        },
+        "srgb_back_drawn": {
+          "worst": 1,
+          "median_abs": 1,
+          "rows": [
+            {
+              "want": "0,0,0",
+              "got": "0,0,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "16,16,16",
+              "got": "16,16,16",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "32,32,32",
+              "got": "31,31,31",
+              "delta": "-1,-1,-1"
+            },
+            {
+              "want": "64,64,64",
+              "got": "64,64,64",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "96,96,96",
+              "got": "95,95,95",
+              "delta": "-1,-1,-1"
+            },
+            {
+              "want": "128,128,128",
+              "got": "128,128,128",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "160,160,160",
+              "got": "160,160,160",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "192,192,192",
+              "got": "192,192,192",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "235,235,235",
+              "got": "235,235,235",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "255,255,255",
+              "got": "255,255,255",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "255,0,0",
+              "got": "255,1,0",
+              "delta": "0,1,0"
+            },
+            {
+              "want": "0,255,0",
+              "got": "0,255,1",
+              "delta": "0,0,1"
+            },
+            {
+              "want": "0,0,255",
+              "got": "1,0,255",
+              "delta": "1,0,0"
+            },
+            {
+              "want": "255,255,0",
+              "got": "254,255,0",
+              "delta": "-1,0,0"
+            },
+            {
+              "want": "0,255,255",
+              "got": "0,254,255",
+              "delta": "0,-1,0"
+            },
+            {
+              "want": "255,0,255",
+              "got": "255,0,254",
+              "delta": "0,0,-1"
+            }
+          ]
+        }
+      },
+      "probe-420-pc": {
+        "sps": {
+          "profile_idc": 100,
+          "video_signal_type_present_flag": 1,
+          "video_full_range_flag": 1,
+          "colour_description_present_flag": 1,
+          "colour_primaries": 2,
+          "transfer_characteristics": 2,
+          "matrix_coefficients": 1
+        },
+        "file_bytes": 4825,
+        "format": "NV12",
+        "frame_says": {
+          "primaries": "bt709",
+          "transfer": "bt709",
+          "matrix": "bt709",
+          "fullRange": false
+        },
+        "luma_at_the_greys": [
+          16,
+          30,
+          43,
+          71,
+          98,
+          126,
+          153,
+          181,
+          218,
+          235
+        ],
+        "srgb_back": {
+          "worst": 11,
+          "median_abs": 2,
+          "rows": [
+            {
+              "want": "0,0,0",
+              "got": "0,0,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "16,16,16",
+              "got": "14,14,14",
+              "delta": "-2,-2,-2"
+            },
+            {
+              "want": "32,32,32",
+              "got": "35,35,35",
+              "delta": "3,3,3"
+            },
+            {
+              "want": "64,64,64",
+              "got": "73,73,73",
+              "delta": "9,9,9"
+            },
+            {
+              "want": "96,96,96",
+              "got": "107,107,107",
+              "delta": "11,11,11"
+            },
+            {
+              "want": "128,128,128",
+              "got": "139,139,139",
+              "delta": "11,11,11"
+            },
+            {
+              "want": "160,160,160",
+              "got": "169,169,169",
+              "delta": "9,9,9"
+            },
+            {
+              "want": "192,192,192",
+              "got": "199,199,199",
+              "delta": "7,7,7"
+            },
+            {
+              "want": "235,235,235",
+              "got": "238,238,238",
+              "delta": "3,3,3"
+            },
+            {
+              "want": "255,255,255",
+              "got": "255,255,255",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "255,0,0",
+              "got": "254,0,0",
+              "delta": "-1,0,0"
+            },
+            {
+              "want": "0,255,0",
+              "got": "0,255,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "0,0,255",
+              "got": "0,0,254",
+              "delta": "0,0,-1"
+            },
+            {
+              "want": "255,255,0",
+              "got": "255,255,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "0,255,255",
+              "got": "0,255,254",
+              "delta": "0,0,-1"
+            },
+            {
+              "want": "255,0,255",
+              "got": "255,0,255",
+              "delta": "0,0,0"
+            }
+          ]
+        },
+        "srgb_back_uploaded": {
+          "worst": 11,
+          "median_abs": 2,
+          "rows": [
+            {
+              "want": "0,0,0",
+              "got": "0,0,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "16,16,16",
+              "got": "14,14,14",
+              "delta": "-2,-2,-2"
+            },
+            {
+              "want": "32,32,32",
+              "got": "35,35,35",
+              "delta": "3,3,3"
+            },
+            {
+              "want": "64,64,64",
+              "got": "73,73,73",
+              "delta": "9,9,9"
+            },
+            {
+              "want": "96,96,96",
+              "got": "107,107,107",
+              "delta": "11,11,11"
+            },
+            {
+              "want": "128,128,128",
+              "got": "139,139,139",
+              "delta": "11,11,11"
+            },
+            {
+              "want": "160,160,160",
+              "got": "169,169,169",
+              "delta": "9,9,9"
+            },
+            {
+              "want": "192,192,192",
+              "got": "199,199,199",
+              "delta": "7,7,7"
+            },
+            {
+              "want": "235,235,235",
+              "got": "238,238,238",
+              "delta": "3,3,3"
+            },
+            {
+              "want": "255,255,255",
+              "got": "255,255,255",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "255,0,0",
+              "got": "254,0,0",
+              "delta": "-1,0,0"
+            },
+            {
+              "want": "0,255,0",
+              "got": "0,255,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "0,0,255",
+              "got": "0,0,254",
+              "delta": "0,0,-1"
+            },
+            {
+              "want": "255,255,0",
+              "got": "255,255,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "0,255,255",
+              "got": "0,255,254",
+              "delta": "0,0,-1"
+            },
+            {
+              "want": "255,0,255",
+              "got": "255,0,255",
+              "delta": "0,0,0"
+            }
+          ]
+        },
+        "srgb_back_drawn": {
+          "worst": 1,
+          "median_abs": 0,
+          "rows": [
+            {
+              "want": "0,0,0",
+              "got": "0,0,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "16,16,16",
+              "got": "16,16,16",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "32,32,32",
+              "got": "31,31,31",
+              "delta": "-1,-1,-1"
+            },
+            {
+              "want": "64,64,64",
+              "got": "64,64,64",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "96,96,96",
+              "got": "95,95,95",
+              "delta": "-1,-1,-1"
+            },
+            {
+              "want": "128,128,128",
+              "got": "128,128,128",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "160,160,160",
+              "got": "160,160,160",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "192,192,192",
+              "got": "192,192,192",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "235,235,235",
+              "got": "235,235,235",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "255,255,255",
+              "got": "255,255,255",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "255,0,0",
+              "got": "254,0,0",
+              "delta": "-1,0,0"
+            },
+            {
+              "want": "0,255,0",
+              "got": "0,255,0",
+              "delta": "0,0,0"
+            },
+            {
+              "want": "0,0,255",
+              "got": "0,0,254",
+              "delta": "0,0,-1"
+            },
+            {
+              "want": "255,255,0",
+              "got": "255,255,1",
+              "delta": "0,0,1"
+            },
+            {
+              "want": "0,255,255",
+              "got": "1,255,254",
+              "delta": "1,0,-1"
+            },
+            {
+              "want": "255,0,255",
+              "got": "254,1,255",
+              "delta": "-1,1,0"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "range:wall-seconds": 0.5
+}

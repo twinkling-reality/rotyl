@@ -35,6 +35,10 @@ results-*.json
 # OBJECT, which is a fourth of the same class and is kept out of all three of
 # them because each of the four figures it answers is quoted from one of them.
 !results-objects.json
+# And whether a full-range clip needs a path of its own, which shares its clips
+# and its patches with the colour probe inside `all` and therefore must not
+# share its file: re-running that one re-dates every decode and encode figure.
+!results-range.json
 # And the export ladder, which is the only measurement in `all` that puts a
 # STYLE CHAIN under the encoder: a change to a style makes it stale and makes
 # nothing else in that run stale, so re-taking it together with the rest meant

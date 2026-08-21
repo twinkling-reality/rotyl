@@ -32,7 +32,7 @@ import { CompositeRenderer } from '../../src/core/render/composite-renderer.ts';
 import { POSTER_STYLE } from '../../src/core/style/poster/poster-style-pipeline.ts';
 import { defaultControls } from '../../src/core/style/style.ts';
 
-const PATCHES: readonly (readonly [number, number, number])[] = [
+export const PATCHES: readonly (readonly [number, number, number])[] = [
   [0, 0, 0],
   [16, 16, 16],
   [32, 32, 32],
@@ -51,18 +51,18 @@ const PATCHES: readonly (readonly [number, number, number])[] = [
   [255, 0, 255],
 ];
 
-const WIDTH = 1920;
-const HEIGHT = 1080;
-const COLS = 4;
-const ROWS = 4;
+export const WIDTH = 1920;
+export const HEIGHT = 1080;
+export const COLS = 4;
+export const ROWS = 4;
 
-interface Decoded {
+export interface Decoded {
   readonly frame: VideoFrame;
   /** What the container says the colour is, which is not always what it is. */
   readonly config: VideoDecoderConfig;
 }
 
-async function firstFrameOf(blob: Blob): Promise<Decoded> {
+export async function firstFrameOf(blob: Blob): Promise<Decoded> {
   const input = new Input({ formats: [MP4], source: new BlobSource(blob) });
   const track = await input.getPrimaryVideoTrack();
   if (!track) throw new Error('no video track');
@@ -75,7 +75,7 @@ async function firstFrameOf(blob: Blob): Promise<Decoded> {
   return { frame, config };
 }
 
-async function firstFrame(url: string): Promise<VideoFrame> {
+export async function firstFrame(url: string): Promise<VideoFrame> {
   return (await firstFrameOf(await (await fetch(url)).blob())).frame;
 }
 
@@ -122,7 +122,7 @@ function target(dev: GPUDevice): GPUTexture {
 }
 
 /** import + one pass, writing through the view named. */
-async function viaExternalTexture(
+export async function viaExternalTexture(
   dev: GPUDevice,
   frame: VideoFrame,
   writeThrough: GPUTextureFormat,
@@ -186,7 +186,10 @@ async function viaExternalTexture(
   return values;
 }
 
-async function viaCopyExternalImage(dev: GPUDevice, frame: VideoFrame): Promise<[number, number, number][]> {
+export async function viaCopyExternalImage(
+  dev: GPUDevice,
+  frame: VideoFrame,
+): Promise<[number, number, number][]> {
   const texture = target(dev);
   dev.queue.copyExternalImageToTexture(
     { source: frame, flipY: false },
@@ -198,7 +201,7 @@ async function viaCopyExternalImage(dev: GPUDevice, frame: VideoFrame): Promise<
   return values;
 }
 
-function error(measured: readonly (readonly [number, number, number])[]): Record<string, unknown> {
+export function error(measured: readonly (readonly [number, number, number])[]): Record<string, unknown> {
   const errors: number[] = [];
   const rows = measured.map((got, i) => {
     const want = PATCHES[i] ?? ([0, 0, 0] as const);

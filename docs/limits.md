@@ -129,6 +129,19 @@ one, and the measurement behind it is on `/research.html`.
   designed around was 90, summed from the four graphs a frame runs; the
   difference is not a graph but the arithmetic between them, which is 18 ms of
   JavaScript a frame over five passes of a million elements each.
+- **A small full-range clip is decoded as though it were limited range, and
+  nothing here can tell.** Most footage is limited range, where black is luma 16
+  and white is 235. A clip that declares itself full range puts them at 0 and
+  255, and this browser's hardware H.264 decoder acts on that declaration while
+  its software decoder ignores it. Which one a clip gets is decided by frame
+  size, so the same picture comes back exact at 1280x720 and thirteen codes
+  contrast-stretched at 320x180, over the whole frame. The flag is readable out
+  of the bitstream; whether the decoder acted on it is not, and
+  `VideoFrame.colorSpace` reports the clip as limited range in both cases, so
+  there is no signal to correct from. It is narrow, because full range on H.264
+  is mostly screen recordings and synthetic output and it has to be small as
+  well, and it is not invisible: thirteen codes is a contrast error somebody
+  would see and would have no way to explain.
 - **A clip is re-encoded, so outside the selection it is the source pixels
   written again rather than the source bytes.** The composite is still exact
   there, and H.264 is not: measured against the source, a region nobody selected

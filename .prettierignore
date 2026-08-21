@@ -17,6 +17,9 @@ tools/video-bench/results.json
 # And where the sound goes, whose codec list a formatter collapses onto one
 # line: a re-take would then fail format:check for having been re-taken.
 tools/video-bench/results-interleave.json
+# And the range ladder, for the same reason: it reports a grey ramp per rung,
+# and a formatter puts ten numbers on one line where the harness writes ten.
+tools/video-bench/results-range.json
 # The stage table, and the probes test/memory-bank.test.ts drives the
 # TypeScript over. The fixture is written on one line on purpose: it is forty
 # thousand numbers, and a formatter would make every re-take a forty-thousand

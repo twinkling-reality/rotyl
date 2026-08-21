@@ -376,6 +376,20 @@ through an sRGB view instead encodes it twice and is wrong by 73 codes at mid
 grey, which is the kind of thing that is obvious in a measurement and invisible
 in a review.
 
+**A full-range clip is the one colour question here that had no answer for four
+chapters, and the answer is that it depends on which decoder the browser
+picks.** Most footage is limited range, where black is 16 and white is 235; a
+clip that says it is full range puts them at 0 and 255, and reading one as the
+other is a contrast error over the whole picture with nothing on screen to
+suggest it. Chrome's hardware H.264 decoder applies the flag and its software
+decoder ignores it, and frame size is what chooses between them: the same
+picture is exact at 1280x720 and thirteen codes out at 320x180. There is no
+branch here to get right and no branch that could help, because
+`VideoFrame.colorSpace` reports that clip as limited range either way, right
+and wrong alike, and reports BT.709 primaries and transfer for a bitstream that
+declares neither. The flag is readable; whether the decoder acted on it is not.
+So it is in [known limits](limits.md) rather than corrected.
+
 The demuxer is mediabunny, reached through a dynamic import, so a session that
 never opens a video never fetches it. MP4 and QuickTime only: they share one
 demuxer, so accepting `.mov` costs 49 bytes, where Matroska is a second demuxer

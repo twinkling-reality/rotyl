@@ -25,7 +25,7 @@ the only thing in here whose answer depends on what a STYLE costs, so a change
 to a style makes it stale and makes nothing else stale: taken together, the run
 that re-timed a comic chain also re-timed an ONNX session and a readback ladder
 that had not moved, and the diff was forty numbers of noise around the one that
-had changed. Eight more measurements sit outside both runs and write their own
+had changed. Nine more measurements sit outside both runs and write their own
 files, because they share nothing with either and re-taking one of them should
 not re-date every figure it would otherwise have landed beside. The bundle sizes
 need a build and no browser: `node tools/video-bench/bundle-size.mjs`. The
@@ -38,7 +38,11 @@ command costs is a third of the same kind, kept apart from the second in
 particular: `node tools/video-bench/run.mjs occlusion`. And which of the figures
 about a tracked log are per RUN and which are per OBJECT is a fourth, kept apart
 from all three of them because each of the four figures it answers is quoted
-from one of them: `node tools/video-bench/run.mjs objects`. A tracked frame needs a dev server
+from one of them: `node tools/video-bench/run.mjs objects`. And whether a
+full-range clip needs a colour path of its own is a fifth, sharing its clips and
+its patches with the colour probe inside `all`, which is the reason it cannot
+share that run's file rather than an argument for putting it there:
+`node tools/video-bench/run.mjs range`. A tracked frame needs a dev server
 started with `VITE_TRACKING_HOST` pointing at the two graphs, which most
 machines will not have: `node tools/video-bench/run.mjs tracked-frame`. And how
 long a clip export can be takes twenty minutes and ends by running the tab out
@@ -48,7 +52,7 @@ needs no GPU at all, answering a question about byte layout that shares nothing
 with a timing: `node tools/video-bench/run.mjs interleave`. The clips are
 gitignored, `results.json`, `results-export.json`, `results-bundle.json`,
 `results-log.json`, `results-document.json`, `results-tracked-frame.json`,
-`results-long-clip.json`, `results-occlusion.json`, `results-objects.json` and `results-interleave.json` are not, and the graphs come from
+`results-long-clip.json`, `results-occlusion.json`, `results-objects.json`, `results-range.json` and `results-interleave.json` are not, and the graphs come from
 `tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
 
 **Nothing under `src/` may be edited while a run is going.** The dev server
@@ -66,7 +70,7 @@ appears nowhere: it throttles when the pane is hidden, which silently turns a
 3 ms number into a 16 ms one. Medians of 15 to 30 runs after warm-up, on an
 Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 
-**Fifteen findings, each with the command that re-takes it:**
+**Sixteen findings, each with the command that re-takes it:**
 
 1. [The 12 MB readback does not bind](#1-the-12-mb-readback-does-not-bind-and-it-is-avoidable-anyway)
 2. [Memory attention is 60 ms](#2-memory-attention-is-60-ms-and-38-at-half-precision)
@@ -82,6 +86,7 @@ Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 12. [Ten minutes of tracking is a 65 MB file that writes in eleven milliseconds](#12-ten-minutes-of-tracking-is-a-65-mb-file-that-writes-in-eleven-milliseconds)
 13. [One more optional field on a command is 14 bytes](#14-one-more-optional-field-on-a-command-is-14-bytes-where-it-is-true)
 14. [Four figures about a tracked log were about one object](#15-four-figures-about-a-tracked-log-were-about-one-object)
+15. [The clip was always the right clip](#16-the-clip-was-always-the-right-clip)
 
 ---
 
@@ -321,11 +326,14 @@ footage is 4:2:0 the colour-managed path is the one that matters and it is the
 correct one, but the discrepancy is Chrome's and nothing here can compensate
 for it.
 
-**What this did not establish:** limited versus full range. Both 4:2:0 probes
-produced identical values and Chrome reported `fullRange: false` for both,
-including the one ffmpeg tagged `pc`, so the range path was never exercised.
-That remains the open colour question, and the clip needed to settle it is one
-whose range flag is verifiably in the bitstream and actually differs.
+**What this said it did not establish, and had:** limited versus full range.
+Both 4:2:0 probes produced identical values and Chrome reported
+`fullRange: false` for both, including the one ffmpeg tagged `pc`, and what was
+written here was that the range path had never been exercised and that what was
+needed was a clip whose flag is verifiably in the bitstream and actually
+differs. It already was that clip, in both halves, and the identical values were
+the answer rather than the absence of one.
+[Measurement 16](#16-the-clip-was-always-the-right-clip) is that read properly.
 
 ---
 
@@ -1279,6 +1287,130 @@ reproduce measurements 12 and 14; the fold cell sits one tick of a median
 rounded to a tenth above measurement 8's, inside the spread both files already
 report in their own min and max.
 
+## 16. The clip was always the right clip
+
+[Measurement 4](#4-a-decoded-frame-lands-in-the-existing-colour-contract-unchanged)
+answered what a decoded frame does to the colour contract and left one case it
+said it could not reach: a clip tagged FULL range rather than limited. Both
+4:2:0 probes came back at the same values, Chrome called both of them limited,
+and what went into this file was that the range path had never been exercised
+and that the clip needed to settle it was one whose flag is verifiably in the
+bitstream and actually differs.
+
+**It already was that clip, in both halves.** Asked of the files rather than of
+the command line that wrote them, `probe-420-pc.mp4` carries
+`video_full_range_flag = 1` in its SPS where `probe-420-tv.mp4` carries 0, its
+stored luma runs 0 to 255 where the other runs 16 to 235, and the two files are
+different sizes. Two clips that genuinely differ coming back at the same values
+is not a measurement that failed to run. It is the answer.
+
+**For those two clips.** Asked again at four sizes it stops being one answer:
+the same picture at 320x180 comes back thirteen codes out where at 1080p it is
+exact, because this browser has two H.264 decoders and only one of them
+implements the flag. That is the half of this measurement worth reading.
+
+```bash
+node tools/video-bench/run.mjs range
+```
+
+The table is on `/research/full-range.html`, out of `results-range.json`.
+
+### What it checks, and in which order
+
+The order is the finding as much as the rows are, because the last line means
+nothing without the two above it.
+
+| the same patches, encoded           | limited range | full range |
+| ----------------------------------- | ------------- | ---------- |
+| the file, in bytes                  | 4,800         | 4,825      |
+| `video_full_range_flag`, in the SPS | 0             | 1          |
+| luma a page reads back, at black    | 16            | 16         |
+| luma a page reads back, at white    | 235           | 235        |
+| what `VideoFrame.colorSpace` says   | limited       | limited    |
+| worst error, sRGB round trip        | 11 codes      | 11 codes   |
+
+**The flag is read out of the decoder configuration the browser is handed**,
+which means parsing the SPS out of the `avcC`: every field before the VUI is
+variable width, so there is no seeking to it, and the emulation prevention bytes
+have to come out first or the parse succeeds and reads the wrong bits. It agrees
+with `ffmpeg -bsf:v trace_headers` on all six colour fields of both clips, which
+is the check on the parser rather than an aside.
+
+**And the files are compared byte for byte**, which is the line that stops every
+other one being a statement about one clip measured twice. A fixture that
+quietly stopped differing measures beautifully.
+
+### The reading that was meant to be the check turned into the finding
+
+The plan was to prove the two clips differ by reading the decoded luma at the
+grey patches, since a full-range encode of black is Y=0 where a limited one is
+Y=16. **A page cannot see that.** `copyTo` hands back the same limited range for
+both files, so the browser has applied the flag and normalised before a frame
+exists to look at. That is stronger evidence for the conclusion than the round
+trip it was supposed to set up, and useless as the check it was written to be,
+so the byte comparison does the checking and this is reported as what it is.
+
+### And then the answer turned out not to be the same at every size
+
+Everything above is the 1920x1080 pair, and one pair at one size cannot see
+this. The same eight greys encoded both ways at four sizes, each full-range clip
+against the limited-range encode of the same picture:
+
+| a full-range clip, against its limited-range twin | worst    |
+| ------------------------------------------------- | -------- |
+| 320x180                                           | 13 codes |
+| 480x270                                           | 13 codes |
+| 640x360                                           | 0 codes  |
+| 1280x720                                          | 0 codes  |
+
+**Below the line the picture is contrast-stretched**, exactly as a full-range
+payload read as limited would be, by thirteen codes across the whole frame. The
+probe that owns the colour contract is 1080p, and 1080p is on the working side.
+
+### The size is not the reason, and asking directly says what is
+
+`hardwareAcceleration` on the decoder configuration settles it. Told to prefer
+hardware, a 320x180 full-range clip is 0 codes from its twin; told to prefer
+software, a 1280x720 one is 13. **The hardware decoder honours the flag at every
+size and the software decoder ignores it at every size**, and frame size only
+decides which one the browser picks.
+
+That is worth having instead of the threshold. Where the line falls is a fact
+about this Mac and this build of Chrome. "The software decoder does not
+implement it" is a sentence somebody on other hardware can check, and it says
+why the boundary moves.
+
+**Every comparison here is against the twin and never against the source**,
+because the GPU upload puts eleven codes into the midtones of any 4:2:0 frame
+whichever range it is. That is
+[measurement 4](#4-a-decoded-frame-lands-in-the-existing-colour-contract-unchanged)'s
+already-attributed BT.709 transfer conversion and it has nothing to do with the
+flag. Two encodes of one picture cancel it.
+
+### The metadata is no help either way
+
+The conversion honours the flag where the hardware decoder does the work, and
+`VideoFrame.colorSpace` reports `fullRange: false` in both cases, right and
+wrong alike. So there is no signal to branch on. Two more of that object's four
+fields are inventions rather than readings: both probes declare
+`colour_primaries` and `transfer_characteristics` of 2, "unspecified", and the
+browser reports `bt709` for both; only `matrix_coefficients` is a value anybody
+wrote down.
+
+The flag itself is readable, out of the SPS. **Whether the decoder acted on it
+is not**, and that is the one thing a correction would need. So what is left is
+a limit rather than a fix, and it is in `docs/limits.md` with its number.
+
+### Its own file, sharing everything
+
+It uses the same two probe clips, the same sixteen patches and the same upload
+path as measurement 4, and that is the reason rather than an objection to it.
+Measurement 4 is inside `run.mjs all`, and `all` writes the `results.json` the
+decode ladder, the readback ladder and two ONNX timings are read from. Adding a
+row there by re-running it would re-date every one of them for a question none
+of them touches, which is the cost measurements 14 and 15 already record having
+paid.
+
 ## What follows
 
 1. **Decode is free and seeking is not.** Scrubbing is a decoder kept alive and
@@ -1347,3 +1479,12 @@ report in their own min and max.
     commands, what the timeline draws does not move, and one of the four was
     not a figure at all: "a fold to one" is a claim about shape, and the shape
     changed underneath it.
+16. **A result that looks like a measurement failing to run can be the answer,
+    and one fixture at one size can still be the wrong question.** Two colour
+    probes coming back identical was written down as "the range path was never
+    exercised". The clip was already right and coming back the same was the
+    finding, at 1080p. At 320x180 the same picture is thirteen codes out:
+    Chrome's hardware H.264 decoder implements `video_full_range_flag` and its
+    software decoder does not, and frame size only picks one. `colorSpace`
+    reports `fullRange` false in both cases, so nothing in the frame says which
+    one you got, and what is left is a limit rather than a fix.

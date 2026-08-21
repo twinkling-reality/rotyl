@@ -246,6 +246,14 @@ const webm = join(fixtures, 'sample.webm');
 // which is the branch that would otherwise never be run.
 const mulaw = join(fixtures, 'sample-mulaw.mov');
 
+/**
+ * The product's own frame provider, reached the way the benchmarks reach
+ * project code in a page: through the dev server, so its bare imports resolve.
+ * Reading a clip back with the same code that reads any other one is the point
+ * rather than a shortcut.
+ */
+const PROVIDER_MODULE = '/src/platform/video/frame-provider.ts';
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   // A real adapter, not a CPU fallback pretending to be one.
@@ -752,6 +760,90 @@ test('refuses a video it cannot decode, by name', async ({ page }) => {
   await expect(page.getByText('WebM and Matroska are not supported yet. MP4 and MOV work.')).toBeVisible();
   // Refused, not half-loaded: the drop zone is still the thing on screen.
   await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
+});
+
+/**
+ * A full-range clip is the same picture, where the hardware decoder gets it.
+ *
+ * Most footage is limited range, where black is luma 16 and white is 235. A
+ * clip that says it is full range puts them at 0 and 255, and reading one as
+ * the other is a contrast error over the whole picture with nothing on screen
+ * to suggest it. `tools/video-bench` measurement 16 found that this browser's
+ * HARDWARE decoder applies the flag and its software decoder ignores it, and
+ * that frame size is what picks one: below about 640x360 a full-range clip
+ * comes back thirteen codes out and there is nothing this product can do about
+ * it, which is in known limits.
+ *
+ * THIS FIXTURE IS 640x360, deliberately on the working side of that line. What
+ * it guards is the case the product is right about, so it fails if the browser
+ * stops honouring the flag where it does today, or if somebody adds a branch
+ * on colorSpace.fullRange, which reads false on both of these files.
+ *
+ * The two clips are checked to be two clips first. They differ in the flag and
+ * in their stored luma, but a page cannot see either: `copyTo` normalises, so
+ * what is compared here is their bytes. Without that the assertion below would
+ * pass just as well on one file opened twice, which is precisely how this
+ * question stayed open for four chapters.
+ */
+test('reads a full-range clip as the same picture as a limited-range one', async ({ page }) => {
+  // The figure the harness measured at this size, read rather than written
+  // down. The rung and the fixture are the same picture at the same size.
+  const allowed = await medianAt('tools/video-bench/results-range.json', [
+    'range',
+    'the_ladder',
+    '640x360',
+    'worst_against_its_twin',
+  ]);
+
+  const result = await page.evaluate(async (providerModule) => {
+    const loaded: ProviderModule = await import(providerModule);
+    const { FrameProvider } = loaded;
+
+    const patches = async (name: string, bytes: Uint8Array<ArrayBuffer>): Promise<number[]> => {
+      const opened = await FrameProvider.open(new Blob([bytes]), 8192);
+      if (!opened.ok) throw new Error(`${name} could not be opened`);
+      let out: number[] | undefined;
+      const shown = await opened.value.readFrame(2, (frame) => {
+        const width = frame.displayWidth;
+        const height = frame.displayHeight;
+        const surface = new OffscreenCanvas(width, height);
+        const context = surface.getContext('2d');
+        if (!context) throw new Error('no 2d context');
+        context.drawImage(frame, 0, 0);
+        const data = context.getImageData(0, 0, width, height).data;
+        // The centre of each of the eight flat patches, four across and two down.
+        out = [];
+        for (let i = 0; i < 8; i++) {
+          const x = Math.floor(((i % 4) + 0.5) * (width / 4));
+          const y = Math.floor((Math.floor(i / 4) + 0.5) * (height / 2));
+          out.push(data[(y * width + x) * 4] ?? -1);
+        }
+      });
+      opened.value.dispose();
+      if (!shown || !out) throw new Error(`${name} gave no frame`);
+      return out;
+    };
+
+    const tv = new Uint8Array(await (await fetch('/e2e/fixtures/range-tv.mp4')).arrayBuffer());
+    const pc = new Uint8Array(await (await fetch('/e2e/fixtures/range-pc.mp4')).arrayBuffer());
+    const sameFile = tv.length === pc.length && tv.every((value, i) => value === pc[i]);
+
+    const limited = await patches('range-tv.mp4', tv);
+    const full = await patches('range-pc.mp4', pc);
+    return {
+      sameFile,
+      limited,
+      full,
+      worst: Math.max(...limited.map((value, i) => Math.abs(value - (full[i] ?? 0)))),
+    };
+  }, PROVIDER_MODULE);
+
+  // Two clips, not one clip twice, or everything below is vacuous.
+  expect(result.sameFile).toBe(false);
+  // And the grey ramp is a grey ramp rather than eight of the same value, or
+  // two flat pictures would agree for the wrong reason.
+  expect(new Set(result.limited).size).toBeGreaterThan(4);
+  expect(result.worst).toBeLessThanOrEqual(allowed);
 });
 
 test('carries a selection forward through the clip', async ({ page }) => {
@@ -1405,7 +1497,7 @@ test('exports the whole clip as a video, with nowhere to write it', async ({ pag
 
       return { selected: patch(144, 104, 32), corner: patch(4, 4, 32) };
     },
-    [bytes.toString('base64'), 30, '/src/platform/video/frame-provider.ts'] as const,
+    [bytes.toString('base64'), 30, PROVIDER_MODULE] as const,
   );
 
   // Stylised inside the rectangle.
@@ -1936,7 +2028,7 @@ test('exports a range, and a selection made before it still applies', async ({ p
       };
       return { selected: patch(144, 104, 32), corner: patch(4, 4, 32) };
     },
-    [Buffer.from(bytes).toString('base64'), '/src/platform/video/frame-provider.ts'] as const,
+    [Buffer.from(bytes).toString('base64'), PROVIDER_MODULE] as const,
   );
   expect(difference.selected).toBeGreaterThan(6);
   expect(difference.corner).toBeLessThan(4);

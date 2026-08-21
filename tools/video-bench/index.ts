@@ -21,6 +21,7 @@ import { documentCost } from './document.ts';
 import { recovery } from './recovery.ts';
 import { occlusion } from './occlusion.ts';
 import { objects } from './objects.ts';
+import { range } from './range.ts';
 import { trackedFrame } from './tracked-frame.ts';
 import { longClip } from './long-clip.ts';
 import { interleave } from './interleave.ts';
@@ -67,6 +68,12 @@ export const MEASUREMENTS = [
   // one: an objects dimension added to any of them re-takes that measurement
   // and moves figures this chapter did not change.
   'objects',
+  // And once more, for whether a full-range clip needs a path of its own. It
+  // shares its clips, its patches and its upload path with `colour`, which is
+  // exactly why it cannot share that measurement's file: `colour` is inside
+  // `all`, and `all` writes the results the decode ladder, the readback ladder
+  // and two ONNX timings are read from.
+  'range',
   // Its own command, and out of `all`, because one rung of it deliberately runs
   // the tab out of memory and because it is twenty minutes where `all` is
   // three. Neither belongs in the middle of a run with nine other measurements
@@ -103,6 +110,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('recovery', () => recovery());
   await step('occlusion', () => occlusion());
   await step('objects', () => objects());
+  await step('range', () => range(dev, CLIPS));
   await step('readback', () => readback(dev));
   await step('ort-device', () => ortDevice(dev, `${ONNX}/memory_encoder.onnx`));
   await step('attention', () => attention(ONNX));

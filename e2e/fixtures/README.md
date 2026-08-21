@@ -144,3 +144,27 @@ the square inscribed in the disc rather than with the disc's bounding box, which
 is the same gesture drawn a third smaller, reports frame 21 absent as well. So
 the test asserts the frames the bar covers and the frames the whole disc is in
 view on, and says nothing about the slivers between them.
+
+## `range-tv.mp4` and `range-pc.mp4`
+
+Eight flat greys at 640x360, six frames, encoded twice: once limited range and
+once full range. The same picture, so the only thing that differs is what the
+decoder is told the numbers mean.
+
+```bash
+# The pair the ladder in tools/video-bench/make-clips.sh writes, at the one size
+# this suite needs. See that script for how the greys are drawn.
+cp tools/video-bench/clips/range-tv-640x360.mp4 e2e/fixtures/range-tv.mp4
+cp tools/video-bench/clips/range-pc-640x360.mp4 e2e/fixtures/range-pc.mp4
+```
+
+**640x360 is chosen and not incidental.** `tools/video-bench` measurement 16
+found that this browser's hardware H.264 decoder applies
+`video_full_range_flag` and its software decoder ignores it, and that frame size
+is what picks one: below about 640x360 the full-range clip comes back thirteen
+codes contrast-stretched, which is in `docs/limits.md`. This pair sits on the
+working side of that line on purpose, because what the test guards is the case
+the product is right about. A fixture on the other side would be pinning a
+browser defect, and the place for that is a limit rather than an assertion.
+
+1,888 and 1,890 bytes, which is small enough not to argue about.

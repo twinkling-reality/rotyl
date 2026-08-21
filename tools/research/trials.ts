@@ -658,11 +658,25 @@ export const TRIALS: readonly Trial[] = [
     where: 'vite.config.ts',
   },
   {
-    what: 'Limited versus full range video',
+    what: 'A colour path of its own for full-range video',
+    verdict: 'rejected',
+    evidence:
+      'Nothing it could do. Where the hardware decoder gets the clip the flag is already applied and the full-range encode lands within a code of the limited-range one; where the software decoder gets it the flag is ignored and the picture is thirteen codes contrast-stretched, and nothing in the frame says which happened. VideoFrame.colorSpace reports fullRange false in both cases. A correction needs to know whether the decoder acted, and that is the one thing that cannot be read. It is in docs/limits.md instead',
+    where: 'tools/video-bench, measurement 16',
+  },
+  {
+    what: 'Asking the decoder for prefer-hardware, so the range flag is always applied',
     verdict: 'open',
     evidence:
-      'Never exercised: both 4:2:0 probes produced identical values and Chrome reported fullRange false for both, including the one tagged pc',
-    where: 'tools/video-bench, measurement 4',
+      'It works, and it is the only thing measured that does: a 320x180 full-range clip told to prefer hardware lands 0 codes from its limited-range twin where the browser’s own choice puts it 13 out. What is not measured is what it costs elsewhere. hardwareAcceleration prefer-hardware can fail configuration outright on a machine with no hardware H.264 decode, which would turn a narrow colour error into no video at all, and no fallback has been built or timed',
+    where: 'src/platform/video/frame-provider.ts',
+  },
+  {
+    what: 'Deciding anything from VideoFrame.colorSpace',
+    verdict: 'rejected',
+    evidence:
+      'It is a default rather than a reading. fullRange is false on a file whose own SPS flag is 1, and primaries and transfer are reported bt709 on a bitstream declaring 2, "unspecified", for both. One of its four fields, matrix_coefficients, is a value anybody wrote down. A branch taken on it is taken on a value the file contradicts, and there is nothing to gain by taking one: the conversion is already correct',
+    where: 'tools/video-bench, measurement 16',
   },
   {
     what: 'Learned edge detection, and neural style transfer',

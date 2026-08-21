@@ -91,8 +91,52 @@ ffmpeg -v error -y $probe -c:v libx264 -qp 0 -pix_fmt yuv444p -color_range tv \
 # 4:2:0 is what every real clip is.
 # shellcheck disable=SC2086
 ffmpeg -v error -y $probe -c:v libx264 -crf 14 -pix_fmt yuv420p -color_range tv probe-420-tv.mp4
+# The same picture encoded FULL range, which is the pair the range question is
+# asked of: this one's luma runs 0 to 255 where the one above runs 16 to 235,
+# and its SPS carries video_full_range_flag = 1 where that one carries 0.
+#
+# yuvj420p is stated rather than left to -color_range to imply. This ffmpeg
+# turns `pc` into yuvj420p on its own and produces a byte-identical file either
+# way, and an older one does not, which is how these two clips came to be
+# believed identical for four chapters when they never were. Measurement 16
+# checks both halves at run time rather than trusting this line.
 # shellcheck disable=SC2086
-ffmpeg -v error -y $probe -c:v libx264 -crf 14 -pix_fmt yuv420p -color_range pc probe-420-pc.mp4
+ffmpeg -v error -y $probe -c:v libx264 -crf 14 -pix_fmt yuvj420p -color_range pc probe-420-pc.mp4
 rm -f /tmp/rotyl-probe.rgb
+
+# The same eight flat greys at a ladder of sizes, full range, plus one limited
+# control at the smallest. Which decoder Chrome picks depends on frame size, and
+# only one of the two honours the range flag, so a pair at one size cannot see
+# the thing this ladder exists to locate. Eight patches rather than sixteen
+# because the answer is in the grey ramp and a 160-pixel-wide frame has no room
+# for a four by four grid.
+echo "range ladder"
+for size in 320x180 480x270 640x360 1280x720; do
+  width=${size%x*}
+  height=${size#*x}
+  node -e '
+const [W, H] = [Number(process.argv[1]), Number(process.argv[2])];
+const COLS = 4, ROWS = 2;
+const patches = [
+  [0,0,0],[32,32,32],[64,64,64],[96,96,96],
+  [128,128,128],[160,160,160],[192,192,192],[255,255,255],
+];
+const buf = Buffer.alloc(W * H * 3);
+for (let y = 0; y < H; y++) {
+  for (let x = 0; x < W; x++) {
+    const p = patches[Math.floor(y / (H / ROWS)) * COLS + Math.floor(x / (W / COLS))];
+    const o = (y * W + x) * 3;
+    buf[o] = p[0]; buf[o + 1] = p[1]; buf[o + 2] = p[2];
+  }
+}
+for (let i = 0; i < 6; i++) process.stdout.write(buf);
+' "$width" "$height" > /tmp/rotyl-range.rgb
+  ladder="-f rawvideo -pix_fmt rgb24 -s $size -framerate 30 -i /tmp/rotyl-range.rgb -frames:v 6     -colorspace bt709 -movflags +faststart -c:v libx264 -crf 14"
+  # shellcheck disable=SC2086
+  ffmpeg -v error -y $ladder -pix_fmt yuvj420p -color_range pc "range-pc-$size.mp4"
+  # shellcheck disable=SC2086
+  ffmpeg -v error -y $ladder -pix_fmt yuv420p -color_range tv "range-tv-$size.mp4"
+done
+rm -f /tmp/rotyl-range.rgb
 
 ls -la

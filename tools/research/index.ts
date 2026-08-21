@@ -162,6 +162,11 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // of them, so an objects dimension added to any of them would re-take that
   // measurement and re-date a page whose finding did not move.
   const perObject = read('tools/video-bench/results-objects.json');
+  // And once more for whether a full-range clip needs a path of its own, which
+  // shares its clips and its patches with the colour probe inside the run
+  // above: taking it there would re-date every decode and encode figure for a
+  // question none of them touches.
+  const perRange = read('tools/video-bench/results-range.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
@@ -183,6 +188,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
       kept,
       hidden,
       perObject,
+      perRange,
     }),
     {
       slug: 'trials',
