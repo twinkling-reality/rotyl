@@ -376,6 +376,26 @@ through an sRGB view instead encodes it twice and is wrong by 73 codes at mid
 grey, which is the kind of thing that is obvious in a measurement and invisible
 in a review.
 
+**What the browser does to the colour on the way there is the transfer the file
+declares, and no probe here had ever declared one.** A frame is converted from
+the transfer its bitstream states into the sRGB everything downstream expects,
+and for five chapters that conversion was measured with clips that state no
+transfer at all. An unspecified transfer defaults to BT.709 and the probes hold
+sRGB values, so the eleven codes they came back out by in the midtones were the
+browser believing a file rather than a defect in the path, and the 2D canvas
+that does not have them is right about the content and wrong about the file.
+Encode the same patches saying sRGB and the conversion does not happen; say
+BT.709 and it does; say nothing and it does by exactly as much.
+
+**Asked with a clip that says BT.709 and means it, the conversion is nearly
+right and the alternative is worse.** Against ffmpeg converting the same file,
+what lands in the texture is within a code from mid grey up. What is left is a
+shadow error, up to seventeen codes, because the curve the browser applies
+behaves like a pure power where BT.709's has a linear toe. A 2D canvas applies
+nothing, which that clip needed, so it is out across the whole ramp, and getting
+a frame onto the GPU through one costs 1.2 ms a frame at 1080p. So this stays as
+it is, and what is left of it is in [known limits](limits.md) with both numbers.
+
 **A full-range clip is the one colour question here that had no answer for four
 chapters, and the answer is that it depends on which decoder the browser
 picks.** Most footage is limited range, where black is 16 and white is 235; a
@@ -583,9 +603,10 @@ reason `.mov` costs forty-nine on the way in.
 **Colour needed nothing on the way out either.** Sixteen flat patches through
 the composite, out through the encoder and back come out bit-identical to the
 same patches encoded by ffmpeg and decoded the same way. The error is entirely
-the midtone shift Chrome applies on the 4:2:0 decode path, which was already
-measured and attributed, and the container is tagged BT.709 limited range, which
-is what an H.264 file is supposed to say.
+the transfer conversion the upload applies to any 4:2:0 frame, which is measured
+and attributed above and is the same on both sides of the comparison, and the
+container is tagged BT.709 limited range, which is what an H.264 file is
+supposed to say.
 
 What decided all of this, and what it cost to find out, is in
 `tools/video-bench`, including the two numbers that say tracking cannot live

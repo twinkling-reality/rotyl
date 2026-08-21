@@ -39,6 +39,10 @@ results-*.json
 # and its patches with the colour probe inside `all` and therefore must not
 # share its file: re-running that one re-dates every decode and encode figure.
 !results-range.json
+# And whether the eleven codes a 4:2:0 frame picks up on the way to the GPU are
+# the browser's or the probe's, which is kept out of results-range.json as well
+# as out of the run above: that file owns a finding two documents quote.
+!results-transfer.json
 # And the export ladder, which is the only measurement in `all` that puts a
 # STYLE CHAIN under the encoder: a change to a style makes it stale and makes
 # nothing else in that run stale, so re-taking it together with the rest meant

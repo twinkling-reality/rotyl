@@ -630,6 +630,7 @@ function colour(video: unknown): Section {
       'Both ways of being wrong here are silent, so it was measured rather than assumed: sixteen flat patches with known sRGB bytes, encoded to H.264 and brought back. What an external texture samples turns out to be sRGB-encoded, exactly like the bytes of a decoded image.',
       'Writing it through an sRGB view instead encodes it twice. The second row is what that costs, and it is the kind of mistake that is obvious in a measurement and invisible in a review.',
       'The 4:2:0 column here is the limited-range clip. Whether the full-range one needs anything of its own was left open on this page for four chapters and is answered on its own: it does not, and the flag was in the bitstream the whole time.',
+      'The eleven codes in that column were attributed here to the browser for five chapters, and they are the browser converting from the transfer these clips declare, which is none. That is its own page as well, and what it changes is the attribution rather than the table: on a clip that says what it is, the upload above is the path that reads the declaration.',
     ],
     table: {
       columns: ['worst error, written through', '4:4:4 lossless', '4:2:0'],
@@ -652,7 +653,7 @@ function colour(video: unknown): Section {
       ],
     },
     caveat:
-      'The 4:2:0 column is Chrome applying a BT.709 to sRGB transfer conversion on the NV12 path and not on the I444 one; ffmpeg round-trips all three probes at worst 1. Since all real footage is 4:2:0 the colour-managed path is the one that matters and it is the correct one, but the discrepancy is Chrome’s and nothing here can compensate for it.',
+      'ffmpeg round-trips all three probes at worst 1, so the eleven codes are introduced in the browser. What used to be written here is that Chrome applies a BT.709 to sRGB conversion on the NV12 path and not on the I444 one, and that nothing here could compensate for it. It converts from the transfer the file declares; these probes declare none, an unspecified transfer defaults to BT.709, and there is no I444 hardware decoder for anything to have been applied by. So the eleven codes belong to the probe, and the sentence about compensating was a claim about a browser made without asking one.',
     command: 'node tools/video-bench/run.mjs colour',
   };
 }
@@ -1498,7 +1499,7 @@ function encodeColour(exported: unknown): Section {
     heading: 'The encoder is not what moves colour',
     prose: [
       'Colour had been measured on the way in and never on the way out, which is the direction a clip export depends on. Pixels leave through a canvas, become a video frame, are converted to YCbCr by the encoder and come back through the browser’s own conversion, and every one of those steps can apply a transfer function.',
-      'The same sixteen patches, put through the real composite at zero coverage, which returns the source byte for byte, then written out and decoded back. All sixteen come back bit-identical to ffmpeg’s round trip, not merely close: the error is entirely the midtone shift Chrome applies on the 4:2:0 decode path, which was already measured and attributed.',
+      'The same sixteen patches, put through the real composite at zero coverage, which returns the source byte for byte, then written out and decoded back. All sixteen come back bit-identical to ffmpeg’s round trip, not merely close: the error is entirely the midtone shift the upload puts into any 4:2:0 frame whose transfer is unspecified, which is measured and attributed on its own page and is the same on both sides of this comparison.',
       'The container is tagged correctly too, which matters for every player that is not this one. So there is no export colour path either; there is the colour path, and this is one more thing that already sits in it.',
     ],
     table: {
@@ -2167,7 +2168,7 @@ function theClipWasAlwaysRight(perRange: unknown): Section {
 }
 
 /** A difference in output codes, which is how every colour figure here reads. */
-const inCodes = (value: number): string => `${value.toFixed(0)} codes`;
+const inCodes = (value: number): string => `${value.toFixed(0)} code${Math.abs(value) === 1 ? '' : 's'}`;
 
 function whichDecoder(perRange: unknown): Section {
   const rung = (size: string): number =>
@@ -2199,7 +2200,7 @@ function whichDecoder(perRange: unknown): Section {
       ],
     },
     caveat:
-      'Every figure here is against the limited-range encode of the same picture and never against the source, because the GPU upload puts eleven codes into the midtones of any 4:2:0 frame whichever range it is. That is Chrome\u2019s BT.709 transfer conversion, it is already measured and attributed on the decode page, and it has nothing to do with the flag. Two encodes of one picture cancel it and leave only what the flag decided.',
+      'Every figure here is against the limited-range encode of the same picture and never against the source, because the GPU upload puts eleven codes into the midtones of any 4:2:0 frame whichever range it is. That is Chrome converting from the transfer the file declares, which on these clips is nothing at all defaulted to BT.709, and it is the page after this one. It has nothing to do with the flag either way, and two encodes of one picture cancel it and leave only what the flag decided.',
     command: 'node tools/video-bench/run.mjs range',
   };
 }
@@ -2225,6 +2226,164 @@ function theMetadataIsNoHelp(perRange: unknown): Section {
     caveat:
       'Its own command and its own results file, sharing its clips, its patches and its upload path with the colour probe, which is the reason rather than an objection to it: that probe is inside the run that writes the results the decode ladder, the readback ladder and two ONNX timings are read from. Adding a row there by re-running it would re-date every one of them for a question none of them touches.',
     command: 'node tools/video-bench/run.mjs range',
+  };
+}
+
+// --- whether the eleven codes are ours ---------------------------------------
+
+/** A grey ramp out of the results, which is ten numbers rather than one. */
+function ramp(source: unknown, path: readonly string[]): readonly number[] {
+  const value = at(source, path);
+  if (!Array.isArray(value)) throw new Error(`research: ${path.join(' / ')} is not a ramp`);
+  return value.map((entry: unknown) => {
+    if (typeof entry !== 'number') throw new Error(`research: ${path.join(' / ')} holds a non-number`);
+    return entry;
+  });
+}
+
+const HONEST = 'probe-trc709-709';
+
+function theTagDecidesIt(declared: unknown): Section {
+  const stated = (clip: string): number =>
+    num(declared, ['transfer', 'the_transfer_reaches_the_bitstream', clip]);
+  const drawn = (label: string): number => num(declared, ['transfer', 'the_tag_decides_it', label]);
+  return {
+    heading: 'The eleven codes are the transfer the file declares, and no probe here declared one',
+    prose: [
+      'A decoded frame comes back eleven codes out in the midtones on the way to the GPU, which the page before this measured and attributed to the browser. It is the browser, and it is the browser doing what it was told: every clip this project has ever encoded declares transfer_characteristics 2, "unspecified", which Chrome defaults to BT.709, and the values inside them are sRGB. The probes have been asking a reader to convert a picture that was already converted.',
+      'So the same sixteen patches were encoded three more times, differing only in what the file says about itself. The content and the encode are identical; the declaration is the variable, and the answer follows it.',
+      `Told sRGB, the upload converts nothing and the patches come back ${inCodes(
+        drawn('says sRGB, and is sRGB'),
+      )} from what was drawn, which is the 4:2:0 encode's own rounding. Told BT.709 it converts, by ${inCodes(
+        drawn('says bt709, and is sRGB'),
+      )}. Told nothing it converts by exactly as much, which is a default behaving as a default rather than an accident. The 2D canvas returns the patches unchanged in all three, so it is right in precisely the two cases where the file is wrong.`,
+    ],
+    table: {
+      columns: [
+        'the same sixteen patches, encoded',
+        'transfer_characteristics',
+        'uploaded, worst from what was drawn',
+      ],
+      rows: [
+        ['says sRGB', stated('probe-trcsrgb-srgb').toFixed(0), inCodes(drawn('says sRGB, and is sRGB'))],
+        ['says BT.709', stated('probe-trc709-srgb').toFixed(0), inCodes(drawn('says bt709, and is sRGB'))],
+        [
+          'says nothing, which is every older probe',
+          stated('probe-420-tv').toFixed(0),
+          inCodes(drawn('says nothing, and is sRGB')),
+        ],
+      ],
+    },
+    caveat:
+      'The transfer goes into these three through -x264-params rather than through -color_trc, because -color_trc is what make-clips.sh has always passed and it does not reach the bitstream. What each file ended up declaring is read back out of the SPS in the decoder configuration the browser is handed, by the parser measurement 16 already checked against ffmpeg -bsf:v trace_headers on all six colour fields.',
+    command: 'node tools/video-bench/run.mjs transfer',
+  };
+}
+
+function whatAnHonestClipDoes(declared: unknown): Section {
+  const row = (label: string, path: readonly string[]): readonly string[] => [
+    label,
+    ...ramp(declared, path).map((value) => value.toFixed(0)),
+  ];
+  const uploaded = 'copyExternalImageToTexture';
+  const canvas = 'drawImage, then copyExternalImageToTexture';
+  const stat = (which: string, part: string): number =>
+    num(declared, ['transfer', 'on_a_clip_that_means_what_it_says', which, part]);
+  return {
+    heading: 'And on a clip that means what it says, the two answers are not close',
+    prose: [
+      'The clip that settles it says BT.709 and is BT.709: the same patches taken into linear light and back out through the BT.709 curve, so what is stored is darker than the sRGB it was drawn from and a correct reader puts it back. ffmpeg is the control, because "correct" needs somebody who is not the browser, and it comes back at what was drawn to within a code. That is the check that the probe is honest, before anything is concluded from it.',
+      `Against that reading, the upload this product already does is within a code from mid grey up and walks away below it: ${inCodes(
+        stat(uploaded, 'worst'),
+      )} at worst, at the patch drawn as 32. What it applies behaves like a pure power where BT.709 has a linear toe, so what is left of the error is entirely in the shadows.`,
+      `A 2D canvas applies nothing, which this clip needed, so it is out across the whole ramp. The worst says the two paths are the same answer, ${inCodes(
+        stat(uploaded, 'worst'),
+      )} against ${inCodes(
+        stat(canvas, 'worst'),
+      )}, and the worst is the wrong statistic: the median of the ramp is ${inCodes(
+        stat(uploaded, 'median_of_the_ramp'),
+      )} for the upload and ${inCodes(stat(canvas, 'median_of_the_ramp'))} for the canvas.`,
+    ],
+    table: {
+      columns: ['the grey ramp', '0', '16', '32', '64', '96', '128', '160', '192', '235', '255'],
+      rows: [
+        row('what was drawn', ['transfer', 'what_was_drawn']),
+        row('stored in the file, read by ffmpeg', ['transfer', 'clips', HONEST, 'ffmpeg', 'as_stored']),
+        row('ffmpeg, converted to an sRGB transfer', [
+          'transfer',
+          'clips',
+          HONEST,
+          'ffmpeg',
+          'converted_to_srgb',
+        ]),
+        row('copyExternalImageToTexture', ['transfer', 'clips', HONEST, 'paths', uploaded, 'ramp']),
+        row('drawImage, then the same copy', ['transfer', 'clips', HONEST, 'paths', canvas, 'ramp']),
+      ],
+    },
+    caveat:
+      'The columns are what the patches were drawn as, so the first row is the header repeated on purpose: it is the answer a correct reader gives, and every row under it is a distance from it. importExternalTexture answers identically to copyExternalImageToTexture on all four clips and is left out of the table rather than duplicating it.',
+    command: 'node tools/video-bench/run.mjs transfer',
+  };
+}
+
+function theHardwareDecoderAgain(declared: unknown): Section {
+  const rung = (key: string): { format: string; converted: string } => ({
+    format: text(declared, ['transfer', 'which_decoder', key, 'format']),
+    converted: flag(declared, ['transfer', 'which_decoder', key, 'converted']) ? 'yes' : 'no',
+  });
+  const row = (label: string, key: string): readonly string[] => {
+    const value = rung(key);
+    return [label, value.format, value.converted];
+  };
+  return {
+    heading: 'And it belongs to the hardware decoder, which is the same pair of decoders again',
+    prose: [
+      'The page before this found that this browser has two H.264 decoders, that frame size picks one, and that only one of them applies the range flag. This is the same pair disagreeing about a second thing: asked of the one clip where converting and not converting look different, the software decoder converts nothing. So the eleven codes and the thirteen are two independent ways for one browser to answer a colour question twice.',
+      'It also closes the other half of what the decode page said. That page attributes the conversion to the NV12 path rather than the I444 one, which is true and is not the reason. Asked to decode the 4:4:4 probe on the hardware decoder, the browser answers that the configuration is only supported by the software decoder. The 4:4:4 probe was never converted because there was no hardware decoder that could have converted it.',
+    ],
+    table: {
+      columns: ['the clip that says BT.709 and is BT.709, decoded by', 'the frame', 'converted'],
+      rows: [
+        row('whichever decoder the browser picks', `${HONEST}, no-preference`),
+        row('told to prefer hardware', `${HONEST}, prefer-hardware`),
+        row('told to prefer software', `${HONEST}, prefer-software`),
+        row('the 4:4:4 probe, either way', 'probe-444-lossless, no-preference'),
+      ],
+    },
+    caveat:
+      'The two decoders hand back different pixel formats, NV12 from one and I420 from the other on the same file, which is a readable difference where VideoFrame.colorSpace has none. It is still not the signal the range measurement wanted. It is a fact about this platform rather than anything the specification promises, and it names a chroma layout rather than a decoder, so correcting colour from it would be reading one thing in order to learn another and would be silently wrong on the first machine whose software decoder hands back NV12.',
+    command: 'node tools/video-bench/run.mjs transfer',
+  };
+}
+
+function whatACanvasWouldCost(declared: unknown): Section {
+  const median = (label: string): number => num(declared, ['transfer', 'cost_ms', label, 'median']);
+  const added = num(declared, ['transfer', 'cost_ms', 'added_by_the_canvas']);
+  return {
+    heading: 'And what the other answer would cost per frame',
+    prose: [
+      'The canvas reading above is getImageData, which brings twelve megabytes back through system memory a frame and is a reading rather than a design. The version somebody would ship draws the frame into a canvas and uploads the canvas, and returns the same values, so the price and the picture are answered about one piece of code.',
+      `That is ${ms(added)} a frame at 1080p, taken as a difference between two rows of one run rather than between two runs, because the direct copy is the noisiest thing in this table on this machine. Against the 5.0 ms a 1080p export frame costs it is a quarter again; against the 33 ms a playing frame has it is nothing.`,
+      'It is also almost exactly the 1.4 ms the export ladder prices for the readback path and rejects, and it is a worse trade than that one was. The readback bought nothing. This buys the wrong answer on any clip that declares its transfer honestly, which is all real footage, in exchange for the right one on probes that declare nothing, which is only ever this repository.',
+    ],
+    table: {
+      columns: ['1920×1080, per frame, fenced', 'median'],
+      rows: [
+        [
+          'copyExternalImageToTexture, which is what the product does',
+          ms(median('copyExternalImageToTexture')),
+        ],
+        ['drawImage into a 2D canvas', ms(median('drawImage'))],
+        [
+          'drawImage, then copyExternalImageToTexture from the canvas',
+          ms(median('drawImage, then copyExternalImageToTexture')),
+        ],
+        ['what the canvas adds', ms(added)],
+      ],
+    },
+    caveat:
+      'Timed on the decode clip rather than on a probe, so the first row is the same call the decode page reports and this table can be read against it. A flat probe is not a fair thing to time an upload with. Its own command and its own results file, sharing its patches and its upload path with the colour probe and its pair of decoders with the range ladder, which is the argument for a file of its own rather than against one: the colour probe sits in the run that writes the decode ladder, the readback ladder and two ONNX timings, and the range ladder owns a finding two documents quote.',
+    command: 'node tools/video-bench/run.mjs transfer',
   };
 }
 
@@ -2281,6 +2440,14 @@ export interface Results {
    * sits inside the run that writes results.json.
    */
   readonly perRange: unknown;
+  /**
+   * Whether the eleven codes a decoded frame picks up on the way to the GPU are
+   * the browser's or the probe's. Its own file for the reason above and once
+   * more: it is kept out of results-range.json as well, which owns a finding
+   * two documents quote and would be re-dated by a question about a different
+   * field of the same header.
+   */
+  readonly declared: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
@@ -2291,6 +2458,7 @@ export function entries(results: Results): readonly Entry[] {
   const { hidden } = results;
   const { perObject } = results;
   const { perRange } = results;
+  const { declared } = results;
   return [
     {
       slug: 'the-look',
@@ -2396,6 +2564,24 @@ export function entries(results: Results): readonly Entry[] {
         'The clip was fine. What was missing was somebody reading the flag out of it, and what reading it turned up is that the reassuring answer was only half of one: the same picture at 320x180 is thirteen codes out where at 1080p it is exact, because this browser has two H.264 decoders and only one of them implements the flag.',
       ],
       sections: [theClipWasAlwaysRight(perRange), whichDecoder(perRange), theMetadataIsNoHelp(perRange)],
+    },
+    {
+      slug: 'the-transfer',
+      results: 'tools/video-bench/results-transfer.json',
+      title: 'The browser was doing what the file said',
+      standfirst:
+        'The eleven codes every 4:2:0 frame picks up on the way to the GPU, attributed to the browser on the decode page and written into two documents as uncorrectable. They are the transfer the file declares, and no probe here had ever declared one.',
+      harness: 'tools/video-bench',
+      lede: [
+        'A decoded frame needs no colour path of its own, which is measured, and one thing was filed beside that finding as a cost of doing business: the midtones come back eleven codes out, said to be Chrome\u2019s and beyond correcting. Then the range measurement, asking something else, found the same VideoFrame drawn into a 2D canvas does not have them. So it was never the decode, and one path in this browser gets a different answer from the other about a picture neither of them touched.',
+        'Which of them is right is not a question these probes could answer, because none of them says what it is. So three more were encoded that do, with ffmpeg as the control, and the answer is that the browser has been reading a declaration this project never wrote: the path the product already takes is the one that reads it, and the alternative costs a millisecond a frame to be wrong on every clip that means what it says.',
+      ],
+      sections: [
+        theTagDecidesIt(declared),
+        whatAnHonestClipDoes(declared),
+        theHardwareDecoderAgain(declared),
+        whatACanvasWouldCost(declared),
+      ],
     },
     {
       slug: 'the-clip',

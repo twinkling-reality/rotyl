@@ -139,4 +139,144 @@ for (let i = 0; i < 6; i++) process.stdout.write(buf);
 done
 rm -f /tmp/rotyl-range.rgb
 
+# The same sixteen patches again, three more ways, for the one thing every
+# probe above has in common and none of them meant to: NONE OF THEM SAYS WHAT
+# ITS TRANSFER IS. The lines above ask ffmpeg for `-color_trc bt709` and it does
+# not reach the bitstream, so every clip here declares transfer_characteristics
+# = 2, "unspecified", which the browser defaults to bt709. So the probes hold
+# sRGB-transfer values labelled BT.709, and what a conversion does to them says
+# nothing about what it does to footage that means what it says.
+#
+# Three clips settle it, and the pairing is the measurement:
+#
+#   probe-trc709-709    says bt709 and IS bt709: the patches taken into linear
+#                       light and back out through the BT.709 OETF. What a
+#                       correct reader gives back is the sRGB the patches were
+#                       drawn from.
+#   probe-trc709-srgb   says bt709 and is sRGB, which is what every probe above
+#                       has always been, with the tag written down rather than
+#                       defaulted. It is the control on the default.
+#   probe-trcsrgb-srgb  says sRGB and IS sRGB. A reader that acts on the tag has
+#                       nothing to do here, and one that converts regardless
+#                       cannot hide behind the tag.
+#
+# The transfer goes in through -x264-params rather than -color_trc, because that
+# is the one that arrives. Measurement 17 reads it back out of the SPS.
+echo "transfer probes"
+node -e '
+const W = 1920, H = 1080, COLS = 4, ROWS = 4;
+// The same sixteen as above and as colour.ts, and they must stay in step.
+const patches = [
+  [0,0,0],[16,16,16],[32,32,32],[64,64,64],
+  [96,96,96],[128,128,128],[160,160,160],[192,192,192],
+  [235,235,235],[255,255,255],[255,0,0],[0,255,0],
+  [0,0,255],[255,255,0],[0,255,255],[255,0,255],
+];
+// sRGB code -> light -> BT.709 code. Both curves written out rather than
+// approximated by a power, because the toe is exactly where the answer turned
+// out to live.
+const toLight = (v) => { const x = v / 255; return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); };
+const to709 = (L) => L < 0.018 ? 4.5 * L : 1.099 * Math.pow(L, 0.45) - 0.099;
+const bt709 = patches.map((p) => p.map((v) => Math.round(255 * to709(toLight(v)))));
+const frame = (rows) => {
+  const buf = Buffer.alloc(W * H * 3);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const p = rows[Math.floor(y / (H / ROWS)) * COLS + Math.floor(x / (W / COLS))];
+      const o = (y * W + x) * 3;
+      buf[o] = p[0]; buf[o + 1] = p[1]; buf[o + 2] = p[2];
+    }
+  }
+  return buf;
+};
+const fs = require("fs");
+for (const [name, rows] of [["srgb", patches], ["709", bt709]]) {
+  const buf = frame(rows);
+  const fd = fs.openSync(`/tmp/rotyl-transfer-${name}.rgb`, "w");
+  for (let i = 0; i < 30; i++) fs.writeSync(fd, buf);
+  fs.closeSync(fd);
+}
+'
+
+transfer="-frames:v 30 -colorspace bt709 -movflags +faststart -c:v libx264 -crf 14 \
+  -pix_fmt yuv420p -color_range tv"
+# shellcheck disable=SC2086
+ffmpeg -v error -y -f rawvideo -pix_fmt rgb24 -s 1920x1080 -framerate 30 -i /tmp/rotyl-transfer-709.rgb \
+  $transfer -x264-params colorprim=bt709:transfer=bt709 probe-trc709-709.mp4
+# shellcheck disable=SC2086
+ffmpeg -v error -y -f rawvideo -pix_fmt rgb24 -s 1920x1080 -framerate 30 -i /tmp/rotyl-transfer-srgb.rgb \
+  $transfer -x264-params colorprim=bt709:transfer=bt709 probe-trc709-srgb.mp4
+# shellcheck disable=SC2086
+ffmpeg -v error -y -f rawvideo -pix_fmt rgb24 -s 1920x1080 -framerate 30 -i /tmp/rotyl-transfer-srgb.rgb \
+  $transfer -x264-params colorprim=bt709:transfer=iec61966-2-1 probe-trcsrgb-srgb.mp4
+rm -f /tmp/rotyl-transfer-709.rgb /tmp/rotyl-transfer-srgb.rgb
+
+# AND THE CONTROL, WHICH HAS TO BE TAKEN HERE BECAUSE IT IS FFMPEG'S. The
+# question measurement 17 asks is which of the browser's two answers is right,
+# and "right" needs somebody who is not the browser to say what these files
+# mean. ffmpeg decodes each one twice: once with no conversion, which is the
+# stored codes and is the check that the clip is the clip, and once converted to
+# an sRGB transfer, which is what the picture is in the space the product works
+# in. The answers are left beside the clips as JSON and fetched by the harness,
+# because a benchmark in a browser cannot run ffmpeg and a control quoted from
+# somebody's terminal is not a control.
+echo "the ffmpeg control"
+node -e '
+const { execFileSync } = require("child_process");
+const fs = require("fs");
+const W = 1920, H = 1080, COLS = 4, ROWS = 4, PATCHES = 16;
+// All sixteen, in all three channels, because the six colour patches move under
+// a transfer conversion as well and a control that only reads the grey ramp
+// would leave the harness comparing part of the picture.
+const patchesOf = (buf) => {
+  const out = [];
+  for (let i = 0; i < PATCHES; i++) {
+    const x = Math.floor(((i % COLS) + 0.5) * (W / COLS));
+    const y = Math.floor((Math.floor(i / COLS) + 0.5) * (H / ROWS));
+    const o = (y * W + x) * 3;
+    out.push([buf[o], buf[o + 1], buf[o + 2]]);
+  }
+  return out;
+};
+const decode = (clip, filter) => {
+  const args = ["-v", "error", "-i", clip, "-frames:v", "1"];
+  if (filter) args.push("-vf", filter);
+  args.push("-pix_fmt", "rgb24", "-f", "rawvideo", "-");
+  try {
+    return patchesOf(execFileSync("ffmpeg", args, { maxBuffer: 1 << 30 }));
+  } catch (e) {
+    // A REFUSAL IS A READING. The clips this project started with declare
+    // neither primaries nor transfer, so the filter has nothing to convert FROM
+    // and says so rather than guessing, which is the whole finding said by the
+    // control. The first line is the reason; everything after it is the
+    // pipeline falling over behind it.
+    // The filter tag and the pointer in front of it come out: they are noise
+    // that differs between runs, and a results file that changes when nothing
+    // did is a results file nobody can date.
+    const line = String(e.stderr ?? e).trim().split("\n")[0];
+    return { refused: line.replace(/^\[[^\]]*\]\s*/, "") };
+  }
+};
+// bt709 in, sRGB out. all=bt709 states the matrix and the primaries, which
+// these files carry anyway, so what is left for the filter to do is the curve.
+const TO_SRGB = "colorspace=all=bt709:trc=srgb:format=yuv444p";
+const clips = [
+  "probe-trc709-709", "probe-trc709-srgb", "probe-trcsrgb-srgb",
+  // And the two clips the question was asked with for five chapters, which are
+  // here to be refused rather than to be measured: neither says what it is.
+  "probe-420-tv", "probe-444-lossless",
+];
+const out = {
+  what: "the same patches read by ffmpeg, once as stored and once converted to an sRGB transfer",
+  how: `ffmpeg -i <clip> -vf ${TO_SRGB} -pix_fmt rgb24`,
+  version: execFileSync("ffmpeg", ["-version"]).toString().split("\n")[0],
+  drawn_from: [0, 16, 32, 64, 96, 128, 160, 192, 235, 255],
+  clips: Object.fromEntries(clips.map((clip) => [clip, {
+    as_stored: decode(`${clip}.mp4`, null),
+    to_srgb: decode(`${clip}.mp4`, TO_SRGB),
+  }])),
+};
+fs.writeFileSync("ffmpeg-transfer.json", JSON.stringify(out, null, 2) + "\n");
+'
+
 ls -la

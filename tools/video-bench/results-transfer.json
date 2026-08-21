@@ -1,0 +1,328 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 12
+  },
+  "transfer": {
+    "what": "three probes that state their transfer, through every way a page can read a frame",
+    "patches": 16,
+    "what_was_drawn": [0, 16, 32, 64, 96, 128, 160, 192, 235, 255],
+    "control": {
+      "how": "ffmpeg -i <clip> -vf colorspace=all=bt709:trc=srgb:format=yuv444p -pix_fmt rgb24",
+      "version": "ffmpeg version 8.1.1 Copyright (c) 2000-2026 the FFmpeg developers"
+    },
+    "the_transfer_reaches_the_bitstream": {
+      "probe-trc709-709": 1,
+      "probe-trc709-srgb": 1,
+      "probe-trcsrgb-srgb": 13,
+      "probe-420-tv": 2,
+      "probe-444-lossless": 2
+    },
+    "the_tag_decides_it": {
+      "says sRGB, and is sRGB": 1,
+      "says bt709, and is sRGB": 11,
+      "says nothing, and is sRGB": 11
+    },
+    "on_a_clip_that_means_what_it_says": {
+      "copyExternalImageToTexture": {
+        "worst": 17,
+        "median_of_the_ramp": 1
+      },
+      "drawImage, then copyExternalImageToTexture": {
+        "worst": 16,
+        "median_of_the_ramp": 11
+      }
+    },
+    "clips": {
+      "probe-trc709-709": {
+        "file_bytes": 4799,
+        "format": "NV12",
+        "declares": {
+          "video_full_range_flag": 0,
+          "colour_primaries": 1,
+          "transfer_characteristics": 1,
+          "matrix_coefficients": 1
+        },
+        "frame_says": {
+          "primaries": "bt709",
+          "transfer": "bt709",
+          "matrix": "bt709",
+          "fullRange": false
+        },
+        "ffmpeg": {
+          "as_stored": [0, 6, 17, 48, 82, 115, 150, 185, 233, 255],
+          "converted_to_srgb": [0, 16, 33, 63, 95, 128, 161, 192, 235, 255]
+        },
+        "paths": {
+          "copyExternalImageToTexture": {
+            "ramp": [0, 2, 16, 54, 92, 127, 161, 193, 236, 255],
+            "worst_against_ffmpeg": 17,
+            "median_of_the_ramp_against_ffmpeg": 1,
+            "worst_against_what_was_drawn": 16
+          },
+          "importExternalTexture, and a pass": {
+            "ramp": [0, 2, 16, 54, 92, 127, 161, 193, 236, 255],
+            "worst_against_ffmpeg": 17,
+            "median_of_the_ramp_against_ffmpeg": 1,
+            "worst_against_what_was_drawn": 16
+          },
+          "drawImage, then getImageData": {
+            "ramp": [0, 6, 17, 48, 82, 115, 150, 185, 233, 255],
+            "worst_against_ffmpeg": 16,
+            "median_of_the_ramp_against_ffmpeg": 11,
+            "worst_against_what_was_drawn": 16
+          },
+          "drawImage, then copyExternalImageToTexture": {
+            "ramp": [0, 6, 17, 48, 82, 115, 150, 185, 233, 255],
+            "worst_against_ffmpeg": 16,
+            "median_of_the_ramp_against_ffmpeg": 11,
+            "worst_against_what_was_drawn": 16
+          }
+        }
+      },
+      "probe-trc709-srgb": {
+        "file_bytes": 4800,
+        "format": "NV12",
+        "declares": {
+          "video_full_range_flag": 0,
+          "colour_primaries": 1,
+          "transfer_characteristics": 1,
+          "matrix_coefficients": 1
+        },
+        "frame_says": {
+          "primaries": "bt709",
+          "transfer": "bt709",
+          "matrix": "bt709",
+          "fullRange": false
+        },
+        "ffmpeg": {
+          "as_stored": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+          "converted_to_srgb": [0, 31, 48, 79, 109, 140, 169, 199, 238, 255]
+        },
+        "paths": {
+          "copyExternalImageToTexture": {
+            "ramp": [0, 14, 35, 73, 107, 139, 169, 199, 238, 255],
+            "worst_against_ffmpeg": 17,
+            "median_of_the_ramp_against_ffmpeg": 1,
+            "worst_against_what_was_drawn": 11
+          },
+          "importExternalTexture, and a pass": {
+            "ramp": [0, 14, 35, 73, 107, 139, 169, 199, 238, 255],
+            "worst_against_ffmpeg": 17,
+            "median_of_the_ramp_against_ffmpeg": 1,
+            "worst_against_what_was_drawn": 11
+          },
+          "drawImage, then getImageData": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": 17,
+            "median_of_the_ramp_against_ffmpeg": 12,
+            "worst_against_what_was_drawn": 1
+          },
+          "drawImage, then copyExternalImageToTexture": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": 17,
+            "median_of_the_ramp_against_ffmpeg": 12,
+            "worst_against_what_was_drawn": 1
+          }
+        }
+      },
+      "probe-trcsrgb-srgb": {
+        "file_bytes": 4800,
+        "format": "NV12",
+        "declares": {
+          "video_full_range_flag": 0,
+          "colour_primaries": 1,
+          "transfer_characteristics": 13,
+          "matrix_coefficients": 1
+        },
+        "frame_says": {
+          "primaries": "bt709",
+          "transfer": "iec61966-2-1",
+          "matrix": "bt709",
+          "fullRange": false
+        },
+        "ffmpeg": {
+          "as_stored": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+          "converted_to_srgb": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255]
+        },
+        "paths": {
+          "copyExternalImageToTexture": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": 0,
+            "median_of_the_ramp_against_ffmpeg": 0,
+            "worst_against_what_was_drawn": 1
+          },
+          "importExternalTexture, and a pass": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": 0,
+            "median_of_the_ramp_against_ffmpeg": 0,
+            "worst_against_what_was_drawn": 1
+          },
+          "drawImage, then getImageData": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": 0,
+            "median_of_the_ramp_against_ffmpeg": 0,
+            "worst_against_what_was_drawn": 1
+          },
+          "drawImage, then copyExternalImageToTexture": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": 0,
+            "median_of_the_ramp_against_ffmpeg": 0,
+            "worst_against_what_was_drawn": 1
+          }
+        }
+      },
+      "probe-420-tv": {
+        "file_bytes": 4800,
+        "format": "NV12",
+        "declares": {
+          "video_full_range_flag": 0,
+          "colour_primaries": 2,
+          "transfer_characteristics": 2,
+          "matrix_coefficients": 1
+        },
+        "frame_says": {
+          "primaries": "bt709",
+          "transfer": "bt709",
+          "matrix": "bt709",
+          "fullRange": false
+        },
+        "ffmpeg": {
+          "as_stored": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+          "converted_to_srgb": {
+            "refused": "Unsupported input primaries 2 (unknown)"
+          }
+        },
+        "paths": {
+          "copyExternalImageToTexture": {
+            "ramp": [0, 14, 35, 73, 107, 139, 169, 199, 238, 255],
+            "worst_against_ffmpeg": null,
+            "median_of_the_ramp_against_ffmpeg": null,
+            "worst_against_what_was_drawn": 11
+          },
+          "importExternalTexture, and a pass": {
+            "ramp": [0, 14, 35, 73, 107, 139, 169, 199, 238, 255],
+            "worst_against_ffmpeg": null,
+            "median_of_the_ramp_against_ffmpeg": null,
+            "worst_against_what_was_drawn": 11
+          },
+          "drawImage, then getImageData": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": null,
+            "median_of_the_ramp_against_ffmpeg": null,
+            "worst_against_what_was_drawn": 1
+          },
+          "drawImage, then copyExternalImageToTexture": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": null,
+            "median_of_the_ramp_against_ffmpeg": null,
+            "worst_against_what_was_drawn": 1
+          }
+        }
+      },
+      "probe-444-lossless": {
+        "file_bytes": 4541,
+        "format": "I444",
+        "declares": {
+          "video_full_range_flag": 0,
+          "colour_primaries": 2,
+          "transfer_characteristics": 2,
+          "matrix_coefficients": 1
+        },
+        "frame_says": {
+          "primaries": "bt709",
+          "transfer": "bt709",
+          "matrix": "bt709",
+          "fullRange": false
+        },
+        "ffmpeg": {
+          "as_stored": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+          "converted_to_srgb": {
+            "refused": "Unsupported input primaries 2 (unknown)"
+          }
+        },
+        "paths": {
+          "copyExternalImageToTexture": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": null,
+            "median_of_the_ramp_against_ffmpeg": null,
+            "worst_against_what_was_drawn": 1
+          },
+          "importExternalTexture, and a pass": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": null,
+            "median_of_the_ramp_against_ffmpeg": null,
+            "worst_against_what_was_drawn": 1
+          },
+          "drawImage, then getImageData": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": null,
+            "median_of_the_ramp_against_ffmpeg": null,
+            "worst_against_what_was_drawn": 1
+          },
+          "drawImage, then copyExternalImageToTexture": {
+            "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+            "worst_against_ffmpeg": null,
+            "median_of_the_ramp_against_ffmpeg": null,
+            "worst_against_what_was_drawn": 1
+          }
+        }
+      }
+    },
+    "which_decoder": {
+      "probe-trc709-709, no-preference": {
+        "format": "NV12",
+        "ramp": [0, 2, 16, 54, 92, 127, 161, 193, 236, 255],
+        "converted": true,
+        "worst_against_ffmpeg": 17
+      },
+      "probe-trc709-709, prefer-hardware": {
+        "format": "NV12",
+        "ramp": [0, 2, 16, 54, 92, 127, 161, 193, 236, 255],
+        "converted": true,
+        "worst_against_ffmpeg": 17
+      },
+      "probe-trc709-709, prefer-software": {
+        "format": "I420",
+        "ramp": [0, 6, 17, 48, 82, 115, 150, 185, 233, 255],
+        "converted": false,
+        "worst_against_ffmpeg": 16
+      },
+      "probe-444-lossless, no-preference": {
+        "format": "I444",
+        "ramp": [0, 16, 31, 64, 95, 128, 160, 192, 235, 255],
+        "converted": false,
+        "worst_against_ffmpeg": null
+      },
+      "probe-444-lossless, prefer-hardware": {
+        "error": "NotSupportedError: This configuration is only supported by the software decoder."
+      }
+    },
+    "cost_ms": {
+      "copyExternalImageToTexture": {
+        "n": 50,
+        "median": 0.8,
+        "min": 0.7,
+        "max": 1.3
+      },
+      "drawImage": {
+        "n": 50,
+        "median": 0.5,
+        "min": 0.2,
+        "max": 18.2
+      },
+      "drawImage, then copyExternalImageToTexture": {
+        "n": 50,
+        "median": 2,
+        "min": 1.8,
+        "max": 2.2
+      },
+      "added_by_the_canvas": 1.2
+    }
+  },
+  "transfer:wall-seconds": 0.7
+}

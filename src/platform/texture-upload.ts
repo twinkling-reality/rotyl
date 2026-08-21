@@ -34,6 +34,15 @@ export function uploadImageToTexture(device: GPUDevice, bitmap: ImageBitmap, tex
  * photograph. Writing it through an `rgba8unorm-srgb` view instead encodes it
  * twice and is wrong by 73 codes at mid grey.
  *
+ * PART OF WHAT THE BROWSER DOES HERE IS A TRANSFER CONVERSION, from what the
+ * bitstream declares to sRGB, and this call is the path that performs it.
+ * Measurement 17 is why it stays. The alternative, drawing the frame into a 2D
+ * canvas and uploading that, converts nothing at all, which is right only for a
+ * file whose transfer is mislabelled and wrong across the whole ramp for one
+ * that means what it says, and it costs 1.2 ms a frame at 1080p. What is left
+ * of this one is a shadow error on the hardware decoder and no conversion at
+ * all on the software one, both in docs/limits.md.
+ *
  * So there is no video colour path. There is the colour path, and this is one
  * more thing that arrives already in it.
  */

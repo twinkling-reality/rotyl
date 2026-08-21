@@ -666,10 +666,17 @@ export const TRIALS: readonly Trial[] = [
   },
   {
     what: 'Getting a decoded frame onto the GPU through a 2D canvas rather than directly',
-    verdict: 'open',
+    verdict: 'rejected',
     evidence:
-      'Found while measuring something else and not chased. The eleven codes the midtones of a 4:2:0 frame pick up are attributed on the decode page to Chrome\u2019s BT.709 conversion, said to be unavoidable. The same VideoFrame drawn into a 2D canvas and read back does not have them: the grey ramp comes back 0 16 31 64 95 128 160 192 235 255 against a source of 0 16 32 64 96 128 160 192 235 255, worst 1, where copyExternalImageToTexture and importExternalTexture both give 0 14 35 73 107 139 169 199 238 255, worst 11. So it is the WebGPU import rather than the decode, and one path in the same browser gets it right. What is not known is which is correct for real footage, since these probes declare "unspecified" transfer and the browser defaults it, nor what a 2D canvas would cost per frame against the 1.4 ms measurement 5 already prices for the readback path',
-    where: 'tools/video-bench, measurements 4 and 16',
+      'It is right on the probes and wrong on footage, and the eleven codes it avoids were never the browser\u2019s. The upload converts from the transfer the file DECLARES, which every probe here left unspecified and the browser defaults to bt709: the same patches encoded three ways come back 1 code from what was drawn when the file says sRGB and 11 out when it says BT.709, one picture and one encode with the declaration as the only variable. On a probe that says BT.709 and IS BT.709, against ffmpeg converting the same file, the upload is a median of 1 code over the grey ramp and 17 at worst in the shadows, where a 2D canvas applies nothing at all and is a median of 11. And it is not free: drawing the frame into a canvas and uploading that adds 1.2 ms a frame at 1080p over the direct copy, which is the 1.4 ms measurement 5 already rejects for the readback path. So it costs a millisecond a frame to be wrong on every clip that means what it says',
+    where: 'tools/video-bench, measurement 17',
+  },
+  {
+    what: 'Reading VideoFrame.format to tell which of the two decoders produced a frame',
+    verdict: 'rejected',
+    evidence:
+      'It works here and it is not a signal. The same file comes back NV12 off the hardware decoder and I420 off the software one, which is the only readable difference between them measured anywhere in this harness and would be exactly what a correction for either of their two colour disagreements needs. It is a fact about this platform rather than anything the specification promises, and the field names a chroma layout rather than a decoder, so a colour decision taken on it is reading one thing in order to learn another and is silently wrong on the first machine whose software decoder hands back NV12',
+    where: 'tools/video-bench, measurement 17',
   },
   {
     what: 'Asking the decoder for prefer-hardware, so the range flag is always applied',
@@ -682,7 +689,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Deciding anything from VideoFrame.colorSpace',
     verdict: 'rejected',
     evidence:
-      'It is a default rather than a reading. fullRange is false on a file whose own SPS flag is 1, and primaries and transfer are reported bt709 on a bitstream declaring 2, "unspecified", for both. One of its four fields, matrix_coefficients, is a value anybody wrote down. A branch taken on it is taken on a value the file contradicts, and there is nothing to gain by taking one: the conversion is already correct',
+      'It is a default rather than a reading. fullRange is false on a file whose own SPS flag is 1, and primaries and transfer are reported bt709 on a bitstream declaring 2, "unspecified", for both. One of its four fields, matrix_coefficients, is a value anybody wrote down. A branch taken on it is taken on a value the file contradicts, and there is nothing to gain by taking one: the conversion is driven by what the bitstream declares, and this object is not a reading of that. Measurement 17 is the same object being right for the wrong reason, reporting bt709 transfer on a clip whose transfer is bt709 because it reports bt709 on everything',
     where: 'tools/video-bench, measurement 16',
   },
   {

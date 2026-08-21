@@ -7,6 +7,7 @@
 //   node tools/video-bench/run.mjs occlusion       # its own file; see APART below
 //   node tools/video-bench/run.mjs objects         # its own file; see APART below
 //   node tools/video-bench/run.mjs range           # its own file; see APART below
+//   node tools/video-bench/run.mjs transfer        # its own file; see APART below
 //   node tools/video-bench/run.mjs recovery        # its own file; see APART below
 //   node tools/video-bench/run.mjs tracked-frame   # needs VITE_TRACKING_HOST
 //   node tools/video-bench/run.mjs long-clip       # twenty minutes; see below
@@ -22,6 +23,7 @@
 
 import { chromium } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
+import { format, resolveConfig } from 'prettier';
 
 /**
  * Kept out of `all`, and out of the file `all` writes, each for its own reason.
@@ -57,6 +59,13 @@ import { writeFileSync } from 'node:fs';
  * ladder, the readback ladder and two ONNX timings are read from, and none of
  * them has anything to do with whether a full-range clip decodes correctly.
  *
+ * `transfer` is the same again and is kept out of `range` as well as out of
+ * `all`. It asks whether the eleven codes a 4:2:0 frame picks up between the
+ * decoder and the texture are the browser's or the probe's, which shares
+ * patches and an upload path with `colour` and a pair of decoders with `range`.
+ * Sharing `range`'s file would re-date a finding two documents quote for a
+ * question about a different field of the same header.
+ *
  * `recovery` is the same again, one chapter further on. It writes tens of
  * megabytes into the origin private file system and cleans up after itself,
  * which is not a thing to have running in the middle of an export measurement.
@@ -80,6 +89,7 @@ const APART = [
   'occlusion',
   'objects',
   'range',
+  'transfer',
   'recovery',
   'tracked-frame',
   'long-clip',
@@ -187,12 +197,25 @@ try {
   };
 }
 
-const json = JSON.stringify(result, null, 2);
-console.log(json);
 const out = `tools/video-bench/results${
   which === ALL ? '' : which === EXPORT ? '-export' : `-${which.join('-')}`
 }.json`;
-writeFileSync(out, `${json}\n`);
+/**
+ * Written the way `pnpm format:check` wants it, rather than the way
+ * JSON.stringify leaves it.
+ *
+ * These files are committed, so a run that produces one prettier would reformat
+ * breaks verify for whoever re-took the measurement, on a file they did not
+ * write by hand. It only shows up once a measurement reports a short array of
+ * numbers, which is why it took seventeen of them to matter: prettier keeps one
+ * of those on a line and stringify does not.
+ */
+const json = await format(JSON.stringify(result, null, 2), {
+  ...(await resolveConfig(out)),
+  filepath: out,
+});
+console.log(json);
+writeFileSync(out, json);
 console.log(`\nwritten to ${out}`);
 
 await browser.close();

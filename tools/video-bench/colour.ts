@@ -268,10 +268,12 @@ export async function colour(dev: GPUDevice, base: string): Promise<unknown> {
  *
  * THE CONTROL IS FFMPEG. The same patches, encoded by ffmpeg and decoded
  * through the identical browser path, are already measured above at worst 11
- * codes in the midtones, which is Chrome's BT.709 conversion on the NV12 path
- * rather than anybody's encoder. Comparing our round trip against that one
- * separates "our encode is wrong" from "this is what 4:2:0 costs in this
- * browser", and those are very different findings.
+ * codes in the midtones, which is the upload converting from the transfer the
+ * file declares rather than anybody's encoder: these probes declare none, and
+ * an unspecified transfer defaults to bt709. See measurement 17. Comparing our
+ * round trip against that one separates "our encode is wrong" from "this is
+ * what an undeclared transfer costs in this browser", and those are very
+ * different findings.
  */
 
 /** Long enough that the encoder has settled and short enough to be instant. */

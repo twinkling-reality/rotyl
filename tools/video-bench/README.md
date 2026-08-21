@@ -25,7 +25,7 @@ the only thing in here whose answer depends on what a STYLE costs, so a change
 to a style makes it stale and makes nothing else stale: taken together, the run
 that re-timed a comic chain also re-timed an ONNX session and a readback ladder
 that had not moved, and the diff was forty numbers of noise around the one that
-had changed. Nine more measurements sit outside both runs and write their own
+had changed. Ten more measurements sit outside both runs and write their own
 files, because they share nothing with either and re-taking one of them should
 not re-date every figure it would otherwise have landed beside. The bundle sizes
 need a build and no browser: `node tools/video-bench/bundle-size.mjs`. The
@@ -42,8 +42,16 @@ from one of them: `node tools/video-bench/run.mjs objects`. And whether a
 full-range clip needs a colour path of its own is a fifth, sharing its clips and
 its patches with the colour probe inside `all`, which is the reason it cannot
 share that run's file rather than an argument for putting it there:
-`node tools/video-bench/run.mjs range`. A tracked frame needs a dev server
-started with `VITE_TRACKING_HOST` pointing at the two graphs, which most
+`node tools/video-bench/run.mjs range`. And whether the eleven codes a 4:2:0
+frame picks up between the decoder and the texture are the browser's or the
+probe's is a sixth, kept out of that one as well as out of `all`, because that
+one owns a finding two documents quote and this asks about a different field of
+the same header: `node tools/video-bench/run.mjs transfer`. It is the only
+measurement here with a control it did not take itself, because the control is
+ffmpeg's and a browser cannot run ffmpeg: `make-clips.sh` decodes the transfer
+probes twice on its way past and leaves the answers in
+`clips/ffmpeg-transfer.json`, which the harness fetches like a clip.
+A tracked frame needs a dev server started with `VITE_TRACKING_HOST` pointing at the two graphs, which most
 machines will not have: `node tools/video-bench/run.mjs tracked-frame`. And how
 long a clip export can be takes twenty minutes and ends by running the tab out
 of memory, which is the measurement rather than a hazard of it:
@@ -52,7 +60,7 @@ needs no GPU at all, answering a question about byte layout that shares nothing
 with a timing: `node tools/video-bench/run.mjs interleave`. The clips are
 gitignored, `results.json`, `results-export.json`, `results-bundle.json`,
 `results-log.json`, `results-document.json`, `results-tracked-frame.json`,
-`results-long-clip.json`, `results-occlusion.json`, `results-objects.json`, `results-range.json` and `results-interleave.json` are not, and the graphs come from
+`results-long-clip.json`, `results-occlusion.json`, `results-objects.json`, `results-range.json`, `results-transfer.json` and `results-interleave.json` are not, and the graphs come from
 `tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
 
 **Nothing under `src/` may be edited while a run is going.** The dev server
@@ -87,6 +95,7 @@ Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 13. [One more optional field on a command is 14 bytes](#14-one-more-optional-field-on-a-command-is-14-bytes-where-it-is-true)
 14. [Four figures about a tracked log were about one object](#15-four-figures-about-a-tracked-log-were-about-one-object)
 15. [The clip was always the right clip](#16-the-clip-was-always-the-right-clip)
+16. [The browser was doing what the file said](#17-the-browser-was-doing-what-the-file-said-and-no-probe-here-had-ever-said-anything)
 
 ---
 
@@ -320,11 +329,19 @@ The two upload paths agree exactly, so the choice between them is only the
 
 **The 4:2:0 column is Chrome, not the encoder.** ffmpeg round-trips all three
 probes at worst 1, so the +11 in the midtones is introduced in the browser: 128
-comes back as 139, which is the BT.709→sRGB transfer conversion to within a
-code. Chrome applies it on the NV12 path and not on the I444 one. Since all real
-footage is 4:2:0 the colour-managed path is the one that matters and it is the
-correct one, but the discrepancy is Chrome's and nothing here can compensate
-for it.
+comes back as 139.
+
+**What was written next to that was wrong in three ways, and
+[measurement 17](#17-the-browser-was-doing-what-the-file-said-and-no-probe-here-had-ever-said-anything)
+is each of them.** This said the +11 is "the BT.709→sRGB transfer conversion to
+within a code", which is true at 128 and at nowhere darker; that Chrome applies
+it "on the NV12 path and not on the I444 one", which is the wrong half of what
+differs, since there is no I444 hardware decoder for it to be applied by; and
+that "nothing here can compensate for it", which is a claim about a browser
+made without asking the browser. The eleven codes are Chrome converting from
+the transfer the file declares, these probes declare none, and the browser
+defaults the absence to bt709. So they are the probe's rather than the
+browser's, and what a clip that says what it is gets instead is on that page.
 
 **What this said it did not establish, and had:** limited versus full range.
 Both 4:2:0 probes produced identical values and Chrome reported
@@ -1411,6 +1428,160 @@ row there by re-running it would re-date every one of them for a question none
 of them touches, which is the cost measurements 14 and 15 already record having
 paid.
 
+## 17. The browser was doing what the file said, and no probe here had ever said anything
+
+[Measurement 4](#4-a-decoded-frame-lands-in-the-existing-colour-contract-unchanged)
+reported the 4:2:0 probes coming back eleven codes out in the midtones,
+attributed it to Chrome's BT.709 conversion on the NV12 path, and said in two
+documents that nothing here could compensate for it.
+[Measurement 16](#16-the-clip-was-always-the-right-clip), asking about a
+different field of the same header, found that the same `VideoFrame` drawn into
+a 2D canvas does not have them. So it was never the decode. It is what happens
+between the frame and the texture, and two paths in one browser disagree by
+eleven codes about a picture neither of them touched.
+
+**And nothing had ever told the browser what the probe was.** Every clip this
+project has encoded declares `transfer_characteristics = 2`, "unspecified",
+which Chrome defaults to bt709: `make-clips.sh` asks ffmpeg for
+`-color_trc bt709` and it does not reach the bitstream. So the probes hold
+sRGB-transfer values labelled BT.709, and the two paths were never disagreeing
+about a fact. One of them is right about the tag and the other is right about
+the content, and a file whose tag and content disagree cannot say which of those
+is the browser's job.
+
+**So it is asked again with clips that say what they are.** Three, all stating
+their transfer in the SPS rather than defaulting it, and the pairing is the
+measurement: one says bt709 and IS bt709, one says bt709 and is sRGB, which is
+what every probe here has always been with the tag written down, and one says
+sRGB and IS sRGB. ffmpeg is the control, because "correct" needs somebody who is
+not the browser: `make-clips.sh` decodes each clip twice, once as stored and
+once converted to an sRGB transfer, and leaves the answers beside the clips.
+
+```bash
+node tools/video-bench/run.mjs transfer
+```
+
+The tables are on `/research/the-transfer.html`, out of `results-transfer.json`.
+
+### The tag decides it, which is what settles whose eleven codes they are
+
+| the same sixteen patches, encoded        | `transfer_characteristics` | uploaded, worst from what was drawn |
+| ---------------------------------------- | -------------------------- | ----------------------------------- |
+| says sRGB                                | 13                         | 1 code                              |
+| says BT.709                              | 1                          | 11 codes                            |
+| says nothing, which is every older probe | 2                          | 11 codes                            |
+
+**One picture, three files, and the declaration is the only thing that differs.**
+The content of the three is the same sRGB bytes and the encode is the same
+encode; told sRGB the WebGPU import converts nothing and the patches come back
+at what was drawn, and told BT.709 it converts. Told nothing it converts by
+exactly as much, which is the default being a default rather than an accident.
+
+So the eleven codes are the browser doing what five chapters of probes told it,
+and the 2D canvas has been right by luck rather than by design: it applies
+nothing at all, which returns the patches unchanged in all three cases and is
+the right answer in exactly the two where the file is wrong.
+
+### And on a clip that means what it says, the two paths are not close
+
+The honest clip is the sixteen patches taken into linear light and back out
+through the BT.709 OETF, so its stored codes are lower than the sRGB they were
+drawn from and a correct reader puts them back.
+
+| the grey ramp                         | 0   | 16  | 32  | 64  | 96  | 128 | 160 | 192 | 235 | 255 |
+| ------------------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| what was drawn                        | 0   | 16  | 32  | 64  | 96  | 128 | 160 | 192 | 235 | 255 |
+| stored in the file, read by ffmpeg    | 0   | 6   | 17  | 48  | 82  | 115 | 150 | 185 | 233 | 255 |
+| ffmpeg, converted to an sRGB transfer | 0   | 16  | 33  | 63  | 95  | 128 | 161 | 192 | 235 | 255 |
+| `copyExternalImageToTexture`          | 0   | 2   | 16  | 54  | 92  | 127 | 161 | 193 | 236 | 255 |
+| `drawImage`, then the same copy       | 0   | 6   | 17  | 48  | 82  | 115 | 150 | 185 | 233 | 255 |
+
+**The control comes back at what was drawn**, within a code, which is the check
+that the probe is honest before anything is concluded from it. Against that
+reading, the WebGPU import is within one code from mid grey up and walks away
+from it below: seventeen codes out at the patch drawn as 32, and fourteen at the
+one drawn as 16. What it applies behaves like a pure power where BT.709 has a
+linear toe, so what is left of the error is entirely in the shadows.
+
+**And the 2D canvas is out across the whole ramp**, because it applies nothing
+and the clip needed something. The worst says the two paths are the same answer,
+at 17 codes against 16, and the worst is the wrong statistic here: the median of
+the ramp is 1 code for the import and 11 for the canvas.
+
+That is the answer to the question the trials ledger has been holding open. The
+import reads the declaration and the canvas ignores it, real footage carries a
+declaration, and the eleven codes are not in it.
+
+### And it is the hardware decoder, which is measurement 16's pair of decoders again
+
+| the honest clip, decoded by         | the frame | converted |
+| ----------------------------------- | --------- | --------- |
+| whichever decoder the browser picks | NV12      | yes       |
+| told to prefer hardware             | NV12      | yes       |
+| told to prefer software             | I420      | no        |
+| the 4:4:4 probe, either way         | I444      | no        |
+
+The software decoder converts nothing, asked of the one clip where converting
+and not converting look different. So this browser has two H.264 decoders that
+disagree about colour in two independent ways, and frame size picks one, which is
+[measurement 16](#16-the-clip-was-always-the-right-clip) exactly.
+
+**It also closes measurement 4's other attribution.** That page says Chrome
+applies the conversion on the NV12 path and not on the I444 one, which is true
+and is not the reason. Asked to decode the 4:4:4 probe on the hardware decoder
+the browser answers `NotSupportedError: This configuration is only supported by
+the software decoder.` The 4:4:4 probe was never converted because there is no
+hardware decoder that could have converted it, and the chroma format is how it
+ends up on the one that does nothing rather than what the browser is reacting to.
+
+**The two decoders hand back different pixel formats, and that is not the signal
+measurement 16 wanted.** NV12 from the hardware one and I420 from the software
+one, on the same file, is a readable difference where `VideoFrame.colorSpace`
+has none. It is still not a branch. It is a fact about this platform rather than
+anything the specification promises, and it names a chroma layout rather than a
+decoder, so deciding a colour correction on it would be reading one thing in
+order to learn another. The first machine whose software decoder hands back NV12
+would be wrong, silently, in the direction this project spends every colour
+measurement trying to avoid.
+
+### What the other answer would cost
+
+The 2D canvas reading above is `getImageData`, which brings twelve megabytes
+back through system memory a frame and is a reading rather than a design. The
+shippable version draws the frame into a canvas and uploads the canvas, and
+returns the same values, so the price and the picture are answered about one
+piece of code.
+
+| 1920x1080, per frame, fenced                        | median |
+| --------------------------------------------------- | ------ |
+| `copyExternalImageToTexture`, what the product does | 0.8 ms |
+| `drawImage` into a 2D canvas                        | 0.5 ms |
+| `drawImage`, then `copyExternalImageToTexture`      | 2.0 ms |
+| **what the canvas adds**                            | 1.2 ms |
+
+The last row is a difference between two rows of ONE run rather than between two
+runs, because the direct copy is the noisiest thing in this table on this
+machine: 0.6 to 1.2 ms across runs of a call
+[measurement 3](#3-decode-is-71-real-time-the-only-cost-is-seeking) reports at
+0.9. What a canvas adds is stable where either row alone is not.
+
+**So 1.2 ms a frame**, against the 5.0 ms a 1080p export frame costs and the 33
+a playing frame has. That is very close to the 1.4 ms
+[measurement 5](#5-the-whole-export-pipeline-is-5-ms-a-frame-and-almost-all-of-it-is-the-encoder)
+prices for the readback path and rejects, and it is a worse trade than that one
+was: the readback bought nothing, and this buys the wrong answer on any clip
+that declares its transfer honestly.
+
+### Its own file, sharing everything
+
+It uses the same sixteen patches and the same upload path as measurement 4 and
+the same pair of decoders as measurement 16, which is the reason for a file of
+its own rather than an objection to it. Measurement 4 is inside `run.mjs all`,
+which writes the `results.json` the decode ladder, the readback ladder and two
+ONNX timings are read from. Measurement 16 is not, and it is still the wrong
+home: that one owns a finding two documents quote, and re-taking it to add a row
+about a different field of the same header would re-date it for nothing.
+
 ## What follows
 
 1. **Decode is free and seeking is not.** Scrubbing is a decoder kept alive and
@@ -1488,3 +1659,13 @@ paid.
     software decoder does not, and frame size only picks one. `colorSpace`
     reports `fullRange` false in both cases, so nothing in the frame says which
     one you got, and what is left is a limit rather than a fix.
+17. **A browser doing something inexplicable is worth asking what it was told.**
+    Eleven codes in the midtones of every 4:2:0 frame were attributed to the
+    browser and written into two documents as uncorrectable. They are the
+    browser converting from the transfer the file declares, and no probe here
+    had ever declared one: told sRGB it converts nothing, told BT.709 it
+    converts by eleven, and told nothing it defaults to BT.709 and converts by
+    eleven. On a clip that says BT.709 and is BT.709 the import is a code from
+    ffmpeg over most of the ramp and the 2D canvas is eleven, so the path this
+    product already takes is the one that reads the declaration, and the
+    alternative costs 1.2 ms a frame to be wrong more often.

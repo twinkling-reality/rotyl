@@ -58,8 +58,9 @@
 //
 // EVERY COMPARISON HERE IS AGAINST THE LIMITED-RANGE TWIN and never against the
 // source, because the GPU upload puts +11 into the midtones of any 4:2:0 frame
-// whichever range it is, which measurement 4 already attributes and which has
-// nothing to do with this. Two encodes of one picture cancel it.
+// whichever range it is, which is the upload converting from the transfer these
+// files declare, which is none. That is measurement 17 and it has nothing to do
+// with the flag. Two encodes of one picture cancel it.
 //
 // AND THE METADATA IS NO HELP EITHER WAY. `VideoFrame.colorSpace` reports
 // `fullRange: false` on a full-range file, both where the decode was right and
@@ -205,7 +206,7 @@ class Bits {
   }
 }
 
-interface Sps {
+export interface Sps {
   readonly profile_idc: number;
   readonly video_signal_type_present_flag: number;
   readonly video_full_range_flag: number | null;
@@ -321,8 +322,13 @@ function parseSps(nal: Uint8Array): Sps {
  * Read from the config this measurement hands to `VideoDecoder`, rather than
  * from the file separately, so the bits parsed are the bits the browser was
  * given and not a second reading of the same clip.
+ *
+ * Exported because measurement 17 asks the same question of the field next to
+ * this one, and a second parser would be a second thing to get wrong: this one
+ * agrees with `ffmpeg -bsf:v trace_headers` on all six colour fields, which is
+ * a check paid for once.
  */
-function spsOf(config: VideoDecoderConfig): Sps | { error: string } {
+export function spsOf(config: VideoDecoderConfig): Sps | { error: string } {
   const description = config.description;
   if (!description) return { error: 'the decoder config carries no avcC' };
   // A VIEW'S OWN WINDOW, not the buffer behind it. `description` is an
@@ -470,8 +476,11 @@ const worstBetween = (
  * browser picks. What the ladder below finds is that the choice matters, and
  * this is what turns "it depends on the frame size" into "it depends on which
  * decoder, and the size is what picks one".
+ *
+ * Exported for measurement 17, which finds the same two decoders disagreeing
+ * about a second thing and has no business asking the question a second way.
  */
-async function decodeWith(
+export async function decodeWith(
   url: string,
   acceleration: HardwareAcceleration,
 ): Promise<VideoFrame | { error: string }> {
@@ -578,9 +587,10 @@ async function whichDecoder(dev: GPUDevice, base: string): Promise<unknown> {
       full_range: full,
       // AGAINST THE TWIN AND NOT AGAINST THE SOURCE, which is the whole of what
       // makes this readable. Every rung here also carries the +11 the GPU upload
-      // puts into the midtones of any 4:2:0 frame, limited or full, and that has
-      // nothing to do with the range flag. Comparing the two encodes of one
-      // picture cancels it and leaves only what the flag decided.
+      // puts into the midtones of any 4:2:0 frame whose transfer is
+      // unspecified, limited or full, and that has nothing to do with the range
+      // flag; see measurement 17. Comparing the two encodes of one picture
+      // cancels it and leaves only what the flag decided.
       worst_against_its_twin: worstOf(full, limited),
       honoured: worstOf(full, limited) <= 3,
     };

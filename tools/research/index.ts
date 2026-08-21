@@ -167,6 +167,12 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // above: taking it there would re-date every decode and encode figure for a
   // question none of them touches.
   const perRange = read('tools/video-bench/results-range.json');
+  // And once more for whether the eleven codes a decoded frame picks up on the
+  // way to the GPU are the browser's or the probe's. Kept out of the range file
+  // as well as out of the run: that one owns a finding two documents quote, and
+  // re-taking it to add a row about a different field of the same header would
+  // re-date it for a question it does not touch.
+  const declared = read('tools/video-bench/results-transfer.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
@@ -189,6 +195,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
       hidden,
       perObject,
       perRange,
+      declared,
     }),
     {
       slug: 'trials',

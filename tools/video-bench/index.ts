@@ -22,6 +22,7 @@ import { recovery } from './recovery.ts';
 import { occlusion } from './occlusion.ts';
 import { objects } from './objects.ts';
 import { range } from './range.ts';
+import { transfer } from './transfer.ts';
 import { trackedFrame } from './tracked-frame.ts';
 import { longClip } from './long-clip.ts';
 import { interleave } from './interleave.ts';
@@ -74,6 +75,13 @@ export const MEASUREMENTS = [
   // `all`, and `all` writes the results the decode ladder, the readback ladder
   // and two ONNX timings are read from.
   'range',
+  // And once more, for whether the eleven codes a 4:2:0 frame picks up on the
+  // way to the GPU are the browser's or the probe's. It shares those patches
+  // and that upload path with `colour` for the same reason `range` does, and
+  // must not share the file for the same reason either. It is kept out of
+  // `range` as well: that one owns a finding two documents quote, and its clips
+  // are a ladder of sizes where these are a set of declarations.
+  'transfer',
   // Its own command, and out of `all`, because one rung of it deliberately runs
   // the tab out of memory and because it is twenty minutes where `all` is
   // three. Neither belongs in the middle of a run with nine other measurements
@@ -111,6 +119,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('occlusion', () => occlusion());
   await step('objects', () => objects());
   await step('range', () => range(dev, CLIPS));
+  await step('transfer', () => transfer(dev, CLIPS));
   await step('readback', () => readback(dev));
   await step('ort-device', () => ortDevice(dev, `${ONNX}/memory_encoder.onnx`));
   await step('attention', () => attention(ONNX));

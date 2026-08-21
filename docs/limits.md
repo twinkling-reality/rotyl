@@ -142,6 +142,23 @@ one, and the measurement behind it is on `/research.html`.
   is mostly screen recordings and synthetic output and it has to be small as
   well, and it is not invisible: thirteen codes is a contrast error somebody
   would see and would have no way to explain.
+- **A decoded frame's transfer is converted by the browser, and the two decoders
+  disagree about that as well.** A frame is converted from the transfer its
+  bitstream declares into the sRGB everything downstream expects, which is right
+  and is why a video needs no colour path of its own here. Two things about it
+  are not exact, and both were hidden for five chapters behind probes that
+  declare no transfer at all. On the hardware decoder the curve applied behaves
+  like a pure power where BT.709's has a linear toe, so a clip that declares
+  BT.709 and means it comes back within a code of ffmpeg from mid grey up and up
+  to seventeen codes crushed in the shadows. On the software decoder, which the
+  same frame-size rule picks, nothing is converted at all, so the same clip comes
+  back as its stored codes, up to sixteen codes dark across the whole picture.
+  The only other path a page has is a 2D canvas, which converts nothing at any
+  size and costs 1.2 ms a frame at 1080p to be the second of those everywhere,
+  so it is not here. And the eleven codes that [video](video.md) and the decode
+  page attributed to the browser for five chapters were the probe rather than the
+  browser: an unspecified transfer defaults to BT.709, and every probe this
+  project has encoded holds sRGB values.
 - **A clip is re-encoded, so outside the selection it is the source pixels
   written again rather than the source bytes.** The composite is still exact
   there, and H.264 is not: measured against the source, a region nobody selected
