@@ -21,10 +21,13 @@
 //   tracked frames in a second way at the same time.
 //
 //   WHAT AN OCCLUSION COSTS, which is the second way and is the opposite sign.
-//   An occluded frame's mask is empty, and an empty mask packs to three bytes
-//   rather than to a silhouette's three and a half kilobytes, so a run with
-//   occlusions in it is the SMALLER document. Read off the two file sizes
-//   alone, the field would look free or better than free, which it is not.
+//   An occluded frame's mask is empty, and an empty mask packs to a KILOBYTE
+//   rather than to a silhouette's three and a half, so a run with occlusions in
+//   it is the SMALLER document. Read off the two file sizes alone, the field
+//   would look free or better than free, which it is not. This header said
+//   three bytes until `EMPTY` below was run, and then went on saying it: the
+//   guess a measurement disproved, quoted at the top of the file that disproved
+//   it, which is the same defect as a document contradicting its own results.
 //
 // AND THE OTHER PROJECTION OVER THE SAME LOG, which is what the timeline is
 // drawn from. It used to be handed the frame numbers an edit was made on and

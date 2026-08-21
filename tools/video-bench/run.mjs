@@ -5,6 +5,7 @@
 //   node tools/video-bench/run.mjs log     # its own file; see APART below
 //   node tools/video-bench/run.mjs document        # its own file; see APART below
 //   node tools/video-bench/run.mjs occlusion       # its own file; see APART below
+//   node tools/video-bench/run.mjs objects         # its own file; see APART below
 //   node tools/video-bench/run.mjs recovery        # its own file; see APART below
 //   node tools/video-bench/run.mjs tracked-frame   # needs VITE_TRACKING_HOST
 //   node tools/video-bench/run.mjs long-clip       # twenty minutes; see below
@@ -40,6 +41,14 @@ import { writeFileSync } from 'node:fs';
  * ten-minute write and read are quoted in three documents, and taken inside
  * that run this moved both of them by noise on a path it does not touch.
  *
+ * `objects` is the same again and is kept out of all three of them rather than
+ * only out of `all`. It asks which of the figures about a tracked log are per
+ * run and which are per object, and each of the four it answers is quoted from
+ * one of the three files above: the file cost from `document`, the fold and the
+ * replay from `log`, the projection from `occlusion`. An objects dimension
+ * added to any of them re-takes that measurement and moves figures nobody
+ * changed, which is the cost this list already records having paid once.
+ *
  * `recovery` is the same again, one chapter further on. It writes tens of
  * megabytes into the origin private file system and cleans up after itself,
  * which is not a thing to have running in the middle of an export measurement.
@@ -57,7 +66,16 @@ import { writeFileSync } from 'node:fs';
  * inside `all` would re-date every decode and encode figure beside it whenever
  * somebody asked where the sound goes.
  */
-const APART = ['log', 'document', 'occlusion', 'recovery', 'tracked-frame', 'long-clip', 'interleave'];
+const APART = [
+  'log',
+  'document',
+  'occlusion',
+  'objects',
+  'recovery',
+  'tracked-frame',
+  'long-clip',
+  'interleave',
+];
 
 /**
  * The export ladder, apart from `all` for a reason this file learned the hard

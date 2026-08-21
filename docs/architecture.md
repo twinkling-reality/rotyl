@@ -260,7 +260,11 @@ reconstructs a boundary. Unpacking is what that costs, and unpacking is not once
 per frame but once per command the frame folded to, so the fold cuts at the last
 command that decides the frame by itself. A run of masks applied with `replace`
 therefore folds to the last of them, whether it is three hundred or eighteen
-thousand, and the replay does one upload.
+thousand, and the replay does one upload. **Per object, which is the one thing
+here that following more than one of them changed**: a run replaces for its
+first object and adds for the rest, so the cut lands on the first and the frame
+folds to one command per object. Three objects is three unpacks and three
+uploads rather than the whole run's worth of either.
 
 It is also what makes a lost graphics device survivable. Everything the renderer
 owns belongs to one `GPUDevice` and dies with it; the log belongs to the work
@@ -276,10 +280,11 @@ not.** The log survived a lost device and did not survive a reload, which is the
 largest gap there has been between what this page promises and what the product
 did. Saving is the log written out and opening is the log handed back: no cached
 mask, no snapshot, nothing derived, because a replay of eighteen thousand
-commands is a fold to one and a texture upload, measured at 0.3 ms. What the
-file has to solve instead is the thing a browser makes hard, which is naming
-media it has no path to, and that is in [saving the work](saving.md) with the
-measurements behind it.
+commands is a fold to one command per object and a texture upload each, measured
+at 0.3 ms following one object and 0.9 following three. What the file has to
+solve instead is the thing a browser makes hard, which is naming media it has no
+path to, and that is in [saving the work](saving.md) with the measurements
+behind it.
 
 **It outlives a tab that was never given the chance to save, too.** Every
 command is appended to a journal as it lands, and a session that ended is

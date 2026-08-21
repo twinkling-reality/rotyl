@@ -19,8 +19,8 @@ exactly the claim it was cited for. Each new scene changes ONE of those and
 keeps everything else, including the paths and the seed, so a row can be read
 against the control rather than against another clip.
 
-  crossing    the control. Two lookalikes crossing head-on, twenty-two frames
-              of them, for the reason under FRAMES below.
+  crossing    the control. Two lookalikes crossing head-on, thirty frames of
+              them, for the reason under FRAMES below.
   occlusion   the target passes behind a bar for eight frames and comes out the
               far side, with the distractor waiting there. Nothing but memory
               can get this right, and it is the case object pointers exist for.
@@ -47,7 +47,7 @@ from PIL import Image
 
 WIDTH, HEIGHT = 854, 480
 
-# TWENTY-TWO, AND IT WAS TEN, which is a change to what these clips can settle
+# THIRTY, AND IT WAS TEN, which is a change to what these clips can settle
 # rather than to how long they take to draw.
 #
 # A memory bank holds the frame the object was pointed at plus the six before
@@ -55,8 +55,15 @@ WIDTH, HEIGHT = 854, 480
 # same seven entries until the EIGHTH tracked frame and differ on every frame
 # after it. Ten frames gave that difference two frames to appear in, which is
 # why the end-to-end table could not separate a tracker that throws the user's
-# own frame away from one that does not. Twenty-two gives it fourteen, with the
+# own frame away from one that does not. Thirty gives it twenty-two, with the
 # crossing inside them.
+#
+# TWENTY-TWO WAS TRIED AND SETTLES NOTHING, which is why this is not the blur
+# clip's number even though it looks like it should be. At twenty-two the two
+# banks score the same to four places, so it is the last eight frames that do
+# the work. This file's own prose said twenty-two, and frame 15, for a chapter
+# after both stopped being true, on the lines either side of a constant reading
+# thirty.
 #
 # The paths changed with the length and had to. Run out past ten the old ones
 # brought the two objects to 2.03 radii, which is touching, and then took the
@@ -117,27 +124,27 @@ def background(rng: np.random.Generator) -> np.ndarray:
 
 def centres(frame: int) -> tuple[tuple[float, float], tuple[float, float]]:
     """
-    Head-on, crossing at three radii, at frame 15 of 22.
+    Head-on, crossing at three radii, at frame 21 of 30.
 
-    20 and 12 px between frames, which is what a 30 fps camera gives for two
+    16 and 10 px between frames, which is what a 30 fps camera gives for two
     things crossing part of a frame in under a second. An early version moved
     them a diameter and a half per frame and the tracker lost them by frame
     three, which measured the clip rather than the export; what caps the speed
-    now is that both have to stay in frame for all twenty-two.
+    now is that both have to stay in frame for all thirty.
 
     Never closer than three radii: paths that end up on top of each other stop
     being a distractor and become one blob, which asks the model an ill-posed
     question rather than a hard one.
 
-    CLOSEST AT FRAME 15, which is the arrangement rather than an artefact of it.
+    CLOSEST AT FRAME 21, which is the arrangement rather than an artefact of it.
     Two banks a tracker might keep hold the same seven entries until the eighth
     tracked frame, so an ambiguity before then is one both of them answer from
-    the same memory. At frame 15 a sliding bank holds seven entries all taken
+    the same memory. At frame 21 a sliding bank holds seven entries all taken
     from the approach and an anchored one still holds the frame somebody
     actually pointed at. They end five radii apart on opposite sides, so "which
     one did it keep" has an answer rather than needing one.
 
-    AND THEY START ELEVEN RADII APART, which is not decoration. A version of
+    AND THEY START TWELVE RADII APART, which is not decoration. A version of
     these paths that began five radii apart and converged from there made the
     REFERENCE fail outright: with object pointers on it reported no object at
     all from frame two and never recovered, on the sharp clip and on the relit

@@ -213,8 +213,15 @@ export const TRIALS: readonly Trial[] = [
     what: 'Caching the rebuilt mask in the document, so a long tracked run opens instantly',
     verdict: 'rejected',
     evidence:
-      'Nothing to fix. A ten-minute log folds to one command, because the fold cuts at the last command that decides a frame by itself, and the fold plus unpacking that one mask is 0.3 ms. A cache would be a second source of truth in the one structure this architecture exists to have exactly one of, in exchange for a third of a millisecond',
-    where: 'tools/video-bench, measurement 12',
+      'Nothing to fix. A ten-minute log folds to one command per object followed, because the fold cuts at the last command that decides a frame by itself and a run replaces for its first seed only, and the fold plus unpacking those masks is 0.3 ms following one object and 0.9 following three. A cache would be a second source of truth in the one structure this architecture exists to have exactly one of, in exchange for a third of a millisecond an object',
+    where: 'tools/video-bench, measurements 12 and 15',
+  },
+  {
+    what: 'Adding an objects dimension to the measurements the four per-object figures came from',
+    verdict: 'rejected',
+    evidence:
+      'The same mistake this harness has already priced once. The four figures that turned out to be per object are quoted from three different results files, and taking the question inside any of them re-takes that measurement: asked inside measurement 12 the previous time, a ten-minute write and read that three documents quote moved from eleven and twelve to ten and ten, and measurement 8’s unpacking figure moved from 10.5 ms to 11.0, on code paths neither question touches. Topical fit is the argument FOR folding two measurements together, which is what makes it the wrong one. Measurement 15 has its own command and its own file, and takes its own one-object control rather than quoting theirs',
+    where: 'tools/video-bench/objects.ts',
   },
   {
     what: 'Asking where a clip goes after it has been encoded, rather than before',
@@ -409,7 +416,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Cutting a frame’s fold at the last command that decides it by itself',
     verdict: 'adopted',
     evidence:
-      'Unpacking alone was 10.5 ms of a 33 ms frame across the three hundred masks a ten-second tracked run folds to, all but the last of them discarded by the next. Three hundred commands become one, and eighteen thousand become one',
+      'Unpacking alone was 10.5 ms of a 33 ms frame across the three hundred masks a ten-second tracked run folds to, all but the last of them discarded by the next. Three hundred commands become one, and eighteen thousand become one. One per object once a run could follow several, since the cut lands on the seed that replaces and the rest add',
     where: 'src/core/document/selection-command.ts',
   },
   {

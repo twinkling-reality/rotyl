@@ -26,11 +26,13 @@ make. See [coming back from a session that ended](#coming-back-from-a-session-th
 
 **It is the log and nothing derived from it.** No cached mask, no thumbnail, no
 rendered anything, and that is a measurement rather than a preference. Loading
-one is a fold and one texture upload: the fold cuts at the last command that
-decides a frame by itself, so eighteen thousand commands of a ten-minute tracked
-run fold to one, and that one plus unpacking its mask is 0.3 ms. A cache would
-be a second source of truth in the one structure this architecture exists to
-have exactly one of, in exchange for a third of a millisecond.
+one is a fold and one texture upload per object: the fold cuts at the last
+command that decides a frame by itself, which a run writes for its first object
+and not for the rest, so eighteen thousand commands of a ten-minute tracked run
+fold to one and fifty-four thousand of a three-object one fold to three. That
+plus unpacking those masks is 0.3 ms and 0.9. A cache would be a second source
+of truth in the one structure this architecture exists to have exactly one of,
+in exchange for a third of a millisecond an object.
 
 **It does not contain the media.** That is the decision somebody will ask about
 first, so: a photograph is a few megabytes and embedding it makes a document

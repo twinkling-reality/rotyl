@@ -156,6 +156,12 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // above: three documents quote that file's ten-minute write and read, and
   // taken inside it this moved both of them by noise.
   const hidden = read('tools/video-bench/results-occlusion.json');
+  // And once more for which of the figures about a tracked log are per run and
+  // which are per object. Kept out of all three of the files above rather than
+  // only out of the run: each of the four figures it answers is quoted from one
+  // of them, so an objects dimension added to any of them would re-take that
+  // measurement and re-date a page whose finding did not move.
+  const perObject = read('tools/video-bench/results-objects.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
@@ -176,6 +182,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
       saved,
       kept,
       hidden,
+      perObject,
     }),
     {
       slug: 'trials',

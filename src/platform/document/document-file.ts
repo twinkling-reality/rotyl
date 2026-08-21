@@ -18,9 +18,10 @@
  * this and it has not.
  *
  * A CONTAINER RATHER THAN JSON, and that is measured rather than assumed. The
- * bulk of a document is masks: one per frame a tracking run reached, packed,
- * about 3.4 KB each and 62 MB for ten minutes. Base64 is a third larger again
- * and has to be built and taken apart a character at a time on both sides,
+ * bulk of a document is masks: one per frame a tracking run reached PER OBJECT
+ * it followed, packed, about 3.4 KB each and so 62 MB for ten minutes of
+ * following one thing and three times that for three. Base64 is a third larger
+ * again and has to be built and taken apart a character at a time on both sides,
  * where a container writes the bytes the log already holds and reads them back
  * as views into one buffer with no copy at all. `/research/the-document.html`
  * has both, at one stroke, at a three hundred frame run and at ten minutes.
@@ -149,12 +150,12 @@ export function documentFilename(mediaName: string): string {
  *
  * CHUNKS RATHER THAN ONE BUFFER, for the reason a clip export writes each
  * packet as its chunk closes rather than holding the file: a ten-minute tracked
- * run is 62 MB of packed masks that the log is already holding, and assembling
- * a second copy of them to write the first one would hold the document twice at
- * the moment it is saved. Given a file handle each chunk goes straight out and
- * nothing is held; given none, a `Blob` takes the list and the browser decides
- * where to keep it. One writer, two targets, one line different, which is the
- * same shape the export sink has.
+ * run is 62 MB of packed masks per object followed that the log is already
+ * holding, and assembling a second copy of them to write the first one would
+ * hold the document twice at the moment it is saved. Given a file handle each
+ * chunk goes straight out and nothing is held; given none, a `Blob` takes the
+ * list and the browser decides where to keep it. One writer, two targets, one
+ * line different, which is the same shape the export sink has.
  *
  * The mask payloads are the log's own arrays, handed over rather than copied,
  * so this allocates the header and nothing else.

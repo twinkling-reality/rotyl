@@ -106,15 +106,22 @@ one, and the measurement behind it is on `/research.html`.
   release has. What the check buys for the mistake somebody would actually make
   is a sentence before a run starts rather than an exception part way through
   one.
-- A tracked run holds one mask per frame in the command log. Held plainly that
-  is 64 KB each, 20 MB for ten seconds and 1.2 GB for ten minutes; packed, which
-  is how they are held, it is 3.4 KB each and 62 MB for ten minutes. Folding
-  them is free, measured at 0.2 ms for eighteen thousand commands, and the fold
-  cuts at the last command that decides the frame by itself, so a replay unpacks
-  one mask rather than all of them. What is left is a clip long enough that
-  62 MB matters, which is about ten times longer than anything measured here and
-  no longer bounded by the export, since an export given a file to write into
-  holds nothing.
+- **A tracked run holds one mask per frame PER OBJECT in the command log**, so
+  every figure in this entry is per object, and none of them said so for as long
+  as there could only be one. Held plainly a mask is 64 KB, 20 MB for ten
+  seconds and 1.2 GB for ten minutes; packed, which is how they are held, it is
+  3.4 KB and 62 MB for ten minutes. Two objects is twice that and three is three
+  times it, taken on the file rather than multiplied out of that one: ten
+  minutes following one thing is a 65 MB document and following three is 196.
+  Folding the log is still free, at 0.3 ms for one object's eighteen thousand
+  commands and 0.7 for three objects' fifty-four thousand, and the fold is still
+  what keeps a replay cheap. What changed there is the shape rather than the
+  number: the cut lands at the last command that decides the frame by itself,
+  which a run writes for its FIRST object and not for the rest, so a replay
+  unpacks one mask per object rather than all of them. What is left is a clip
+  long enough that 62 MB an object matters, which is about ten times longer than
+  anything measured here and no longer bounded by the export, since an export
+  given a file to write into holds nothing.
 - A tracked frame is 135 ms and playback's is thirty-three, so tracking is a job
   rather than something the playhead drives. Seven tracked frames a second means
   a three-hundred-frame run is three quarters of a minute, which the interface

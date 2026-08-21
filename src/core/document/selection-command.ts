@@ -134,6 +134,15 @@ export function hasAnyCoverage(commands: readonly SelectionCommand[]): boolean {
  * two hundred and ninety-nine were overwritten by the next. Measured, unpacking
  * that many masks alone is 10.5 ms against a 33 ms frame, before any of them
  * reaches the GPU.
+ *
+ * WHICH LEAVES ONE COMMAND PER OBJECT AND NOT ONE, and that is the one thing
+ * here that following more than one object changed. A run replaces for its
+ * FIRST seed and adds for the rest, because two objects have to be two regions
+ * rather than a race, so the cut lands on the first one's command and the ones
+ * after it survive. Ten minutes following three things folds fifty-four
+ * thousand commands to three rather than to one, at 0.7 ms against 0.3, and a
+ * replay then unpacks three masks. See `/research/per-object.html`, which is
+ * where the four figures this sentence used to be one of were taken again.
  */
 export function commandsForFrame(
   commands: readonly SelectionCommand[],
@@ -237,6 +246,14 @@ function afterOne(was: boolean, command: SelectionCommand): boolean {
  * is eighteen thousand of them on a track six hundred pixels wide. Joined, that
  * run is one element, or a handful where the object went behind something. The
  * measurement is on `/research/the-occlusion.html`.
+ *
+ * AND IT IS ONE ELEMENT HOWEVER MANY OBJECTS THE RUN FOLLOWED, because a run is
+ * one gesture whatever it followed and every command in it carries that
+ * gesture's group. What does grow with them is the log this walks, which is why
+ * it was taken again at several: it runs on every render of the editor, and
+ * three times the commands is 1.27 times the time rather than three, since what
+ * it sorts is the frames a log touched and there are still eighteen thousand of
+ * those. `/research/per-object.html`.
  *
  * A run's anchor is not part of it, and that is right rather than a rounding
  * error: the tracker writes no command on the frame the selection was made on,

@@ -61,6 +61,8 @@ const ms = (value: number): string => `${value.toFixed(value < 10 ? 1 : 0)} ms`;
 const asBytes = (count: number): string =>
   count < 1024 ? `${count.toFixed(0)} bytes` : `${(count / 1024).toFixed(1)} KB`;
 const pct = (value: number): string => `${value.toFixed(2)}%`;
+/** Megabytes, to a hundredth, which is what a document is quoted to everywhere else. */
+const asFile = (bytes: number): string => `${(bytes / 1e6).toFixed(2)} MB`;
 
 const SIZES = ['720p', '2 MP', '12 MP', '24 MP'] as const;
 const STYLES = ['comic', 'poster', 'print'] as const;
@@ -1092,6 +1094,7 @@ function commandLog(video: unknown): Section {
       `What the packing does not pay for by itself is the replay. Unpacking is cheap once and is not once: a rebuild of the mask walks every command the frame folded to, and ${unpacking(
         'roughness 0.5',
       )} of a 33 ms frame goes on three hundred masks before any of them reaches the GPU. So the fold cuts at the last command that decides the frame by itself, which a run of replaces makes the last one. Three hundred commands become one, and so does eighteen thousand.`,
+      'Per object, which every figure on this page is and none of them said until a run could follow more than one thing. A run replaces for its FIRST seed and adds for the rest, so the cut lands on the first one and a frame folds to one command per object rather than to one. What each of these figures comes back as at one, two and three objects is the page on the four figures that were about one object, in a file of its own so that asking did not re-take this one.',
     ],
     table: {
       columns: ['a mask on every frame', 'held plainly', 'packed', 'folding one frame'],
@@ -1132,7 +1135,7 @@ function documentCost(document: unknown): Section {
   return {
     heading: 'A ten-minute tracked run is a 65 MB file that writes in eleven milliseconds',
     prose: [
-      'What a brush stroke costs to write down is nothing and everybody knows it. What decides whether saving is a file format or a paragraph in known limits is what a TRACKED RUN costs: one command per frame, a mask on each, packed, which the chapter before this one measured at 3.4 KB a mask and 62 MB for ten minutes held in memory.',
+      'What a brush stroke costs to write down is nothing and everybody knows it. What decides whether saving is a file format or a paragraph in known limits is what a TRACKED RUN costs: one command per frame PER OBJECT, a mask on each, packed, which the chapter before this one measured at 3.4 KB a mask and 62 MB for ten minutes of following one thing. Every figure on this page is per object for that reason, and none of them said so until the interface could reach a second seed; what they come back as at several is the page on the four figures that were about one object.',
       `Those 62 MB survive the trip. The file is ${megabytes(
         of('ten minutes', ['container', 'bytes']),
       )} against ${held.toFixed(
@@ -1218,6 +1221,7 @@ function documentReplay(document: unknown): Section {
       ).toFixed(0)}, and unpacking that one mask and the fold together are ${ms(
         of('ten minutes', ['replay', 'ms', 'median']),
       )}. Everything after it is the texture upload the renderer does on every frame anyway.`,
+      'One per object, which is the one line on this page that following more than one thing did not merely re-scale. The cut lands on a run’s FIRST seed, because that is the one that replaces and the rest add, so a frame folds to one command per object and a replay unpacks that many masks. It is still a fraction of a frame and the file is still allowed to be dumb, and the arithmetic is on the page about the four figures that were about one object.',
       'So the document carries the log and nothing derived from it. No mask, no thumbnail, no rendered anything: replaying is cheaper than reading whatever a cache of it would have been.',
     ],
     table: {
@@ -1987,7 +1991,7 @@ function whatTheTimelineDrew(hidden: unknown): Section {
 }
 
 function whatSayingSoCost(hidden: unknown): Section {
-  const asFile = (path: readonly string[]): string => `${(num(hidden, path) / 1e6).toFixed(2)} MB`;
+  const fileOf = (path: readonly string[]): string => asFile(num(hidden, path));
   const carrying = num(hidden, ['occlusion', 'frames_hidden']).toFixed(0);
   const perCommand = num(hidden, ['occlusion', 'the_field', 'bytes_per_command']).toFixed(0);
   const flagBytes = num(hidden, ['occlusion', 'the_field', 'bytes']);
@@ -2007,14 +2011,98 @@ function whatSayingSoCost(hidden: unknown): Section {
     table: {
       columns: ['ten minutes of tracking, as a file', 'bytes'],
       rows: [
-        ['nothing hidden', asFile(['occlusion', 'the_occlusion', 'nothing_hidden_bytes'])],
-        [`hidden ${carrying} frames, not said`, asFile(['occlusion', 'the_field', 'without_it_bytes'])],
-        [`hidden ${carrying} frames, said`, asFile(['occlusion', 'the_field', 'with_it_bytes'])],
+        ['nothing hidden', fileOf(['occlusion', 'the_occlusion', 'nothing_hidden_bytes'])],
+        [`hidden ${carrying} frames, not said`, fileOf(['occlusion', 'the_field', 'without_it_bytes'])],
+        [`hidden ${carrying} frames, said`, fileOf(['occlusion', 'the_field', 'with_it_bytes'])],
       ],
     },
     caveat:
       'Its own command and its own results file, for both halves of this page, which is the harness’s own rule rather than a preference. Either would have fitted somewhere else: the file cost beside what a document costs, the projection beside what the fold costs. Measured there they re-took those measurements and moved figures six documents quote, by noise, on code paths neither touches.',
     command: 'node tools/video-bench/run.mjs occlusion',
+  };
+}
+
+// --- which figures were about one object -------------------------------------
+
+/** The three columns, named once so the table and the prose cannot disagree. */
+const COUNTS = ['1 object', '2 objects', '3 objects'] as const;
+
+function fourFigures(perObject: unknown): Section {
+  const cell = (count: string, path: readonly string[]): number =>
+    num(perObject, ['objects', 'per_objects', count, ...path]);
+  const row = (label: string, render: (count: string) => string): readonly string[] => [
+    label,
+    ...COUNTS.map(render),
+  ];
+  // Read off the table rather than typed beside it, which is the rule this
+  // whole chapter is about: a ratio in prose is a number waiting to go stale,
+  // and the four it describes went stale by standing still.
+  const against = (count: string, path: readonly string[]): string =>
+    `${(cell(count, path) / cell('1 object', path)).toFixed(2)}×`;
+  return {
+    heading: 'Three of the four move with the number of objects, and the fourth does not',
+    prose: [
+      'A run writes one applyMask per frame it followed an object to, and for as long as there was exactly one object a figure about a run and a figure about an object were the same figure. Four of them are quoted in three of this project’s documents, and each is exactly true of one object and says nothing about several. They are taken here at one, two and three.',
+      `The file is the one that really is arithmetic, and it is measured anyway rather than multiplied: N objects is N commands per frame and N packed masks behind them, and the run comes back at ${against(
+        '2 objects',
+        ['file_bytes'],
+      )} and ${against('3 objects', ['file_bytes'])} of a single object’s ${asFile(
+        cell('1 object', ['file_bytes']),
+      )}. So a ten-minute clip with three things followed through it is a ${asFile(
+        cell('3 objects', ['file_bytes']),
+      )} document, and what had to change about that figure is the two missing words rather than the figure.`,
+      `The projection is the one that matters most, because it is the only one of the four on the render path: editSpans runs over the whole log on every render of the editor. It is also the one that moves LEAST. Three times the commands is ${against(
+        '3 objects',
+        ['projection', 'ms', 'median'],
+      )} the time, because what it sorts is the distinct frames a log touched and there are still eighteen thousand of those however many commands landed on each of them.`,
+      `And what it DRAWS does not move at all: ${cell('3 objects', ['projection', 'elements']).toFixed(
+        0,
+      )} elements at three objects, the same ${cell('1 object', ['projection', 'elements']).toFixed(
+        0,
+      )} as at one. A run is one gesture whatever it followed, every command in it carries the same group, and the timeline joins along that. Following a third car does not put a third bar on the track.`,
+    ],
+    table: {
+      columns: ['ten minutes of tracking', 'one object', 'two', 'three'],
+      rows: [
+        row('commands in the log', (count) => cell(count, ['commands']).toLocaleString('en-GB')),
+        row('the file', (count) => asFile(cell(count, ['file_bytes']))),
+        row('writing it', (count) => ms(cell(count, ['write_ms', 'median']))),
+        row('the fold, at the last frame', (count) => ms(cell(count, ['fold', 'ms', 'median']))),
+        row('what the fold leaves', (count) => cell(count, ['fold', 'folded_to']).toFixed(0)),
+        row('a replay: fold and unpack', (count) => ms(cell(count, ['replay', 'ms', 'median']))),
+        row('the projection, per render', (count) => ms(cell(count, ['projection', 'ms', 'median']))),
+        row('elements it draws', (count) => cell(count, ['projection', 'elements']).toFixed(0)),
+      ],
+    },
+    caveat:
+      'The same silhouette for every object, which is the rule the mask helper already sets for the two measurements this one has to be comparable with: two harnesses drawing their own masks would make “62 MB held” and “62 MB written” two numbers about two different logs. A real second object is a different silhouette, and the packing charges for the perimeter rather than for the identity, so what differs between two of them is the spread the compression sweep on the command-log page already brackets.',
+    command: 'node tools/video-bench/run.mjs objects',
+  };
+}
+
+function foldsToN(perObject: unknown): Section {
+  const cell = (count: string, path: readonly string[]): number =>
+    num(perObject, ['objects', 'per_objects', count, ...path]);
+  return {
+    heading: 'One of the four was not a figure that moved. It was a sentence that stopped being true',
+    prose: [
+      'The fold cuts at the last command that decides a frame by itself, which is a clear or a mask applied with replace, because everything before one of those is discarded by it. A run following one object writes replace on every frame it reached, so eighteen thousand commands fold to one and a replay unpacks one mask. That is what made a document able to be dumb: nothing derived has to be stored in it, because rebuilding it is a fold and a texture upload.',
+      `A run following several writes replace for the FIRST object and add for the rest, which is what makes two objects two regions rather than a race. So the cut lands on the first object’s command and everything after it survives: the frame folds to ${cell(
+        '3 objects',
+        ['fold', 'folded_to'],
+      ).toFixed(0)} commands at three objects rather than to one, and a replay unpacks ${cell('3 objects', [
+        'replay',
+        'masks_unpacked',
+      ]).toFixed(0)} masks rather than one.`,
+      `That is the only one of the four where the correction is not a number. “A fold to one and a texture upload” had no N in it to be wrong about; it was a claim about shape, and the shape changed underneath it when the interface reached a second seed. What it costs is ${ms(
+        cell('3 objects', ['replay', 'ms', 'median']),
+      )} against ${ms(
+        cell('1 object', ['replay', 'ms', 'median']),
+      )}, which is linear in objects and is still a fraction of one frame, so the conclusion the sentence was written to support survives being said correctly.`,
+    ],
+    caveat:
+      'Its own command and its own results file, which is the rule the occlusion measurement was written to establish arriving at the door it was written for. Every one of the four figures above already has a home: the file cost belongs to what a document costs, the fold and the replay to what a tracked clip does to the command log, and the projection to what the timeline was given to draw. An objects dimension added to any of the three re-takes that measurement and moves figures this chapter did not change. The one-object column duplicates those three and is taken here rather than quoted from them for the opposite reason: a control that sits in another file taken on another day is not a control, and every ratio above is a ratio between two cells of one run.',
+    command: 'node tools/video-bench/run.mjs objects',
   };
 }
 
@@ -2058,6 +2146,13 @@ export interface Results {
    * reason the section that reads it gives.
    */
   readonly hidden: unknown;
+  /**
+   * Which of the figures about a tracked log are per run and which are per
+   * object. Its own file because every one of the four it answers is quoted
+   * from one of the three above, so an objects dimension added to any of them
+   * re-takes a measurement this chapter did not change.
+   */
+  readonly perObject: unknown;
 }
 
 export function entries(results: Results): readonly Entry[] {
@@ -2066,6 +2161,7 @@ export function entries(results: Results): readonly Entry[] {
   const { saved } = results;
   const { kept } = results;
   const { hidden } = results;
+  const { perObject } = results;
   return [
     {
       slug: 'the-look',
@@ -2213,7 +2309,7 @@ export function entries(results: Results): readonly Entry[] {
       harness: 'tools/video-bench',
       lede: [
         'Strokes rather than pixels have been the source of truth since the first chapter. Undo is a cursor into the log, export replays it rather than asking the app what applies, and a lost graphics device is survivable because the log belongs to the work and not to the device. Reloading the page threw all of it away.',
-        'A photograph’s log is a handful of strokes and nobody needed a measurement for that. A tracked run is one command per frame with a mask on each, which the chapter before this one measured at 62 MB in memory for ten minutes, and what happens to those 62 MB on the way to a disk is what decides whether saving is a file format or a paragraph in known limits.',
+        'A photograph’s log is a handful of strokes and nobody needed a measurement for that. A tracked run is one command per frame per object with a mask on each, which the chapter before this one measured at 62 MB in memory for ten minutes of following one thing, and what happens to those 62 MB on the way to a disk is what decides whether saving is a file format or a paragraph in known limits.',
       ],
       sections: [documentCost(saved), documentShape(saved), documentReplay(saved), documentIdentity(saved)],
     },
@@ -2279,6 +2375,19 @@ export function entries(results: Results): readonly Entry[] {
         'What separates them is not how interesting they are. It is whether they are true of the tool or true of the document somebody has open. An occlusion is a numbered frame of this clip with no selection on it that somebody has to act on; a confidence score is the same thing on every file anybody ever opens. The first belongs in the editor. The second belongs on a page like this one, which is where it has stayed.',
       ],
       sections: [whatDied(), whatTheTimelineDrew(hidden), whatSayingSoCost(hidden)],
+    },
+    {
+      slug: 'per-object',
+      results: 'tools/video-bench/results-objects.json',
+      title: 'Four figures that were about one object and did not say so',
+      standfirst:
+        'Multi-object tracking arrived without re-taking anything, because nothing about the loop changed. What changed was the meaning of four committed figures, each of which had been exactly true of one object for as long as there could only be one.',
+      harness: 'tools/video-bench',
+      lede: [
+        'The feature that reached this was small: the command log had been recording which objects somebody pointed at since object selection landed, so a run follows one object per answer the selection is made of and there is no new gesture, no mode and no list to manage. What it did do is turn a constant into a variable, and four numbers in three documents were written when it was still a constant.',
+        'None of the four is wrong. Each is still exactly true of one object, and not one of them says so, which leaves a reader holding a product that can multiply all four by however many things they clicked. Three of them move with N, one of them barely does, and one of the four is not a number at all.',
+      ],
+      sections: [fourFigures(perObject), foldsToN(perObject)],
     },
     {
       slug: 'the-host',

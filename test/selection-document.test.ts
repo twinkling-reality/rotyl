@@ -141,6 +141,19 @@ const replace = (frame: number): SelectionCommand => ({
   frame,
 });
 
+/** One tracked object's command on one frame, in the shape `runTracking` writes. */
+const trackedSeed = (frame: number, index: number): SelectionCommand => ({
+  kind: 'applyMask',
+  mask: packCoverage(1, 1, new Uint8Array([255])),
+  op: index === 0 ? 'replace' : 'add',
+  frame,
+  group: 7,
+});
+
+/** Three frames of a run following `objects` things, oldest first. */
+const multiObjectRun = (objects: number): SelectionCommand[] =>
+  [4, 5, 6].flatMap((frame) => Array.from({ length: objects }, (_, index) => trackedSeed(frame, index)));
+
 describe('a log spanning frames', () => {
   const at = (frame: number): SelectionCommand => ({ kind: 'paint', stroke, frame });
 
@@ -256,6 +269,31 @@ describe('a log spanning frames', () => {
     expect(editSpans([absent('replace', 4, 3), { ...erase, frame: 4, group: 3 }])).toEqual([
       { from: 4, to: 4, kind: 'absent' },
     ]);
+  });
+
+  it('folds a multi-object run to one command per object, not to one', () => {
+    // THE SHAPE `runTracking` WRITES, which is what makes this the one figure
+    // about a tracked log that following more than one object did not merely
+    // re-scale. The first seed replaces, because replacing what was held
+    // forward is the drift tracking exists to remove; the rest add, because two
+    // objects have to be two regions rather than a race. So the fold's cut
+    // lands on the FIRST object's command and every object after it survives,
+    // and a replay unpacks one mask per object rather than one.
+    expect(commandsForFrame(multiObjectRun(1), 6)).toHaveLength(1);
+    expect(commandsForFrame(multiObjectRun(2), 6)).toHaveLength(2);
+    expect(commandsForFrame(multiObjectRun(3), 6)).toHaveLength(3);
+    // And what survives is one command per object of the LAST frame, rather
+    // than any of the frames the run passed through on the way there.
+    expect(commandsForFrame(multiObjectRun(3), 6).map((command) => command.frame)).toEqual([6, 6, 6]);
+
+    // The timeline does not multiply with them, because a run is one gesture
+    // whatever it followed and every command in it carries that gesture's
+    // group. Three objects over three frames is nine commands and one span.
+    for (const objects of [1, 2, 3]) {
+      expect(editSpans(multiObjectRun(objects)), `${String(objects)} objects`).toEqual([
+        { from: 4, to: 6, kind: 'tracked' },
+      ]);
+    }
   });
 
   it('keeps two hand edits on neighbouring frames as two marks', () => {

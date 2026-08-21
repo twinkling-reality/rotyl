@@ -25,7 +25,7 @@ the only thing in here whose answer depends on what a STYLE costs, so a change
 to a style makes it stale and makes nothing else stale: taken together, the run
 that re-timed a comic chain also re-timed an ONNX session and a readback ladder
 that had not moved, and the diff was forty numbers of noise around the one that
-had changed. Seven more measurements sit outside both runs and write their own
+had changed. Eight more measurements sit outside both runs and write their own
 files, because they share nothing with either and re-taking one of them should
 not re-date every figure it would otherwise have landed beside. The bundle sizes
 need a build and no browser: `node tools/video-bench/bundle-size.mjs`. The
@@ -35,7 +35,10 @@ become a file needs neither either, and has a command of its own so that
 re-taking one of the two does not re-date the other:
 `node tools/video-bench/run.mjs document`. What ONE MORE optional field on a
 command costs is a third of the same kind, kept apart from the second in
-particular: `node tools/video-bench/run.mjs occlusion`. A tracked frame needs a dev server
+particular: `node tools/video-bench/run.mjs occlusion`. And which of the figures
+about a tracked log are per RUN and which are per OBJECT is a fourth, kept apart
+from all three of them because each of the four figures it answers is quoted
+from one of them: `node tools/video-bench/run.mjs objects`. A tracked frame needs a dev server
 started with `VITE_TRACKING_HOST` pointing at the two graphs, which most
 machines will not have: `node tools/video-bench/run.mjs tracked-frame`. And how
 long a clip export can be takes twenty minutes and ends by running the tab out
@@ -45,7 +48,7 @@ needs no GPU at all, answering a question about byte layout that shares nothing
 with a timing: `node tools/video-bench/run.mjs interleave`. The clips are
 gitignored, `results.json`, `results-export.json`, `results-bundle.json`,
 `results-log.json`, `results-document.json`, `results-tracked-frame.json`,
-`results-long-clip.json`, `results-occlusion.json` and `results-interleave.json` are not, and the graphs come from
+`results-long-clip.json`, `results-occlusion.json`, `results-objects.json` and `results-interleave.json` are not, and the graphs come from
 `tools/edgetam-export`. `export.py` for the pair, then `half_precision.py`.
 
 **Nothing under `src/` may be edited while a run is going.** The dev server
@@ -63,7 +66,7 @@ appears nowhere: it throttles when the pane is hidden, which silently turns a
 3 ms number into a 16 ms one. Medians of 15 to 30 runs after warm-up, on an
 Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 
-**Fourteen findings, each with the command that re-takes it:**
+**Fifteen findings, each with the command that re-takes it:**
 
 1. [The 12 MB readback does not bind](#1-the-12-mb-readback-does-not-bind-and-it-is-avoidable-anyway)
 2. [Memory attention is 60 ms](#2-memory-attention-is-60-ms-and-38-at-half-precision)
@@ -78,6 +81,7 @@ Apple M3 Pro (Mac15,7, 18 GB) under Chrome 151, adapter `apple / metal-3`.
 11. [Sound in one run is not a file anybody can stream](#11-sound-in-one-run-is-not-a-file-anybody-can-stream)
 12. [Ten minutes of tracking is a 65 MB file that writes in eleven milliseconds](#12-ten-minutes-of-tracking-is-a-65-mb-file-that-writes-in-eleven-milliseconds)
 13. [One more optional field on a command is 14 bytes](#14-one-more-optional-field-on-a-command-is-14-bytes-where-it-is-true)
+14. [Four figures about a tracked log were about one object](#15-four-figures-about-a-tracked-log-were-about-one-object)
 
 ---
 
@@ -1182,6 +1186,99 @@ FOR folding two measurements together, which makes it exactly the wrong one.
 The rest of what it cost, and the argument for where a fact like this belongs at
 all, is on `/research/the-occlusion.html`.
 
+## 15. Four figures about a tracked log were about one object
+
+Multi-object tracking landed without re-taking anything, because nothing about
+the loop changed: `runTracking` has taken a list of seeds since the day it
+landed, and what was missing was a way to say WHICH objects, which the command
+log had been recording since object selection landed. What it did change is the
+meaning of four committed figures, each of which had been exactly true of one
+object for as long as there could only be one.
+
+- `docs/limits.md`, 3.4 KB a packed mask and 62 MB for ten minutes
+- `docs/limits.md`, folding eighteen thousand commands is 0.2 ms
+- `docs/architecture.md`, a replay is a fold to ONE and a texture upload, 0.3 ms
+- `docs/video.md`, eighteen thousand elements to two, 1.1 ms
+
+None of the four is wrong and not one of them says so, which leaves a reader
+holding a product that can multiply all four by however many things they
+clicked.
+
+```bash
+node tools/video-bench/run.mjs objects
+```
+
+Ten minutes at thirty, one silhouette per object, no GPU and no clips. The
+table is on `/research/per-object.html`, out of `results-objects.json`.
+
+### Three of them move, one of them barely does, and one is not a number
+
+**The file is the one that really is arithmetic**, and it is measured rather
+than multiplied, because "obviously linear" is how an empty mask came to be
+written down as three bytes. N objects is N commands per frame and N packed
+masks behind them, and the run comes back at 2.00 and 3.00 times a single
+object's 65.45 MB. So the fix for that figure is the two missing words rather
+than a different number.
+
+**The fold moves by about a fifth of a millisecond per object.**
+`commandsForFrame` filters and sorts the whole log, so three times the commands
+is more than three times neither: it is 0.3, 0.5 and 0.7 ms at one, two and
+three objects, against a 33 ms frame.
+
+**The projection is the one on the render path, and it moves LEAST.**
+`editSpans` runs over the whole log on every render of the editor, so this is
+the only one of the four where twice the commands is twice something a person
+can feel. Three times the commands is 1.27 times the time, because what it
+sorts is the distinct frames a log touched and there are still eighteen thousand
+of those however many commands landed on each of them.
+
+**And what it draws does not move at all.** Two elements at three objects, the
+same two as at one. A run is one gesture whatever it followed, every command in
+it carries the same group, and the timeline joins along that, so following a
+third car does not put a third bar on the track. That is the one of the four
+that needed the qualification and not the number.
+
+### The fourth was a sentence rather than a figure
+
+The fold cuts at the last command that decides a frame by itself, and a run
+following one object writes `replace` on every frame it reached, so eighteen
+thousand commands fold to one and a replay unpacks one mask. That is what made
+the document format able to be dumb: nothing derived has to be stored in it,
+because rebuilding it is a fold and a texture upload.
+
+A run following several writes `replace` for the FIRST object and `add` for the
+rest, which is what makes two objects two regions rather than a race. So the cut
+lands on the first object's command and everything after it survives: the frame
+folds to N and a replay unpacks N masks. **"A fold to one" had no N in it to be
+wrong about.** It was a claim about shape, and the shape changed underneath it
+when the interface reached a second seed. What it costs is 0.9 ms against 0.3,
+which is linear in objects and still a fraction of one frame, so the conclusion
+the sentence was written to support survives being said correctly.
+
+### Its own file, which is measurement 14's rule arriving at its own door
+
+Every one of the four already has a home. The file cost is
+[measurement 12](#12-ten-minutes-of-tracking-is-a-65-mb-file-that-writes-in-eleven-milliseconds)'s,
+the fold and the replay are
+[measurement 8](#8-a-tracked-clip-does-not-fit-in-the-command-log-and-the-fold-is-not-why)'s,
+and the projection is
+[measurement 14](#14-one-more-optional-field-on-a-command-is-14-bytes-where-it-is-true)'s
+own. An objects dimension added to any of the three re-takes that measurement
+and moves figures this chapter did not change, which is the cost measurement 14
+exists to record having paid once. A question about a dimension none of them has
+is a new finding, and a new finding gets a file.
+
+**The one-object column is taken here rather than quoted from those three**, for
+the reason `tools/style-bench` re-takes its reference scene inside every run: a
+control that sits in another file taken on another day is not a control, and
+every ratio above is then a ratio between two cells of one run. It duplicates
+them on purpose and it agrees with them. The ten-minute log it writes is the
+same log measurement 14 writes with nothing hidden, so the two files agree byte
+for byte rather than to a rounding; the replay and the projection cells
+reproduce measurements 12 and 14; the fold cell sits one tick of a median
+rounded to a tenth above measurement 8's, inside the spread both files already
+report in their own min and max.
+
 ## What follows
 
 1. **Decode is free and seeking is not.** Scrubbing is a decoder kept alive and
@@ -1242,3 +1339,11 @@ all, is on `/research/the-occlusion.html`.
     together and it is the wrong one. Adding this row inside measurement 12
     moved that measurement's ten-minute write and read, which three documents
     quote, by noise, on a code path it does not touch.
+15. **A figure taken while something was a constant does not say that it was.**
+    Four numbers about a tracked log were exactly true of one object and silent
+    about several, and multi-object tracking made all four per object without
+    touching a line any of them measures. Three move with N, the projection on
+    the render path moves least of all at 1.27 times for three times the
+    commands, what the timeline draws does not move, and one of the four was
+    not a figure at all: "a fold to one" is a claim about shape, and the shape
+    changed underneath it.

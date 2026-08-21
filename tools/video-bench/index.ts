@@ -20,6 +20,7 @@ import { log } from './log.ts';
 import { documentCost } from './document.ts';
 import { recovery } from './recovery.ts';
 import { occlusion } from './occlusion.ts';
+import { objects } from './objects.ts';
 import { trackedFrame } from './tracked-frame.ts';
 import { longClip } from './long-clip.ts';
 import { interleave } from './interleave.ts';
@@ -60,6 +61,12 @@ export const MEASUREMENTS = [
   // write and read, and taken inside that run this moved both of them by noise
   // on a code path it does not touch.
   'occlusion',
+  // And once more, for which of the figures about a tracked log are per RUN and
+  // which are per OBJECT. Every one of the four it answers already has a home
+  // in one of the three files above, which is precisely why it cannot go in
+  // one: an objects dimension added to any of them re-takes that measurement
+  // and moves figures this chapter did not change.
+  'objects',
   // Its own command, and out of `all`, because one rung of it deliberately runs
   // the tab out of memory and because it is twenty minutes where `all` is
   // three. Neither belongs in the middle of a run with nine other measurements
@@ -95,6 +102,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('document', () => documentCost());
   await step('recovery', () => recovery());
   await step('occlusion', () => occlusion());
+  await step('objects', () => objects());
   await step('readback', () => readback(dev));
   await step('ort-device', () => ortDevice(dev, `${ONNX}/memory_encoder.onnx`));
   await step('attention', () => attention(ONNX));

@@ -261,7 +261,11 @@ stretches the object was hidden in drawn faintly inside it rather than left as
 gaps, since a gap and a run that never got there are the same picture. The
 anchor keeps its own mark, because where somebody chose and where the run
 started are two facts and the track can carry both. Ten minutes of tracking went
-from eighteen thousand elements to two.
+from eighteen thousand elements to two, and it is two however many objects the
+run followed, because a run is one gesture whatever it followed. What multiplies
+with them is the commands the projection walks, which is why it was taken again
+at several: it runs on every render of the editor, and 1.1 ms over eighteen
+thousand commands is 1.4 over fifty-four thousand.
 
 **Tracking a second object is a second seed.** `runTracking` takes a list of
 masks, builds one track per mask, and advances all of them against one
@@ -313,6 +317,16 @@ missing from it. On the fixture clip where one disc goes behind a bar and an
 identical one stands beside it, following both draws no faint stretch at all
 where following one draws the whole occlusion, and both pictures are correct:
 the standing disc is selected on every frame of it.
+
+**And so does the price, which four committed figures were silent about.** A run
+writes one command per frame per object, so a second object is a second mask on
+every frame it reaches. Ten minutes following three things is a 196 MB document
+against 65 for one; the fold cuts at the first object's `replace` and therefore
+leaves one command per object rather than one, so a replay unpacks that many
+masks and costs 0.9 ms against 0.3. None of those figures was wrong and not one
+of them said "per object", which is the whole of what reaching a second seed did
+to them. What each of the four came back as at one, two and three objects is on
+`/research/per-object.html`.
 
 **Two cursors need two decoders.** A run opens a second `FrameProvider` over the
 same file and a full-resolution texture of its own. Sharing the playhead's would
