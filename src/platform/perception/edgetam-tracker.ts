@@ -44,17 +44,19 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
  * download.
  *
  * FIVE SESSIONS MAKE A TRACKED FRAME, and the fifth is the reason this file
- * fetches a mask decoder of its own. The published one exposes neither of the
- * two outputs a tracked frame needs: `object_pointer`, the token carrying an
- * object's identity between frames, without which the bank's pointer block
- * stays empty and the tracker comes back from an occlusion late and with no
- * mask at all on the frames it was late by, and `object_score_logits`, which is
- * the model's own account of whether the object is in this frame at all.
- * `tools/edgetam-export` re-exports that decoder with both on it, and with the
- * prompt a tracked frame never varies baked in, so this graph cannot be handed
- * the nearly-right prompt the published one accepts. Which decoder arrived is
- * asked of the graph at load, because serving the published one is an ordinary
- * mistake and used to be a silent one.
+ * fetches a mask decoder of its own. The published one does not expose
+ * `object_pointer`, the token carrying an object's identity between frames,
+ * without which the bank's pointer block stays empty and the tracker comes back
+ * from an occlusion late and with no mask at all on the frames it was late by.
+ * `tools/edgetam-export` re-exports that decoder with the pointer on it, and
+ * with the prompt a tracked frame never varies baked in, so this graph cannot
+ * be handed the nearly-right prompt the published one accepts.
+ *
+ * The other output a tracked frame needs, `object_score_logits`, the published
+ * decoder DOES have; this comment used to say it does not. Which decoder
+ * arrived is still asked of the graph at load, because serving the published
+ * one is an ordinary mistake and the check names what is missing rather than
+ * recognising a file. See `loadEdgeTamTracker`.
  *
  * A TRACKED FRAME IS 135 MS, of which 44 is reading it and 91 is advancing one
  * track against what was read. Two objects is 226 rather than 270, because the
@@ -140,8 +142,10 @@ const DECODER = { graph: 'tracked_mask_decoder_fp16.onnx', bytes: 11_100_000 };
  *
  * `object_pointer` carries an object's identity between frames, and
  * `object_score_logits` is the model's own account of whether the object is in
- * this frame at all. Neither is on the published decoder, which is the entire
- * reason `tools/edgetam-export` re-exports one.
+ * this frame at all. The pointer is the one the published decoder lacks and the
+ * entire reason `tools/edgetam-export` re-exports one; the score is asked for
+ * as well because a graph without it cannot say an object is absent, and this
+ * check names whichever is missing rather than recognising a particular file.
  */
 const DECODER_OWES = ['object_pointer', 'object_score_logits'] as const;
 
@@ -290,26 +294,34 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
 
   // AND IT IS THE RIGHT DECODER, asked of the graph rather than assumed.
   //
-  // The published one is missing both of the outputs this file fetches thirty
-  // megabytes rather than nineteen to get, and pointing a build at it is an
-  // ordinary mistake: it is the file every EdgeTAM release contains and the
-  // only one anybody who has not read `tools/edgetam-export` would think to
-  // serve. What that used to produce was not an error. `object_pointer` would
-  // have failed on the first frame, loudly, but the occlusion verdict fell back
-  // to the best head's predicted IoU, which is a different quantity compared
-  // against the same zero and is essentially always positive. So the tracker
-  // would have run, and reported the object present on every frame of every
-  // clip, including the ones it is behind something on.
+  // Pointing a build at the published decoder is an ordinary mistake: it is the
+  // file every EdgeTAM release contains and the only one anybody who has not
+  // read `tools/edgetam-export` would think to serve.
   //
-  // Checked here rather than on the first frame because it is a fact about the
-  // graph rather than about a frame, and because failing before a run starts is
-  // one sentence where failing during one is a sentence plus a half-written
-  // gesture in the log.
+  // WHAT IT IS MISSING IS ONE OF THE TWO, NOT BOTH, which this comment used to
+  // say and which asking the file settles: at the revision `model-store.ts`
+  // pins, `prompt_encoder_mask_decoder.onnx` declares `iou_scores`,
+  // `pred_masks` and `object_score_logits`. So serving it has always failed,
+  // and failed loudly, on `object_pointer`, which is read the way every other
+  // output is and throws on the first tracked frame.
+  //
+  // The silent case is real and is not that file. A graph carrying the pointer
+  // and no object score used to fall back to the best head's predicted IoU,
+  // which is a different quantity compared against the same zero and is
+  // essentially always positive, so it would have tracked and reported the
+  // object present on every frame of every clip. No release contains such a
+  // graph, so that was a wrong answer waiting for a file rather than a bug
+  // anybody had hit, and it is unreachable now either way.
+  //
+  // What the check buys for the case that does happen is a sentence before
+  // anything starts instead of an exception on the first frame: it is a fact
+  // about the graph rather than about a frame, and failing during a run is a
+  // sentence plus a half-written gesture in the log.
   const missing = decoderIsMissing(decoder.outputNames);
   if (missing.length > 0) {
     await Promise.all([attention.release(), encoder.release(), decoder.release()]);
     throw new Error(
-      `That mask decoder has no ${missing.join(' and no ')}, so it is the published one rather than the re-export tools/edgetam-export produces. Tracking needs both.`,
+      `That mask decoder has no ${missing.join(' and no ')}, so it is not the one tools/edgetam-export re-exports. The published decoder is missing object_pointer; a graph missing object_score_logits cannot say an object is absent at all. Tracking needs both.`,
     );
   }
 

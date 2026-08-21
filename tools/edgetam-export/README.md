@@ -359,15 +359,40 @@ constants below, so a host serves one small file beside the graphs:
 **And the decoder has to be the re-export, which the product now asks rather
 than assumes.** It is the third graph a host serves and the only one with a
 plausible substitute: every EdgeTAM release contains a mask decoder, and serving
-that one is the obvious mistake. It is missing both of the outputs a tracked
-frame needs. `object_pointer` fails on the first frame, loudly, because the
-product reads it the way it reads everything else. `object_score_logits` used to
-fail into nothing at all: the product fell back to the best head's predicted
-IoU, which is a different quantity compared against the same zero and is
-essentially always positive, so the tracker ran, and reported the object present
-on every frame of every clip including the ones it is behind something on.
-`loadEdgeTamTracker` now asks the session for its output names and refuses a
-graph without either, naming which one is missing.
+that one is the obvious mistake. `loadEdgeTamTracker` asks the session for its
+output names and refuses a graph missing either, naming which one.
+
+**It is missing ONE of the two, and this file said both.** The section above
+gets it right and this one had it wrong, which is the hazard of writing the same
+fact down twice. Asked of `onnx/prompt_encoder_mask_decoder.onnx` and of its
+half-precision twin at the revision `model-store.ts` pins, both declare
+`iou_scores`, `pred_masks` and `object_score_logits`, and neither declares
+`object_pointer`. So serving the published decoder has always failed, and failed
+loudly, on the first tracked frame: the pointer is read the way every other
+output is.
+
+The silent failure the check also closes is real and is a graph nobody ships. A
+decoder carrying the pointer and no object score fell back to the best head's
+predicted IoU, which is a different quantity compared against the same zero and
+is essentially always positive, so it would have tracked and reported the object
+present on every frame of every clip including the ones it is behind something
+on. What the check therefore buys for the mistake somebody would actually make
+is not a failure where there was none, it is a sentence at load naming the file
+instead of an exception part way through a gesture.
+
+**And that refusal has now been pointed at the file this directory actually
+ships, which it had not been.** The list it checks against came off `export.py`,
+and what a host serves is not what `export.py` writes: it is
+`tracked_mask_decoder_fp16.onnx`, after `half_precision.py` has been over it. A
+conversion that renamed or dropped an output would have turned the check from a
+refusal of the wrong graph into a refusal of the right one, which is a worse
+failure than the one it exists to prevent and which nothing had run. It does
+not. The half-precision graph declares `iou_scores`, `pred_masks`,
+`object_score_logits` and `object_pointer`, and a browser handed it loads the
+tracker and follows an object through a clip. The two end-to-end tests that had
+skipped in every run of that suite pass, and there is a third beside them now
+that tracks through the occlusion scene below and checks the frames the model
+called absent against this file's own ground truth.
 
 The first parameter above is the trap the section below describes. The published vision encoder
 ADDS it, which is right for a single image and wrong for a tracked frame, where

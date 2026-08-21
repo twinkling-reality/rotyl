@@ -77,9 +77,16 @@ one, and the measurement behind it is on `/research.html`.
   graphs cost. Everything the published pair does for a click is unchanged: the
   re-export is only ever used for a tracked frame. Which decoder a host actually
   served is asked of the graph at load and refused by name if it is the wrong
-  one, because the published decoder is also missing the model's own account of
-  whether the object is in a frame, and that one used to fail into a tracker
-  that reported it present on every frame of every clip.
+  one. This page used to say the published decoder is also missing the model's
+  own account of whether the object is in a frame. It is not: asked of the file
+  at the pinned revision, in both precisions, it declares `object_score_logits`
+  and no `object_pointer`, so serving it has always failed loudly on the first
+  tracked frame. The silent failure the check also closes, a graph carrying the
+  pointer and no object score falling back to the best head's predicted IoU and
+  reporting the object present on every frame of every clip, is a shape no
+  release has. What the check buys for the mistake somebody would actually make
+  is a sentence before a run starts rather than an exception part way through
+  one.
 - A tracked run holds one mask per frame in the command log. Held plainly that
   is 64 KB each, 20 MB for ten seconds and 1.2 GB for ten minutes; packed, which
   is how they are held, it is 3.4 KB each and 62 MB for ten minutes. Folding
