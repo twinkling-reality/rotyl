@@ -665,6 +665,13 @@ export const TRIALS: readonly Trial[] = [
     where: 'tools/video-bench, measurement 16',
   },
   {
+    what: 'Getting a decoded frame onto the GPU through a 2D canvas rather than directly',
+    verdict: 'open',
+    evidence:
+      'Found while measuring something else and not chased. The eleven codes the midtones of a 4:2:0 frame pick up are attributed on the decode page to Chrome\u2019s BT.709 conversion, said to be unavoidable. The same VideoFrame drawn into a 2D canvas and read back does not have them: the grey ramp comes back 0 16 31 64 95 128 160 192 235 255 against a source of 0 16 32 64 96 128 160 192 235 255, worst 1, where copyExternalImageToTexture and importExternalTexture both give 0 14 35 73 107 139 169 199 238 255, worst 11. So it is the WebGPU import rather than the decode, and one path in the same browser gets it right. What is not known is which is correct for real footage, since these probes declare "unspecified" transfer and the browser defaults it, nor what a 2D canvas would cost per frame against the 1.4 ms measurement 5 already prices for the readback path',
+    where: 'tools/video-bench, measurements 4 and 16',
+  },
+  {
     what: 'Asking the decoder for prefer-hardware, so the range flag is always applied',
     verdict: 'open',
     evidence:
