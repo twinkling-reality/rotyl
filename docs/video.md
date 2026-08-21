@@ -232,6 +232,27 @@ stops reporting a selection nobody made, and that all of it survives a save and
 a reload, which a fact about the run would not. What it costs is on
 `/research/the-occlusion.html`.
 
+**And a model has now written one.** Every `absent` command that had ever
+existed in this repository was written by a test: by a tracker made of
+arithmetic, by a benchmark, or by hand. The two end-to-end tests that drive a
+real tracker skip on a build with no host, which is every build a clone can make
+on its own, and had skipped in every run of this suite. Pointed at a local host
+they pass, and there is a third beside them now whose answer is known before it
+runs.
+It opens the occlusion scene out of `tools/edgetam-export`, twenty-eight frames
+in which a disc passes behind a bar for eight of them, and checks the frames the
+model called absent against the geometry the harness drew rather than against
+another run. The bar's width is the disc's diameter plus eight frames of travel,
+so which frames it covers is arithmetic somebody did while drawing them.
+
+It says the object is behind something on all eight of them, and on this machine
+on the frame it first shows again as well, which is five per cent of a disc and
+which the reference tracker is late on by the same one frame. So the test
+asserts the eight and says nothing about the slivers at either end: that frame
+is a coin flip, and encoding the same pictures differently lands on both sides
+of it. What the clip cost to commit, and the ladder of encodes that decided its
+settings, is in `e2e/fixtures/README.md`.
+
 **The timeline draws a run as a run.** Three hundred frames is one gesture, and
 until this chapter it was three hundred marks that looked exactly like three
 hundred separate strokes, on a projection that was handed the frame numbers and

@@ -47,6 +47,18 @@ one, and the measurement behind it is on `/research.html`.
   Nothing in the product invents a mask for a frame the model was asked about
   and answered, and the alternative, holding the last one forward across the
   gap, is the drift tracking exists to remove.
+- **Coming back from an occlusion is a marginal decision, and re-encoding the
+  same footage can put it on the wrong side.** The end-to-end fixture is a clip
+  in which a disc is behind a bar for eight known frames, and it was encoded ten
+  ways, from 2.1 MB down to 89 KB, and tracked through each. Every one of them
+  reported the object absent on all eight and missed none, so the verdict itself
+  is not delicate. Whether the run ever finds the object again afterwards is a
+  different question with a different answer: two of the ten never do, and stay
+  absent through to the end of the clip. It is a band rather than a quality
+  floor, because the two coarser encodes below it recover, and no mechanism for
+  it has been established here. What it means for somebody with real footage is
+  that a clip this tracker is marginal about is a clip whose re-encode it may
+  follow differently. `e2e/fixtures/README.md` has the ladder.
 - **A second tracked object going behind something leaves the first one's
   region standing, and nothing marks the difference.** The first track's command
   replaces and the rest add, so an empty mask from the first blanks the frame
@@ -345,6 +357,15 @@ one, and the measurement behind it is on `/research.html`.
   `RotylEngine.render` in a file that already builds several engines took one
   file from none in twelve to ten in twelve, measured back to back. What that
   test covered is covered in Playwright instead, where a browser has no limit.
-- The end-to-end suite covers the object tool's interaction but not the model:
-  36 MB over the network is the wrong thing to put in a loop that has to be
-  reliable. The model path is verified by hand in a browser.
+- **The end-to-end suite covers the object tool's interaction but not the
+  model**, because 36 MB over the network is the wrong thing to put in a loop
+  that has to be reliable, and that path is verified by hand in a browser.
+  Tracking is the exception, and it is guarded rather than merely skipped: three
+  tests exist only when the Track button does, which is only when a build was
+  told where its graphs live, and a fourth asserts the button is absent when it
+  was not. Which of the two sets runs is decided by the same build-time string
+  the feature is, so neither configuration can quietly cover nothing. What the
+  three cost whoever runs them is the graphs and the object model over the
+  network, which is why no build has them by default, and until this chapter
+  none of them had ever run: every `absent` command this repository had produced
+  was written by a test rather than by a model.

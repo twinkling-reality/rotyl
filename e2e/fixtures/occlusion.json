@@ -1,0 +1,401 @@
+{
+  "radius": 46,
+  "occluder": [
+    330,
+    598
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "target": [
+        120,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 1,
+      "target": [
+        142,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 2,
+      "target": [
+        164,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 3,
+      "target": [
+        186,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 4,
+      "target": [
+        208,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 5,
+      "target": [
+        230,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 6,
+      "target": [
+        252,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 7,
+      "target": [
+        274,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 8,
+      "target": [
+        296,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6090,
+      "visible": true,
+      "whole": false
+    },
+    {
+      "frame": 9,
+      "target": [
+        318,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 4356,
+      "visible": true,
+      "whole": false
+    },
+    {
+      "frame": 10,
+      "target": [
+        340,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 2358,
+      "visible": true,
+      "whole": false
+    },
+    {
+      "frame": 11,
+      "target": [
+        362,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 600,
+      "visible": true,
+      "whole": false
+    },
+    {
+      "frame": 12,
+      "target": [
+        384,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 0,
+      "visible": false,
+      "whole": false
+    },
+    {
+      "frame": 13,
+      "target": [
+        406,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 0,
+      "visible": false,
+      "whole": false
+    },
+    {
+      "frame": 14,
+      "target": [
+        428,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 0,
+      "visible": false,
+      "whole": false
+    },
+    {
+      "frame": 15,
+      "target": [
+        450,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 0,
+      "visible": false,
+      "whole": false
+    },
+    {
+      "frame": 16,
+      "target": [
+        472,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 0,
+      "visible": false,
+      "whole": false
+    },
+    {
+      "frame": 17,
+      "target": [
+        494,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 0,
+      "visible": false,
+      "whole": false
+    },
+    {
+      "frame": 18,
+      "target": [
+        516,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 0,
+      "visible": false,
+      "whole": false
+    },
+    {
+      "frame": 19,
+      "target": [
+        538,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 0,
+      "visible": false,
+      "whole": false
+    },
+    {
+      "frame": 20,
+      "target": [
+        560,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 303,
+      "visible": true,
+      "whole": false
+    },
+    {
+      "frame": 21,
+      "target": [
+        582,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 1917,
+      "visible": true,
+      "whole": false
+    },
+    {
+      "frame": 22,
+      "target": [
+        604,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 3905,
+      "visible": true,
+      "whole": false
+    },
+    {
+      "frame": 23,
+      "target": [
+        626,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 5751,
+      "visible": true,
+      "whole": false
+    },
+    {
+      "frame": 24,
+      "target": [
+        648,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 25,
+      "target": [
+        670,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 26,
+      "target": [
+        692,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    },
+    {
+      "frame": 27,
+      "target": [
+        714,
+        240
+      ],
+      "distractor": [
+        770,
+        380
+      ],
+      "area": 6625,
+      "visible": true,
+      "whole": true
+    }
+  ]
+}

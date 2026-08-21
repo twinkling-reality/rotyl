@@ -27,3 +27,7 @@ tools/edgetam-export/host-fixture.json
 # frames than at ten. Formatting it by hand would only fail again the next time
 # somebody re-takes it, which is the trap the entries above avoid.
 tools/edgetam-export/results.json
+# The occlusion clip's ground truth, copied out of tools/edgetam-export/fixture
+# by the command in e2e/fixtures/README.md. Formatted here it would stop being
+# the copy that command makes, which is the one thing the command has to be.
+e2e/fixtures/occlusion.json

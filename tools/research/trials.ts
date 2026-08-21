@@ -21,6 +21,20 @@ export const TRIALS: readonly Trial[] = [
     where: 'src/core/document/selection-command.ts, and "What the tracker knew and the log could not say"',
   },
   {
+    what: 'A smaller end-to-end occlusion clip, by resolution or by quality, so the fixture stays tiny',
+    verdict: 'rejected',
+    evidence:
+      'The occlusion scene draws a new background on every frame, so there is no temporal redundancy in it at all and the clip is twenty-eight independent pictures rather than two seconds of video: a megabyte at the quality the tracker needs, and fifteen times the other clip in that directory for less than half the frames. Ten encodes from 2.1 MB to 89 KB were run through the real tracker. Every one of them reported the object absent on all eight frames the bar covers and missed none, so the assertion is not delicate; what moved is whether the run ever found the object again. Two never did, at 240,185 and 158,298 bytes, and it is a band rather than a floor because the two coarser rows below it recover. Halving the resolution, at 99,574 bytes, does not recover either. The clip is committed at the size it was drawn at and four quality steps clear of the nearest failure, because a clip inside that band would be what the test measured',
+    where: 'e2e/fixtures/README.md',
+  },
+  {
+    what: 'Asserting the frame the object comes back on, which is the frame a reader would look at',
+    verdict: 'rejected',
+    evidence:
+      'It is a five per cent sliver of a disc and the model’s own score sits within a tenth of a per cent of zero on it, which /research/the-host.html already says makes a run’s answer there a coin flip. Two things already in this repository land on opposite sides of it: the PyTorch reference is a frame late, which is its reacquisition_delay of 1, and the numpy host in host.py is not. Two more were found by running it. Encoding the same frames differently moves it, and so does the seed: the same clip seeded from the square inscribed in the disc rather than from its bounding box reports one more frame than the bounding box does. So the end-to-end test asserts the frames the bar covers and the frames the whole disc is in view on, and says nothing about the slivers at either end. An assertion on the flip would fail on somebody else’s GPU for a reason that is not a defect',
+    where: 'e2e/editor.spec.ts',
+  },
+  {
     what: 'Falling back to the head’s predicted IoU when a mask decoder has no object score',
     verdict: 'rejected',
     evidence:

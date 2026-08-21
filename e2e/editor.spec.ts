@@ -90,8 +90,104 @@ async function medianAt(results: string, path: readonly string[]): Promise<numbe
   return node;
 }
 
+/** One frame of the occlusion clip, as the harness that drew it wrote it down. */
+interface TruthFrame {
+  readonly frame: number;
+  readonly target: readonly [number, number];
+  /** Any of the target is in view, which is false only where the bar covers it. */
+  readonly visible: boolean;
+  /** All of it is, which is false on the frames it is entering or leaving behind. */
+  readonly whole: boolean;
+}
+
+/**
+ * What the occlusion clip's own ground truth says about each of its frames.
+ *
+ * READ RATHER THAN WRITTEN DOWN, which is the rule `medianAt` above follows for
+ * the same reason: the clip and this file come out of one command, so a fixture
+ * rebuilt with a wider bar moves the assertion with it instead of leaving a
+ * literal here that somebody has to notice. It is not a measurement either way.
+ * The bar's width is the object's own diameter plus eight frames of travel, so
+ * which frames it covers is geometry the harness computed while it was drawing
+ * them rather than an observation of what any model did.
+ */
+async function occlusionTruth(): Promise<{ radius: number; frames: readonly TruthFrame[] }> {
+  const truth: unknown = JSON.parse(await readFile(join(fixtures, 'occlusion.json'), 'utf8'));
+  const radius = field(truth, 'radius');
+  const frames = field(truth, 'frames');
+  if (typeof radius !== 'number') throw new Error('occlusion.json: no radius');
+  if (!Array.isArray(frames) || frames.length === 0) throw new Error('occlusion.json: no frames');
+  return { radius, frames: frames.map(truthFrame) };
+}
+
+/** One property of a parsed JSON value, without asserting a shape over it. */
+function field(value: unknown, key: string): unknown {
+  if (value === null || typeof value !== 'object') return undefined;
+  return Object.getOwnPropertyDescriptor(value, key)?.value;
+}
+
+/** One `frames` entry, checked rather than cast, the way `medianAt` walks a path. */
+function truthFrame(value: unknown): TruthFrame {
+  const frame = field(value, 'frame');
+  const visible = field(value, 'visible');
+  const whole = field(value, 'whole');
+  const target = field(value, 'target');
+  if (typeof frame !== 'number' || typeof visible !== 'boolean' || typeof whole !== 'boolean')
+    throw new Error('occlusion.json: a frame is missing its verdict');
+  const x = Array.isArray(target) ? (target[0] as unknown) : undefined;
+  const y = Array.isArray(target) ? (target[1] as unknown) : undefined;
+  if (typeof x !== 'number' || typeof y !== 'number')
+    throw new Error(`occlusion.json: frame ${String(frame)} is missing its target`);
+  return { frame, visible, whole, target: [x, y] };
+}
+
+/**
+ * Where a source pixel is on screen, in the coordinates a pointer carries.
+ *
+ * Every other gesture in this file is placed as a fraction of the canvas, which
+ * is right when what is being tested is that a drag reaches the engine at all.
+ * This one has to land on a 92 px disc whose position the fixture states in
+ * source pixels, and the canvas is larger than the image and letterboxes it, so
+ * a fraction of one is not a fraction of the other. The engine's own view is
+ * the conversion, read back through the handle the dev build hangs off the
+ * window for exactly this.
+ */
+async function atSource(page: Page, x: number, y: number): Promise<{ x: number; y: number }> {
+  return page.evaluate(
+    (at: { x: number; y: number }) => {
+      const engine = globalThis.rotyl?.engine;
+      const canvas = document.querySelector('canvas');
+      if (!engine || !canvas) throw new Error('no engine to place a gesture against');
+      const rect = canvas.getBoundingClientRect();
+      const { zoom, center } = engine.view;
+      const cx = (at.x - center.x) * zoom + canvas.width / 2;
+      const cy = (at.y - center.y) * zoom + canvas.height / 2;
+      return {
+        x: rect.left + (cx * rect.width) / canvas.width,
+        y: rect.top + (cy * rect.height) / canvas.height,
+      };
+    },
+    { x, y },
+  );
+}
+
+/** The frames a run wrote an `absent` command for, which is the model's answer. */
+async function absentFrames(page: Page): Promise<readonly number[]> {
+  return page.evaluate(() => {
+    const log = globalThis.rotyl?.engine.document;
+    if (!log) throw new Error('no document');
+    return log.appliedCommands
+      .filter((command) => command.kind === 'applyMask' && command.group !== undefined && command.absent)
+      .map((command) => command.frame);
+  });
+}
+
 const fixture = join(fixtures, 'sample.png');
 const clip = join(fixtures, 'sample.mp4');
+// Twenty-eight frames in which a disc passes behind a bar for eight of them and
+// comes out the far side with a lookalike waiting there. The one fixture here
+// whose right answer is known before anything is run.
+const occlusion = join(fixtures, 'occlusion.mp4');
 const webm = join(fixtures, 'sample.webm');
 // A QuickTime file whose sound an MP4 cannot hold. QuickTime carries mu-law and
 // MP4 does not, so this is an ordinary file whose soundtrack has nowhere to go,
@@ -901,6 +997,103 @@ test('leaves the playhead free while it tracks', async ({ page }) => {
   // frame of the clip: the bar's right edge and the track's are the same place.
   await expect.poll(() => trackedTo(page), { timeout: 120_000 }).toBeGreaterThan(0.999);
   await expect(track).toBeEnabled();
+});
+
+test('reports the object behind something on the frames it is behind something on', async ({ page }) => {
+  // THE ONE TEST IN THIS FILE WHOSE ANSWER IS KNOWN BEFORE IT RUNS, and the
+  // reason the clip beside it is not the colour bars every other video test
+  // opens. Those have no object in them and nothing goes behind anything, so a
+  // real run over them can show that tracking writes commands and can show
+  // nothing whatever about an occlusion.
+  //
+  // This clip is `tools/edgetam-export/make_fixture.py`'s occlusion scene, the
+  // one the tracker's own measurements are taken on: a disc crosses behind a
+  // bar and comes out the far side with an identical disc waiting there. The
+  // bar's width is the disc's diameter plus eight frames of travel, so which
+  // frames it is wholly hidden on follows from the geometry rather than from
+  // anybody's observation, and `occlusion.json` is what the harness wrote down
+  // while it was drawing them.
+  //
+  // So this asserts the model's answer against a fact rather than against
+  // itself. `draws a tracked run as one run` above asserts the same shape with
+  // a hand-written log and no model at all, which is the half that runs
+  // everywhere; this is the half that needs the weights, and until it ran, every
+  // `absent` command that had ever existed in this repository was written by a
+  // test.
+  test.setTimeout(180_000);
+  await page.locator('input[type=file]').setInputFiles(occlusion);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+
+  const track = page.getByRole('button', { name: 'Track' });
+  test.skip((await track.count()) === 0, 'no VITE_TRACKING_HOST: nothing to fetch a tracker from');
+
+  const truth = await occlusionTruth();
+  const start = truth.frames[0];
+  if (!start) throw new Error('occlusion.json: no first frame');
+  const hidden = truth.frames.filter((each) => !each.visible).map((each) => each.frame);
+  const whole = new Set(truth.frames.filter((each) => each.whole).map((each) => each.frame));
+  expect(hidden.length).toBeGreaterThan(0);
+
+  // The Area tool over the target's own bounding box, for the reason the run
+  // above uses it: what is being tested is the tracker, and a click would put
+  // the object model's opinion of this clip in front of it. A rectangle is
+  // exactly what a seed is by the time a run starts anyway, which is coverage.
+  await page.keyboard.press('a');
+  const from = await atSource(page, start.target[0] - truth.radius, start.target[1] - truth.radius);
+  const to = await atSource(page, start.target[0] + truth.radius, start.target[1] + truth.radius);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.locator('.timeline__mark')).toHaveCount(1);
+  await expect(track).toBeEnabled();
+
+  await track.click();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible({ timeout: 120_000 });
+  // Run to the end rather than stopping part way: the frames that matter most
+  // are the ones after the bar, where an object that was lost stays lost.
+  await expect.poll(() => trackedTo(page), { timeout: 120_000 }).toBeGreaterThan(0.999);
+  await expect(track).toBeEnabled({ timeout: 120_000 });
+
+  const absent = await absentFrames(page);
+
+  // EVERY FRAME THE BAR COVERS. This is the claim, and it is the one that fails
+  // loudly if the verdict stops reaching the log: a tracker whose commands
+  // carry no `absent` writes none of these, and one handed the published mask
+  // decoder reports the object present on every frame of every clip.
+  expect(absent).toEqual(expect.arrayContaining(hidden));
+
+  // AND NOTHING ON A FRAME THE WHOLE OF IT IS IN VIEW ON, which is what
+  // separates a tracker that answered from one that gave up: both write empty
+  // masks, and only one of them writes them where the object is.
+  expect(absent.filter((frame) => whole.has(frame))).toEqual([]);
+
+  // The frames between those two rules are the ones the object is entering the
+  // bar on or coming out from behind it on, a sliver of a disc at either end,
+  // and they are deliberately unconstrained. The frame it first shows again is
+  // five per cent of itself, the model's own score sits within a tenth of a per
+  // cent of zero there, and `/research/the-host.html` already says a run's
+  // answer on that frame is which side of a coin flip it landed on. Asserting
+  // it would be asserting the flip.
+  //
+  // What can be said about them is that they are one stretch and not several:
+  // there is one bar in the picture and the object goes behind it once, so the
+  // frames named span exactly as many as there are of them.
+  expect(Math.max(...absent) - Math.min(...absent) + 1).toBe(absent.length);
+
+  // What the interface made of it, which is the other half of why the verdict
+  // is on the command. Three bars: the run up to the bar, the stretch inside it
+  // drawn faintly, and the run after. A gap there would say the run never
+  // reached those frames, which is the opposite of what happened.
+  await expect(page.locator('.timeline__run')).toHaveCount(3);
+  await expect(page.locator('.timeline__run--absent')).toHaveCount(1);
+
+  // And the sentence quotes the log rather than a count of its own, which is
+  // the thing a run hands back being the same thing it wrote down.
+  await expect(
+    page.getByText(`The object is behind something on ${String(absent.length)} of them`, { exact: false }),
+  ).toBeVisible();
 });
 
 test('plays, and stops where it was asked to', async ({ page }) => {

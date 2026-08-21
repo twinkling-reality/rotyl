@@ -295,6 +295,18 @@ eight, every entry a sliding bank holds is a frame with nothing in it. It is the
 sharpest of the two clips that can price the host's mistakes, and the only one
 that starves the memory outright rather than merely testing it.
 
+**And it is now the only one of the four that also leaves this directory.**
+`e2e/fixtures/occlusion.mp4` is these twenty-eight frames encoded, with
+`truth.json` copied beside it, so the product's own end-to-end suite can open
+the clip, track through it and check the frames the model called absent against
+the geometry drawn here rather than against another run of itself. What that
+cost, and the ladder of encodes it was measured over, is in
+`e2e/fixtures/README.md`. One number out of it belongs here: every encode from
+2.1 MB down to 89 KB reports the object absent on all eight frames the bar
+covers and misses none, so the eight frames are not delicate. What is delicate
+is coming back afterwards, which two encodes in the middle of that ladder never
+do.
+
 **blur**, the same paths with each object integrated along its own velocity over
 half a frame, which is a 180 degree shutter. The ground truth stays the sharp
 circle: a smeared object's extent is a matter of opinion, and the question is
