@@ -14,6 +14,13 @@ import type { Trial } from './page.ts';
  */
 export const TRIALS: readonly Trial[] = [
   {
+    what: 'Declaring the production cache policy in a Pages `_headers` file',
+    verdict: 'rejected',
+    evidence:
+      'The first owner-only production smoke returned `public, max-age=0, must-revalidate` for both HTML and the versioned model instead of the model’s one-year immutable policy. The 26,913 decompressed bytes still matched SHA-256 b7861d11ba637998606b6ea462b01a5dcb92b098baa225970f5fb4499e8aed71, so delivery and integrity were right and invalidation was not. Sites packaged the file and did not apply it. The worker now runs before every asset and sets the response policy itself',
+    where: 'worker/index.ts and tools/hosting/check.mjs',
+  },
+  {
     what: 'Fetching a private project release through its browser download URL with a bearer token',
     verdict: 'rejected',
     evidence:

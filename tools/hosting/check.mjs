@@ -6,19 +6,28 @@ import { mismatch, PROJECT_ROOT, readManifest } from '../model-assets/lib.mjs';
 const output = path.join(PROJECT_ROOT, 'dist');
 const client = path.join(output, 'client');
 
-await Promise.all(['index.html', '_headers'].map((name) => access(path.join(client, name))));
+await access(path.join(client, 'index.html'));
 await Promise.all(['index.js', 'wrangler.json'].map((name) => access(path.join(output, 'server', name))));
 await access(path.join(output, '.openai', 'hosting.json'));
 
-const headers = await readFile(path.join(client, '_headers'), 'utf8');
-const immutable = 'Cache-Control: public, max-age=31536000, immutable';
-if (
-  !headers.includes('/models/edgetam/edgetam-v1/*') ||
-  !headers.includes('/assets/*') ||
-  headers.split(immutable).length !== 3 ||
-  /models[\s\S]*Cache-Control: no-cache/.test(headers)
-) {
-  throw new Error('The production cache policy does not keep versioned model and code assets immutable.');
+const worker = await readFile(path.join(output, 'server', 'index.js'), 'utf8');
+const workerPolicy = [
+  '/models/edgetam/edgetam-v1/',
+  '/assets/',
+  'public, max-age=31536000, immutable',
+  'public, max-age=0, must-revalidate',
+  'application/gzip',
+  'Referrer-Policy',
+  'X-Content-Type-Options',
+  'X-Frame-Options',
+];
+if (workerPolicy.some((value) => !worker.includes(value))) {
+  throw new Error('The production worker is missing a cache, content type or security policy.');
+}
+
+const wrangler = JSON.parse(await readFile(path.join(output, 'server', 'wrangler.json'), 'utf8'));
+if (wrangler.assets?.run_worker_first !== true) {
+  throw new Error('Production assets can bypass the worker response policy.');
 }
 
 const manifest = await readManifest();
