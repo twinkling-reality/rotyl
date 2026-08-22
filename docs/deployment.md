@@ -4,8 +4,10 @@
 
 Rotyl's production contract lives in `.openai/hosting.json` and
 `worker/index.ts`. The application remains a static Vite build. The worker is
-its explicit Cloudflare entry point, runs before every static asset, applies the
-cache and security policy, then asks the asset binding for the file.
+its explicit Cloudflare entry point. The Sites build stages deployable files
+under an internal asset-binding path so public requests reach the worker. The
+worker maps each public path to its file and applies the cache, content type and
+security policy to the response.
 
 ```bash
 pnpm site:build
@@ -14,9 +16,10 @@ pnpm site:check
 
 The first command produces the client and worker output Sites deploys. The
 second verifies the complete model release again in that final layout, refuses
-a duplicate copy, and checks that the built worker makes versioned model and
-code paths immutable. HTML is explicitly revalidated, so an application
-release can move immediately while an existing model version cannot change.
+a duplicate or publicly matching copy, and checks that the built worker makes
+versioned model and code paths immutable. HTML is explicitly revalidated, so
+an application release can move immediately while an existing model version
+cannot change.
 
 The project release in `models/edgetam/manifest.json` is only a build input. A
 deployed browser never reaches through to it: all runtime requests stay on the

@@ -14,10 +14,17 @@ import type { Trial } from './page.ts';
  */
 export const TRIALS: readonly Trial[] = [
   {
+    what: 'Asking Sites to honor Cloudflare Assets `run_worker_first`',
+    verdict: 'rejected',
+    evidence:
+      'Saved Sites version 2 contained `run_worker_first: true`, and its build passed the local Cloudflare response smoke. Production still gave both `/assets/index-pN3u7jfE.js` and the versioned model `public, max-age=0, must-revalidate`; the model also kept the platform’s `application/json` type. An unmatched path did receive the worker’s three security headers, proving that Sites uses the worker as a fallback but does not honor that asset option. The deployable files now live under `/__rotyl`, leaving their public paths unmatched so every product request reaches the worker',
+    where: 'tools/hosting/build.mjs, worker/index.ts and tools/hosting/check.mjs',
+  },
+  {
     what: 'Declaring the production cache policy in a Pages `_headers` file',
     verdict: 'rejected',
     evidence:
-      'The first owner-only production smoke returned `public, max-age=0, must-revalidate` for both HTML and the versioned model instead of the model’s one-year immutable policy. The 26,913 decompressed bytes still matched SHA-256 b7861d11ba637998606b6ea462b01a5dcb92b098baa225970f5fb4499e8aed71, so delivery and integrity were right and invalidation was not. Sites packaged the file and did not apply it. The worker now runs before every asset and sets the response policy itself',
+      'The first owner-only production smoke returned `public, max-age=0, must-revalidate` for both HTML and the versioned model instead of the model’s one-year immutable policy. The 26,913 decompressed bytes still matched SHA-256 b7861d11ba637998606b6ea462b01a5dcb92b098baa225970f5fb4499e8aed71, so delivery and integrity were right and invalidation was not. Sites packaged the file and did not apply it, making a worker-owned response policy necessary; the next trial determined how requests must reach that worker',
     where: 'worker/index.ts and tools/hosting/check.mjs',
   },
   {

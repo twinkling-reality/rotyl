@@ -114,8 +114,8 @@ export default defineConfig(async ({ mode }) => {
           compatibility_date: '2026-05-22',
           assets: {
             binding: 'ASSETS',
+            html_handling: 'none',
             not_found_handling: 'single-page-application',
-            run_worker_first: true,
           },
         },
       }),
