@@ -11,8 +11,21 @@ permissions:
 
 jobs:
   measure:
-    runs-on: macos-15
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Intel virtual Mac
+            runner: macos-15-intel
+            result: hosted-results-intel.json
+            artifact: hosted-dawn-intel
+          - name: GPU larger Mac
+            runner: macos-15-xlarge
+            result: hosted-results-xlarge.json
+            artifact: hosted-dawn-xlarge
     steps:
       - name: Check out the change
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -30,11 +43,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Measure the hosted runner
-        run: node tools/ci-bench/hosted.mjs --cycles 16
+        run: node tools/ci-bench/hosted.mjs --cycles 16 --output tools/ci-bench/${{ matrix.result }}
 
       - name: Keep the measurement
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: hosted-dawn-measurement
-          path: tools/ci-bench/hosted-results.json
+          name: ${{ matrix.artifact }}
+          path: tools/ci-bench/${{ matrix.result }}
