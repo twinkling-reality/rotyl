@@ -41,7 +41,7 @@
     ]
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.37.1",
+    "@cloudflare/vite-plugin": "1.53.1",
     "@openai/sites-vite-plugin": "0.1.0",
     "@playwright/test": "1.62.1",
     "@vitest/browser-playwright": "4.1.10",
@@ -53,6 +53,6 @@
     "vite": "8.2.1",
     "vitest": "4.1.10",
     "webgpu": "0.4.0",
-    "wrangler": "4.92.0"
+    "wrangler": "4.125.0"
   }
 }
