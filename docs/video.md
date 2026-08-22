@@ -153,22 +153,27 @@ anywhere asking which kind of file this is.
 
 ## Tracking, and where it runs
 
-**It is wired up, and it needs a host to fetch two graphs from.** The loop, the
-memory bank, the second decoder and the button are all here;
-`memory_attention_shared_fp16.onnx`, `memory_encoder.onnx` and
-`parameters.json` are in no published release, so a build says where they are or
-the feature is not offered:
+**It is present in every deployment.** The loop, the memory bank, the second
+decoder and the button are backed by Rotyl's complete EdgeTAM release.
+`tools/edgetam-export` produces the files no upstream ONNX release contains;
+the project release versions them with the selection files, and the build emits
+all of them under the application origin.
 
-```bash
-VITE_TRACKING_HOST=https://example.org/edgetam pnpm build
-```
+There is no `VITE_TRACKING_HOST` now. Its deliberate absence was the right
+answer while Rotyl did not distribute the graphs: a wrong default fetched a
+large file and then failed only when Track was pressed. The owned release changes
+that premise. Preparation checks every file before a build starts, the build
+checks again before emitting, and the browser checks after fetch. A missing or
+changed file therefore produces no deployment, not a button that fails later.
+The first Track transfers 22.24 MB of tracking data. If the seed was drawn by
+hand and object selection has not loaded the shared vision encoder yet, the
+same run also fetches the 18.57 MB half-precision selection files, for 40.81 MB
+of explicitly compressed model data in all. The complete delivery cost is on
+`/research/model-delivery.html`.
 
-**There is deliberately no default.** A wrong guess does not fail at start-up,
-it fails after fetching nineteen megabytes at the moment somebody presses Track,
-so with nothing configured there is no Track button rather than one that can
-only apologise. `tools/edgetam-export` produces the three files in two commands
-and says what a host owes anyone it serves them to, which is the Apache-2.0
-licence text and a note that the files were modified.
+The Apache-2.0 licence, attribution and statement that the exported graphs are
+modified files travel beside them in every build. The exporter README records
+the exact checkpoint and the process that makes those bytes again.
 
 **What the tracker computes is checked against the reference and not against
 its author.** Half of a tracked frame is not in any graph: the transposes
@@ -341,9 +346,10 @@ with the same vision encoder a click is answered by, borrowed from the
 perception store that owns it, so tracking costs no second download and no
 second copy of the weights in memory.
 
-What produces the files it fetches is in `tools/edgetam-export`: two graphs the
-published release does not contain, four parameters from the checkpoint, and a
-position encoding worth computing rather than shipping.
+What produces the files it fetches is in `tools/edgetam-export`: the graphs the
+published release does not contain, the parameters the host arithmetic needs,
+and a position encoding worth computing rather than shipping. Their release
+contract is in `models/edgetam/manifest.json`.
 
 ## Getting frames out of a file
 

@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { decoderIsMissing } from '../src/platform/perception/edgetam-tracker.ts';
 
 /**
- * Which decoder a tracking host served, which is a question with two different
+ * Which decoder the owned release contains, which is a question with two different
  * wrong answers and only one of them loud.
  *
  * A tracked frame runs a mask decoder this project re-exports rather than the
  * one every EdgeTAM release contains, for two outputs. Pointing
- * `VITE_TRACKING_HOST` at the published file is an ordinary mistake: it is the
+ * Putting the published file in the tracked decoder's place is an ordinary mistake: it is the
  * obvious thing to serve, and it is the exact file `tools/edgetam-export`
  * exists to replace.
  *
@@ -31,7 +31,7 @@ import { decoderIsMissing } from '../src/platform/perception/edgetam-tracker.ts'
  * that cannot: this is the whole of the decision, and `loadEdgeTamTracker` only
  * asks the session for its output names and hands them over.
  */
-describe('which mask decoder a tracking host served', () => {
+describe('which mask decoder the owned release contains', () => {
   it('takes the re-export', () => {
     // The names `tools/edgetam-export/export.py` writes, in its own order, and
     // the names `tracked_mask_decoder_fp16.onnx` still declares after

@@ -1,10 +1,11 @@
 """
-Export the two graphs video tracking needs and the published release lacks.
+Export the three graphs video tracking needs and the published release lacks.
 
 See README.md for what is missing and why the memory bank is a fixed size. The
 short version: a memory entry is 512 tokens, the bank holds 7 of them plus 64
 pointer tokens, and padding it to that size rather than growing it is what keeps
-the graph to one shape and the two rotary integers to constants.
+the attention graph to one shape and the two rotary integers to constants. The
+third graph is the tracked mask decoder with its object pointer exposed.
 """
 
 import pathlib
@@ -19,6 +20,7 @@ OUT = HERE / "onnx"
 # The checkpoint onnx-community/EdgeTAM-ONNX was exported from, so the graphs
 # produced here and the ones already shipping hold the same weights.
 CHECKPOINT = "yonigozlan/EdgeTAM-hf"
+CHECKPOINT_REVISION = "c266ce53b3fc00f0f495b583f6a116c4e57f53bb"
 
 # Observed on a real clip rather than read off the config, because the config
 # does not say how many tokens a memory entry becomes after the perceiver.
@@ -217,7 +219,9 @@ def write(module: torch.nn.Module, args: tuple, path: pathlib.Path, inputs: list
 
 def load_model() -> EdgeTamVideoModel:
     patch_cross_attention_for_masking()
-    return EdgeTamVideoModel.from_pretrained(CHECKPOINT, dtype=torch.float32).eval()
+    return EdgeTamVideoModel.from_pretrained(
+        CHECKPOINT, revision=CHECKPOINT_REVISION, dtype=torch.float32
+    ).eval()
 
 
 def main() -> None:

@@ -1577,9 +1577,8 @@ export function App(): JSX.Element {
   const hasEdits = (selection?.appliedCommands.length ?? 0) > 0;
   // And tracking needs something on THIS frame to follow, which is the fold's
   // question rather than the log's.
-  // Only asked where there is a Track button to disable, so a build with no
-  // tracker configured folds no commands per render for a button it does not
-  // draw. Folded once and asked twice, because the second question is how MANY
+  // Only asked for a video, where there is a Track button to disable. Folded
+  // once and asked twice, because the second question is how MANY
   // things are selected, and that is the same fold read the same way: one
   // object per answer the model gave to a prompt somebody started, which the
   // log has recorded since object selection landed. From the log rather than

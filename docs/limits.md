@@ -5,15 +5,14 @@
 Nothing here is a bug report. Each of these is a decision, or the honest edge of
 one, and the measurement behind it is on `/research.html`.
 
-- **Tracking needs somewhere to fetch two graphs from, and there is no default.**
-  `memory_attention_shared_fp16.onnx`, `memory_encoder.onnx` and
-  `parameters.json` are in no published EdgeTAM release. `tools/edgetam-export`
-  produces all three in two commands, and a build points at wherever they were
-  put with `VITE_TRACKING_HOST`. Without one there is no Track button, which is
-  a deliberate absence rather than a disabled control: a wrong or missing host
-  is nineteen megabytes fetched and then a 404, at the moment somebody asked for
-  the feature. Until a build has one, a selection held across a moving subject
-  still drifts off it and has to be corrected by selecting again further along.
+- **Tracking depends on derivative graphs this project has to maintain.**
+  `memory_attention_shared_fp16.onnx`, `memory_encoder.onnx`, the tracked mask
+  decoder and `parameters.json` are in no published EdgeTAM ONNX release.
+  `tools/edgetam-export` produces them, and Rotyl's versioned model release now
+  puts their exact digests, Apache-2.0 licence and modified-file notice into
+  every deployment. That closes the missing feature, not the maintenance cost:
+  moving to another checkpoint means re-exporting, re-verifying and publishing
+  the complete release rather than changing a runtime URL.
 - **The fixture clips had to be rebuilt before they could price the host's
   mistakes end to end.** `host.py` puts every piece of the host's arithmetic
   against the reference's own tensors and is unambiguous either way; running the
@@ -378,8 +377,14 @@ one, and the measurement behind it is on `/research.html`.
 - The print screen's pitch is a fraction of the image, not a distance in pixels,
   because that is what makes the preview and the export the same picture. At
   100% zoom on a very large photograph the dots are correspondingly large.
-- Object selection needs the network once, to fetch the model, and around 36 MB
-  of it. The image never leaves the machine; the model has to arrive on it.
+- Object selection needs the network once, to fetch the code-split runtime and
+  the model. On half-precision hardware its model files are 18.57 MB served and
+  20.59 MB in Cache Storage. The image never leaves the machine; the checked
+  model arrives from the same Rotyl deployment. Tracking adds 22.24 MB served
+  and 29.78 MB cached. A cold session using both therefore transfers 40.81 MB
+  of model data. The full-precision selection alternative costs more and is
+  carried for hardware that cannot compile half precision; the complete table
+  is on `/research/model-delivery.html`.
 - Object selection only ever adds. Alt-click is a negative point, a statement
   about the object, answered by the model, not a subtraction from the mask, so
   removing a region that is already selected is still the eraser's job.
@@ -409,26 +414,25 @@ one, and the measurement behind it is on `/research.html`.
 - Export flattens transparency, matching the preview canvas, which is opaque.
 - HEIC is rejected by signature with a specific message, in every browser.
 - The unit suite runs shaders through Dawn's Node bindings, which do not survive
-  running the full style chain more than once per process, and abort
-  intermittently when GPU work is spread across separate cases in one file. The
-  GPU tests are scoped accordingly, each such file renders once and asserts
-  many times, and browsers have no such limit. Between one run in eight and one
-  in four still aborts under load, with and without those tests; the abort
-  arrives after every assertion has passed, so it reads as an unexplained crash
-  rather than a failure. Run it again before concluding anything from one.
+  running the full style chain more than once per process, and can abort while
+  native objects are being torn down. The GPU tests are scoped accordingly,
+  each such file renders once and asserts many times, and browsers have no such
+  limit. Across 32 unchanged suites, 29 processes exited cleanly, one exited
+  after all 284 assertions passed, and two stopped with one shader file still
+  pending. The gate therefore reads Vitest's assertion report: a complete
+  passing report passes regardless of native teardown, a failed assertion never
+  retries, and only an incomplete file gets another Dawn process within the
+  measured bound. The evidence and residual estimate are on `/research/ci.html`.
   The cost is steep enough to shape what is worth testing here: a single
   `RotylEngine.render` in a file that already builds several engines took one
   file from none in twelve to ten in twelve, measured back to back. What that
   test covered is covered in Playwright instead, where a browser has no limit.
 - **The end-to-end suite covers the object tool's interaction but not the
-  model**, because 36 MB over the network is the wrong thing to put in a loop
-  that has to be reliable, and that path is verified by hand in a browser.
-  Tracking is the exception, and it is guarded rather than merely skipped: three
-  tests exist only when the Track button does, which is only when a build was
-  told where its graphs live, and a fourth asserts the button is absent when it
-  was not. Which of the two sets runs is decided by the same build-time string
-  the feature is, so neither configuration can quietly cover nothing. What the
-  three cost whoever runs them is the graphs and the object model over the
-  network, which is why no build has them by default, and until this chapter
-  none of them had ever run: every `absent` command this repository had produced
-  was written by a test rather than by a model.
+  model**, because downloading the release in every browser loop would make the
+  suite depend on network traffic rather than the deployment under test. That
+  path is verified by hand in a browser. Tracking is no longer guarded by a
+  build option: the suite always asserts that Track exists, and its three real
+  model cases use the same verified, same-origin release every build contains.
+  Playwright remains a separate real-Chrome command rather than part of the CI
+  unit gate, because it is evidence about the browser and GPU it actually ran
+  on.

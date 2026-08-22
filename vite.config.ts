@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { defineConfig, type Plugin } from 'vite';
 import { renderResearchSite, researchFigures } from './tools/research/index.ts';
+import { modelAssets } from './tools/model-assets/vite.ts';
 
 /**
  * Strip WGSL comments, and keep every newline.
@@ -97,7 +98,7 @@ function researchPage(): Plugin {
 // honours it. The plugin exists to add Babel-based Fast Refresh, which is not
 // worth reintroducing Babel to this build for.
 export default defineConfig({
-  plugins: [wgslComments(), researchPage()],
+  plugins: [wgslComments(), modelAssets(), researchPage()],
   build: {
     target: 'es2023',
     assetsInlineLimit: 0,

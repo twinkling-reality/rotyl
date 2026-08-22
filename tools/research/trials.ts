@@ -14,6 +14,62 @@ import type { Trial } from './page.ts';
  */
 export const TRIALS: readonly Trial[] = [
   {
+    what: 'Fetching a private project release through its browser download URL with a bearer token',
+    verdict: 'rejected',
+    evidence:
+      'The empty-cache proof received 404 on the first asset even though the local GitHub session was authenticated. The authenticated release-assets API then obtained and verified all 91,280,555 decompressed bytes. Public releases can still use the direct URL; private builds resolve the same named assets through the API and never send the project token to a source override',
+    where: 'tools/model-assets/prepare.mjs and /research/model-delivery.html',
+  },
+  {
+    what: 'VITE_TRACKING_HOST as a permanent deployment decision',
+    verdict: 'rejected',
+    evidence:
+      'It was the honest answer while the project distributed no tracking assets: a missing setting removed the button, because the wrong setting failed after a large fetch at the moment Track was pressed. Ownership changes the premise. The verified tracking release is 22.24 MB served and every deployment contains it now, so the environment variable would preserve a way to build a partial product and a way to bypass the project release. Build preparation may obtain the complete release from another directory or origin, but the manifest stays fixed and runtime always uses the application origin',
+    where: 'models/edgetam/README.md and /research/model-delivery.html',
+  },
+  {
+    what: 'Leaving object selection on the third-party model host after tracking moved',
+    verdict: 'rejected',
+    evidence:
+      'It would close only half the dependency and leave two features sharing one encoder from different authorities. The owned half-precision selection files are 18.57 MB served, the first page makes zero model requests, and moving the loader behind first use takes the application control from 51.3 KB to 49.8 KB gzipped. There is no first-load price for putting both features under one release, while a third-party outage and silent replacement remain real prices for leaving one behind',
+    where: 'src/platform/perception/model-assets.ts and /research/model-delivery.html',
+  },
+  {
+    what: 'Serving the ONNX files uncompressed and relying on the static host to recognise them',
+    verdict: 'rejected',
+    evidence:
+      'ONNX is normally application/octet-stream and a portable build cannot assume its host will compress it. The complete model directory is 91.28 MB raw against 78.19 MB as the explicit gzip files the build emits. A half-precision session using selection and tracking is 50.37 MB raw against 40.81 MB served. Explicit decompression takes 123 ms for selection and 166 ms for tracking on the measurement machine, paid once before the model runs, in exchange for 9.56 MB less origin traffic in that session',
+    where: 'tools/model-assets/vite.ts and /research/model-delivery.html',
+  },
+  {
+    what: 'Checking model digests only at build',
+    verdict: 'rejected',
+    evidence:
+      'The build check covers the release input and costs 74 ms for all 91.28 MB, but it cannot cover the deployment origin response or Cache Storage that exist afterwards. The fetch check costs 17 ms for half-precision selection and 26 ms for tracking, and closes both later boundaries before ONNX Runtime receives a byte. A versioned URL prevents intended replacement; a digest refuses accidental or hostile replacement under that URL',
+    where: 'src/platform/perception/model-store.ts and /research/model-delivery.html',
+  },
+  {
+    what: 'Checking model digests only after fetch',
+    verdict: 'rejected',
+    evidence:
+      'It would eventually protect a user and still allow a deployment containing a missing or wrong file to be published. Hashing the whole release during build costs 74 ms and turns that mistake into no deployment at all. The browser repeats the check because it owns a different boundary, not because either hash is distrusted',
+    where: 'tools/model-assets/vite.ts and /research/model-delivery.html',
+  },
+  {
+    what: 'Using the Dawn process exit as the unit-test gate',
+    verdict: 'rejected',
+    evidence:
+      'Measured over 32 unchanged suites, 29 exited cleanly and 3 native workers exited with no failed assertion, so an exit-only gate rejects 9.38% of unchanged runs. One carried a report proving all 284 assertions passed and two left cases pending, which also rules out accepting the native exit by signature. Assertion completion is the proof and the exit is not',
+    where: 'tools/ci-bench/results.json and /research/ci.html',
+  },
+  {
+    what: 'Rerunning the whole unit suite after any nonzero exit',
+    verdict: 'rejected',
+    evidence:
+      'It reruns 279 or 283 assertions already proved in the two incomplete observations and would rerun a real failure too, which is how a flaky gate hides a flaky test. The report names the one incomplete file. Only that file gets a fresh Dawn process, and no failed assertion is retried. Three total processes come from the observed 1.17% per-Dawn-process exit rate: the estimated residual is 0.0013% of suites, below one in 77,000',
+    where: 'tools/ci/run-tests.mjs and /research/ci.html',
+  },
+  {
     what: 'An occlusion as a field on the command, rather than on the run that produced it',
     verdict: 'adopted',
     evidence:
@@ -517,7 +573,7 @@ export const TRIALS: readonly Trial[] = [
     where: 'README, "How it is put together"',
   },
   {
-    what: 'Bundling the segmentation model',
+    what: 'Bundling the segmentation model into the initial application',
     verdict: 'rejected',
     evidence: '36 MB in the initial download for a feature most sessions never touch; code-split instead',
     where: 'README, "Selecting an object"',

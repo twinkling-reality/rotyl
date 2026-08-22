@@ -60,12 +60,209 @@ const ms = (value: number): string => `${value.toFixed(value < 10 ? 1 : 0)} ms`;
  */
 const asBytes = (count: number): string =>
   count < 1024 ? `${count.toFixed(0)} bytes` : `${(count / 1024).toFixed(1)} KB`;
+const asDecimalBytes = (count: number): string =>
+  count < 1000 ? `${count.toFixed(0)} bytes` : `${(count / 1000).toFixed(1)} KB`;
 const pct = (value: number): string => `${value.toFixed(2)}%`;
 /** Megabytes, to a hundredth, which is what a document is quoted to everywhere else. */
 const asFile = (bytes: number): string => `${(bytes / 1e6).toFixed(2)} MB`;
 
 const SIZES = ['720p', '2 MP', '12 MP', '24 MP'] as const;
 const STYLES = ['comic', 'poster', 'print'] as const;
+
+// --- owning the model release ---------------------------------------------
+
+export function modelDeliveryEntry(models: unknown): Entry {
+  const group = (name: string, fieldName: string): number => num(models, ['groups', name, fieldName]);
+  const before = num(models, ['initial_application', 'before', 'gzip']);
+  const owned = num(models, ['initial_application', 'owned_release', 'gzip']);
+  const halfServed = num(models, ['serving', 'cold_full_feature_session_half']);
+  const halfCached = num(models, ['cache', 'after_tracking_half']);
+  const buildCheck = num(models, ['verification_ms', 'build_all']);
+  const selectionCheck = num(models, ['verification_ms', 'fetch_selection_half']);
+  const trackingCheck = num(models, ['verification_ms', 'fetch_tracking']);
+
+  return {
+    slug: 'model-delivery',
+    results: 'tools/model-assets/results.json',
+    title: 'What it costs to own and ship the model layer',
+    standfirst:
+      'The complete selection and tracking release, from the first page through first use, cache, invalidation and integrity refusal.',
+    harness: 'tools/model-assets',
+    taken: `${text(models, ['environment', 'cpu'])}, Node ${text(models, ['environment', 'node'])}`,
+    lede: [
+      'Object selection and tracking were local computations backed by somebody else’s availability. The selection graphs came from a third-party model host at runtime, while the tracking files existed only wherever a builder happened to put them. A clone could build an editor with no Track button, and a deployment could change its model without changing its application.',
+      'One manifest owns that boundary now. It pins the upstream revisions, every byte length and every SHA-256 digest. A build vendors the complete project release into its own output; the browser asks only that deployment for a model and checks the same digest before ONNX Runtime sees it.',
+    ],
+    sections: [
+      {
+        heading: 'The first page pays nothing for ownership',
+        prose: [
+          `The committed application chunk is ${asDecimalBytes(before)} gzipped in the control build. The owned release build is ${asDecimalBytes(owned)}, ${asDecimalBytes(before - owned)} smaller, because the model loader itself moved behind first use with the model it loads. The first page makes ${String(num(models, ['initial_application', 'model_requests']))} model requests.`,
+          'Ownership changes what a deployment contains, not what a person who opens the drop zone downloads. Object selection still pays on first selection use and tracking still pays on first Track.',
+        ],
+        table: {
+          columns: ['initial application', 'raw', 'gzipped'],
+          rows: [
+            [
+              'committed build',
+              asDecimalBytes(num(models, ['initial_application', 'before', 'raw'])),
+              asDecimalBytes(before),
+            ],
+            [
+              'owned model release',
+              asDecimalBytes(num(models, ['initial_application', 'owned_release', 'raw'])),
+              asDecimalBytes(owned),
+            ],
+          ],
+        },
+        command: 'node tools/model-assets/measure.mjs',
+      },
+      {
+        heading: 'First use, cache and serving are three different prices',
+        prose: [
+          `On hardware with half precision, a cold session that selects an object and then tracks it transfers ${asFile(halfServed)} of model data and keeps ${asFile(halfCached)} after decompression. One thousand such cold sessions are ${asFile(num(models, ['serving', 'thousand_full_feature_sessions_half']))} of origin traffic. A warm session transfers none of it.`,
+          'The full-precision selection variant has to travel in the deployment for hardware that cannot compile half precision, but one browser fetches one variant and never both. Tracking has one variant.',
+        ],
+        table: {
+          columns: ['first use', 'served', 'kept in Cache Storage'],
+          rows: [
+            [
+              'object selection, half precision',
+              asFile(group('selection_half', 'served')),
+              asFile(group('selection_half', 'raw')),
+            ],
+            [
+              'object selection, full precision',
+              asFile(group('selection_full', 'served')),
+              asFile(group('selection_full', 'raw')),
+            ],
+            ['tracking', asFile(group('tracking', 'served')), asFile(group('tracking', 'raw'))],
+          ],
+        },
+        caveat:
+          'Served bytes are the explicit gzip files in the build, independent of whether a static host decides ONNX is compressible. Cache Storage holds the checked, decompressed bytes ONNX Runtime consumes.',
+        command: 'node tools/model-assets/measure.mjs',
+      },
+      {
+        heading: 'A deployment carries both selection variants and only fetches one',
+        prose: [
+          `The model part of a deployment is ${asFile(group('deployment', 'served'))}, against ${asFile(group('deployment', 'raw'))} uncompressed. That is storage and release bandwidth paid once per deployment, not first-load traffic.`,
+          `The cache name and every URL contain the manifest version. On the next model use after an update, the browser deletes the previous Rotyl model cache before opening the new one. That gives back ${asFile(num(models, ['cache', 'invalidated_on_next_model_use_half']))} in the ordinary half-precision case, then downloads only whichever features are used again.`,
+        ],
+        table: {
+          columns: ['deployment contents', 'files', 'served'],
+          rows: [
+            [
+              'selection, both variants',
+              String(group('selection_half', 'files') + group('selection_full', 'files')),
+              asFile(group('selection_half', 'served') + group('selection_full', 'served')),
+            ],
+            ['tracking', String(group('tracking', 'files')), asFile(group('tracking', 'served'))],
+            ['licence and notice', String(group('legal', 'files')), asFile(group('legal', 'served'))],
+          ],
+        },
+        command: 'node tools/model-assets/measure.mjs',
+      },
+      {
+        heading: 'The digest belongs at build and at fetch',
+        prose: [
+          `Checking the complete release at build takes ${ms(buildCheck)}. It catches a missing, stale or replaced release before a deployable directory exists. Checking the half-precision selection files after fetch takes ${ms(selectionCheck)}, and the tracking files ${ms(trackingCheck)}. That second check covers the origin response and Cache Storage, which did not exist at build time.`,
+          'A mismatch is never handed to the runtime. The build names the file, expected length and expected digest and produces no deployment. The editor names the refused file and release, says the deployment or cache is incomplete, and tells the user to reload or contact the deployer. Retrying a changed graph under the same version would turn an integrity failure into a silent model swap.',
+        ],
+        table: {
+          columns: ['checked boundary', 'median'],
+          rows: [
+            ['all release files at build', ms(buildCheck)],
+            ['selection, half precision, after fetch', ms(selectionCheck)],
+            [
+              'selection, full precision, after fetch',
+              ms(num(models, ['verification_ms', 'fetch_selection_full'])),
+            ],
+            ['tracking after fetch', ms(trackingCheck)],
+            ['inflate selection, half precision', ms(num(models, ['inflate_ms', 'selection_half']))],
+            ['inflate tracking', ms(num(models, ['inflate_ms', 'tracking']))],
+          ],
+        },
+        caveat:
+          'Digest timings use Web Crypto over the exact bytes in the manifest. Decompression is timed separately because it is a transport cost rather than an integrity check.',
+        command: 'node tools/model-assets/measure.mjs',
+      },
+      {
+        heading: 'A clone with no assets cannot produce a partial product',
+        prose: [
+          'The normal build fills a local cache from Rotyl’s immutable release, verifies every file, then emits every feature. A maintainer may point that preparation step at a local export or another origin, but the override changes only where bytes are obtained; it cannot change the manifest or bypass a digest.',
+          'Offline with an empty cache, an unavailable release, or one wrong byte, the build stops before Vite and says how to supply the complete release. There is no output with a Track button waiting to fail, and no successful output with the button missing.',
+        ],
+        command: 'pnpm models:check',
+      },
+    ],
+  };
+}
+
+// --- CI stability ----------------------------------------------------------
+
+export function ciStabilityEntry(ci: unknown): Entry {
+  const runs = num(ci, ['summary', 'runs']);
+  const clean = num(ci, ['summary', 'clean_exits']);
+  const aborts = runs - clean;
+  const rawRate = (aborts / runs) * 100;
+  const processRate = num(ci, ['summary', 'observed_process_abort_rate']) * 100;
+  const residual = num(ci, ['summary', 'estimated_incomplete_suites_after_three_attempts']);
+  const residualPct = `${(residual * 100).toFixed(4)}%`;
+  const oneIn = Math.floor(1 / residual).toLocaleString('en-GB');
+
+  return {
+    slug: 'ci',
+    results: 'tools/ci-bench/results.json',
+    title: 'What a reliable shader-test gate has to recognise',
+    standfirst:
+      'Dawn’s native teardown measured across repeated complete suites, and a gate that retries only an unrun file rather than ignoring a crash or rerunning a failure.',
+    harness: 'tools/ci-bench',
+    taken: `${text(ci, ['environment', 'cpu'])}, Node ${text(ci, ['environment', 'node'])}`,
+    lede: [
+      'A CI workflow that reruns until green teaches exactly the wrong lesson, and a workflow that trusts one native process exit flakes on code that passed. The unit suite needs a third answer: preserve every real shader assertion while recognising the one failure mode Dawn’s Node binding has after or between them.',
+      'The harness records Vitest’s machine-readable assertion report and the process exit separately. A failed assertion, a missing report and an incomplete file are therefore different outcomes before any policy is applied.',
+    ],
+    sections: [
+      {
+        heading: 'Exit code alone would reject nearly one change in ten',
+        prose: [
+          `${String(runs)} complete suites produced ${String(clean)} clean exits and ${String(aborts)} native exits, a raw gate failure rate of ${pct(rawRate)}. There were ${String(num(ci, ['summary', 'assertion_failures']))} failed assertions. One native exit came after all assertions had passed; two left a GPU file’s cases pending.`,
+          'That last split is why accepting a recognisable Dawn exit is not safe. Some of these exits changed only teardown, while others stopped cases from running. The assertion report, not the native message, is the proof.',
+        ],
+        table: {
+          columns: ['outcome', 'suites'],
+          rows: [
+            ['clean process exit', String(clean)],
+            [
+              'native exit after complete assertion proof',
+              String(num(ci, ['summary', 'post_assertion_aborts'])),
+            ],
+            ['native exit with an incomplete file', String(num(ci, ['summary', 'incomplete_runs']))],
+            ['failed assertions', String(num(ci, ['summary', 'assertion_failures']))],
+          ],
+        },
+        command: 'node tools/ci-bench/run.mjs --runs 32',
+      },
+      {
+        heading: 'Only the incomplete file gets another process',
+        prose: [
+          `The observed rate is ${pct(processRate)} per Dawn process. At that rate, allowing an incomplete file three total processes leaves an estimated ${residualPct} incomplete suites, below one in ${oneIn}. A failed assertion is never run again, and neither is any file whose assertions already passed.`,
+          'A nonzero process with a complete passing report passes because every claimed test ran. A report with pending cases names their file and only that file starts in a fresh Dawn process. No report, any failed assertion, or a file still incomplete at the measured bound fails the job.',
+        ],
+        table: {
+          columns: ['gate', 'raw false failure estimate'],
+          rows: [
+            ['exit code only', pct(rawRate)],
+            ['assertion proof with the measured bound', residualPct],
+          ],
+        },
+        caveat: `The residual is the observed per-process exit rate raised to the three-attempt bound, across the ${String(num(ci, ['summary', 'dawn_files_per_suite']))} shader files in one suite. It is a reliability estimate from this run, not a claim that native failures are independent on every machine.`,
+        command: 'pnpm test',
+      },
+    ],
+  };
+}
 
 // --- the look ---------------------------------------------------------------
 

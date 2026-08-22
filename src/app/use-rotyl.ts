@@ -3,7 +3,6 @@ import { acquireRenderDevice, watchDevice, type UnsupportedReason } from '../cor
 import { SelectionDocument } from '../core/document/selection-document.ts';
 import { RotylEngine } from '../core/render/rotyl-engine.ts';
 import { PerceptionStore } from '../core/perception/perception-store.ts';
-import { loadEdgeTamEngine } from '../platform/perception/edgetam-engine.ts';
 
 /** sRGB value of --surface-sunken, the ground the image sits on. */
 const VIEWPORT_BACKGROUND = [0.9412, 0.9412, 0.9412] as const;
@@ -128,9 +127,10 @@ export function useRotyl(): RuntimeState {
       // Given Rotyl's device so the model's input tensor can be built where the
       // image already lives. The runtime declines to share a device and brings
       // up its own; see edgetam-engine for what that costs and what it does not.
-      const perception = new PerceptionStore(document, (onProgress) =>
-        loadEdgeTamEngine({ device, supportsF16, onProgress }),
-      );
+      const perception = new PerceptionStore(document, async (onProgress) => {
+        const { loadEdgeTamEngine } = await import('../platform/perception/edgetam-engine.ts');
+        return loadEdgeTamEngine({ device, supportsF16, onProgress });
+      });
 
       const runtime: RotylRuntime = {
         engine,

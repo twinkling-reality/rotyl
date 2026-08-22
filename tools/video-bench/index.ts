@@ -43,9 +43,9 @@ export const MEASUREMENTS = [
   'colour',
   'encode',
   'encode-colour',
-  // Its own command, and out of `all`, because it needs a tracking host: the
-  // two graphs are in no published release, so a machine without one measures
-  // nothing here and everything else in `all` still runs.
+  // Its own command, and out of `all`, because it fetches the complete model
+  // path and runs for much longer than an individual graph timing. Re-taking
+  // it must not re-date the decode ladder and the unrelated ONNX timings.
   'tracked-frame',
   // No GPU and no clip: a measurement about the command log, which is core
   // code and runs anywhere.
@@ -129,7 +129,7 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('colour', () => colour(dev, CLIPS));
   await step('encode', () => encode(dev, CLIPS));
   await step('encode-colour', () => encodeColour(dev, CLIPS));
-  await step('tracked-frame', () => trackedFrame(dev, CLIPS, import.meta.env.VITE_TRACKING_HOST));
+  await step('tracked-frame', () => trackedFrame(dev, CLIPS));
   await step('long-clip', () => longClip(dev, CLIPS));
   await step('interleave', () => interleave(CLIPS));
   // LAST, AND NOT BY ACCIDENT. It assigns to `ort.env.webgpu.device` and

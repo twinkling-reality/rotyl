@@ -12,9 +12,9 @@
 // reimplements any of it, which is the point: what is being timed has to be the
 // thing that runs, or the number is about this file.
 //
-// NEEDS A TRACKING HOST, since the two graphs are in no published release. See
-// tools/edgetam-export. With none configured it says so and measures nothing,
-// rather than reporting a zero.
+// NEEDS THE OWNED MODEL RELEASE in the local cache, like the development server
+// that serves it. `pnpm dev` prepares and verifies that release before this can
+// run, so a measurement cannot silently use a different graph.
 //
 // The split comes from the two seams `runTracking` already has, so nothing in
 // src/ grows a timer: the scene is wrapped to time `understand`, and the engine
@@ -183,23 +183,12 @@ interface Run {
   readonly absent: number;
 }
 
-export async function trackedFrame(
-  dev: GPUDevice,
-  clips: string,
-  host: string | undefined,
-): Promise<unknown> {
-  if (!host) {
-    return {
-      error:
-        'no VITE_TRACKING_HOST: the two graphs are in no published release, so there is nowhere to fetch them from. See tools/edgetam-export.',
-    };
-  }
-
+export async function trackedFrame(dev: GPUDevice, clips: string): Promise<unknown> {
   const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
   const supportsF16 = adapter?.features.has('shader-f16') ?? false;
 
   const engine = await loadEdgeTamEngine({ device: dev, supportsF16, onProgress: () => undefined });
-  const tracker = await loadEdgeTamTracker({ host, onProgress: () => undefined });
+  const tracker = await loadEdgeTamTracker({ onProgress: () => undefined });
 
   const runs: Run[] = [];
   try {

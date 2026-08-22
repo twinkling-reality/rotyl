@@ -23,6 +23,13 @@ having it inferred, so re-taking one measurement does not re-date a page that
 did not move. Dates come from the commit that last touched that file, so "is
 this current" has an answer.
 
+The model release and the CI gate each have a harness of their own for the same
+reason. `tools/model-assets` measures first-page, served, cached, invalidated and
+digest costs without re-taking a video timing. `tools/ci-bench` records the unit
+suite's assertion report separately from its native process exit, without
+re-dating either model delivery or a renderer. Their generated pages are
+`/research/model-delivery.html` and `/research/ci.html`.
+
 **One of the inputs is fetched rather than drawn**, which is the one exception
 to everything else here being reproducible from the repository alone. It is
 pinned by hash and it exists because the alternative was worse: the measurement

@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "version": "edgetam-v1",
+  "release": "https://github.com/twinkling-reality/rotyl/releases/download/edgetam-v1",
+  "provenance": {
+    "upstream": {
+      "repository": "https://github.com/facebookresearch/EdgeTAM",
+      "revision": "7711e012a30a2402c4eaab637bdb00a521302c91"
+    },
+    "selection": {
+      "repository": "https://huggingface.co/onnx-community/EdgeTAM-ONNX",
+      "revision": "9c77c7bff7fd0f3079585fa17af7f730ddc531ed"
+    },
+    "tracking": {
+      "repository": "https://huggingface.co/yonigozlan/EdgeTAM-hf",
+      "revision": "c266ce53b3fc00f0f495b583f6a116c4e57f53bb"
+    }
+  },
+  "files": {
+    "vision_encoder_fp16.onnx": {
+      "bytes": 167617,
+      "sha256": "d8f560849085892866a5c652a600cafbbd301e11c15ff0d89c81e15fe91264ac",
+      "feature": "selection-half"
+    },
+    "vision_encoder_fp16.onnx_data": {
+      "bytes": 9739536,
+      "sha256": "6a6741eb00b3049939675569818b207953cb13113a80ca9580c9c714d8646b38",
+      "feature": "selection-half"
+    },
+    "prompt_encoder_mask_decoder_fp16.onnx": {
+      "bytes": 229799,
+      "sha256": "f6c0e539017b05ff12cd5be869f2a125d946dee10f6e79b64a7466dfceafafb9",
+      "feature": "selection-half"
+    },
+    "prompt_encoder_mask_decoder_fp16.onnx_data": {
+      "bytes": 10454016,
+      "sha256": "bda4d98aef24b7589313f9771c8d2d6380716a256bf5c926326eaf5054097d5b",
+      "feature": "selection-half"
+    },
+    "vision_encoder.onnx": {
+      "bytes": 192225,
+      "sha256": "ed068218eba96760fe02d04ce899c449660ac813a088d80ed7f42c8bb01e7cec",
+      "feature": "selection-full"
+    },
+    "vision_encoder.onnx_data": {
+      "bytes": 19532576,
+      "sha256": "21e75dba7077dfcb53e8c9a6e99977156f2240ff3f1f9cddc43d66aa1ecb528e",
+      "feature": "selection-full"
+    },
+    "prompt_encoder_mask_decoder.onnx": {
+      "bytes": 213114,
+      "sha256": "d3668299ec3edf70fbb139ec642b54bf3d4be453fd1b688a6b5938e0856fe546",
+      "feature": "selection-full"
+    },
+    "prompt_encoder_mask_decoder.onnx_data": {
+      "bytes": 20958208,
+      "sha256": "dfa2125e30d08d388732f20c18fb63ab0f0f590cd270eb307f0c2b65919d1be8",
+      "feature": "selection-full"
+    },
+    "memory_attention_shared_fp16.onnx": {
+      "bytes": 12049526,
+      "sha256": "60799c916c851b58927f6fa5e2ab3dd854b793f1e3347cd37d33439126102231",
+      "feature": "tracking"
+    },
+    "memory_encoder.onnx": {
+      "bytes": 6691119,
+      "sha256": "a3b5dadf998fa3a05a53ef206698f39b5ae892d61e68145dc981df7b3428df76",
+      "feature": "tracking"
+    },
+    "tracked_mask_decoder_fp16.onnx": {
+      "bytes": 11013652,
+      "sha256": "9e5339147ba76978a1ad8a9ee026a36e94d55758386cdbe88db91d98c91d69c7",
+      "feature": "tracking"
+    },
+    "parameters.json": {
+      "bytes": 26913,
+      "sha256": "b7861d11ba637998606b6ea462b01a5dcb92b098baa225970f5fb4499e8aed71",
+      "feature": "tracking"
+    },
+    "LICENSE.txt": {
+      "bytes": 11357,
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "feature": "legal"
+    },
+    "NOTICE.txt": {
+      "bytes": 897,
+      "sha256": "3c53d2e75baf85351490163c8cb7682116f95cb96b840e85530f3c0541fdfffd",
+      "feature": "legal"
+    }
+  }
+}

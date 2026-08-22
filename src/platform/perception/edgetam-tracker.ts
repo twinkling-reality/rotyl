@@ -22,6 +22,7 @@ import {
 import type { SceneEmbedding } from '../../core/perception/segmentation-engine.ts';
 import type { ObjectTrack, TrackedMask, TrackingEngine } from '../../core/perception/tracking-engine.ts';
 import { embeddingTensors, type EdgeTamTensor } from './edgetam-engine.ts';
+import { modelAsset, type ModelAssetName } from './model-assets.ts';
 import { fetchGraph } from './model-store.ts';
 import type * as OrtNamespace from 'onnxruntime-web/webgpu';
 
@@ -38,10 +39,10 @@ import type * as OrtNamespace from 'onnxruntime-web/webgpu';
  * both of them; the three here are memory attention, which conditions this
  * frame's features on what the bank remembers, the memory encoder, which turns
  * this frame's answer into the next entry in it, and a mask decoder of this
- * file's own. The graphs are produced by `tools/edgetam-export` and are not in
- * any published release, so `host` is where whoever is running this put them.
- * There is no default: a wrong guess would 404 after a thirty-megabyte
- * download.
+ * file's own. The graphs are produced by `tools/edgetam-export`, published in
+ * Rotyl's immutable model release, and emitted into every deployment. The
+ * build and this fetch path check the same manifest before a session receives
+ * them.
  *
  * FIVE SESSIONS MAKE A TRACKED FRAME, and the fifth is the reason this file
  * fetches a mask decoder of its own. The published one does not expose
@@ -97,15 +98,55 @@ interface Parameters {
   };
 }
 
+function property(value: unknown, name: string): unknown {
+  if (value === null || typeof value !== 'object') return undefined;
+  return Object.getOwnPropertyDescriptor(value, name)?.value;
+}
+
+function numbers(value: unknown, name: string): readonly number[] {
+  if (!Array.isArray(value)) throw new Error(`EdgeTAM tracking: ${name} was not an array`);
+  return value.map((entry: unknown) => {
+    if (typeof entry !== 'number' || !Number.isFinite(entry)) {
+      throw new Error(`EdgeTAM tracking: ${name} contained something other than a number`);
+    }
+    return entry;
+  });
+}
+
+function finite(value: unknown, name: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`EdgeTAM tracking: ${name} was not a number`);
+  }
+  return value;
+}
+
+function parametersFrom(bytes: Uint8Array<ArrayBuffer>): Parameters {
+  const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes));
+  const parameters = property(parsed, 'parameters');
+  const constants = property(parsed, 'constants');
+  return {
+    parameters: {
+      no_memory_embedding: numbers(property(parameters, 'no_memory_embedding'), 'no_memory_embedding'),
+      memory_temporal_positional_encoding: numbers(
+        property(parameters, 'memory_temporal_positional_encoding'),
+        'memory_temporal_positional_encoding',
+      ),
+      no_object_pointer: numbers(property(parameters, 'no_object_pointer'), 'no_object_pointer'),
+    },
+    constants: {
+      sigmoid_scale_for_mem_enc: finite(
+        property(constants, 'sigmoid_scale_for_mem_enc'),
+        'sigmoid_scale_for_mem_enc',
+      ),
+      sigmoid_bias_for_mem_enc: finite(
+        property(constants, 'sigmoid_bias_for_mem_enc'),
+        'sigmoid_bias_for_mem_enc',
+      ),
+    },
+  };
+}
+
 export interface EdgeTamTrackerOptions {
-  /**
-   * Where the two graphs and `parameters.json` are served from.
-   *
-   * They are a derivative work of an Apache-2.0 checkpoint, so whoever hosts
-   * them ships the licence and the attribution with them; see
-   * `tools/edgetam-export`.
-   */
-  readonly host: string;
   readonly onProgress: (progress: number) => void;
 }
 
@@ -119,8 +160,15 @@ export interface EdgeTamTrackerOptions {
  * conditions every later frame. Both carry their weights inside them, so each
  * is one request.
  */
-const ATTENTION = { graph: 'memory_attention_shared_fp16.onnx', bytes: 12_000_000 };
-const ENCODER = { graph: 'memory_encoder.onnx', bytes: 6_700_000 };
+interface TrackerAsset {
+  readonly graph: ModelAssetName;
+  readonly bytes: number;
+}
+
+const trackerAsset = (graph: ModelAssetName): TrackerAsset => ({ graph, bytes: modelAsset(graph).bytes });
+
+const ATTENTION = trackerAsset('memory_attention_shared_fp16.onnx');
+const ENCODER = trackerAsset('memory_encoder.onnx');
 /**
  * The mask decoder a tracked frame uses, which is not the published one.
  *
@@ -135,7 +183,8 @@ const ENCODER = { graph: 'memory_encoder.onnx', bytes: 6_700_000 };
  * late, agreeing with the reference. Neither earns that frame. Eleven megabytes
  * against twenty-two decides it.
  */
-const DECODER = { graph: 'tracked_mask_decoder_fp16.onnx', bytes: 11_100_000 };
+const DECODER = trackerAsset('tracked_mask_decoder_fp16.onnx');
+const PARAMETERS = trackerAsset('parameters.json');
 
 /**
  * The two outputs this file fetches a decoder of its own to get.
@@ -154,8 +203,7 @@ const DECODER_OWES = ['object_pointer', 'object_score_logits'] as const;
  * be told which one.
  *
  * Exported because it is the whole of a check that would otherwise only run
- * against a graph no test can hold: nineteen megabytes, fetched from a host
- * most machines do not have.
+ * against the large tracked decoder in the owned model release.
  */
 export function decoderIsMissing(outputs: readonly string[]): readonly string[] {
   return DECODER_OWES.filter((name) => !outputs.includes(name));
@@ -261,24 +309,20 @@ function seedLogits(seed: CoverageMask): Float32Array {
 }
 
 export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promise<TrackingEngine> {
-  const { host, onProgress } = options;
+  const { onProgress } = options;
   const ort = await import('onnxruntime-web/webgpu');
 
-  const total = ATTENTION.bytes + ENCODER.bytes + DECODER.bytes;
+  const total = ATTENTION.bytes + ENCODER.bytes + DECODER.bytes + PARAMETERS.bytes;
   let fetched = 0;
-  const graphOf = async (file: typeof ATTENTION): Promise<Uint8Array<ArrayBuffer>> => {
-    const graph = await fetchGraph(
-      file.graph,
-      (received) => {
-        onProgress(Math.min(1, (fetched + received) / total));
-      },
-      host,
-    );
+  const graphOf = async (file: TrackerAsset): Promise<Uint8Array<ArrayBuffer>> => {
+    const graph = await fetchGraph(file.graph, (received) => {
+      onProgress(Math.min(1, (fetched + received) / total));
+    });
     fetched += file.bytes;
     return graph;
   };
 
-  const parameters: Parameters = await (await fetch(`${host}/parameters.json`)).json();
+  const parameters = parametersFrom(await graphOf(PARAMETERS));
   const noMemory = parameters.parameters.no_memory_embedding;
   const temporal = Float32Array.from(parameters.parameters.memory_temporal_positional_encoding);
   const { sigmoid_scale_for_mem_enc: scale, sigmoid_bias_for_mem_enc: bias } = parameters.constants;

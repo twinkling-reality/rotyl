@@ -1,0 +1,161 @@
+{
+  "release": "edgetam-v1",
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "cpu": "Apple M3 Pro",
+    "node": "v24.15.0"
+  },
+  "initial_application": {
+    "before": {
+      "raw": 166127,
+      "gzip": 51282
+    },
+    "owned_release": {
+      "raw": 161954,
+      "gzip": 49823
+    },
+    "model_requests": 0
+  },
+  "groups": {
+    "selection_half": {
+      "files": 4,
+      "raw": 20590968,
+      "served": 18571198
+    },
+    "selection_full": {
+      "files": 4,
+      "raw": 40896123,
+      "served": 37367464
+    },
+    "tracking": {
+      "files": 4,
+      "raw": 29781210,
+      "served": 22239773
+    },
+    "legal": {
+      "files": 2,
+      "raw": 12254,
+      "served": 12254
+    },
+    "deployment": {
+      "files": 14,
+      "raw": 91280555,
+      "served": 78190689
+    }
+  },
+  "cache": {
+    "after_selection_half": 20590968,
+    "after_selection_full": 40896123,
+    "after_tracking_half": 50372178,
+    "after_tracking_full": 70677333,
+    "invalidated_on_next_model_use_half": 50372178,
+    "invalidated_on_next_model_use_full": 70677333
+  },
+  "serving": {
+    "cold_selection_half": 18571198,
+    "cold_selection_full": 37367464,
+    "cold_tracking_after_selection": 22239773,
+    "cold_full_feature_session_half": 40810971,
+    "cold_full_feature_session_full": 59607237,
+    "thousand_full_feature_sessions_half": 40810971000
+  },
+  "verification_ms": {
+    "build_all": 73.92670899999939,
+    "fetch_selection_half": 16.641125000000102,
+    "fetch_selection_full": 30.083875000000262,
+    "fetch_tracking": 25.631250000000364
+  },
+  "inflate_ms": {
+    "selection_half": 123.32400000000052,
+    "selection_full": 224.56362500000068,
+    "tracking": 165.6647920000014
+  },
+  "files": [
+    {
+      "name": "vision_encoder_fp16.onnx",
+      "feature": "selection-half",
+      "raw": 167617,
+      "served": 71426
+    },
+    {
+      "name": "vision_encoder_fp16.onnx_data",
+      "feature": "selection-half",
+      "raw": 9739536,
+      "served": 9098503
+    },
+    {
+      "name": "prompt_encoder_mask_decoder_fp16.onnx",
+      "feature": "selection-half",
+      "raw": 229799,
+      "served": 52693
+    },
+    {
+      "name": "prompt_encoder_mask_decoder_fp16.onnx_data",
+      "feature": "selection-half",
+      "raw": 10454016,
+      "served": 9348576
+    },
+    {
+      "name": "vision_encoder.onnx",
+      "feature": "selection-full",
+      "raw": 192225,
+      "served": 79415
+    },
+    {
+      "name": "vision_encoder.onnx_data",
+      "feature": "selection-full",
+      "raw": 19532576,
+      "served": 18253777
+    },
+    {
+      "name": "prompt_encoder_mask_decoder.onnx",
+      "feature": "selection-full",
+      "raw": 213114,
+      "served": 31899
+    },
+    {
+      "name": "prompt_encoder_mask_decoder.onnx_data",
+      "feature": "selection-full",
+      "raw": 20958208,
+      "served": 19002373
+    },
+    {
+      "name": "memory_attention_shared_fp16.onnx",
+      "feature": "tracking",
+      "raw": 12049526,
+      "served": 6417724
+    },
+    {
+      "name": "memory_encoder.onnx",
+      "feature": "tracking",
+      "raw": 6691119,
+      "served": 6048857
+    },
+    {
+      "name": "tracked_mask_decoder_fp16.onnx",
+      "feature": "tracking",
+      "raw": 11013652,
+      "served": 9760831
+    },
+    {
+      "name": "parameters.json",
+      "feature": "tracking",
+      "raw": 26913,
+      "served": 12361
+    },
+    {
+      "name": "LICENSE.txt",
+      "feature": "legal",
+      "raw": 11357,
+      "served": 11357
+    },
+    {
+      "name": "NOTICE.txt",
+      "feature": "legal",
+      "raw": 897,
+      "served": 897
+    }
+  ],
+  "emitted_files": 14
+}

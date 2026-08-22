@@ -22,12 +22,10 @@ export interface ToolbarProps {
   readonly onToggleStylePanel: () => void;
   /**
    * Following the selection forward, when there is a clip to follow it through
-   * and somewhere to fetch the tracker from.
+   * and a selection to follow.
    *
-   * ABSENT RATHER THAN DISABLED where either is missing. A photograph has no
-   * later frames, and a build with no host configured has nowhere to fetch
-   * nineteen megabytes of graph from; in both cases a greyed button would
-   * promise something that is not there.
+   * ABSENT RATHER THAN DISABLED for a photograph, which has no later frames. A
+   * greyed button there would promise something the document cannot have.
    */
   readonly tracking?: {
     readonly running: boolean;

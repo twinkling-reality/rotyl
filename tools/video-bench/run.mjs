@@ -9,7 +9,7 @@
 //   node tools/video-bench/run.mjs range           # its own file; see APART below
 //   node tools/video-bench/run.mjs transfer        # its own file; see APART below
 //   node tools/video-bench/run.mjs recovery        # its own file; see APART below
-//   node tools/video-bench/run.mjs tracked-frame   # needs VITE_TRACKING_HOST
+//   node tools/video-bench/run.mjs tracked-frame   # its own file; see APART below
 //   node tools/video-bench/run.mjs long-clip       # twenty minutes; see below
 //   node tools/video-bench/run.mjs interleave      # its own file; see APART below
 //
@@ -70,9 +70,9 @@ import { format, resolveConfig } from 'prettier';
  * megabytes into the origin private file system and cleans up after itself,
  * which is not a thing to have running in the middle of an export measurement.
  *
- * `tracked-frame` needs a dev server started with VITE_TRACKING_HOST pointing
- * at the two graphs `tools/edgetam-export` produces, which most machines will
- * not have. In `all` it would leave an error where every other number is.
+ * `tracked-frame` fetches the owned selection and tracking release from the
+ * development server and runs for much longer than an individual graph timing.
+ * In `all` it would re-date unrelated decode and ONNX measurements.
  *
  * `long-clip` deliberately runs the tab out of memory, which is the measurement
  * rather than a hazard of it, and it takes twenty minutes where `all` takes

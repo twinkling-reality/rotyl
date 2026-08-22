@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { entries, hardware } from './measurements.ts';
+import { ciStabilityEntry, entries, hardware, modelDeliveryEntry } from './measurements.ts';
 import { renderEntry, renderIndex, type Entry, type FigureMeta } from './page.ts';
 import { TRIALS } from './trials.ts';
 
@@ -117,9 +117,9 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // command: what the two graphs are worth is one question, and whether the
   // host around them says the same thing as the reference is another.
   const host = read('tools/edgetam-export/host.json');
-  // Its own file because its own command writes it, and because that command
-  // needs a tracking host: without one there is nothing to fetch the two graphs
-  // from, so it cannot be part of a run everyone can take.
+  // Its own file because its own command writes it, and because it fetches and
+  // runs the complete owned model path. Re-taking it must not re-date the
+  // decode ladder and the unrelated graph timings.
   const tracked = read('tools/video-bench/results-tracked-frame.json');
   const shrink = read('tools/edgetam-export/shrink.json');
   // Its own file because its own command writes it: bundle sizes need a build
@@ -173,6 +173,12 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // re-taking it to add a row about a different field of the same header would
   // re-date it for a question it does not touch.
   const declared = read('tools/video-bench/results-transfer.json');
+  // Separate because model delivery changes neither a frame nor a graph. It is
+  // a build, fetch and cache measurement with its own command and result.
+  const models = read('tools/model-assets/results.json');
+  // Separate again because repeating Vitest answers a reliability question and
+  // must not re-date any renderer or delivery figure.
+  const ci = read('tools/ci-bench/results.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
@@ -197,6 +203,8 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
       perRange,
       declared,
     }),
+    modelDeliveryEntry(models),
+    ciStabilityEntry(ci),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',
@@ -213,7 +221,11 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
     },
   ];
 
-  const stamped = pages.map((entry) => ({ ...entry, taken, date: lastChanged(entry.results) }));
+  const stamped = pages.map((entry) => ({
+    ...entry,
+    taken: entry.taken ?? taken,
+    date: lastChanged(entry.results),
+  }));
 
   const meta = figureMeta(root);
   return [

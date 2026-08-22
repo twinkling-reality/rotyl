@@ -733,28 +733,6 @@ test('opens a video, scrubs it, and selects on a frame', async ({ page }) => {
   await expect(undo).toBeEnabled();
 });
 
-test('offers no tracking when there is nowhere to fetch a tracker from', async ({ page }) => {
-  // The graphs a tracker needs are in no published release, so a build says
-  // where they are or the feature is not there. This build says nothing, which
-  // is the state this suite runs in and the one worth pinning: a Track button
-  // that could only 404 after a nineteen-megabyte download is worse than an
-  // absent feature, and a default host would be exactly that button.
-  await page.locator('input[type=file]').setInputFiles(clip);
-  await expect(page.getByRole('slider', { name: 'Frame' })).toBeVisible();
-
-  // The pair to the run below, and the two are mutually exclusive by
-  // configuration on purpose: one of them asserts the feature is there and the
-  // other that it is honestly absent, and which applies is decided by the same
-  // build-time string rather than by a flag either of them invents.
-  const track = page.getByRole('button', { name: 'Track' });
-  test.skip((await track.count()) > 0, 'VITE_TRACKING_HOST is set: there is a tracker to offer');
-
-  await expect(track).toHaveCount(0);
-  // Everything else in the toolbar is still there, so this is a missing button
-  // rather than a missing toolbar.
-  await expect(page.getByRole('button', { name: 'Invert' })).toBeVisible();
-});
-
 test('refuses a video it cannot decode, by name', async ({ page }) => {
   await page.locator('input[type=file]').setInputFiles(webm);
   await expect(page.getByText('WebM and Matroska are not supported yet. MP4 and MOV work.')).toBeVisible();
@@ -1018,24 +996,15 @@ test('draws a tracked run as one run, with the frames it lost the object faint',
 });
 
 test('follows a selection forward through the clip, and stops where it is told', async ({ page }) => {
-  // THE ONE TEST HERE THAT NEEDS WEIGHTS, and it skips itself rather than
-  // asking to be remembered. Tracking fetches nineteen megabytes of graph from
-  // wherever a build was told they are, plus the thirty-six the object model
-  // costs, which is the wrong thing to put in a loop that has to be reliable.
-  // So it runs when VITE_TRACKING_HOST is set and not otherwise, and the way it
-  // asks is by looking for the button that only exists when it is.
-  //
-  //     cp tools/edgetam-export/onnx/{memory_attention_shared_fp16,memory_encoder}.onnx \
-  //        tools/edgetam-export/onnx/parameters.json public/edgetam/
-  //     echo VITE_TRACKING_HOST=/edgetam > .env.local
-  //     pnpm e2e
+  // The complete model release belongs to the build now, so this is an
+  // ordinary feature test rather than one side of a build-time feature gate.
   test.setTimeout(180_000);
   await page.locator('input[type=file]').setInputFiles(clip);
   const canvas = page.locator('canvas');
   await expect(canvas).toBeVisible();
 
   const track = page.getByRole('button', { name: 'Track' });
-  test.skip((await track.count()) === 0, 'no VITE_TRACKING_HOST: nothing to fetch a tracker from');
+  await expect(track).toBeVisible();
 
   const box = await canvas.boundingBox();
   expect(box).not.toBeNull();
@@ -1093,14 +1062,13 @@ test('leaves the playhead free while it tracks', async ({ page }) => {
   // them would be wrong: every scrub would cancel the run and the run would
   // cancel every scrub.
   //
-  // Guarded the same way as the run above, and for the same reason.
   test.setTimeout(180_000);
   await page.locator('input[type=file]').setInputFiles(clip);
   const canvas = page.locator('canvas');
   await expect(canvas).toBeVisible();
 
   const track = page.getByRole('button', { name: 'Track' });
-  test.skip((await track.count()) === 0, 'no VITE_TRACKING_HOST: nothing to fetch a tracker from');
+  await expect(track).toBeVisible();
 
   const box = await canvas.boundingBox();
   expect(box).not.toBeNull();
@@ -1161,7 +1129,7 @@ test('reports the object behind something on the frames it is behind something o
   // So this asserts the model's answer against a fact rather than against
   // itself. `draws a tracked run as one run` above asserts the same shape with
   // a hand-written log and no model at all, which is the half that runs
-  // everywhere; this is the half that needs the weights, and until it ran, every
+  // everywhere; this is the half that uses the shipped weights, and until it ran, every
   // `absent` command that had ever existed in this repository was written by a
   // test.
   test.setTimeout(180_000);
@@ -1170,7 +1138,7 @@ test('reports the object behind something on the frames it is behind something o
   await expect(canvas).toBeVisible();
 
   const track = page.getByRole('button', { name: 'Track' });
-  test.skip((await track.count()) === 0, 'no VITE_TRACKING_HOST: nothing to fetch a tracker from');
+  await expect(track).toBeVisible();
 
   const truth = await occlusionTruth();
   const start = truth.frames[0];
@@ -1260,7 +1228,7 @@ test('follows two objects at once, because the log already said there were two',
   await expect(canvas).toBeVisible();
 
   const track = page.getByRole('button', { name: 'Track' });
-  test.skip((await track.count()) === 0, 'no VITE_TRACKING_HOST: nothing to fetch a tracker from');
+  await expect(track).toBeVisible();
 
   const truth = await occlusionTruth();
   const start = truth.frames[0];
