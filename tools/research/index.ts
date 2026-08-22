@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { ciStabilityEntry, entries, hardware, modelDeliveryEntry } from './measurements.ts';
+import { ciStabilityEntry, entries, hardware, hostedCiEntry, modelDeliveryEntry } from './measurements.ts';
 import { renderEntry, renderIndex, type Entry, type FigureMeta } from './page.ts';
 import { TRIALS } from './trials.ts';
 
@@ -179,6 +179,13 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // Separate again because repeating Vitest answers a reliability question and
   // must not re-date any renderer or delivery figure.
   const ci = read('tools/ci-bench/results.json');
+  // The local distribution above did not transfer to GitHub's virtual Macs.
+  // These four files are a new measurement of that runner boundary rather than
+  // another sample folded into the local result.
+  const hostedStandard = read('tools/ci-bench/hosted-results-standard.json');
+  const hostedIntel = read('tools/ci-bench/hosted-results-intel.json');
+  const hostedXlarge = read('tools/ci-bench/hosted-results-xlarge.json');
+  const hostedBrowser = read('tools/ci-bench/browser-results.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
@@ -205,6 +212,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
     }),
     modelDeliveryEntry(models),
     ciStabilityEntry(ci),
+    hostedCiEntry({ standard: hostedStandard, intel: hostedIntel, xlarge: hostedXlarge }, hostedBrowser),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',

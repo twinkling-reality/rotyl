@@ -473,9 +473,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -492,9 +490,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "engine-media.test.ts"
-      ],
+      "pending_files": ["engine-media.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -511,9 +507,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -530,9 +524,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -549,9 +541,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -568,9 +558,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -587,9 +575,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -606,9 +592,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -625,9 +609,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -644,9 +626,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -680,9 +660,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -716,9 +694,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -735,9 +711,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -754,9 +728,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -773,9 +745,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -792,9 +762,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -811,9 +779,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -830,9 +796,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -849,9 +813,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -885,9 +847,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -904,9 +864,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "engine-media.test.ts"
-      ],
+      "pending_files": ["engine-media.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -923,9 +881,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -942,9 +898,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -961,9 +915,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -980,9 +932,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -999,9 +949,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1018,9 +966,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1037,9 +983,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1056,9 +1000,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1092,9 +1034,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -1128,9 +1068,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -1147,9 +1085,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1166,9 +1102,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1185,9 +1119,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1204,9 +1136,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1223,9 +1153,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1242,9 +1170,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -1261,9 +1187,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1297,9 +1221,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1316,9 +1238,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "engine-media.test.ts"
-      ],
+      "pending_files": ["engine-media.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1335,9 +1255,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1354,9 +1272,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1373,9 +1289,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1392,9 +1306,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1411,9 +1323,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1430,9 +1340,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1449,9 +1357,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1468,9 +1374,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1504,9 +1408,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -1523,9 +1425,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "engine-media.test.ts"
-      ],
+      "pending_files": ["engine-media.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1542,9 +1442,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -1561,9 +1459,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1580,9 +1476,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1599,9 +1493,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1618,9 +1510,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1637,9 +1527,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1656,9 +1544,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1675,9 +1561,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1711,9 +1595,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -1730,9 +1612,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "engine-media.test.ts"
-      ],
+      "pending_files": ["engine-media.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1749,9 +1629,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1768,9 +1646,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1787,9 +1663,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1806,9 +1680,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1825,9 +1697,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1844,9 +1714,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1863,9 +1731,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1882,9 +1748,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1918,9 +1782,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1937,9 +1799,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "engine-media.test.ts"
-      ],
+      "pending_files": ["engine-media.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1956,9 +1816,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1975,9 +1833,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -1994,9 +1850,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2013,9 +1867,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2032,9 +1884,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2051,9 +1901,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2070,9 +1918,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2089,9 +1935,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2125,9 +1969,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2161,9 +2003,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2180,9 +2020,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2199,9 +2037,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2218,9 +2054,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2237,9 +2071,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2256,9 +2088,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2275,9 +2105,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -2294,9 +2122,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2330,9 +2156,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -2349,9 +2173,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "engine-media.test.ts"
-      ],
+      "pending_files": ["engine-media.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2368,9 +2190,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2387,9 +2207,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2406,9 +2224,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2425,9 +2241,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2444,9 +2258,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2463,9 +2275,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2482,9 +2292,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2501,9 +2309,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2537,9 +2343,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2573,9 +2377,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -2592,9 +2394,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2611,9 +2411,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2630,9 +2428,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2649,9 +2445,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2668,9 +2462,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2687,9 +2479,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -2706,9 +2496,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2742,9 +2530,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2761,9 +2547,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "engine-media.test.ts"
-      ],
+      "pending_files": ["engine-media.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2780,9 +2564,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2799,9 +2581,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2818,9 +2598,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2837,9 +2615,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2856,9 +2632,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2875,9 +2649,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2894,9 +2666,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2913,9 +2683,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2949,9 +2717,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -2968,9 +2734,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "engine-media.test.ts"
-      ],
+      "pending_files": ["engine-media.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -2987,9 +2751,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3006,9 +2768,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3025,9 +2785,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3044,9 +2802,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3063,9 +2819,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3082,9 +2836,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3101,9 +2853,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -3120,9 +2870,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3156,9 +2904,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3192,9 +2938,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3211,9 +2955,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3230,9 +2972,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3249,9 +2989,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3268,9 +3006,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3287,9 +3023,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3306,9 +3040,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3325,9 +3057,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3361,9 +3091,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -3380,9 +3108,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "engine-media.test.ts"
-      ],
+      "pending_files": ["engine-media.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3399,9 +3125,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3418,9 +3142,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3437,9 +3159,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3456,9 +3176,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3475,9 +3193,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3511,9 +3227,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3530,9 +3244,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3566,9 +3278,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "color-contract.test.ts"
-      ],
+      "pending_files": ["color-contract.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -3602,9 +3312,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "export-consistency.test.ts"
-      ],
+      "pending_files": ["export-consistency.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3621,9 +3329,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "frame-tensor.test.ts"
-      ],
+      "pending_files": ["frame-tensor.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3640,9 +3346,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "mask-refine.test.ts"
-      ],
+      "pending_files": ["mask-refine.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3659,9 +3363,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "poster-stylisation.test.ts"
-      ],
+      "pending_files": ["poster-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3678,9 +3380,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "print-stylisation.test.ts"
-      ],
+      "pending_files": ["print-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3697,9 +3397,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "rect-stamp.test.ts"
-      ],
+      "pending_files": ["rect-stamp.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },
@@ -3716,9 +3414,7 @@
         "pending": 1,
         "success": true
       },
-      "pending_files": [
-        "selection-mask.test.ts"
-      ],
+      "pending_files": ["selection-mask.test.ts"],
       "assertion_proof": false,
       "stderr_tail": "WARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
     },
@@ -3735,9 +3431,7 @@
         "pending": 0,
         "success": true
       },
-      "pending_files": [
-        "selective-stylisation.test.ts"
-      ],
+      "pending_files": ["selective-stylisation.test.ts"],
       "assertion_proof": false,
       "stderr_tail": ""
     },

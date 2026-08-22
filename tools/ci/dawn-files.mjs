@@ -37,7 +37,7 @@ export function unitTestFiles() {
   return readdirSync(TEST_ROOT)
     .filter((name) => name.endsWith('.test.ts'))
     .map((name) => path.join(TEST_ROOT, name))
-    .sort();
+    .toSorted();
 }
 
 /** Test files that reach Dawn, including through a shared test harness. */

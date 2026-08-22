@@ -32,8 +32,9 @@ pnpm e2e      # Playwright, real Chrome
 ```
 
 `pnpm verify` is also the required GitHub Actions job. Playwright stays a
-separate real-Chrome run because it tests the browser and GPU the unit gate does
-not emulate.
+separate real-Chrome run because it tests gestures, media, model-backed paths
+and whole browser sessions rather than unit assertions. The shader unit tests
+inside `pnpm verify` also use installed Chrome, so the gate requires it.
 
 ## What it does
 
@@ -96,7 +97,8 @@ src/app/       Preact UI
 `core` never imports from `platform` or `app`, enforced by a second tsconfig that
 compiles it with no `dom` library, so a stray `window` fails the build rather
 than being caught in review. The payoff is concrete: every shader is unit-tested
-by running it for real through Dawn in Node, with no browser and no mocks.
+by running it for real through Dawn in installed Chrome, with no shader mocks,
+while the ordinary DOM-free unit tests stay in Node.
 
 It ships an initial 162 KB of JavaScript, 49.8 KB gzipped, plus 31 KB of subset fonts.
 Three runtime dependencies, all but the framework code-split, so a photograph

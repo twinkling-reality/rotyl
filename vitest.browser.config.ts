@@ -20,6 +20,7 @@ export default defineConfig({
       enforce: 'pre',
       resolveId(source) {
         if (source === './gpu-harness.ts') return path.resolve('test/browser-gpu-harness.ts');
+        return undefined;
       },
     },
   ],

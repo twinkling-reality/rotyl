@@ -258,7 +258,115 @@ export function ciStabilityEntry(ci: unknown): Entry {
           ],
         },
         caveat: `The residual is the observed per-process exit rate raised to the three-attempt bound, across the ${String(num(ci, ['summary', 'dawn_files_per_suite']))} shader files in one suite. It is a reliability estimate from this run, not a claim that native failures are independent on every machine.`,
-        command: 'pnpm test',
+        command: 'node tools/ci-bench/run.mjs --runs 32',
+      },
+    ],
+  };
+}
+
+interface HostedNativeResults {
+  readonly standard: unknown;
+  readonly intel: unknown;
+  readonly xlarge: unknown;
+}
+
+/** The hosted-runner measurement that tested the local gate's premise. */
+export function hostedCiEntry(native: HostedNativeResults, browser: unknown): Entry {
+  const nativeRows = [
+    ['standard virtual Mac', native.standard],
+    ['Intel virtual Mac', native.intel],
+    ['GPU larger Mac', native.xlarge],
+  ] as const;
+  const complete = (result: unknown, group: 'suite' | 'isolated'): number =>
+    num(result, [group, 'processes']) -
+    num(result, [group, 'incomplete_processes']) -
+    num(result, [group, 'assertion_failures']);
+  const ratio = (result: unknown, group: 'suite' | 'isolated'): string =>
+    `${String(complete(result, group))} / ${String(num(result, [group, 'processes']))}`;
+  const fullProcesses = nativeRows.reduce(
+    (total, [, result]) => total + num(result, ['suite', 'processes']),
+    0,
+  );
+  const fullComplete = nativeRows.reduce((total, [, result]) => total + complete(result, 'suite'), 0);
+  const isolatedProcesses = nativeRows.reduce(
+    (total, [, result]) => total + num(result, ['isolated', 'processes']),
+    0,
+  );
+  const isolatedComplete = nativeRows.reduce((total, [, result]) => total + complete(result, 'isolated'), 0);
+  const browserProcesses = num(browser, ['summary', 'processes']);
+  const browserComplete = num(browser, ['summary', 'complete_processes']);
+  const browserAssertions = num(browser, ['observations', '0', 'report', 'total']);
+
+  return {
+    slug: 'hosted-ci',
+    results: 'tools/ci-bench/browser-results.json',
+    title: 'Why the shader gate runs in Chrome',
+    standfirst:
+      'The local Dawn bound tested on every hosted Mac shape, then replaced by the browser process that owns the product’s actual GPU lifetime.',
+    harness: 'tools/ci-bench',
+    taken: `${text(browser, ['environment', 'cpu'])}, Node ${text(browser, ['environment', 'node'])}`,
+    lede: [
+      'The local measurement found a narrow native teardown failure and justified retrying only an incomplete shader file. That was a candidate policy, not permission to assume the same distribution on a different machine. The first GitHub run contradicted it, so the runner itself became the next measurement.',
+      'Every hosted variant was asked both questions: can the unchanged full suite complete, and does putting each shader file in its own native process remove the failure. The answer to both was no. The installed Chrome on the ordinary runner was then asked to execute the same WGSL assertions while the browser, rather than Vitest, owned Dawn’s process lifetime.',
+    ],
+    sections: [
+      {
+        heading: 'No hosted native runner completed a full suite',
+        prose: [
+          `${String(fullComplete)} of ${String(fullProcesses)} unchanged full-suite processes completed across the three hosted Mac shapes. None reported a failed assertion; they stopped with cases still pending. A retry count cannot be derived from a runner on which the observed full-suite completion rate is zero.`,
+          `One shader file per process improved the shape without fixing it: ${String(isolatedComplete)} of ${String(isolatedProcesses)} processes completed. The result also moved sharply with the runner, which rules out transplanting the local machine’s process rate into GitHub’s gate.`,
+        ],
+        table: {
+          columns: ['hosted runner', 'reported CPU', 'full suite complete', 'isolated files complete'],
+          rows: nativeRows.map(([label, result]) => [
+            label,
+            text(result, ['environment', 'cpu']),
+            ratio(result, 'suite'),
+            ratio(result, 'isolated'),
+          ]),
+        },
+        caveat:
+          'A complete process means a zero exit and a report with every assertion passed and none pending. An assertion failure is counted separately and is never treated as native instability.',
+        command: 'Run “Measure hosted Dawn” from GitHub Actions',
+      },
+      {
+        heading: 'The larger GPU runner made the native binding worse',
+        prose: [
+          `The GPU larger Mac completed ${ratio(native.xlarge, 'isolated')} isolated processes, against ${ratio(native.standard, 'isolated')} on the standard virtual Mac and ${ratio(native.intel, 'isolated')} on Intel. Paying for a runner advertised with GPU acceleration does not change who owns the native binding’s teardown, and did not buy a usable gate.`,
+          'This is why CI does not select a more expensive machine and does not hide the result behind a larger retry budget. Both approaches preserve the failure boundary the measurement identified.',
+        ],
+        command: 'node tools/ci-bench/hosted.mjs --cycles 16',
+      },
+      {
+        heading: 'Installed Chrome completed every hosted cycle',
+        prose: [
+          `${String(browserComplete)} of ${String(browserProcesses)} Chrome processes completed all ${String(browserAssertions)} shader assertions. That is ${String(browserComplete * browserAssertions)} assertion executions with none failed or pending on the same standard virtual Mac where native Node Dawn completed no full suite.`,
+          'The shader files are discovered through their local import graph and assembled into one browser page. That keeps one Chrome-owned device across the shader suite, which is the lifetime the product has, while ordinary DOM-free unit tests remain parallel Node processes.',
+        ],
+        table: {
+          columns: ['gate on the standard virtual Mac', 'complete processes', 'failed assertion processes'],
+          rows: [
+            [
+              'native Node Dawn',
+              ratio(native.standard, 'suite'),
+              String(num(native.standard, ['suite', 'assertion_failures'])),
+            ],
+            [
+              'installed Chrome Dawn',
+              `${String(browserComplete)} / ${String(browserProcesses)}`,
+              String(num(browser, ['summary', 'failed_assertion_processes'])),
+            ],
+          ],
+        },
+        command: 'node tools/ci-bench/browser.mjs --cycles 16',
+      },
+      {
+        heading: 'The gate has no retry path',
+        prose: [
+          'The Node report and the Chrome report must each exist, exit cleanly, contain tests, and say that every collected assertion passed with none pending. A failed assertion, a missing installed Chrome, unavailable WebGPU, a missing report, or an incomplete report fails the job on that run.',
+          'The required workflow runs the same pnpm verify command maintainers run locally, then builds and inspects the production Sites layout. Playwright remains separate because it exercises gestures, media and model-backed browser paths rather than unit assertions.',
+        ],
+        command: 'pnpm verify',
       },
     ],
   };

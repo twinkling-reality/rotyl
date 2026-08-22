@@ -107,7 +107,7 @@ function summary(observations) {
 }
 
 const result = {
-  command: `node tools/ci-bench/hosted.mjs --cycles ${String(cycles)} ` + `--output ${outputArgument}`,
+  command: `node tools/ci-bench/hosted.mjs --cycles ${String(cycles)} --output ${outputArgument}`,
   environment: {
     platform: process.platform,
     architecture: process.arch,

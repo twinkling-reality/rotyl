@@ -28,7 +28,10 @@ reason. `tools/model-assets` measures first-page, served, cached, invalidated an
 digest costs without re-taking a video timing. `tools/ci-bench` records the unit
 suite's assertion report separately from its native process exit, without
 re-dating either model delivery or a renderer. Their generated pages are
-`/research/model-delivery.html` and `/research/ci.html`.
+`/research/model-delivery.html` and `/research/ci.html`. The local CI result did
+not transfer to GitHub's virtual Macs, so the hosted runner and installed-Chrome
+decision is a separate measurement at `/research/hosted-ci.html`, with its own
+result files and command.
 
 **One of the inputs is fetched rather than drawn**, which is the one exception
 to everything else here being reproducible from the repository alone. It is

@@ -25,4 +25,6 @@ the model version alone.
 
 Every production deployment is a saved Sites version built from the exact
 source commit. GitHub's Verify job runs both the portable build and the Sites
-layout check before that commit can enter `main`.
+layout check before that commit can enter `main`. Its ordinary unit assertions
+run in Node and its WGSL assertions run in installed Chrome; the hosted-runner
+measurement behind that split is generated at `/research/hosted-ci.html`.

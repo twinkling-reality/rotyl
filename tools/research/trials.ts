@@ -67,7 +67,49 @@ export const TRIALS: readonly Trial[] = [
     verdict: 'rejected',
     evidence:
       'It reruns 279 or 283 assertions already proved in the two incomplete observations and would rerun a real failure too, which is how a flaky gate hides a flaky test. The report names the one incomplete file. Only that file gets a fresh Dawn process, and no failed assertion is retried. Three total processes come from the observed 1.17% per-Dawn-process exit rate: the estimated residual is 0.0013% of suites, below one in 77,000',
-    where: 'tools/ci/run-tests.mjs and /research/ci.html',
+    where: 'tools/ci-bench/results.json and /research/ci.html',
+  },
+  {
+    what: 'Counting only tests that import the GPU harness directly',
+    verdict: 'rejected',
+    evidence:
+      'It found 8 files and the first hosted failure named 11. The other 3 import a style or mask harness which imports the GPU harness for them, so a text search makes those shader assertions disappear from any split gate. The detector follows every relative test-helper import until it either reaches gpu-harness.ts or runs out of local dependencies',
+    where: 'tools/ci/dawn-files.mjs, measurement 20',
+  },
+  {
+    what: 'Transplanting the local three-attempt Dawn bound to GitHub’s standard Mac',
+    verdict: 'rejected',
+    evidence:
+      'The local estimate began with a 1.17% native exit rate per shader process. On the standard hosted M1 Virtual, 0 of 16 full suites completed and all 16 ended with assertions pending. A retry exponent is not a reliability bound when the runner measured for the gate has an observed full-suite completion rate of zero',
+    where: 'tools/ci-bench/hosted-results-standard.json and /research/hosted-ci.html',
+  },
+  {
+    what: 'Putting every hosted Node Dawn test file in its own process',
+    verdict: 'rejected',
+    evidence:
+      'It removed cross-file lifetime and still left 102 of 176 processes incomplete on the standard M1 Virtual, 39 of 176 on Intel and 153 of 176 on the larger M2 Pro. There were 0 failed assertions. Isolation changes the frequency and does not remove the native failure boundary',
+    where: 'tools/ci-bench/hosted-results-*.json and /research/hosted-ci.html',
+  },
+  {
+    what: 'Paying for GitHub’s GPU-accelerated larger Mac runner',
+    verdict: 'rejected',
+    evidence:
+      'It completed 0 of 16 full native suites and 23 of 176 isolated shader processes. The ordinary M1 Virtual completed 74 isolated processes and Intel completed 137, so the billed GPU runner was the worst of the three on the failure that mattered',
+    where: 'tools/ci-bench/hosted-results-xlarge.json and /research/hosted-ci.html',
+  },
+  {
+    what: 'Opening every shader test file in parallel browser sessions',
+    verdict: 'rejected',
+    evidence:
+      'Vitest opened 11 Chrome sessions at once and timed out connecting to one before any of the 55 assertions ran. The product owns one GPU device in one page, and assembling the same 11 files into one page is both the representative lifetime and the smaller gate',
+    where: 'vitest.browser.config.ts, measurement 20',
+  },
+  {
+    what: 'Running the shader unit suite in installed Chrome as one page',
+    verdict: 'adopted',
+    evidence:
+      'The standard hosted M1 Virtual completed 16 of 16 Chrome processes, all 55 shader assertions every time: 880 assertion executions with 0 failed or pending. Native Node Dawn on the same runner completed 0 of 16 full suites. The gate requires the complete Chrome report and has no retry path',
+    where: 'tools/ci-bench/browser-results.json and /research/hosted-ci.html',
   },
   {
     what: 'An occlusion as a field on the command, rather than on the run that produced it',
