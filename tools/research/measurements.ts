@@ -69,6 +69,102 @@ const asFile = (bytes: number): string => `${(bytes / 1e6).toFixed(2)} MB`;
 const SIZES = ['720p', '2 MP', '12 MP', '24 MP'] as const;
 const STYLES = ['comic', 'poster', 'print'] as const;
 
+// --- public launch ---------------------------------------------------------
+
+export function publicLaunchEntry(launch: unknown): Entry {
+  const probes = at(launch, ['production', 'exposure_probes']);
+  if (!Array.isArray(probes)) throw new Error('research: production / exposure_probes is not a list');
+  const exposed = probes.filter((_, index) =>
+    flag(launch, ['production', 'exposure_probes', String(index), 'exposed']),
+  ).length;
+  const direct =
+    flag(launch, ['production', 'anonymous_https']) && !flag(launch, ['production', 'redirected']);
+  const policyRow = (label: string, group: string): readonly string[] => [
+    label,
+    String(num(launch, ['production', group, 'status'])),
+    text(launch, ['production', group, 'cache_control']),
+    text(launch, ['production', group, 'content_type']),
+  ];
+
+  return {
+    slug: 'public-launch',
+    results: 'tools/launch-check/results.json',
+    title: 'What the public deployment actually exposes',
+    standfirst:
+      'The anonymous canonical HTTPS origin, its exact artifact, cache boundary, model digest and negative exposure probes.',
+    harness: 'tools/launch-check',
+    taken: `Anonymous HTTPS from Node ${text(launch, ['environment', 'node'])}`,
+    lede: [
+      'A build that passed locally is not proof of the origin a visitor receives. The public check reads the exact Sites output, then approaches the canonical hostname without browser credentials and without following a redirect.',
+      `The result is ${direct ? 'one direct HTTPS origin' : 'not a direct HTTPS origin'} for application code and the independently versioned ${text(launch, ['model_release'])} model release. It records only public response metadata, file sizes and derived digests.`,
+    ],
+    sections: [
+      {
+        heading: 'The public artifact is the artifact that was checked',
+        prose: [
+          `The deployment contains ${String(num(launch, ['build', 'deployment_files']))} files and occupies ${asFile(num(launch, ['build', 'deployment_bytes']))}. ${String(num(launch, ['build', 'public_files']))} of those files, occupying ${asFile(num(launch, ['build', 'public_bytes']))}, are below the worker's public asset root.`,
+          `The largest public file is ${text(launch, ['build', 'largest_public_file', 'path'])} at ${asFile(num(launch, ['build', 'largest_public_file', 'bytes']))}. The output contains no source map and no temporary archive.`,
+        ],
+        table: {
+          columns: ['boundary', 'files', 'bytes'],
+          rows: [
+            [
+              'saved Sites artifact',
+              String(num(launch, ['build', 'deployment_files'])),
+              asFile(num(launch, ['build', 'deployment_bytes'])),
+            ],
+            [
+              'public worker assets',
+              String(num(launch, ['build', 'public_files'])),
+              asFile(num(launch, ['build', 'public_bytes'])),
+            ],
+          ],
+        },
+        command: 'node tools/launch-check/measure.mjs',
+      },
+      {
+        heading: 'HTML revalidates and immutable bytes do not',
+        prose: [
+          `The root, research page, hashed application code and versioned model all answered on ${text(launch, ['canonical_origin'])}. All four returned the worker's referrer, framing and content-type protections.`,
+          'HTML must revalidate so an atomic deployment can replace it. A hashed application asset and a model path containing its release version can remain immutable for a year because changing either changes its URL.',
+        ],
+        table: {
+          columns: ['anonymous request', 'status', 'cache-control', 'content-type'],
+          rows: [
+            policyRow('application HTML', 'root'),
+            policyRow('research HTML', 'research'),
+            policyRow('hashed application code', 'code'),
+            policyRow('versioned model', 'model'),
+          ],
+        },
+        command: 'node tools/launch-check/measure.mjs',
+      },
+      {
+        heading: 'The model crosses the deployment boundary with its digest',
+        prose: [
+          `${String(num(launch, ['models', 'emitted_files']))} model release files occupy ${asFile(num(launch, ['models', 'served_bytes']))} as served. The probe fetched ${text(launch, ['models', 'probe', 'path'])}, decompressed it and matched all ${String(num(launch, ['models', 'probe', 'decompressed_bytes']))} bytes to the committed SHA-256 digest.`,
+          `${String(probes.length)} negative requests looked for deployment configuration, package metadata, worker source, repository data and a temporary site archive. ${String(exposed)} contained the marker that would identify the requested private source.`,
+        ],
+        table: {
+          columns: ['production refusal', 'observed'],
+          rows: [
+            [
+              'model probe matches manifest',
+              flag(launch, ['models', 'probe', 'matches_manifest']) ? 'yes' : 'no',
+            ],
+            ['source maps in public output', String(num(launch, ['build', 'source_maps']))],
+            ['temporary archives in public output', String(num(launch, ['build', 'temporary_archives']))],
+            ['private-source markers exposed', `${String(exposed)} / ${String(probes.length)}`],
+          ],
+        },
+        caveat:
+          'A negative marker probe does not prove that no undiscovered route exists. It makes the intended deployment boundary executable and fails the measurement if any named source or metadata path begins exposing its expected contents.',
+        command: 'node tools/launch-check/measure.mjs',
+      },
+    ],
+  };
+}
+
 // --- owning the model release ---------------------------------------------
 
 export function modelDeliveryEntry(models: unknown): Entry {

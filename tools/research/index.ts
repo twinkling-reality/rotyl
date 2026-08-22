@@ -1,6 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { ciStabilityEntry, entries, hardware, hostedCiEntry, modelDeliveryEntry } from './measurements.ts';
+import {
+  ciStabilityEntry,
+  entries,
+  hardware,
+  hostedCiEntry,
+  modelDeliveryEntry,
+  publicLaunchEntry,
+} from './measurements.ts';
 import { renderEntry, renderIndex, type Entry, type FigureMeta } from './page.ts';
 import { TRIALS } from './trials.ts';
 
@@ -186,6 +193,10 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   const hostedIntel = read('tools/ci-bench/hosted-results-intel.json');
   const hostedXlarge = read('tools/ci-bench/hosted-results-xlarge.json');
   const hostedBrowser = read('tools/ci-bench/browser-results.json');
+  // Separate because it measures the public origin after deployment rather
+  // than a build or a local runtime. Re-taking it must not re-date either the
+  // model-delivery finding or the hosted-runner finding.
+  const launch = read('tools/launch-check/results.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
@@ -213,6 +224,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
     modelDeliveryEntry(models),
     ciStabilityEntry(ci),
     hostedCiEntry({ standard: hostedStandard, intel: hostedIntel, xlarge: hostedXlarge }, hostedBrowser),
+    publicLaunchEntry(launch),
     {
       slug: 'trials',
       title: 'What was tried, and what happened to it',
