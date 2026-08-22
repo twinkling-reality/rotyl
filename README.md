@@ -113,6 +113,7 @@ without copying the file does not exist on the main thread.
 | [Video](docs/video.md)                         | playing, holding a selection across frames, reading frames, writing a clip |
 | [Saving the work](docs/saving.md)              | the document, coming back from a crash, and which file it belongs to       |
 | [What was measured](docs/measurements.md)      | why every number lives on a generated page instead of in these files       |
+| [Deployment](docs/deployment.md)               | the production build, immutable model paths and release boundary           |
 | [The interface](docs/interface.md)             | closing a file, saying what is happening and what happened, type           |
 | [Known limits](docs/limits.md)                 | what it cannot do, in its own words                                        |
 | [Licence](docs/licences.md)                    | MIT, and what the dependencies are                                         |

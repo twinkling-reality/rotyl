@@ -44,3 +44,9 @@ jobs:
         run: pnpm verify
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Build the production site
+        run: pnpm site:build
+
+      - name: Verify the production site
+        run: pnpm site:check

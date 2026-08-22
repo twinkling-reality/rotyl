@@ -1,6 +1,6 @@
 {
   "name": "rotyl",
-  "version": "0.1.0",
+  "version": "0.1.0-rc.1",
   "packageManager": "pnpm@10.7.1",
   "private": true,
   "license": "MIT",
@@ -14,6 +14,8 @@
     "dev": "vite",
     "prebuild": "pnpm models",
     "build": "tsc -b && vite build",
+    "site:build": "tsc -b && node tools/hosting/build.mjs",
+    "site:check": "node tools/hosting/check.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b --force && tsc -p tsconfig.core.json",
     "lint": "oxlint --type-aware",
@@ -39,6 +41,8 @@
     ]
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "1.37.1",
+    "@openai/sites-vite-plugin": "0.1.0",
     "@playwright/test": "1.62.1",
     "@webgpu/types": "0.1.71",
     "oxlint": "1.78.0",
@@ -47,6 +51,7 @@
     "typescript": "7.0.2",
     "vite": "8.2.1",
     "vitest": "4.1.10",
-    "webgpu": "0.4.0"
+    "webgpu": "0.4.0",
+    "wrangler": "4.92.0"
   }
 }

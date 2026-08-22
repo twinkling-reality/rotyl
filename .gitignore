@@ -2,6 +2,7 @@ node_modules/
 dist/
 .model-assets/
 .scratch/
+.wrangler/
 test-results/
 playwright-report/
 *.local

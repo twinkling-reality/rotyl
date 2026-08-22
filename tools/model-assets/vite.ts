@@ -56,6 +56,9 @@ export function modelAssets(): Plugin {
 
   return {
     name: 'rotyl:model-assets',
+    applyToEnvironment(environment) {
+      return environment.name === 'client';
+    },
     configResolved(resolved) {
       config = resolved;
       verified = readVerifiedModelAssets(resolved.root);
