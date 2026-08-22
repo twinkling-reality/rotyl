@@ -14,6 +14,7 @@ from the benchmarks' own results, for the reason
 | [Video](video.md)                         | playing, holding a selection across frames, reading frames, writing a clip |
 | [Saving the work](saving.md)              | the document, coming back from a crash, and which file it belongs to       |
 | [What was measured](measurements.md)      | why every number lives on a generated page instead of in these files       |
+| [Deployment](deployment.md)               | the production build, canonical origin, release boundary and rollback      |
 | [The interface](interface.md)             | closing a file, saying what is happening and what happened, type           |
 | [Known limits](limits.md)                 | what it cannot do, in its own words                                        |
 | [Licence](licences.md)                    | MIT, and what the dependencies are                                         |

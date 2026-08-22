@@ -3,6 +3,8 @@
 **Select part of an image or a video, transform only that part, export at full
 resolution.** Everything outside the selection stays byte-identical.
 
+[Open Rotyl](https://rotyl.glendonchin.com/)
+
 Runs on your machine. Nothing is ever uploaded. On first use, the model comes
 from the same Rotyl deployment as the application and stays in the browser's
 cache.
@@ -35,6 +37,10 @@ pnpm e2e      # Playwright, real Chrome
 separate real-Chrome run because it tests gestures, media, model-backed paths
 and whole browser sessions rather than unit assertions. The shader unit tests
 inside `pnpm verify` also use installed Chrome, so the gate requires it.
+
+A normal clone needs no feature flag or private model host. The build obtains
+the complete release named by `models/edgetam/manifest.json`, checks every byte
+against its committed digest, and refuses to emit a partial application.
 
 ## What it does
 
@@ -105,6 +111,20 @@ Three runtime dependencies, all but the framework code-split, so a photograph
 fetches neither the inference runtime, nor the demuxer, nor the container writer.
 One Web Worker, which appends the crash journal because the API that can do that
 without copying the file does not exist on the main thread.
+
+## Model provenance and release integrity
+
+Rotyl uses EdgeTAM under Apache-2.0. The selection graphs are pinned upstream
+artifacts. The tracking graphs and parameters are reproducible derivative files
+made by [the exporter](tools/edgetam-export/README.md). Exact repositories,
+revisions, byte lengths and SHA-256 digests live in
+[`models/edgetam/manifest.json`](models/edgetam/manifest.json).
+
+The build verifies that manifest before it emits the application. The browser
+checks the same digest after fetching a model and before giving it to the
+inference runtime. Runtime requests stay on the origin that served Rotyl, under
+the immutable `edgetam-v1` path. Images and videos remain in the browser and are
+never uploaded.
 
 ## Reading further
 
