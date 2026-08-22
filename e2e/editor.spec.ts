@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFile } from 'node:fs/promises';
+import { gzipSync } from 'node:zlib';
 import { BlobSource, EncodedPacketSink, Input, MP4, QTFF } from 'mediabunny';
 
 /**
@@ -1053,6 +1054,64 @@ test('follows a selection forward through the clip, and stops where it is told',
   await expect(runs).toHaveCount(0);
   await expect(marks).toHaveCount(1);
   await expect(page.getByText('2 / 60')).toBeVisible();
+});
+
+test('refuses a changed model with a recovery message and leaves Track usable', async ({ page }) => {
+  await page.route(/\/models\/edgetam\/edgetam-v1\/vision_encoder(?:_fp16)?\.onnx\.gz$/, async (route) => {
+    const bytes = route.request().url().includes('_fp16') ? 167_617 : 192_225;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/gzip',
+      body: gzipSync(Buffer.alloc(bytes)),
+    });
+  });
+
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  await page.keyboard.press('a');
+  await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.35);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.65, { steps: 10 });
+  await page.mouse.up();
+
+  const track = page.getByRole('button', { name: 'Track' });
+  await track.click();
+  await expect(page.getByText('its SHA-256 digest was different', { exact: false })).toBeVisible();
+  await expect(
+    page.getByText('The deployment or browser cache is incomplete. Reload', { exact: false }),
+  ).toBeVisible();
+  await expect(track).toBeVisible();
+  await expect(track).toBeEnabled();
+});
+
+test('reports a missing model and leaves Track usable', async ({ page }) => {
+  await page.route(/\/models\/edgetam\/edgetam-v1\/vision_encoder(?:_fp16)?\.onnx\.gz$/, async (route) => {
+    await route.fulfill({ status: 404, contentType: 'application/gzip', body: '' });
+  });
+
+  await page.locator('input[type=file]').setInputFiles(clip);
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+
+  await page.keyboard.press('a');
+  await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.35);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.65, { steps: 10 });
+  await page.mouse.up();
+
+  const track = page.getByRole('button', { name: 'Track' });
+  await track.click();
+  await expect(page.getByText(/Could not download vision_encoder.*\(404\)/)).toBeVisible();
+  await expect(track).toBeVisible();
+  await expect(track).toBeEnabled();
 });
 
 test('leaves the playhead free while it tracks', async ({ page }) => {
