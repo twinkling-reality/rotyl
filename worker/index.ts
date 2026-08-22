@@ -8,14 +8,18 @@ interface Environment {
 
 /**
  * Rotyl is a static application, but its cache boundary is part of the model
- * release contract. Sites does not apply a Pages `_headers` file, so every
- * response runs through this worker before the asset binding serves it.
+ * release contract. Sites serves a matching static path before its worker, so
+ * the deployable files live under an internal binding path. Public requests do
+ * not match a static file and reach this worker, which maps them to that path.
  */
 export default {
   async fetch(request: Request, environment: Environment): Promise<Response> {
-    const response = await environment.ASSETS.fetch(request);
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+    url.pathname = `/__rotyl${pathname === '/' ? '/index.html' : pathname}`;
+
+    const response = await environment.ASSETS.fetch(new Request(url, request));
     const headers = new Headers(response.headers);
-    const pathname = new URL(request.url).pathname;
 
     headers.set('Referrer-Policy', 'no-referrer');
     headers.set('X-Content-Type-Options', 'nosniff');
