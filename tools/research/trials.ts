@@ -14,6 +14,13 @@ import type { Trial } from './page.ts';
  */
 export const TRIALS: readonly Trial[] = [
   {
+    what: 'Moving Rotyl to a second static host solely to obtain a canonical domain',
+    verdict: 'rejected',
+    evidence:
+      'The existing Sites project accepted rotyl.glendonchin.com directly, returned one CNAME and two validation records, provisioned a managed certificate, and kept its saved-version rollback path. The anonymous production measurement then observed zero redirects, the same worker cache and security policy on HTML, hashed code and the versioned model, and zero exposed source markers across five probes. A migration would add another provider and another rollback procedure without satisfying a requirement Sites lacked',
+    where: 'docs/deployment.md and /research/public-launch.html',
+  },
+  {
     what: 'Configuring the Sites asset binding with `html_handling: none`',
     verdict: 'rejected',
     evidence:

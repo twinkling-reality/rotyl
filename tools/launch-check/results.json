@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "application_release": "v0.1.0",
+  "model_release": "edgetam-v1",
+  "canonical_origin": "https://rotyl.glendonchin.com",
+  "environment": {
+    "node": "v24.15.0"
+  },
+  "build": {
+    "deployment_files": 63,
+    "deployment_bytes": 103941981,
+    "public_files": 58,
+    "public_bytes": 103939350,
+    "largest_public_file": {
+      "path": "assets/ort-wasm-simd-threaded.asyncify-CvvOzbbq.wasm",
+      "bytes": 24254953
+    },
+    "source_maps": 0,
+    "temporary_archives": 0
+  },
+  "models": {
+    "emitted_files": 14,
+    "served_bytes": 78190689,
+    "probe": {
+      "path": "/models/edgetam/edgetam-v1/parameters.json.gz",
+      "decompressed_bytes": 26913,
+      "sha256": "b7861d11ba637998606b6ea462b01a5dcb92b098baa225970f5fb4499e8aed71",
+      "matches_manifest": true
+    }
+  },
+  "production": {
+    "anonymous_https": true,
+    "redirected": false,
+    "root": {
+      "status": 200,
+      "cache_control": "public, max-age=0, must-revalidate",
+      "content_type": "text/html; charset=utf-8",
+      "referrer_policy": "no-referrer",
+      "content_type_options": "nosniff",
+      "frame_options": "DENY"
+    },
+    "research": {
+      "status": 200,
+      "cache_control": "public, max-age=0, must-revalidate",
+      "content_type": "text/html; charset=utf-8",
+      "referrer_policy": "no-referrer",
+      "content_type_options": "nosniff",
+      "frame_options": "DENY"
+    },
+    "code": {
+      "path": "/assets/clip-sink-BVnmuDoU.js",
+      "status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_type": "text/javascript",
+      "referrer_policy": "no-referrer",
+      "content_type_options": "nosniff",
+      "frame_options": "DENY"
+    },
+    "model": {
+      "path": "/models/edgetam/edgetam-v1/parameters.json.gz",
+      "status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_type": "application/gzip",
+      "referrer_policy": "no-referrer",
+      "content_type_options": "nosniff",
+      "frame_options": "DENY"
+    },
+    "exposure_probes": [
+      {
+        "path": "/.openai/hosting.json",
+        "status": 404,
+        "exposed": false
+      },
+      {
+        "path": "/package.json",
+        "status": 404,
+        "exposed": false
+      },
+      {
+        "path": "/worker/index.ts",
+        "status": 404,
+        "exposed": false
+      },
+      {
+        "path": "/.git/config",
+        "status": 404,
+        "exposed": false
+      },
+      {
+        "path": "/site.tar",
+        "status": 404,
+        "exposed": false
+      }
+    ]
+  }
+}

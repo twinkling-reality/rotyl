@@ -1,5 +1,7 @@
 # Rotyl
 
+[![Verify](https://github.com/twinkling-reality/rotyl/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/twinkling-reality/rotyl/actions/workflows/verify.yml)
+
 **Select part of an image or a video, transform only that part, export at full
 resolution.** Everything outside the selection stays byte-identical.
 
