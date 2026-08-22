@@ -1,0 +1,261 @@
+{
+  "command": "node tools/ci-bench/browser.mjs --cycles 16",
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "cpu": "Apple M1 (Virtual)",
+    "node": "v24.15.0",
+    "image_os": "macos15",
+    "image_version": "20260727.0256.1",
+    "runner_architecture": "ARM64"
+  },
+  "cycles": 16,
+  "summary": {
+    "processes": 16,
+    "complete_processes": 16,
+    "failed_assertion_processes": 0,
+    "incomplete_processes": 0
+  },
+  "observations": [
+    {
+      "cycle": 1,
+      "exit": 0,
+      "signal": null,
+      "seconds": 9.981015042,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "exit": 0,
+      "signal": null,
+      "seconds": 3.320411167,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.888943792,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.8918554590000003,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "exit": 0,
+      "signal": null,
+      "seconds": 3.1432960420000016,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.7495004169999993,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.6940019580000008,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.620219167000003,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.542081124999997,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.657393833999995,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.594511249999996,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.5318655,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.574628791000003,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.873011750000005,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.5085942920000015,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.527010541999996,
+      "complete": true,
+      "report": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "stderr_tail": ""
+    }
+  ]
+}

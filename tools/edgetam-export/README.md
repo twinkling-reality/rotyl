@@ -3,12 +3,18 @@
 Produces the three ONNX graphs that video tracking needs and the published
 EdgeTAM release does not contain.
 
-**Rotyl fetches these at runtime, from wherever whoever built it put them.**
-There is no default host, because the failure mode of a wrong one is nineteen
-megabytes fetched and then a 404 at the moment somebody presses Track; a build
-sets `VITE_TRACKING_HOST` or there is no Track button. What a host serves is the
-two graphs and `parameters.json`, and what it owes anyone it serves them to is
-below.
+**Rotyl owns and ships the result.** The files join the published selection
+graphs in `models/edgetam/manifest.json`, with exact byte lengths and SHA-256
+digests. A build prepares that complete project release, refuses any mismatch,
+and emits it under the application origin. The browser checks the same manifest
+again before a graph can reach ONNX Runtime.
+
+The old `VITE_TRACKING_HOST` deliberately had no default because a wrong guess
+failed only after a large fetch at the moment somebody pressed Track. It is gone
+because there is no host decision left for a builder to make: every deployable
+build contains the verified files, or no build is produced. `ROTYL_MODEL_SOURCE`
+may point the preparation command at a clean local export, but it changes only
+where the build obtains the exact release, never what runtime fetches.
 
 It is the same reason the font subsetting command is written down in the root
 README: a binary artefact nobody can regenerate is a liability.
@@ -32,7 +38,7 @@ python3.12 -m venv venv && ./venv/bin/pip install -r requirements.txt
 `host.py` is the one that checks the product rather than the export, and it is
 the subject of [what is not in a graph](#what-is-not-in-a-graph-and-what-that-cost).
 It fetches the two published graphs on first use, at the revision
-`src/platform/perception/model-store.ts` pins.
+`models/edgetam/manifest.json` pins.
 
 `verify.py` alone takes `--scene crossing|occlusion|blur|lighting` and
 `--no-pointers` and prints a frame by frame trace, which is what to run when
@@ -43,16 +49,19 @@ something is wrong. `--sweep` runs all eight combinations and writes
 `onnx/tracked_mask_decoder.onnx`, which are gitignored: they are 161 MB and
 regenerating them is one command.
 Weights come from `yonigozlan/EdgeTAM-hf`, the checkpoint the published ONNX
-release was exported from.
+release was exported from, at the exact revision pinned in the scripts and the
+model manifest. `parameters.py` writes the remaining host parameters. After the
+verification commands pass, follow `models/edgetam/README.md` to create a new
+immutable project release rather than replacing the current version.
 
 **Apache-2.0, checked rather than assumed.** `facebookresearch/EdgeTAM` carries
 one `LICENSE`, Apache 2.0, with no `NOTICE` beside it and no acceptable-use
 policy, and `checkpoints/edgetam.pt` is inside that repository rather than under
-terms of its own. The Hugging Face checkpoint above and the ONNX release the
-product fetches at runtime declare the same. Nothing here blocks a public build.
-What it does mean is that the two graphs written by this script are a derivative
-work: anyone hosting them ships the licence text and the attribution with them,
-and says that the files were modified, which they were.
+terms of its own. The Hugging Face checkpoint above and the ONNX selection
+release declare the same. Nothing here blocks a public build. What it does mean
+is that the graphs and parameters written here are derivative files: Rotyl ships
+the licence text, upstream attribution and a notice naming the modifications in
+the same versioned directory as those files.
 
 ## What was missing, and what still is
 
@@ -338,7 +347,7 @@ the PyTorch reference on every frame of all four, not merely similar. The
 numbers are on `/research/tracking.html`, out of `results.json`, along with what
 motion blur costs, which is the only one of the three that costs anything.
 
-## What a host has to supply, besides the two graphs
+## What the release has to supply, besides the graphs
 
 The graphs are the expensive half and they are not the whole of it. A tracked
 frame is four sessions and a memory bank, and the parts that are neither are
@@ -347,7 +356,7 @@ fails silently.
 
 **Four parameters that are in the checkpoint and in no graph.** All are tiny,
 and `parameters.py` writes all four to `onnx/parameters.json` along with the
-constants below, so a host serves one small file beside the graphs:
+constants below, so the release carries one small file beside the graphs:
 
 | parameter                             | shape    | what it is for                                 |
 | ------------------------------------- | -------- | ---------------------------------------------- |
@@ -357,7 +366,7 @@ constants below, so a host serves one small file beside the graphs:
 | `memory_temporal_positional_encoding` | 7×1×1×64 | how long ago an entry in the bank is from      |
 
 **And the decoder has to be the re-export, which the product now asks rather
-than assumes.** It is the third graph a host serves and the only one with a
+than assumes.** It is the third exported graph and the only one with a
 plausible substitute: every EdgeTAM release contains a mask decoder, and serving
 that one is the obvious mistake. `loadEdgeTamTracker` asks the session for its
 output names and refuses a graph missing either, naming which one.
@@ -365,7 +374,7 @@ output names and refuses a graph missing either, naming which one.
 **It is missing ONE of the two, and this file said both.** The section above
 gets it right and this one had it wrong, which is the hazard of writing the same
 fact down twice. Asked of `onnx/prompt_encoder_mask_decoder.onnx` and of its
-half-precision twin at the revision `model-store.ts` pins, both declare
+half-precision twin at the revision the model manifest pins, both declare
 `iou_scores`, `pred_masks` and `object_score_logits`, and neither declares
 `object_pointer`. So serving the published decoder has always failed, and failed
 loudly, on the first tracked frame: the pointer is read the way every other

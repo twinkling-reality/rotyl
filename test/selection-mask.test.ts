@@ -145,7 +145,7 @@ describe('replay', () => {
 
     const first = await replayed(commands);
     const second = await replayed(commands);
-    expect(Buffer.from(first).equals(Buffer.from(second))).toBe(true);
+    expect(first).toEqual(second);
   });
 
   it('reproduces a prefix exactly, so undo needs no snapshots', async () => {
@@ -154,7 +154,7 @@ describe('replay', () => {
 
     const afterUndo = await replayed(prefix);
     const direct = await replayed(prefix);
-    expect(Buffer.from(afterUndo).equals(Buffer.from(direct))).toBe(true);
-    expect(Buffer.from(await replayed(full)).equals(Buffer.from(direct))).toBe(false);
+    expect(afterUndo).toEqual(direct);
+    expect(await replayed(full)).not.toEqual(direct);
   });
 });

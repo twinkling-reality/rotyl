@@ -1,7 +1,7 @@
 """
 The host, checked against the reference rather than against its author.
 
-`verify.py` proves the two exported graphs are the modules they came from. This
+`verify.py` proves the three exported graphs are the modules they came from. This
 proves everything else a tracked frame is: the two PUBLISHED graphs either side
 of them, the transposes between the four sessions, the layout of the memory
 bank, and the arithmetic the memory encoder is fed. None of that is in a graph.
@@ -15,13 +15,12 @@ at a mask and deciding it seems right settles nothing.
     ./venv/bin/python host.py --fixtures      # the probes the Node test drives
 
 The published vision encoder and mask decoder are fetched on first use, at the
-revision `src/platform/perception/model-store.ts` pins, so what is measured here
-is the graph the product actually runs and not whatever is on `main` today.
+revision `models/edgetam/manifest.json` pins, so what is measured here is the
+graph the product release carries and not whatever is on `main` today.
 
-WHAT IT COMPARES AGAINST. The reference, with object pointers turned off. The
-published decoder does not expose `object_pointer`, so the product has none; a
-reference that had them would fold the cost of that trade, which is measured on
-its own in `verify.py`, into every row here.
+WHAT IT COMPARES AGAINST. The reference with object pointers, which the product
+has now through its re-exported decoder. Individual difference rows turn a
+pointer or another host correction off to price it; the built row keeps them.
 """
 
 import argparse
@@ -44,7 +43,8 @@ ONNX = HERE / "onnx"
 FIXTURE = HERE / "fixture"
 
 CHECKPOINT = "yonigozlan/EdgeTAM-hf"
-# The same repository and the same commit `model-store.ts` fetches at runtime.
+CHECKPOINT_REVISION = "c266ce53b3fc00f0f495b583f6a116c4e57f53bb"
+# The same repository and commit the owned model manifest records.
 PUBLISHED = "onnx-community/EdgeTAM-ONNX"
 REVISION = "9c77c7bff7fd0f3079585fa17af7f730ddc531ed"
 
@@ -379,11 +379,13 @@ class Reference:
             raise SystemExit(f"no {scene} fixture; run make_fixture.py first")
         self.height, self.width = np.asarray(images[0]).shape[:2]
 
-        processor = AutoVideoProcessor.from_pretrained(CHECKPOINT)
-        full_processor = AutoProcessor.from_pretrained(CHECKPOINT)
+        processor = AutoVideoProcessor.from_pretrained(CHECKPOINT, revision=CHECKPOINT_REVISION)
+        full_processor = AutoProcessor.from_pretrained(CHECKPOINT, revision=CHECKPOINT_REVISION)
         self.video = processor(videos=[images], return_tensors="pt")["pixel_values_videos"][0]
 
-        model = EdgeTamVideoModel.from_pretrained(CHECKPOINT, dtype=torch.float32).eval()
+        model = EdgeTamVideoModel.from_pretrained(
+            CHECKPOINT, revision=CHECKPOINT_REVISION, dtype=torch.float32
+        ).eval()
         # The reference keeps its object pointers, because the product has them
         # now. `pointers=False` is how a run asks what going without costs, and
         # it is what every figure here was taken against before the mask decoder

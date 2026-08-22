@@ -1,0 +1,17 @@
+Rotyl EdgeTAM model assets
+
+These files derive from EdgeTAM by Meta Platforms, Inc. and affiliates:
+https://github.com/facebookresearch/EdgeTAM
+
+The selection graphs are unmodified copies from onnx-community/EdgeTAM-ONNX at
+revision 9c77c7bff7fd0f3079585fa17af7f730ddc531ed.
+
+The tracking graphs and parameters derive from yonigozlan/EdgeTAM-hf at revision
+c266ce53b3fc00f0f495b583f6a116c4e57f53bb. Rotyl modified these files by
+exporting the memory encoder and fixed-size memory attention graphs, sharing the
+attention graph's repeated constants, converting that graph to half precision,
+re-exporting the tracked mask decoder with object_pointer exposed and converting
+it to half precision, and extracting the parameters the host requires.
+
+The upstream work and these derivative model files are licensed under the
+Apache License, Version 2.0. The complete licence text travels beside this file.

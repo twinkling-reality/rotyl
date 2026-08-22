@@ -36,6 +36,7 @@ from transformers import AutoProcessor, AutoVideoProcessor, EdgeTamVideoInferenc
 
 from export import (
     CHECKPOINT,
+    CHECKPOINT_REVISION,
     MEMORY_TOKENS,
     NUM_MASKMEM,
     TOKENS_PER_MEMORY,
@@ -178,8 +179,8 @@ def prepare(scene: str) -> tuple:
     if not images:
         raise SystemExit(f"no {scene} fixture; run make_fixture.py first")
     height, width = np.asarray(images[0]).shape[:2]
-    processor = AutoVideoProcessor.from_pretrained(CHECKPOINT)
-    full_processor = AutoProcessor.from_pretrained(CHECKPOINT)
+    processor = AutoVideoProcessor.from_pretrained(CHECKPOINT, revision=CHECKPOINT_REVISION)
+    full_processor = AutoProcessor.from_pretrained(CHECKPOINT, revision=CHECKPOINT_REVISION)
     return truth, images, height, width, processor, full_processor
 
 
@@ -283,7 +284,9 @@ def summarise(rows: list[dict], masks: np.ndarray, reference_masks: np.ndarray) 
 def compare_modules(truth, images, height, width, processor, full_processor) -> None:
     """Claims 1 and 2: the graphs are the modules, and padding is not an approximation."""
     patch_cross_attention_for_masking()
-    model = EdgeTamVideoModel.from_pretrained(CHECKPOINT, dtype=torch.float32).eval()
+    model = EdgeTamVideoModel.from_pretrained(
+        CHECKPOINT, revision=CHECKPOINT_REVISION, dtype=torch.float32
+    ).eval()
 
     encoder_calls: list[dict] = []
     attention_calls: list[dict] = []
@@ -392,8 +395,12 @@ def main() -> None:
     print("=== the graphs against the modules they came from ===")
     compare_modules(truth, images, height, width, processor, full_processor)
 
-    reference_model = EdgeTamVideoModel.from_pretrained(CHECKPOINT, dtype=torch.float32).eval()
-    model = EdgeTamVideoModel.from_pretrained(CHECKPOINT, dtype=torch.float32).eval()
+    reference_model = EdgeTamVideoModel.from_pretrained(
+        CHECKPOINT, revision=CHECKPOINT_REVISION, dtype=torch.float32
+    ).eval()
+    model = EdgeTamVideoModel.from_pretrained(
+        CHECKPOINT, revision=CHECKPOINT_REVISION, dtype=torch.float32
+    ).eval()
     memory = OnnxMemory()
     install(model, memory)
 

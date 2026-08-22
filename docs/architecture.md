@@ -8,11 +8,14 @@ src/platform/  browser adapters: decode, texture upload, encode, mux, inference
 src/app/       Preact UI
 ```
 
-It ships as 166 KB of JavaScript, 51.9 KB gzipped, plus 31 KB of subset fonts.
-Three runtime dependencies, all but the framework code-split, so a photograph
-fetches none of the other two: the inference runtime arrives on the first object
-click, the demuxer on the first video, the container writer on the first clip
-export.
+It ships an initial 162 KB of JavaScript, 49.8 KB gzipped, plus 31 KB of subset
+fonts. Three runtime dependencies, all but the framework code-split, so a
+photograph fetches none of the other two: the inference runtime arrives on the
+first object click, the demuxer on the first video, the container writer on the
+first clip export. The initial page makes no model request. The complete model
+release is emitted beside the application and remains behind the first use of
+the feature that needs it. `/research/model-delivery.html` prices that boundary
+separately.
 
 `core` never imports from `platform` or `app`. That is enforced by
 `tsconfig.core.json`, which compiles `src/core` with `"lib": ["es2023"]` and no

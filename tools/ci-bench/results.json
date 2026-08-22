@@ -1,0 +1,502 @@
+{
+  "command": "pnpm exec vitest run --reporter=json",
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "cpu": "Apple M3 Pro",
+    "node": "v24.15.0"
+  },
+  "summary": {
+    "runs": 32,
+    "clean_exits": 29,
+    "post_assertion_aborts": 1,
+    "assertion_failures": 0,
+    "incomplete_runs": 2,
+    "dawn_files_per_suite": 8,
+    "dawn_processes": 256,
+    "observed_process_abort_rate": 0.01171875,
+    "estimated_incomplete_suites_after_three_attempts": 0.000012874603271484375
+  },
+  "runs": [
+    {
+      "run": 1,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.307385916000001,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 2,
+      "exit": 0,
+      "signal": null,
+      "seconds": 9.358429875,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 3,
+      "exit": 0,
+      "signal": null,
+      "seconds": 9.614317125000001,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 4,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.446290084000001,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 5,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.511331540999999,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 6,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.265449584000002,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 7,
+      "exit": 1,
+      "signal": null,
+      "seconds": 11.395918083999998,
+      "report": {
+        "total": 284,
+        "passed": 283,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "run": 8,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.730384000000006,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 9,
+      "exit": 0,
+      "signal": null,
+      "seconds": 9.639713542000012,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 10,
+      "exit": 0,
+      "signal": null,
+      "seconds": 9.03408712499999,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 11,
+      "exit": 0,
+      "signal": null,
+      "seconds": 9.849383291999999,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 12,
+      "exit": 0,
+      "signal": null,
+      "seconds": 9.566988708999997,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 13,
+      "exit": 0,
+      "signal": null,
+      "seconds": 9.825163833,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 14,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.171435458000007,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 15,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.336611458,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 16,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.84846554199999,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 17,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.62002358399998,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 18,
+      "exit": 1,
+      "signal": null,
+      "seconds": 11.206654125000002,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 19,
+      "exit": 0,
+      "signal": null,
+      "seconds": 11.228352041999985,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 20,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.821409667,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 21,
+      "exit": 0,
+      "signal": null,
+      "seconds": 9.863505917000003,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 22,
+      "exit": 0,
+      "signal": null,
+      "seconds": 12.415616750000016,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 23,
+      "exit": 0,
+      "signal": null,
+      "seconds": 11.23389308400001,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 24,
+      "exit": 0,
+      "signal": null,
+      "seconds": 11.03823225,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 25,
+      "exit": 0,
+      "signal": null,
+      "seconds": 12.691606334000012,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 26,
+      "exit": 1,
+      "signal": null,
+      "seconds": 13.43300808400003,
+      "report": {
+        "total": 284,
+        "passed": 279,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "run": 27,
+      "exit": 0,
+      "signal": null,
+      "seconds": 13.10585941600002,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 28,
+      "exit": 0,
+      "signal": null,
+      "seconds": 13.58459149999998,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 29,
+      "exit": 0,
+      "signal": null,
+      "seconds": 14.900906958000036,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 30,
+      "exit": 0,
+      "signal": null,
+      "seconds": 9.783821958999964,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 31,
+      "exit": 0,
+      "signal": null,
+      "seconds": 12.347925208000001,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "run": 32,
+      "exit": 0,
+      "signal": null,
+      "seconds": 10.625426708000013,
+      "report": {
+        "total": 284,
+        "passed": 284,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "assertion_proof": true,
+      "stderr_tail": ""
+    }
+  ]
+}

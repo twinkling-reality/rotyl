@@ -1,12 +1,16 @@
 node_modules/
 dist/
+.model-assets/
 .scratch/
+.wrangler/
+.vitest-attachments/
+test/__screenshots__/
 test-results/
 playwright-report/
 *.local
 .DS_Store
 tsconfig.tsbuildinfo
 
-# A local tracking host, for the one end-to-end run that needs weights.
-# See tools/edgetam-export and the test guarded on the Track button.
+# Kept only as an exporter work directory. The application serves the complete,
+# verified release from .model-assets through Vite now.
 public/edgetam/

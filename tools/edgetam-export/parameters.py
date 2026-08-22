@@ -1,11 +1,11 @@
 """
 The four parameters a tracker needs that live in the checkpoint and in no graph.
 
-`export.py` writes the two graphs. This writes everything else a host has to
-serve beside them, which is four tensors totalling about five kilobytes and a
-handful of constants out of the config. None of it is large and all of it fails
-silently when it is missing, which is the whole reason it is a command rather
-than a paragraph.
+`export.py` writes the three graphs. This writes everything else the project
+release has to carry beside them, which is four tensors and a handful of
+constants out of the config. None of it is large and all of it fails silently
+when it is missing, which is the whole reason it is a checked file rather than a
+paragraph.
 
     ./venv/bin/python parameters.py
 
@@ -21,6 +21,7 @@ import torch
 from transformers import EdgeTamVideoModel
 
 CHECKPOINT = "yonigozlan/EdgeTAM-hf"
+CHECKPOINT_REVISION = "c266ce53b3fc00f0f495b583f6a116c4e57f53bb"
 HERE = pathlib.Path(__file__).parent
 OUT = HERE / "onnx"
 FIXTURE = HERE / "position-encoding.json"
@@ -35,7 +36,9 @@ CHANNELS = [0, 1, 2, 63, 64, 127, 128, 129, 255]
 
 def main() -> None:
     OUT.mkdir(exist_ok=True)
-    model = EdgeTamVideoModel.from_pretrained(CHECKPOINT, dtype=torch.float32).eval()
+    model = EdgeTamVideoModel.from_pretrained(
+        CHECKPOINT, revision=CHECKPOINT_REVISION, dtype=torch.float32
+    ).eval()
 
     parameters = {
         name: getattr(model, name).detach().flatten().tolist()

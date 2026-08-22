@@ -25,7 +25,7 @@ import type { TrackingEngine } from './tracking-engine.ts';
 
 export type TrackingStatus =
   | { readonly kind: 'idle' }
-  /** Fetching the two graphs, which is nineteen megabytes and happens once. */
+  /** Fetching the tracking release, which happens once. */
   | { readonly kind: 'loading'; readonly progress: number }
   | {
       readonly kind: 'running';

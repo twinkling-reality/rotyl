@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { TrackingStore, type TrackingStatus } from '../core/perception/tracking-store.ts';
 import { seedsFrom } from '../core/perception/tracking-seeds.ts';
-import { trackingHost } from '../platform/perception/tracking-host.ts';
 import type { TrackingResult } from '../core/perception/tracking-job.ts';
 import type { RotylRuntime } from './use-rotyl.ts';
 
@@ -14,15 +13,14 @@ import type { RotylRuntime } from './use-rotyl.ts';
  * the device is rebuilt, or the session ends. A run in flight when any of those
  * happens is stopped, and what it had already found is already in the document.
  *
- * NOTHING IS BUILT UNTIL IT IS ASKED FOR. The two graphs are nineteen megabytes
+ * NOTHING IS BUILT UNTIL IT IS ASKED FOR. The tracking graphs are large
  * and the tracker's module pulls in the inference runtime, so both are behind
- * the first press of Track. What is decided earlier, and cheaply, is whether
- * the button exists at all: with no host configured there is nowhere to fetch
- * them from and the only honest interface is one that does not offer it.
+ * the first press of Track. Every deployment carries the verified release, so
+ * every video can offer the feature without a host decision at runtime.
  */
 
 export interface TrackingHandle {
-  /** Whether there is anything to offer: a clip, and somewhere to fetch from. */
+  /** Whether there is anything to offer: a clip. */
   readonly available: boolean;
   readonly status: TrackingStatus;
   readonly running: boolean;
@@ -51,15 +49,14 @@ export function useTracking({ runtime, file, onFinished }: TrackingOptions): Tra
   const [status, setStatus] = useState<TrackingStatus>({ kind: 'idle' });
   const [running, setRunning] = useState(false);
   const storeRef = useRef<TrackingStore | undefined>(undefined);
-  const host = trackingHost();
   // Through a ref, because the store is built in an effect keyed on the file
   // and the runtime. A callback in that dependency list would throw away the
-  // tracker and its nineteen megabytes every time App re-rendered.
+  // tracker and its checked model release every time App re-rendered.
   const finished = useRef(onFinished);
   finished.current = onFinished;
 
   useEffect(() => {
-    if (!runtime || !file || !host) {
+    if (!runtime || !file) {
       storeRef.current?.dispose();
       storeRef.current = undefined;
       setStatus({ kind: 'idle' });
@@ -71,7 +68,7 @@ export function useTracking({ runtime, file, onFinished }: TrackingOptions): Tra
       runtime.engine.document,
       async (onProgress) => {
         const { loadEdgeTamTracker } = await import('../platform/perception/edgetam-tracker.ts');
-        return loadEdgeTamTracker({ host, onProgress });
+        return loadEdgeTamTracker({ onProgress });
       },
       async (from) => {
         // A SECOND DECODER OVER THE SAME FILE, which is what `VideoScene`
@@ -105,7 +102,7 @@ export function useTracking({ runtime, file, onFinished }: TrackingOptions): Tra
       setStatus({ kind: 'idle' });
       setRunning(false);
     };
-  }, [runtime, file, host]);
+  }, [runtime, file]);
 
   const track = useCallback(
     (frame: number): void => {
@@ -144,5 +141,5 @@ export function useTracking({ runtime, file, onFinished }: TrackingOptions): Tra
     storeRef.current?.stop();
   }, []);
 
-  return { available: Boolean(host && file), status, running, track, stop };
+  return { available: file !== undefined, status, running, track, stop };
 }

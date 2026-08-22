@@ -1,5 +1,5 @@
 /**
- * Where the segmentation weights come from, and where they stay.
+ * Where the EdgeTAM weights come from, and where they stay.
  *
  * Rotyl's promise is that the image never leaves the machine, and it does not:
  * this fetches a model *to* the machine, once, and everything after that is
@@ -7,9 +7,10 @@
  * "runs locally" and "needs no network ever" are different claims, and only the
  * first is true.
  *
- * The revision is pinned to a commit rather than to `main`. A moving reference
- * would mean the weights could change under a cached session, and a mask is not
- * the kind of output where a silent model swap is acceptable.
+ * Every graph is served by the deployment that served the application. The
+ * build obtained it from Rotyl's immutable release and checked it against the
+ * committed manifest before it emitted a byte. This file checks it again after
+ * fetch and after a cache read, before ONNX Runtime can see it.
  *
  * Cached in the Cache Storage API rather than in memory or IndexedDB: it is the
  * one browser store designed for exactly this. Immutable, addressable by URL,
@@ -17,14 +18,14 @@
  * nothing.
  */
 
-const REVISION = '9c77c7bff7fd0f3079585fa17af7f730ddc531ed';
-const BASE = `https://huggingface.co/onnx-community/EdgeTAM-ONNX/resolve/${REVISION}/onnx`;
+import { MODEL_RELEASE, modelAsset, modelAssetUrl, type ModelAssetName } from './model-assets.ts';
 
-const CACHE_NAME = 'rotyl-models-v1';
+const CACHE_PREFIX = 'rotyl-models-';
+const CACHE_NAME = `${CACHE_PREFIX}${MODEL_RELEASE}`;
 
 export interface ModelFile {
   /** The graph. Small: the weights live beside it. */
-  readonly graph: string;
+  readonly graph: ModelAssetName;
   /**
    * The weights, as an ONNX external-data sidecar.
    *
@@ -32,9 +33,7 @@ export interface ModelFile {
    * model came from, so they are fetched here and handed over as bytes under
    * the exact filename the graph records.
    */
-  readonly weights: string;
-  /** Declared size in bytes, used only to show progress before the first byte. */
-  readonly bytes: number;
+  readonly weights: ModelAssetName;
 }
 
 export interface ModelVariant {
@@ -56,24 +55,20 @@ export const EDGETAM_VARIANTS = {
     encoder: {
       graph: 'vision_encoder_fp16.onnx',
       weights: 'vision_encoder_fp16.onnx_data',
-      bytes: 167_617 + 9_739_536,
     },
     decoder: {
       graph: 'prompt_encoder_mask_decoder_fp16.onnx',
       weights: 'prompt_encoder_mask_decoder_fp16.onnx_data',
-      bytes: 229_799 + 10_454_016,
     },
   },
   full: {
     encoder: {
       graph: 'vision_encoder.onnx',
       weights: 'vision_encoder.onnx_data',
-      bytes: 192_225 + 19_532_576,
     },
     decoder: {
       graph: 'prompt_encoder_mask_decoder.onnx',
       weights: 'prompt_encoder_mask_decoder.onnx_data',
-      bytes: 213_114 + 20_958_208,
     },
   },
 } as const satisfies Record<string, ModelVariant>;
@@ -84,7 +79,10 @@ export function edgetamVariant(supportsF16: boolean): ModelVariant {
 
 /** Total download for a cold start, for the message shown while it happens. */
 export function variantBytes(variant: ModelVariant): number {
-  return variant.encoder.bytes + variant.decoder.bytes;
+  return [variant.encoder, variant.decoder].reduce(
+    (total, file) => total + modelAsset(file.graph).bytes + modelAsset(file.weights).bytes,
+    0,
+  );
 }
 
 export interface ModelBytes {
@@ -92,24 +90,64 @@ export interface ModelBytes {
   readonly weights: Uint8Array<ArrayBuffer>;
 }
 
+let cachePromise: Promise<Cache | undefined> | undefined;
+
 async function openCache(): Promise<Cache | undefined> {
   // Absent in insecure contexts and in some private modes. Not having it costs
   // a re-download, which is worth continuing for rather than failing over.
   if (!('caches' in globalThis)) return undefined;
-  try {
-    return await caches.open(CACHE_NAME);
-  } catch {
-    return undefined;
+  cachePromise ??= (async () => {
+    try {
+      const names = await caches.keys();
+      await Promise.all(
+        names
+          .filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)
+          .map((name) => caches.delete(name)),
+      );
+      return await caches.open(CACHE_NAME);
+    } catch {
+      return undefined;
+    }
+  })();
+  return cachePromise;
+}
+
+function hex(bytes: ArrayBuffer): string {
+  return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/** Refuse bytes that are not the exact release this build names. */
+export async function verifyModelAsset(name: ModelAssetName, bytes: Uint8Array<ArrayBuffer>): Promise<void> {
+  const expected = modelAsset(name);
+  const detail =
+    bytes.byteLength !== expected.bytes
+      ? `${String(bytes.byteLength)} bytes arrived; ${String(expected.bytes)} were required`
+      : hex(await crypto.subtle.digest('SHA-256', bytes)) !== expected.sha256
+        ? 'its SHA-256 digest was different'
+        : undefined;
+  if (detail) {
+    throw new Error(
+      `Rotyl refused ${name} because it did not match model release ${MODEL_RELEASE}: ${detail}. ` +
+        'The deployment or browser cache is incomplete. Reload; if this continues, tell whoever deployed Rotyl.',
+    );
   }
 }
 
 async function readWithProgress(
   response: Response,
   onBytes: (delta: number) => void,
+  compressed = false,
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const body = response.body;
+  const body = compressed ? response.body?.pipeThrough(new DecompressionStream('gzip')) : response.body;
   if (!body) {
-    const buffer = new Uint8Array(await response.arrayBuffer());
+    const received = new Uint8Array(await response.arrayBuffer());
+    const buffer = compressed
+      ? new Uint8Array(
+          await new Response(
+            new Blob([received]).stream().pipeThrough(new DecompressionStream('gzip')),
+          ).arrayBuffer(),
+        )
+      : received;
     onBytes(buffer.byteLength);
     return buffer;
   }
@@ -134,21 +172,37 @@ async function readWithProgress(
 }
 
 async function fetchFile(
-  name: string,
+  name: ModelAssetName,
   onBytes: (delta: number) => void,
-  base = BASE,
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const url = `${base}/${name}`;
+  const url = modelAssetUrl(name);
   const cache = await openCache();
 
   const cached = await cache?.match(url);
-  if (cached) return readWithProgress(cached, onBytes);
+  if (cached) {
+    const bytes = await readWithProgress(cached, onBytes);
+    try {
+      await verifyModelAsset(name, bytes);
+    } catch (cause) {
+      // The message asks for a reload, so make that reload meaningful. This
+      // attempt still refuses the file loudly; the next one has to go back to
+      // the deployment rather than reading the same corrupt cache entry again.
+      await cache?.delete(url).catch(() => undefined);
+      throw cause;
+    }
+    return bytes;
+  }
 
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Could not download ${name} (${String(response.status)}).`);
   }
-  const bytes = await readWithProgress(response, onBytes);
+  // A plain static host serves the explicit .gz file as bytes and this stream
+  // inflates it. A host configured for precompressed assets may set
+  // Content-Encoding instead, in which case fetch has already done that work.
+  const alreadyDecoded = response.headers.get('Content-Encoding')?.includes('gzip') ?? false;
+  const bytes = await readWithProgress(response, onBytes, !alreadyDecoded);
+  await verifyModelAsset(name, bytes);
   // Stored after the fact rather than by cloning the response: a clone has to
   // buffer the whole body anyway, and this way a failed download never leaves a
   // truncated entry behind.
@@ -165,24 +219,18 @@ async function fetchFile(
  * fetched it twice, which the cache made cheap and the progress bar made
  * confusing.
  *
- * @param base where to fetch from, for the one caller that is not the published
- * release: the tracking graphs are produced by `tools/edgetam-export` and hosted
- * by whoever is running this, so they cannot be a constant here.
+ * The name is constrained by the manifest, so a caller cannot ask this fetch
+ * path for bytes the build did not verify and ship.
  */
 export async function fetchGraph(
-  name: string,
+  name: ModelAssetName,
   onProgress: (received: number) => void,
-  base?: string,
 ): Promise<Uint8Array<ArrayBuffer>> {
   let received = 0;
-  return fetchFile(
-    name,
-    (delta) => {
-      received += delta;
-      onProgress(received);
-    },
-    base,
-  );
+  return fetchFile(name, (delta) => {
+    received += delta;
+    onProgress(received);
+  });
 }
 
 /**

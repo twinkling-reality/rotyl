@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
+import { sites } from '@openai/sites-vite-plugin';
 import { defineConfig, type Plugin } from 'vite';
 import { renderResearchSite, researchFigures } from './tools/research/index.ts';
+import { modelAssets } from './tools/model-assets/vite.ts';
 
 /**
  * Strip WGSL comments, and keep every newline.
@@ -61,6 +63,9 @@ function wgslComments(): Plugin {
 function researchPage(): Plugin {
   return {
     name: 'rotyl:research',
+    applyToEnvironment(environment) {
+      return environment.name === 'client';
+    },
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         const requested = request.url?.split('?')[0]?.replace(/^\//, '');
@@ -96,10 +101,31 @@ function researchPage(): Plugin {
 // ("jsx": "react-jsx", "jsxImportSource": "preact") and Vite's transformer
 // honours it. The plugin exists to add Babel-based Fast Refresh, which is not
 // worth reintroducing Babel to this build for.
-export default defineConfig({
-  plugins: [wgslComments(), researchPage()],
-  build: {
-    target: 'es2023',
-    assetsInlineLimit: 0,
-  },
+export default defineConfig(async ({ mode }) => {
+  const plugins: Plugin[] = [wgslComments(), modelAssets(), researchPage()];
+  if (mode === 'sites') {
+    const { cloudflare } = await import('@cloudflare/vite-plugin');
+    plugins.push(
+      sites(),
+      ...cloudflare({
+        viteEnvironment: { name: 'server' },
+        config: {
+          main: './worker/index.ts',
+          compatibility_date: '2026-05-22',
+          assets: {
+            binding: 'ASSETS',
+            not_found_handling: 'single-page-application',
+          },
+        },
+      }),
+    );
+  }
+
+  return {
+    plugins,
+    build: {
+      target: 'es2023',
+      assetsInlineLimit: 0,
+    },
+  };
 });

@@ -32,9 +32,12 @@ everything left of it asks a model what is there, everything right of it draws
 what you draw.
 
 A segmentation model (EdgeTAM) runs on your machine, in the browser. The first
-use downloads it, about 16 MB compressed for the runtime and 20 MB for the
-weights, and caches both; after that it is offline. Your image is never sent
-anywhere. The only thing that crosses the network is the model coming to you.
+use downloads the code-split runtime and 18.57 MB of half-precision model files,
+then caches the checked, decompressed model; after that it is offline unless the
+browser evicts it. Your image is never sent anywhere. The files come from the
+same versioned Rotyl deployment as the application, not from the upstream model
+host. Their size, cache cost and digest time come directly from
+`/research/model-delivery.html`.
 
 Three things about the shape of this are load-bearing.
 

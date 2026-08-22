@@ -51,8 +51,8 @@ measurement here with a control it did not take itself, because the control is
 ffmpeg's and a browser cannot run ffmpeg: `make-clips.sh` decodes the transfer
 probes twice on its way past and leaves the answers in
 `clips/ffmpeg-transfer.json`, which the harness fetches like a clip.
-A tracked frame needs a dev server started with `VITE_TRACKING_HOST` pointing at the two graphs, which most
-machines will not have: `node tools/video-bench/run.mjs tracked-frame`. And how
+A tracked frame fetches the complete owned release from the development server
+and stays in its own result file: `node tools/video-bench/run.mjs tracked-frame`. And how
 long a clip export can be takes twenty minutes and ends by running the tab out
 of memory, which is the measurement rather than a hazard of it:
 `node tools/video-bench/run.mjs long-clip`. And where the sound goes in a file
@@ -290,7 +290,7 @@ QuickTime, which is what a phone or a camera writes, costs 64 bytes gzipped: it
 is the same demuxer with a different brand list. Matroska costs 15.4 KB, because
 it is not.
 
-The current application bundle is 51.9 KB gzipped, so this is not
+The application bundle when this measurement was taken was 51.9 KB gzipped, so this is not
 going in it. It gets the same treatment as the inference runtime, a dynamic
 import and its own chunk, and a session that never opens a video never fetches
 it.
@@ -539,13 +539,14 @@ the table that the design turns on rather than the absolute numbers.
 
 The table above measures each module alone. Shipped, there are two consumers of
 one library, and the bundler puts what they share in a chunk of its own.
-Gzipped, before the export chunk existed, at the split that made it, and today:
+Gzipped, before the export chunk existed, at the split that made it, and when
+measurement 5 was taken:
 
-| chunk            | before writing | at the split | today   |
-| ---------------- | -------------- | ------------ | ------- |
-| the application  | 41.6 KB        | 42.5 KB      | 51.9 KB |
-| opening a video  | 33.2 KB        | 42.0 KB      | 42.2 KB |
-| exporting a clip | none           | 32.0 KB      | 33.5 KB |
+| chunk            | before writing | at the split | measurement 5 |
+| ---------------- | -------------- | ------------ | ------------- |
+| the application  | 41.6 KB        | 42.5 KB      | 51.9 KB       |
+| opening a video  | 33.2 KB        | 42.0 KB      | 42.2 KB       |
+| exporting a clip | none           | 32.0 KB      | 33.5 KB       |
 
 **Opening a video got 8.8 KB more expensive for somebody who never exports one**,
 and that is worth stating rather than burying. Chunks are assigned per module,
@@ -725,13 +726,13 @@ frame. That is the whole of what computing four megabytes rather than shipping
 them costs, against a third of the shared attention graph's download.
 
 ```bash
-VITE_TRACKING_HOST=... pnpm dev --port 5180
+pnpm dev --port 5180
 node tools/video-bench/run.mjs tracked-frame
 ```
 
-It needs a tracking host, which is why it is out of `all` and writes its own
-file: the two graphs are in no published release, so most machines have nowhere
-to fetch them from and would leave an error where every other number is.
+It fetches and runs the owned selection and tracking release, which is why it is
+out of `all` and writes its own file. Re-taking that long end-to-end path must
+not re-date the decode ladder and the individual graph timings around it.
 
 ---
 
