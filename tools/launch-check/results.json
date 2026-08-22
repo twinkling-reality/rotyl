@@ -8,9 +8,9 @@
   },
   "build": {
     "deployment_files": 63,
-    "deployment_bytes": 103941981,
+    "deployment_bytes": 103941994,
     "public_files": 58,
-    "public_bytes": 103939350,
+    "public_bytes": 103939363,
     "largest_public_file": {
       "path": "assets/ort-wasm-simd-threaded.asyncify-CvvOzbbq.wasm",
       "bytes": 24254953
