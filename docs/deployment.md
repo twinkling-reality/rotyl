@@ -7,7 +7,8 @@ Rotyl's production contract lives in `.openai/hosting.json` and
 its explicit Cloudflare entry point. The Sites build stages deployable files
 under an internal asset-binding path so public requests reach the worker. The
 worker maps each public path to its file and applies the cache, content type and
-security policy to the response.
+security policy to the response. Internal HTML files use transport-neutral
+names so the host cannot redirect a binding fetch before that policy is set.
 
 ```bash
 pnpm site:build

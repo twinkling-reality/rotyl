@@ -7,7 +7,10 @@ const output = path.join(PROJECT_ROOT, 'dist');
 const client = path.join(output, 'client');
 const workerAssets = path.join(client, '__rotyl');
 
-await access(path.join(workerAssets, 'index.html'));
+await Promise.all([
+  access(path.join(workerAssets, 'index.html.page')),
+  access(path.join(workerAssets, 'research', 'hosted-ci.html.page')),
+]);
 await Promise.all(['index.js', 'wrangler.json'].map((name) => access(path.join(output, 'server', name))));
 await access(path.join(output, '.openai', 'hosting.json'));
 
@@ -27,6 +30,7 @@ await Promise.all(
 const worker = await readFile(path.join(output, 'server', 'index.js'), 'utf8');
 const workerPolicy = [
   '/__rotyl',
+  '.html.page',
   '/models/edgetam/edgetam-v1/',
   '/assets/',
   'public, max-age=31536000, immutable',
@@ -43,9 +47,6 @@ if (workerPolicy.some((value) => !worker.includes(value))) {
 const wrangler = JSON.parse(await readFile(path.join(output, 'server', 'wrangler.json'), 'utf8'));
 if (wrangler.assets?.binding !== 'ASSETS') {
   throw new Error('The production worker has no static asset binding.');
-}
-if (wrangler.assets?.html_handling !== 'none') {
-  throw new Error('The production asset binding can redirect internal HTML paths.');
 }
 
 const manifest = await readManifest();
