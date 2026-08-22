@@ -14,6 +14,13 @@ import type { Trial } from './page.ts';
  */
 export const TRIALS: readonly Trial[] = [
   {
+    what: 'Configuring the Sites asset binding with `html_handling: none`',
+    verdict: 'rejected',
+    evidence:
+      'The local Cloudflare origin served the root and generated research HTML directly, but saved Sites version 3 redirected the root to `/__rotyl/` with 307 even though its built config said `html_handling: none`. The same deployment served the worker-routed versioned model with its immutable cache and gzip type, isolating the discrepancy to production binding normalization. Internal HTML now uses a `.page` suffix and the worker assigns its HTML type, leaving no `.html` path for the binding to normalize',
+    where: 'tools/hosting/build.mjs, worker/index.ts and tools/hosting/check.mjs',
+  },
+  {
     what: 'Asking Sites to honor Cloudflare Assets `run_worker_first`',
     verdict: 'rejected',
     evidence:

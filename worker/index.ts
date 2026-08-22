@@ -16,7 +16,9 @@ export default {
   async fetch(request: Request, environment: Environment): Promise<Response> {
     const url = new URL(request.url);
     const pathname = url.pathname;
-    url.pathname = `/__rotyl${pathname === '/' ? '/index.html' : pathname}`;
+    const html = pathname === '/' || pathname.endsWith('.html');
+    const assetPath = pathname === '/' ? '/index.html.page' : `${pathname}${html ? '.page' : ''}`;
+    url.pathname = `/__rotyl${assetPath}`;
 
     const response = await environment.ASSETS.fetch(new Request(url, request));
     const headers = new Headers(response.headers);
@@ -27,8 +29,9 @@ export default {
 
     if (pathname.startsWith('/models/edgetam/edgetam-v1/') || pathname.startsWith('/assets/')) {
       headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-    } else if (headers.get('Content-Type')?.startsWith('text/html')) {
+    } else if (html) {
       headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
+      headers.set('Content-Type', 'text/html; charset=utf-8');
     }
 
     if (pathname.endsWith('.gz')) headers.set('Content-Type', 'application/gzip');
