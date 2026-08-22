@@ -33,10 +33,14 @@ function reachesHarness(file, visiting = new Set()) {
 }
 
 /** Test files that reach Dawn, including through a shared test harness. */
-export function dawnTestFiles() {
+export function unitTestFiles() {
   return readdirSync(TEST_ROOT)
     .filter((name) => name.endsWith('.test.ts'))
     .map((name) => path.join(TEST_ROOT, name))
-    .filter((file) => reachesHarness(file))
     .sort();
+}
+
+/** Test files that reach Dawn, including through a shared test harness. */
+export function dawnTestFiles() {
+  return unitTestFiles().filter((file) => reachesHarness(file));
 }

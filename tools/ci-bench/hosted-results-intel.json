@@ -1,0 +1,3427 @@
+{
+  "command": "node tools/ci-bench/hosted.mjs --cycles 16",
+  "environment": {
+    "platform": "darwin",
+    "architecture": "x64",
+    "cpu": "Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz",
+    "node": "v24.15.0",
+    "image_os": "macos15",
+    "image_version": "20260727.0377.1",
+    "runner_architecture": "X64"
+  },
+  "cycles": 16,
+  "dawn_files": [
+    "color-contract.test.ts",
+    "engine-media.test.ts",
+    "export-consistency.test.ts",
+    "frame-tensor.test.ts",
+    "mask-refine.test.ts",
+    "poster-stylisation.test.ts",
+    "print-stylisation.test.ts",
+    "rect-stamp.test.ts",
+    "selection-mask.test.ts",
+    "selective-stylisation.test.ts",
+    "video-scene.test.ts"
+  ],
+  "suite": {
+    "processes": 16,
+    "clean_exits": 0,
+    "post_assertion_aborts": 0,
+    "assertion_failures": 0,
+    "incomplete_processes": 16,
+    "pending_files": 39
+  },
+  "isolated": {
+    "processes": 176,
+    "clean_exits": 137,
+    "post_assertion_aborts": 0,
+    "assertion_failures": 0,
+    "incomplete_processes": 39,
+    "pending_files": 39
+  },
+  "suites": [
+    {
+      "cycle": 1,
+      "exit": 1,
+      "signal": null,
+      "seconds": 37.7746625,
+      "report": {
+        "total": 288,
+        "passed": 273,
+        "failed": 0,
+        "pending": 1,
+        "success": true
+      },
+      "pending_files": [
+        "export-consistency.test.ts",
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts",
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": "libc++abi: terminating due to uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument\nlibc++abi: terminating due to uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument\nWARNING: Some tests are still running when generating the JSON report.This is likely an internal bug in Vitest.Please report it to https://github.com/vitest-dev/vitest/issues"
+    },
+    {
+      "cycle": 2,
+      "exit": 1,
+      "signal": null,
+      "seconds": 20.108643548,
+      "report": {
+        "total": 288,
+        "passed": 277,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "exit": 1,
+      "signal": null,
+      "seconds": 18.485598574000004,
+      "report": {
+        "total": 288,
+        "passed": 277,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "exit": 1,
+      "signal": null,
+      "seconds": 13.868213205999986,
+      "report": {
+        "total": 288,
+        "passed": 277,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "exit": 1,
+      "signal": null,
+      "seconds": 13.079076409,
+      "report": {
+        "total": 288,
+        "passed": 273,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts",
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": "libc++abi: terminating due to uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument"
+    },
+    {
+      "cycle": 6,
+      "exit": 1,
+      "signal": null,
+      "seconds": 13.12938266100001,
+      "report": {
+        "total": 288,
+        "passed": 273,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts",
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "exit": 1,
+      "signal": null,
+      "seconds": 12.787849482999999,
+      "report": {
+        "total": 288,
+        "passed": 277,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "exit": 1,
+      "signal": null,
+      "seconds": 12.873552283000011,
+      "report": {
+        "total": 288,
+        "passed": 277,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": "libc++abi: terminating due to uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument"
+    },
+    {
+      "cycle": 9,
+      "exit": 1,
+      "signal": null,
+      "seconds": 11.999487250000005,
+      "report": {
+        "total": 288,
+        "passed": 273,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts",
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "exit": 1,
+      "signal": null,
+      "seconds": 12.503582362999994,
+      "report": {
+        "total": 288,
+        "passed": 273,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts",
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "exit": 1,
+      "signal": null,
+      "seconds": 13.267415506999997,
+      "report": {
+        "total": 288,
+        "passed": 277,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "exit": 1,
+      "signal": null,
+      "seconds": 14.401960369999987,
+      "report": {
+        "total": 288,
+        "passed": 277,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "exit": 1,
+      "signal": null,
+      "seconds": 12.487765073000016,
+      "report": {
+        "total": 288,
+        "passed": 277,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "exit": 1,
+      "signal": null,
+      "seconds": 13.947260440000013,
+      "report": {
+        "total": 288,
+        "passed": 277,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "exit": 1,
+      "signal": null,
+      "seconds": 12.904809510000021,
+      "report": {
+        "total": 288,
+        "passed": 273,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts",
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": "libc++abi: terminating due to uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument"
+    },
+    {
+      "cycle": 16,
+      "exit": 1,
+      "signal": null,
+      "seconds": 13.354254790999985,
+      "report": {
+        "total": 288,
+        "passed": 277,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts",
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    }
+  ],
+  "isolated_processes": [
+    {
+      "cycle": 1,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4400542140000034,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 1,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.7531264979999979,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 1,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.407313059999986,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 1,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.143363474999991,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 1,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.3923599609999802,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 1,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.6967084770000074,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 1,
+      "file": "print-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.8107825920000031,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 1,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4907195749999955,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 1,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.536280660999997,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 1,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4061147540000092,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 1,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1921807920000282,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.442006568999961,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.5612205810000306,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.7140029109999886,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4075095350000193,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.6917926129999687,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.8439075940000476,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "print-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.4433510170000372,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2534867499999818,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3265280020000063,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2922140900000232,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 2,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1788764479999663,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1819908720000531,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.6409021199999843,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.011472095999983,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.8148308229999965,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.9808028419999755,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.8398339120000018,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "print-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.6187741820000228,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.424277148000023,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.565179357999994,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.6347686620000168,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 3,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.235989554000029,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2901996709999513,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.752074100000027,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.6787764779999852,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4716447170000173,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.8769118359999848,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.8880443819999928,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "print-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.6853110980000348,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4681102749999846,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4467810520000057,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.5824146509999992,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 4,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3449330330000375,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.745746799000015,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 2.2112616029999916,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.8414463889999897,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4755664800000377,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.6560603729999857,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.6517227640000056,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "print-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.9294519860000001,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.6256793569999863,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.7131689449999832,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3831789129999816,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 5,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1979316269999836,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1393491550000034,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4518395080000046,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3596178039999796,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.213981305000023,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.545505799000035,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.7139800409999444,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "print-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3724191809999757,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2345365349999629,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3273582680000109,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.427614467999956,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 6,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.215372165000008,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.230163196999987,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.9647907039999846,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.6858765609999538,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2954369949999964,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.4896791029999732,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.5536485039999826,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "print-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3806680199999828,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.261942630000005,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.292243724,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.461388942999998,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 7,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3193389069999684,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.270084137000027,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.6003431900000433,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4520195010000025,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2013546779999742,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.4151080910000018,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.4260874800000456,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "file": "print-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.3895234509999863,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": "libc++abi: terminating due to uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument"
+    },
+    {
+      "cycle": 8,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.473129699000041,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3945093399999897,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4129636700000265,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 8,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1648705600000102,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1843970379999955,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.5029965450000018,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3950702309999614,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.209624605000019,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.6024965830000002,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.6771936759999952,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "print-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3932678610000293,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2576115059999866,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3088948319999618,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3674708639999735,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 9,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1400398699999787,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.227731047999987,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.5597798639999818,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.9849724500000012,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3887126999999746,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.560665301000001,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.487867911999987,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": "libc++abi: terminating due to uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument"
+    },
+    {
+      "cycle": 10,
+      "file": "print-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4004025819999515,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3108335529999458,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4631779220000025,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.6859317129999982,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 10,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.343984460000007,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.231697696999996,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4715118510000176,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.381621417999966,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1474247070000274,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.3646622970000026,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.4481873520000372,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "print-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3854590949999983,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4073850500000409,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3313360790000297,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4001160880000099,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 11,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.197711909000005,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1897835190000479,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.5868929690000368,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3848555080000078,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2923181280000136,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.5742748609999544,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.3909025229999679,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "print-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.306837868999981,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3628231580000139,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2097046770000015,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3367072480000206,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 12,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.081166120000009,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.0869657219999935,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.445802650000027,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.595627015999984,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.109149112999963,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.2928930350000156,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.383611138999986,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "print-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.2658679909999482,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.178985520999995,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2280010919999913,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2387581820000195,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 13,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.0938306110000122,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.360801904999942,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3860837380000157,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3440699819999864,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1031004589999793,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.3427067019999959,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.3315175939999753,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "print-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3024224390000454,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1996380490000011,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.385581108000013,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.5711768309999607,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 14,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3791087999999871,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3537801270000054,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.6413384319999604,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.5271603009999963,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1730778999999747,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.3003080640000408,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.3577683420000248,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "file": "print-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.4651118060000008,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "print-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": "libc++abi: terminating due to uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument"
+    },
+    {
+      "cycle": 15,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.1788969459999934,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3140336310000276,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.470634995999979,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 15,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2012740510000148,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "color-contract.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2528570230000187,
+      "report": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "engine-media.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.7720870730000315,
+      "report": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "export-consistency.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4755530969999964,
+      "report": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "frame-tensor.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.5363862720000325,
+      "report": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "mask-refine.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.4380120960000204,
+      "report": {
+        "total": 7,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "mask-refine.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "poster-stylisation.test.ts",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1.3862447570000076,
+      "report": {
+        "total": 4,
+        "passed": 0,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [
+        "poster-stylisation.test.ts"
+      ],
+      "assertion_proof": false,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "print-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2725866350000141,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "rect-stamp.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.2406001320000506,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "selection-mask.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.4312052389999734,
+      "report": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "selective-stylisation.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.3672949850000442,
+      "report": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    },
+    {
+      "cycle": 16,
+      "file": "video-scene.test.ts",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1.16468498000002,
+      "report": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pending": 0,
+        "success": true
+      },
+      "pending_files": [],
+      "assertion_proof": true,
+      "stderr_tail": ""
+    }
+  ]
+}

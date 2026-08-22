@@ -1,30 +1,25 @@
 /**
- * A Vitest gate that distinguishes a failed assertion from Dawn tearing down.
+ * Run ordinary unit tests in Node and shader tests in installed Chrome.
  *
- * Dawn occasionally exits a worker after reporting no failed assertions. If
- * every assertion completed, that report is proof and the native exit changes
- * nothing. If a file has pending assertions, only that file is run again. A
- * real failure, a missing report, or a file that cannot complete within the
- * measured bound fails immediately or at the bound.
+ * GitHub's virtual Macs cannot complete the native Node Dawn suite, even with
+ * one shader file per process. Chrome owns Dawn's lifetime across test files
+ * and is also the engine the product actually ships against. Both processes
+ * must produce a complete machine-readable assertion report.
  */
 
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { dawnTestFiles, unitTestFiles } from './dawn-files.mjs';
 
-// Measurement 19 observed three Dawn exits across the shader processes in
-// thirty-two suites. Three attempts puts the measured residual below one in
-// seventy-seven thousand suites. This is a measured bound, not a generic retry
-// count; tools/ci-bench/results.json carries the arithmetic.
-const MAX_ATTEMPTS = 3;
 const scratch = path.resolve('.scratch', `test-gate-${String(Date.now())}`);
 mkdirSync(scratch, { recursive: true });
 
-function runVitest(files, label) {
+function runVitest(files, label, extra = []) {
   const reportPath = path.join(scratch, `${label}.json`);
-  const result = spawnSync(
+  const processResult = spawnSync(
     'pnpm',
-    ['exec', 'vitest', 'run', ...files, '--reporter=json', `--outputFile=${reportPath}`],
+    ['exec', 'vitest', 'run', ...files, ...extra, '--reporter=json', `--outputFile=${reportPath}`],
     { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 },
   );
 
@@ -34,86 +29,49 @@ function runVitest(files, label) {
   } catch {
     report = undefined;
   }
-  return { result, report };
+  return { processResult, report };
 }
 
-function failedMessages(report) {
+function failures(report) {
   return (report?.testResults ?? [])
     .flatMap((file) => file.assertionResults)
     .filter((test) => test.status === 'failed')
     .flatMap((test) => [`${test.fullName}:`, ...test.failureMessages]);
 }
 
-function pendingFiles(report) {
-  return (report?.testResults ?? [])
-    .filter((file) => file.assertionResults.some((test) => test.status === 'pending'))
-    .map((file) => file.name);
-}
+function requireComplete(label, run) {
+  const report = run.report;
+  const complete = Boolean(
+    report?.success &&
+    report.numTotalTests > 0 &&
+    report.numPassedTests === report.numTotalTests &&
+    report.numFailedTests === 0 &&
+    report.numPendingTests === 0 &&
+    run.processResult.status === 0,
+  );
+  if (complete) {
+    console.log(`${label}: ${String(report.numPassedTests)} assertions passed.`);
+    return report.numPassedTests;
+  }
 
-function fail(message, run) {
-  console.error(message);
-  const failures = failedMessages(run.report);
-  if (failures.length > 0) console.error(failures.join('\n'));
-  if (run.result.stderr.trim()) console.error(run.result.stderr.trim());
+  console.error(`${label} did not produce a complete passing assertion report.`);
+  const messages = failures(report);
+  if (messages.length > 0) console.error(messages.join('\n'));
+  if (run.processResult.stdout.trim()) console.error(run.processResult.stdout.trim());
+  if (run.processResult.stderr.trim()) console.error(run.processResult.stderr.trim());
   process.exitCode = 1;
+  return 0;
 }
 
-const initial = runVitest([], 'all');
-if (!initial.report) {
-  fail('Vitest produced no assertion report.', initial);
-} else if (initial.report.numFailedTests > 0) {
-  fail(`${String(initial.report.numFailedTests)} unit assertions failed.`, initial);
-} else {
-  const pending = pendingFiles(initial.report);
-  const completed = initial.report.numPassedTests;
-  const total = initial.report.numTotalTests;
+const dawn = new Set(dawnTestFiles());
+const nodeFiles = unitTestFiles().filter((file) => !dawn.has(file));
+const node = runVitest(nodeFiles, 'node', ['--fileParallelism=true']);
+const nodeAssertions = requireComplete('Node', node);
 
-  if (pending.length === 0 && completed === total) {
-    console.log(`${String(completed)} unit assertions passed.`);
-  } else if (pending.length === 0) {
-    fail(
-      `Vitest reported ${String(completed)} of ${String(total)} assertions without naming the gap.`,
-      initial,
-    );
-  } else {
-    console.log(
-      `Dawn ended before ${String(total - completed)} assertions in ${pending.map((file) => path.basename(file)).join(', ')}. ` +
-        'Running only the incomplete file.',
-    );
-    for (const file of pending) {
-      let passed = false;
-      for (let attempt = 2; attempt <= MAX_ATTEMPTS; attempt++) {
-        const retry = runVitest([file], `${path.basename(file)}-${String(attempt)}`);
-        if (!retry.report) {
-          fail(`The retry for ${path.basename(file)} produced no assertion report.`, retry);
-          break;
-        }
-        if (retry.report.numFailedTests > 0) {
-          fail(`${String(retry.report.numFailedTests)} assertions failed in ${path.basename(file)}.`, retry);
-          break;
-        }
-        if (
-          retry.report.numTotalTests > 0 &&
-          retry.report.numPassedTests === retry.report.numTotalTests &&
-          retry.report.numPendingTests === 0
-        ) {
-          passed = true;
-          console.log(
-            `${path.basename(file)} completed on measured attempt ${String(attempt)}: ` +
-              `${String(retry.report.numPassedTests)} assertions passed.`,
-          );
-          break;
-        }
-      }
-      if (!passed && process.exitCode !== 1) {
-        console.error(
-          `${path.basename(file)} did not complete in ${String(MAX_ATTEMPTS)} measured attempts.`,
-        );
-        process.exitCode = 1;
-      }
-    }
-    if (process.exitCode !== 1) {
-      console.log(`${String(total)} unit assertions passed, with every collected case complete.`);
-    }
+if (process.exitCode !== 1) {
+  const browser = runVitest([], 'chrome-dawn', ['--config', 'vitest.browser.config.ts']);
+  const browserAssertions = requireComplete('Chrome Dawn', browser);
+  if (process.exitCode !== 1) {
+    console.log(`${String(nodeAssertions + browserAssertions)} unit assertions passed.`);
   }
 }

@@ -3,6 +3,8 @@ dist/
 .model-assets/
 .scratch/
 .wrangler/
+.vitest-attachments/
+test/__screenshots__/
 test-results/
 playwright-report/
 *.local

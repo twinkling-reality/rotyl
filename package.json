@@ -44,6 +44,7 @@
     "@cloudflare/vite-plugin": "1.37.1",
     "@openai/sites-vite-plugin": "0.1.0",
     "@playwright/test": "1.62.1",
+    "@vitest/browser-playwright": "4.1.10",
     "@webgpu/types": "0.1.71",
     "oxlint": "1.78.0",
     "oxlint-tsgolint": "^7.0.2001",

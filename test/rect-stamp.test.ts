@@ -86,7 +86,7 @@ describe('rectangle stamping', () => {
   });
 
   it('is the same rectangle dragged backwards', () => {
-    expect(Buffer.compare(Buffer.from(backward), Buffer.from(forward))).toBe(0);
+    expect(backward).toEqual(forward);
   });
 
   it('cuts a rectangle back out of a stroke', () => {

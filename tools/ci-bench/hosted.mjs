@@ -16,7 +16,8 @@ const at = (name, fallback) => {
   return index >= 0 ? process.argv[index + 1] : fallback;
 };
 const cycles = Number(at('--cycles', '16'));
-const output = path.resolve(at('--output', 'tools/ci-bench/hosted-results.json'));
+const outputArgument = at('--output', 'tools/ci-bench/hosted-results.json');
+const output = path.resolve(outputArgument);
 if (!Number.isInteger(cycles) || cycles < 1) throw new Error('--cycles needs a positive integer');
 
 const dawnFiles = dawnTestFiles();
@@ -106,7 +107,7 @@ function summary(observations) {
 }
 
 const result = {
-  command: `node tools/ci-bench/hosted.mjs --cycles ${String(cycles)}`,
+  command: `node tools/ci-bench/hosted.mjs --cycles ${String(cycles)} ` + `--output ${outputArgument}`,
   environment: {
     platform: process.platform,
     architecture: process.arch,
