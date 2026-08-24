@@ -227,9 +227,9 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
     publicLaunchEntry(launch),
     {
       slug: 'trials',
-      title: 'What was tried, and what happened to it',
+      title: 'The ideas we rejected',
       standfirst:
-        'The ledger of rejected approaches, each with the number that decided it. The only page here not generated from a results file, because a rejection leaves none behind.',
+        'Each entry names the evidence that killed or changed an approach, so the same dead end does not get repeated.',
       harness: 'hand, from the other five',
       results: 'tools/research/trials.ts',
       lede: [

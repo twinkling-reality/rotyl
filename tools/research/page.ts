@@ -469,7 +469,7 @@ export function renderIndex(entries: readonly Entry[]): string {
   // so where it matters.
   const main = `<div class="wrap">
 <h1>Research</h1>
-<p class="standfirst">What was measured, and what it cost to find out.</p>
+<p class="standfirst">Benchmarks, failures and the numbers behind Rotyl’s engineering decisions.</p>
 <div class="list">${rows}</div>
 </div>`;
 
