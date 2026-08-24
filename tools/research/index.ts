@@ -227,7 +227,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
     publicLaunchEntry(launch),
     {
       slug: 'trials',
-      title: 'The ideas we rejected',
+      title: 'Rejected approaches',
       standfirst:
         'Each entry names the evidence that killed or changed an approach, so the same dead end does not get repeated.',
       harness: 'hand, from the other five',
