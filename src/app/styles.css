@@ -178,7 +178,9 @@ button {
   height: var(--h-bar);
   flex: none;
   padding: 0 var(--s-4) 0 var(--s-5);
-  background: var(--bg);
+  /* The middle tone between paper and the editing surface. The bar stays a
+     straight piece of application chrome rather than becoming another card. */
+  background: var(--surface);
   z-index: var(--z-bar);
 }
 
@@ -259,10 +261,19 @@ button {
 }
 
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-size: var(--fs-md);
   font-weight: var(--fw-regular);
   letter-spacing: var(--ls-md);
   margin: 0;
+}
+
+.wordmark__mark {
+  display: block;
+  width: 19px;
+  height: 19px;
 }
 
 .file-status {
@@ -347,6 +358,10 @@ button {
   align-items: center;
   gap: var(--s-1);
   justify-self: end;
+}
+
+.top-bar .icon-button:hover:not(:disabled) {
+  background: var(--surface-sunken);
 }
 
 /* The one link out of the product, in the corner the actions will take over. */
@@ -525,7 +540,7 @@ button {
   margin-left: var(--s-1);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  background: var(--surface);
+  background: var(--bg);
   color: var(--text-primary);
   font-size: 12.5px;
   transition:
