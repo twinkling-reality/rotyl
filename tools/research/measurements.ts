@@ -89,9 +89,9 @@ export function publicLaunchEntry(launch: unknown): Entry {
   return {
     slug: 'public-launch',
     results: 'tools/launch-check/results.json',
-    title: 'What the public deployment actually exposes',
+    title: `${String(num(launch, ['build', 'public_files']))} public files, ${String(exposed)} source leaks`,
     standfirst:
-      'The anonymous canonical HTTPS origin, its exact artifact, cache boundary, model digest and negative exposure probes.',
+      'An anonymous check of the live domain, cache rules, model digest and five paths that must never reveal private project files.',
     harness: 'tools/launch-check',
     taken: `Anonymous HTTPS from Node ${text(launch, ['environment', 'node'])}`,
     lede: [
@@ -180,9 +180,8 @@ export function modelDeliveryEntry(models: unknown): Entry {
   return {
     slug: 'model-delivery',
     results: 'tools/model-assets/results.json',
-    title: 'What it costs to own and ship the model layer',
-    standfirst:
-      'The complete selection and tracking release, from the first page through first use, cache, invalidation and integrity refusal.',
+    title: 'The model ships with the app, not the first page',
+    standfirst: `All ${asFile(group('deployment', 'served'))} are pinned and deployed on the same origin. The browser fetches only the features it uses and checks every file before inference.`,
     harness: 'tools/model-assets',
     taken: `${text(models, ['environment', 'cpu'])}, Node ${text(models, ['environment', 'node'])}`,
     lede: [
@@ -310,9 +309,9 @@ export function ciStabilityEntry(ci: unknown): Entry {
   return {
     slug: 'ci',
     results: 'tools/ci-bench/results.json',
-    title: 'What a reliable shader-test gate has to recognise',
+    title: 'A passing shader suite could still exit 1',
     standfirst:
-      'Dawn’s native teardown measured across repeated complete suites, and a gate that retries only an unrun file rather than ignoring a crash or rerunning a failure.',
+      'Dawn crashed both after completed assertions and during unfinished files. The assertion report, not the process code, became the gate.',
     harness: 'tools/ci-bench',
     taken: `${text(ci, ['environment', 'cpu'])}, Node ${text(ci, ['environment', 'node'])}`,
     lede: [
@@ -396,9 +395,8 @@ export function hostedCiEntry(native: HostedNativeResults, browser: unknown): En
   return {
     slug: 'hosted-ci',
     results: 'tools/ci-bench/browser-results.json',
-    title: 'Why the shader gate runs in Chrome',
-    standfirst:
-      'The local Dawn bound tested on every hosted Mac shape, then replaced by the browser process that owns the product’s actual GPU lifetime.',
+    title: 'Node Dawn failed on every hosted Mac',
+    standfirst: `No native runner completed the full suite. Installed Chrome finished all ${String(browserProcesses)} cycles with every shader assertion accounted for.`,
     harness: 'tools/ci-bench',
     taken: `${text(browser, ['environment', 'cpu'])}, Node ${text(browser, ['environment', 'node'])}`,
     lede: [
@@ -2864,9 +2862,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-look',
       results: 'tools/style-bench/results.json',
-      title: 'What a style costs, and whether it holds still',
+      title: 'Three styles, measured',
       standfirst:
-        'Three style chains timed against one picture, and the temporal measurement that contradicted what everyone assumed about per-frame stylisation.',
+        'Comic, Poster and Print compared for render time, control cost and frame-to-frame stability.',
       harness: 'tools/style-bench',
       lede: [
         'Everything that decides whether a selection is correct was already built and measured. What was not settled was whether what comes out is worth looking at, and, on video, whether it stays worth looking at while it moves.',
@@ -2892,9 +2890,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'real-footage',
       results: 'tools/style-bench/results-real.json',
-      title: 'What survived a real picture, and what did not',
+      title: 'The brick wall broke Poster',
       standfirst:
-        'The three style measurements re-taken against four photographs and two shots of a film, fetched by URL and pinned by hash. One finding reversed sign, and cost a style one of its operators.',
+        'Synthetic scenes hid an outline problem. Six real images exposed it and changed the shader.',
       harness: 'tools/style-bench',
       lede: [
         'Everything on the page before this was measured against a scene drawn by a script, including the finding that decided per-frame stylisation was acceptable at all. This is that page again, with the picture changed and nothing else.',
@@ -2913,9 +2911,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-detail-control',
       results: 'tools/style-bench/results-real.json',
-      title: 'What raising detail was doing to a clip',
+      title: 'Comic detail has a bad top end',
       standfirst:
-        'The comic chain amplifies a photograph at the top of its detail control and attenuates it at the bottom. Attributed to a stage rather than to a control, by holding each of the three things detail moves and measuring again: the explanation that had been written down was the wrong one.',
+        'High settings amplify changes between frames. Isolating the three moving parts traced the problem to the flatten stage.',
       harness: 'tools/style-bench',
       lede: [
         'One column of the table on the page before this had been in the repository across six pictures and nobody had read it. The comic chain’s amplification is not a number, it is a slope in the detail control, and the top of that slope is the only measured defect left in what this product actually draws.',
@@ -2926,9 +2924,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'holding-still',
       results: 'tools/style-bench/results-motion.json',
-      title: 'What holds a stylised clip still, and what would not',
+      title: 'Temporal smoothing made the picture worse',
       standfirst:
-        'The flicker that softening a decision cannot reach, attributed to where it comes from, and the counter-metric that says the expensive answer would be worse than the disease. Nothing was built. This is why.',
+        'The remaining flicker comes from one stage in Comic. Blending frames adds visible ghosts without fixing it.',
       harness: 'tools/style-bench',
       lede: [
         'Earlier chapters softened the individual decisions in each chain and the numbers moved a long way. What is left is the residue, and there were three stories about where it comes from: the input moves, a stage amplifies, or the decisions genuinely are per frame. They imply completely different features at completely different prices, and building the expensive one before finding out which dominates would have been this project’s first unforced error.',
@@ -2944,9 +2942,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'video',
       results: 'tools/video-bench/results.json',
-      title: 'What decode costs, and where colour goes',
+      title: 'Video decode, from demux to GPU',
       standfirst:
-        'Demux, decode, seek and upload across two clips that differ only in keyframe spacing, and the probe showing a decoded frame needs no colour path of its own.',
+        'Demux, decode, seek and upload timed across two keyframe layouts, followed by a direct check of the colour path.',
       harness: 'tools/video-bench',
       lede: [
         'Four things were unknown before video could be built, all of them capable of forcing a different design. These settled the shape of the frame provider and the colour contract; the model’s side of it is on its own page.',
@@ -2956,9 +2954,8 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'full-range',
       results: 'tools/video-bench/results-range.json',
-      title: 'The clip was always the right clip',
-      standfirst:
-        'The one colour question this project left open, answered by looking inside the two files it had been asking it with, and then answered properly by asking it at more than one size. This browser\u2019s hardware decoder applies the range flag and its software decoder ignores it, so which answer a clip gets depends on which decoder it lands on.',
+      title: 'Chrome has two answers for full-range H.264',
+      standfirst: 'Hardware decode honours the range flag at 1080p. Software decode ignores it at 320×180.',
       harness: 'tools/video-bench',
       lede: [
         'A decoded frame needs no colour path of its own, which is measured, and there was one case the measurement could not reach: a clip tagged full range rather than limited. Both probes came back identical and the browser called both of them limited, so the conclusion written down was that the range path had never been exercised and that a better clip was needed.',
@@ -2969,9 +2966,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-transfer',
       results: 'tools/video-bench/results-transfer.json',
-      title: 'The browser was doing what the file said',
+      title: 'The eleven-code shift came from transfer metadata',
       standfirst:
-        'The eleven codes every 4:2:0 frame picks up on the way to the GPU, attributed to the browser on the decode page and written into two documents as uncorrectable. They are the transfer the file declares, and no probe here had ever declared one.',
+        'The measured colour change was declared by the file, not introduced by decoding or the WebGPU path.',
       harness: 'tools/video-bench',
       lede: [
         'A decoded frame needs no colour path of its own, which is measured, and one thing was filed beside that finding as a cost of doing business: the midtones come back eleven codes out, said to be Chrome\u2019s and beyond correcting. Then the range measurement, asking something else, found the same VideoFrame drawn into a 2D canvas does not have them. So it was never the decode, and one path in this browser gets a different answer from the other about a picture neither of them touched.',
@@ -2987,9 +2984,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-clip',
       results: 'tools/video-bench/results-export.json',
-      title: 'What writing a clip costs',
+      title: 'Exporting a video, end to end',
       standfirst:
-        'The export pipeline timed end to end, the two ways of getting the composite to the encoder, what rate control does to a file, and the probe showing the encoder leaves colour alone.',
+        'Composite, encode, bitrate, container overhead and colour measured as one complete pipeline.',
       harness: 'tools/video-bench',
       lede: [
         'Export had only ever written one frame. Three things stood between that and a clip, all of them capable of forcing a different design: what an encoded frame costs when everything is in flight at once, what a container writer costs in bytes, and whether the colour contract survives being written back out.',
@@ -3006,9 +3003,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'a-long-clip',
       results: 'tools/video-bench/results-long-clip.json',
-      title: 'How long a clip can be, and what decides it',
+      title: 'Streaming removed the clip-length ceiling',
       standfirst:
-        'The export that could only build the file in memory, measured to the length where it stops, and the same export given a file to write into, where the length of the clip stops being a variable.',
+        'Buffering the whole export fails as clips grow. Writing packets directly to a file keeps memory bounded.',
       harness: 'tools/video-bench',
       lede: [
         'The known limits page said a ten-minute clip export would be about a gigabyte and that there was no answer to that beyond failing. It named a consequence and measured nothing, and the two failures worth telling apart are a tab that dies and a tab that swaps for four minutes and finishes.',
@@ -3019,9 +3016,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'sound',
       results: 'tools/video-bench/results-interleave.json',
-      title: 'Where the sound goes in the file',
+      title: 'Audio has to be interleaved',
       standfirst:
-        'A clip arrived with a soundtrack and left without one. Carrying it across is a packet copy that costs nothing; putting the packets in the right PLACE is the measurement, and the cheap answer does not produce a file at all.',
+        'Copying encoded audio is cheap. Placing it beside the matching video packets is what keeps playback progressive.',
       harness: 'tools/video-bench',
       lede: [
         'What audio passthrough costs was never the question worth asking. Copying packets that are already encoded costs nothing and everybody knows it. What nobody here had measured is interleaving, and it decides whether the last chapter\u2019s central commitment was real: the index goes at the front so a file starts playing before it has finished arriving, and a second track is the first thing capable of undoing that without moving a single box.',
@@ -3032,9 +3029,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-document',
       results: 'tools/video-bench/results-document.json',
-      title: 'What the command log costs as a file',
+      title: 'The command log became a file format',
       standfirst:
-        'The one structure this architecture is built on had never been allowed to outlive a tab. What a tracked run costs to write down, read back and replay, and what it costs to be sure the file it names is the file somebody supplied.',
+        'Save size, load time, replay cost and media identity measured for tracked edits that need to survive a tab.',
       harness: 'tools/video-bench',
       lede: [
         'Strokes rather than pixels have been the source of truth since the first chapter. Undo is a cursor into the log, export replays it rather than asking the app what applies, and a lost graphics device is survivable because the log belongs to the work and not to the device. Reloading the page threw all of it away.',
@@ -3045,9 +3042,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'crash-recovery',
       results: 'tools/video-bench/results-recovery.json',
-      title: 'What it costs to write the log down on every edit',
+      title: 'Crash recovery needed a worker',
       standfirst:
-        'Saving is a thing somebody presses, and a crash costs whatever happened since they last pressed it. Whether the log can be written down as it is made turns out to be a question about one file API, and the answer put this project’s first Web Worker in it.',
+        'The edit journal now writes off the main thread, preserving unsaved work without making brush and tracking actions wait on storage.',
       harness: 'tools/video-bench',
       lede: [
         'The chapter before this one gave the command log a file and a button. What a button cannot do is protect the work between presses, and on a tracked run that is three quarters of a minute of following an object per press somebody did not make.',
@@ -3063,9 +3060,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'tracking',
       results: 'tools/edgetam-export/results.json',
-      title: 'What tracking would cost, before building it',
+      title: 'Could EdgeTAM track in the browser?',
       standfirst:
-        'The two graphs a tracker needs, exported and run on the runtime that already ships, and the readback that looked like a bottleneck and is not.',
+        'Two missing graphs, model traffic, mask readback and command-log growth showed the feature could fit before implementation began.',
       harness: 'tools/video-bench, tools/edgetam-export',
       lede: [
         'Tracking does not exist yet. These are the numbers that say what it would cost and what shape it would have to take, taken before writing it rather than after.',
@@ -3082,9 +3079,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'tracked-frame',
       results: 'tools/video-bench/results-tracked-frame.json',
-      title: 'What a tracked frame costs, now that there is one to time',
+      title: 'A tracked frame takes 135 ms, not 90',
       standfirst:
-        'The end-to-end figure tracking was designed around, taken end to end for the first time. It is 135 ms rather than the 90 that summing four graphs predicted, and the difference is not a graph.',
+        'The complete path added 45 ms beyond the four ONNX graphs. Host-side work explained the gap.',
       harness: 'tools/video-bench',
       lede: [
         'Every number this project has quoted about tracking was taken before a tracked frame existed: four graphs timed one at a time and added up. That was the honest thing to do and it was published saying so. This is the same question asked of the thing itself.',
@@ -3095,9 +3092,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-occlusion',
       results: 'tools/video-bench/results-occlusion.json',
-      title: 'What the tracker knew and the log could not say',
+      title: 'Occlusion vanished between the model and the document',
       standfirst:
-        'The model answers, on every frame, whether the object is in it. That answer crossed two files and died at the third, so a clip with a subject behind a lorry was indistinguishable from a clip where the selection had been erased. What it cost to carry, and why the other three facts the perception layer drops are still dropped.',
+        'EdgeTAM knew which frames lost the object, but the command log discarded that answer. Carrying it costs 14 bytes per command.',
       harness: 'tools/video-bench',
       lede: [
         'Everything measured in this project so far has been about what it draws. This one is about what it knows and never says. Five things the perception layer computes reached nobody: the model’s own occlusion verdict, each candidate’s area, each candidate’s confidence, a store’s prompt points, and the result a completed tracking run hands back. Two of them are carried now. The verdict is a field on a command, which is what this page is mostly about, and the run’s own result is a sentence in the line a finished export already writes into. The other three are still dropped, on purpose and with the reason written down.',
@@ -3108,9 +3105,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'per-object',
       results: 'tools/video-bench/results-objects.json',
-      title: 'Four figures that were about one object and did not say so',
+      title: 'Tracking cost scales per object',
       standfirst:
-        'Multi-object tracking arrived without re-taking anything, because nothing about the loop changed. What changed was the meaning of four committed figures, each of which had been exactly true of one object for as long as there could only be one.',
+        'Four published figures assumed one object. Three grow with object count; one barely moves.',
       harness: 'tools/video-bench',
       lede: [
         'The feature that reached this was small: the command log had been recording which objects somebody pointed at since object selection landed, so a run follows one object per answer the selection is made of and there is no new gesture, no mode and no list to manage. What it did do is turn a constant into a variable, and four numbers in three documents were written when it was still a constant.',
@@ -3121,9 +3118,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-host',
       results: 'tools/edgetam-export/host.json',
-      title: 'The half of a tracked frame that is not in a graph',
+      title: 'Three silent bugs lived outside the ONNX graphs',
       standfirst:
-        'Every transpose, the memory bank and the prompt a tracked frame sends, each run against the reference’s own inputs. Three of them were wrong, and none of the three produced an error.',
+        'Reference inputs exposed errors in transposes, memory and prompting that still produced plausible masks.',
       harness: 'tools/edgetam-export',
       lede: [
         'The two graphs a tracker needs were exported and checked against the modules they came from. That leaves the other half of a tracked frame, which is host code: two published graphs either side of the exported pair, the transposes between four sessions, the bank’s layout, and the arithmetic the memory encoder is fed either side of it.',
@@ -3134,9 +3131,9 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-editor',
       results: 'tools/research/measurements.ts',
-      title: 'What editing costs, and what ships',
+      title: 'Brush latency: 1 to 3 ms',
       standfirst:
-        'The figures that decide how the tool feels, taken by hand rather than by a harness, and kept apart from the rest for exactly that reason.',
+        'Hand-timed interaction figures that guide product decisions but are not reproducible enough for the benchmark set.',
       harness: 'measured by hand, in a browser',
       lede: [
         'Nothing regenerates these and nothing notices if they drift. They are not less true than the rest, but a page that mixed them would be claiming a discipline it only has for half of what it shows.',
