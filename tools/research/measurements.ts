@@ -89,7 +89,7 @@ export function publicLaunchEntry(launch: unknown): Entry {
   return {
     slug: 'public-launch',
     results: 'tools/launch-check/results.json',
-    title: `${String(num(launch, ['build', 'public_files']))} public files, ${String(exposed)} source leaks`,
+    title: 'Production deployment audit',
     standfirst:
       'An anonymous check of the live domain, cache rules, model digest and five paths that must never reveal private project files.',
     harness: 'tools/launch-check',
@@ -180,7 +180,7 @@ export function modelDeliveryEntry(models: unknown): Entry {
   return {
     slug: 'model-delivery',
     results: 'tools/model-assets/results.json',
-    title: 'The model ships with the app, not the first page',
+    title: 'Model delivery and caching',
     standfirst: `All ${asFile(group('deployment', 'served'))} are pinned and deployed on the same origin. The browser fetches only the features it uses and checks every file before inference.`,
     harness: 'tools/model-assets',
     taken: `${text(models, ['environment', 'cpu'])}, Node ${text(models, ['environment', 'node'])}`,
@@ -309,7 +309,7 @@ export function ciStabilityEntry(ci: unknown): Entry {
   return {
     slug: 'ci',
     results: 'tools/ci-bench/results.json',
-    title: 'A passing shader suite could still exit 1',
+    title: 'Shader test reliability',
     standfirst:
       'Dawn crashed both after completed assertions and during unfinished files. The assertion report, not the process code, became the gate.',
     harness: 'tools/ci-bench',
@@ -395,7 +395,7 @@ export function hostedCiEntry(native: HostedNativeResults, browser: unknown): En
   return {
     slug: 'hosted-ci',
     results: 'tools/ci-bench/browser-results.json',
-    title: 'Node Dawn failed on every hosted Mac',
+    title: 'GPU tests on GitHub runners',
     standfirst: `No native runner completed the full suite. Installed Chrome finished all ${String(browserProcesses)} cycles with every shader assertion accounted for.`,
     harness: 'tools/ci-bench',
     taken: `${text(browser, ['environment', 'cpu'])}, Node ${text(browser, ['environment', 'node'])}`,
@@ -2862,7 +2862,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-look',
       results: 'tools/style-bench/results.json',
-      title: 'Three styles, measured',
+      title: 'Style timing and flicker',
       standfirst:
         'Comic, Poster and Print compared for render time, control cost and frame-to-frame stability.',
       harness: 'tools/style-bench',
@@ -2890,7 +2890,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'real-footage',
       results: 'tools/style-bench/results-real.json',
-      title: 'The brick wall broke Poster',
+      title: 'Style tests on real footage',
       standfirst:
         'Synthetic scenes hid an outline problem. Six real images exposed it and changed the shader.',
       harness: 'tools/style-bench',
@@ -2911,7 +2911,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-detail-control',
       results: 'tools/style-bench/results-real.json',
-      title: 'Comic detail has a bad top end',
+      title: 'Comic detail response',
       standfirst:
         'High settings amplify changes between frames. Isolating the three moving parts traced the problem to the flatten stage.',
       harness: 'tools/style-bench',
@@ -2924,7 +2924,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'holding-still',
       results: 'tools/style-bench/results-motion.json',
-      title: 'Temporal smoothing made the picture worse',
+      title: 'Frame-to-frame stability',
       standfirst:
         'The remaining flicker comes from one stage in Comic. Blending frames adds visible ghosts without fixing it.',
       harness: 'tools/style-bench',
@@ -2942,7 +2942,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'video',
       results: 'tools/video-bench/results.json',
-      title: 'Video decode, from demux to GPU',
+      title: 'Video decode and colour',
       standfirst:
         'Demux, decode, seek and upload timed across two keyframe layouts, followed by a direct check of the colour path.',
       harness: 'tools/video-bench',
@@ -2954,7 +2954,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'full-range',
       results: 'tools/video-bench/results-range.json',
-      title: 'Chrome has two answers for full-range H.264',
+      title: 'Full-range H.264 decoding',
       standfirst: 'Hardware decode honours the range flag at 1080p. Software decode ignores it at 320×180.',
       harness: 'tools/video-bench',
       lede: [
@@ -2966,7 +2966,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-transfer',
       results: 'tools/video-bench/results-transfer.json',
-      title: 'The eleven-code shift came from transfer metadata',
+      title: 'Video transfer metadata',
       standfirst:
         'The measured colour change was declared by the file, not introduced by decoding or the WebGPU path.',
       harness: 'tools/video-bench',
@@ -2984,7 +2984,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-clip',
       results: 'tools/video-bench/results-export.json',
-      title: 'Exporting a video, end to end',
+      title: 'Video export performance',
       standfirst:
         'Composite, encode, bitrate, container overhead and colour measured as one complete pipeline.',
       harness: 'tools/video-bench',
@@ -3003,7 +3003,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'a-long-clip',
       results: 'tools/video-bench/results-long-clip.json',
-      title: 'Streaming removed the clip-length ceiling',
+      title: 'Long video exports',
       standfirst:
         'Buffering the whole export fails as clips grow. Writing packets directly to a file keeps memory bounded.',
       harness: 'tools/video-bench',
@@ -3016,7 +3016,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'sound',
       results: 'tools/video-bench/results-interleave.json',
-      title: 'Audio has to be interleaved',
+      title: 'Audio interleaving',
       standfirst:
         'Copying encoded audio is cheap. Placing it beside the matching video packets is what keeps playback progressive.',
       harness: 'tools/video-bench',
@@ -3029,7 +3029,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-document',
       results: 'tools/video-bench/results-document.json',
-      title: 'The command log became a file format',
+      title: 'Rotyl file size and replay',
       standfirst:
         'Save size, load time, replay cost and media identity measured for tracked edits that need to survive a tab.',
       harness: 'tools/video-bench',
@@ -3042,7 +3042,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'crash-recovery',
       results: 'tools/video-bench/results-recovery.json',
-      title: 'Crash recovery needed a worker',
+      title: 'Crash recovery performance',
       standfirst:
         'The edit journal now writes off the main thread, preserving unsaved work without making brush and tracking actions wait on storage.',
       harness: 'tools/video-bench',
@@ -3060,7 +3060,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'tracking',
       results: 'tools/edgetam-export/results.json',
-      title: 'Could EdgeTAM track in the browser?',
+      title: 'EdgeTAM tracking feasibility',
       standfirst:
         'Two missing graphs, model traffic, mask readback and command-log growth showed the feature could fit before implementation began.',
       harness: 'tools/video-bench, tools/edgetam-export',
@@ -3079,7 +3079,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'tracked-frame',
       results: 'tools/video-bench/results-tracked-frame.json',
-      title: 'A tracked frame takes 135 ms, not 90',
+      title: 'EdgeTAM tracking performance',
       standfirst:
         'The complete path added 45 ms beyond the four ONNX graphs. Host-side work explained the gap.',
       harness: 'tools/video-bench',
@@ -3092,7 +3092,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-occlusion',
       results: 'tools/video-bench/results-occlusion.json',
-      title: 'Occlusion vanished between the model and the document',
+      title: 'Occlusion handling',
       standfirst:
         'EdgeTAM knew which frames lost the object, but the command log discarded that answer. Carrying it costs 14 bytes per command.',
       harness: 'tools/video-bench',
@@ -3105,7 +3105,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'per-object',
       results: 'tools/video-bench/results-objects.json',
-      title: 'Tracking cost scales per object',
+      title: 'Multi-object tracking costs',
       standfirst:
         'Four published figures assumed one object. Three grow with object count; one barely moves.',
       harness: 'tools/video-bench',
@@ -3118,7 +3118,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-host',
       results: 'tools/edgetam-export/host.json',
-      title: 'Three silent bugs lived outside the ONNX graphs',
+      title: 'EdgeTAM host validation',
       standfirst:
         'Reference inputs exposed errors in transposes, memory and prompting that still produced plausible masks.',
       harness: 'tools/edgetam-export',
@@ -3131,7 +3131,7 @@ export function entries(results: Results): readonly Entry[] {
     {
       slug: 'the-editor',
       results: 'tools/research/measurements.ts',
-      title: 'Brush latency: 1 to 3 ms',
+      title: 'Editing latency',
       standfirst:
         'Hand-timed interaction figures that guide product decisions but are not reproducible enough for the benchmark set.',
       harness: 'measured by hand, in a browser',

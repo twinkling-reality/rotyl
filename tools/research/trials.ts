@@ -144,8 +144,7 @@ export const TRIALS: readonly Trial[] = [
     verdict: 'adopted',
     evidence:
       'The model answers per frame whether the object is in it, the tracker acts on that three times, and the answer then reached nobody: what got into the log was an applyMask with an empty mask, which is the same shape as a selection erased down to nothing. A run is a thing that happened once in a session that ends and the question is asked of a document that was saved and reloaded, so the run was the wrong carrier. On the command it is 14 bytes on each of the 300 commands that carry it, 4.1 KB of a 64 MB ten-minute document, and it makes hasAnyCoverage exact for that case rather than approximate. The whole chapter is 0.60 KB gzipped on an application bundle whose size decided this project’s framework, and it adds no button',
-    where:
-      'src/core/document/selection-command.ts, and "Occlusion vanished between the model and the document"',
+    where: 'src/core/document/selection-command.ts, and "Occlusion handling"',
   },
   {
     what: 'A smaller end-to-end occlusion clip, by resolution or by quality, so the fixture stays tiny',
@@ -180,7 +179,7 @@ export const TRIALS: readonly Trial[] = [
     verdict: 'rejected',
     evidence:
       'It answers the wrong question by putting five unlike facts behind one switch. What a head scored and what a candidate covers are the same on every file anybody opens; where a tracked object went behind something is a numbered frame of THIS clip that somebody has to act on. The first belongs on /research/ and the second belongs where per-frame facts already are, which is a mark on a track that costs no button. A mode is also the one shape that cannot be judged: nobody turns it on, so nothing about it is ever wrong in front of anybody',
-    where: '"Occlusion vanished between the model and the document"',
+    where: '"Occlusion handling"',
   },
   {
     what: 'The model’s confidence in the interface, on the candidates or anywhere else',
@@ -453,21 +452,21 @@ export const TRIALS: readonly Trial[] = [
     verdict: 'adopted',
     evidence:
       'The measurement it feeds reversed sign on a photograph: the poster chain amplified its input by five on a brick wall where the drawn scene reports it attenuating by two, which cost that style its outline operator',
-    where: 'tools/style-bench/fetch-real.sh, and "The brick wall broke Poster"',
+    where: 'tools/style-bench/fetch-real.sh, and "Style tests on real footage"',
   },
   {
     what: 'Softening the poster outline’s neighbour probe, so the field it thresholds is continuous',
     verdict: 'rejected',
     evidence:
       'Cuts the signal as much as the noise: 78 codes to 69 on a brick wall, for a visible weakening of every genuine outline on every picture',
-    where: '"The brick wall broke Poster", the outline',
+    where: '"Style tests on real footage", the outline',
   },
   {
     what: 'Widening the poster outline’s threshold one-sidedly, as it was written',
     verdict: 'rejected',
     evidence:
       'A transition opening at the decision displaces it rather than resolving it: wide enough to be steady took the outlines off the reference scene altogether, and a genuine boundary is only one band past the threshold to begin with',
-    where: '"The brick wall broke Poster", the outline',
+    where: '"Style tests on real footage", the outline',
   },
   {
     what: 'Centring that threshold’s transition on itself, and flooring its half width',
@@ -481,7 +480,7 @@ export const TRIALS: readonly Trial[] = [
     verdict: 'rejected',
     evidence:
       'The quantity being thresholded was a distance between two quantised colours and therefore discrete: a hard probe left nothing for a width to resolve and a soft one lost the signal. Every combination of the two was measured at four widths, and the best of them sat three times above the floor',
-    where: '"The brick wall broke Poster", the four tuning passes',
+    where: '"Style tests on real footage", the four tuning passes',
   },
   {
     what: 'Reading the flattened colour rather than its rounding, and making the outline’s weight that distance ramped up to the threshold',
@@ -495,7 +494,7 @@ export const TRIALS: readonly Trial[] = [
     verdict: 'rejected',
     evidence:
       'The mechanism known limits named, and it is not one. Measured at four floors on a perturbation of six codes, it takes a brick wall from 29 codes out to 9 and takes a frame of film from 17 UP to 22 on the way: a wider ellipse spans more structure, so a sector that flips costs more codes. There is no radius that is right for both pictures, which is what the control is for',
-    where: '"Comic detail has a bad top end", the interventions',
+    where: '"Comic detail response", the interventions',
   },
   {
     what: 'Holding the comic ink’s tau at its detail-0 value, so a flat region keeps a margin against the threshold',
