@@ -187,36 +187,76 @@ button {
   border-bottom: 1px solid var(--line-subtle);
 }
 
-/* Wordmark and the way out, together: leaving is about the document, and the
-   document's identity lives on this side of the bar. */
 .top-bar__lead {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
   min-width: 0;
 }
 
 .close-file {
-  animation: rise var(--dur) var(--ease-out);
+  position: relative;
+  display: inline-flex;
+  flex: none;
 }
 
-/* Asking is a word, not a dialog. It borrows the danger colour for as long as
-   it is armed and gives it straight back. */
-.close-file--asking {
-  height: var(--h-control);
-  padding: 0 var(--s-3);
-  border: 1px solid var(--danger);
+.close-file__trigger.icon-button {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-sm);
+}
+
+.close-file__trigger .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* A local question about the file, anchored to its close control. It does not
+   move the filename or the rest of the header while somebody answers. */
+.close-file__question {
+  position: absolute;
+  top: calc(100% + var(--s-2));
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 38px;
+  padding: 0 6px 0 var(--s-3);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
   background: var(--bg);
-  color: var(--danger);
-  font: inherit;
+  color: var(--text-primary);
   font-size: var(--fs-sm);
-  cursor: pointer;
+  white-space: nowrap;
+  animation: rise var(--dur) var(--ease-out);
+  z-index: var(--z-panel);
 }
 
-.close-file--asking:hover {
+.close-file__prompt {
+  margin-right: var(--s-1);
+}
+
+.close-file__choice {
+  height: 26px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-sm);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+}
+
+.close-file__choice:hover {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.close-file__choice--discard {
   background: var(--danger);
   color: var(--bg);
+}
+
+.close-file__choice--discard:hover {
+  background: var(--danger);
+  color: var(--bg);
+  opacity: 0.88;
 }
 
 .wordmark {
@@ -243,12 +283,40 @@ button {
   max-width: 32ch;
 }
 
-/* The centred column is the first thing to go: a long filename would otherwise
-   overrun the wordmark on the left and the Export button on the right, since a
-   grid track sizes to its content before it will overlap. */
+.file-status__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+/* On a narrow screen the file keeps its close control while secondary file
+   facts leave. The middle track can then shrink between the brand and actions. */
 @media (max-width: 720px) {
-  .file-status {
+  .top-bar {
+    grid-template-columns: auto 1fr auto;
+    gap: var(--s-2);
+    padding-inline: var(--s-3);
+  }
+
+  .file-status__separator,
+  .file-status__meta,
+  .file-status__note {
     display: none;
+  }
+
+  .file-status {
+    justify-self: start;
+    overflow: visible;
+  }
+
+  .file-status__name {
+    max-width: 18vw;
+  }
+
+  .close-file__question {
+    right: auto;
+    left: 0;
   }
 }
 
@@ -406,7 +474,7 @@ button {
   cursor: default;
 }
 
-/* The only filled control in the application. */
+/* The final-output control stays the strongest action in the row. */
 .export-button {
   display: inline-flex;
   align-items: center;
@@ -434,6 +502,38 @@ button {
    straight back, the same way closing over unsaved work asks. */
 .export-button--stop {
   background: var(--danger);
+}
+
+/* Save is a complete action, not a text link. Its quiet surface keeps Export
+   primary while giving Save the same icon, label and squircle structure. */
+.save-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: var(--h-control);
+  padding: 0 var(--s-3);
+  margin-left: var(--s-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+
+.save-button:hover:not(:disabled) {
+  background: var(--surface-sunken);
+  border-color: var(--line-strong);
+}
+
+.save-button:disabled {
+  color: var(--text-tertiary);
+  opacity: 0.46;
+  cursor: default;
 }
 
 /* Quieter again, for a control that is present on every clip and asked for on

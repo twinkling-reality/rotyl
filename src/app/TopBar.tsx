@@ -1,7 +1,7 @@
 import { Fragment, type JSX } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { Activity } from './Activity.tsx';
-import { CloseIcon, DownloadIcon, RedoIcon, UndoIcon } from './icons.tsx';
+import { CloseIcon, DownloadIcon, RedoIcon, SaveIcon, UndoIcon } from './icons.tsx';
 
 export interface TopBarProps {
   readonly file?: {
@@ -73,7 +73,6 @@ export function TopBar({
     <header class={`top-bar${file ? ' top-bar--editing' : ''}`}>
       <div class="top-bar__lead">
         <h1 class="wordmark">Rotyl</h1>
-        {file ? <CloseFile onClose={onClose} hasEdits={hasEdits} /> : null}
       </div>
 
       {/*
@@ -85,7 +84,10 @@ export function TopBar({
         <div class="file-status">
           {file ? (
             <>
-              <span class="file-status__name">{file.name}</span>
+              <span class="file-status__identity">
+                <span class="file-status__name">{file.name}</span>
+                <CloseFile onClose={onClose} hasEdits={hasEdits} />
+              </span>
               <span class="file-status__separator" aria-hidden="true">
                 ·
               </span>
@@ -126,17 +128,9 @@ export function TopBar({
             <RedoIcon />
             <span class="visually-hidden">Redo</span>
           </button>
-          {/*
-            BESIDE UNDO RATHER THAN BESIDE EXPORT, because it belongs to the
-            work rather than to the result: undo, redo and save are the three
-            things somebody does to a selection, and export is what they do
-            with one. It is a text button for the reason Frame is one, which is
-            that the loud button in this corner is the thing a person opened the
-            file to make.
-          */}
           <button
             type="button"
-            class="text-button"
+            class="save-button"
             onClick={onSave}
             disabled={!hasEdits || saveDisabled}
             title={
@@ -145,6 +139,7 @@ export function TopBar({
                 : 'Nothing has been selected yet'
             }
           >
+            <SaveIcon />
             Save
           </button>
           <ExportControl
@@ -266,51 +261,72 @@ function ExportControl({
 }
 
 /**
- * Leaving, and being asked once when leaving costs something.
+ * Leaving, and asking before it costs something.
  *
  * A selection is a few minutes of careful work with no file behind it, so a
- * stray click on an X should not take it. This product has no dialogs anywhere,
- * and adding one here for a decision this small would be a heavier answer than
- * the problem: the button asks in place instead, and forgets it was asking
- * after a few seconds so it cannot sit there armed.
+ * stray click on a close control should not take it. The question opens beside
+ * the filename because that is the thing being closed. Cancel is visible,
+ * Escape cancels too, and the question still expires so it cannot sit armed.
  *
- * With nothing to lose it just closes, because a confirmation nobody needs is
- * the fastest way to teach people to click through confirmations.
+ * With nothing to lose it closes immediately.
  */
 function CloseFile({ onClose, hasEdits }: { onClose: () => void; hasEdits: boolean }): JSX.Element {
   const [asking, setAsking] = useState(false);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const cancelButton = useRef<HTMLButtonElement>(null);
+
+  const cancelAsking = useCallback((): void => {
+    setAsking(false);
+    closeButton.current?.focus();
+  }, []);
 
   useEffect(() => {
     if (!asking) return undefined;
+    cancelButton.current?.focus();
     const timer = setTimeout(() => {
       setAsking(false);
     }, ASKS_FOR);
+    const cancelWithEscape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      cancelAsking();
+    };
+    globalThis.addEventListener('keydown', cancelWithEscape);
     return () => {
       clearTimeout(timer);
+      globalThis.removeEventListener('keydown', cancelWithEscape);
     };
-  }, [asking]);
-
-  if (asking) {
-    return (
-      <button type="button" class="close-file close-file--asking" onClick={onClose}>
-        Discard edits?
-      </button>
-    );
-  }
+  }, [asking, cancelAsking]);
 
   return (
-    <button
-      type="button"
-      class="close-file icon-button"
-      title="Close"
-      onClick={() => {
-        if (hasEdits) setAsking(true);
-        else onClose();
-      }}
-    >
-      <CloseIcon />
-      <span class="visually-hidden">Close</span>
-    </button>
+    <span class="close-file">
+      <button
+        ref={closeButton}
+        type="button"
+        class="close-file__trigger icon-button"
+        title={asking ? 'Cancel closing this file' : 'Close file'}
+        aria-expanded={hasEdits ? asking : undefined}
+        onClick={() => {
+          if (!hasEdits) onClose();
+          else if (asking) cancelAsking();
+          else setAsking(true);
+        }}
+      >
+        <CloseIcon />
+        <span class="visually-hidden">Close file</span>
+      </button>
+      {asking ? (
+        <span class="close-file__question" role="group" aria-label="Discard edits?">
+          <span class="close-file__prompt">Discard edits?</span>
+          <button ref={cancelButton} type="button" class="close-file__choice" onClick={cancelAsking}>
+            Cancel
+          </button>
+          <button type="button" class="close-file__choice close-file__choice--discard" onClick={onClose}>
+            Discard
+          </button>
+        </span>
+      ) : null}
+    </span>
   );
 }
 
