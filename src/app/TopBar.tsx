@@ -72,7 +72,10 @@ export function TopBar({
   return (
     <header class={`top-bar${file ? ' top-bar--editing' : ''}`}>
       <div class="top-bar__lead">
-        <h1 class="wordmark">Rotyl</h1>
+        <h1 class="wordmark">
+          <img class="wordmark__mark" src="/rotyl-mark.svg" alt="" aria-hidden="true" />
+          <span>Rotyl</span>
+        </h1>
       </div>
 
       {/*
