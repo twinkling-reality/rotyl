@@ -19,7 +19,7 @@ Re-run this after anything that changes the chrome.
 **The hero uses a real CC0 portrait.** The generator fetches Cameron Kirby's
 _Photographer in close-up_ from Wikimedia Commons and verifies its pinned
 SHA-256 before opening it. The source stays in an ignored cache; the generated
-GIF is the only copy committed. The video and style-panel stills keep using the
+GIF is the only copy committed. The video and style-shelf stills keep using the
 synthetic street scene because they document measured video behavior.
 
 **The hero records one complete edit.** It drags a rectangle through the
@@ -31,7 +31,7 @@ so the change reads without an unexplained jump.
 
 | file        | size   |
 | ----------- | ------ |
-| hero.gif    | 724 KB |
+| hero.gif    | 424 KB |
 | video.webp  | 44 KB  |
 | styles.webp | 52 KB  |
 

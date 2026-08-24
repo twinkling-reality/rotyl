@@ -8,9 +8,9 @@
  * The load-bearing invariant: nothing downstream of the input handler ever
  * sees a screen coordinate. Pointer positions are converted once, at the event
  * boundary, and every stroke point stored by the document is already in image
- * space. That is what keeps a selection aligned when the window resizes, when
- * the style panel opens, when the user zooms, and when export renders at a
- * different resolution than the preview.
+ * space. That is what keeps a selection aligned when the viewport resizes,
+ * when the user zooms, and when export renders at a different resolution than
+ * the preview.
  *
  * The view is stored as zoom + centre rather than as a matrix because those are
  * the two quantities the interaction actually manipulates; `imageSamplingUv`

@@ -95,10 +95,10 @@ rather than losing it between one press of Save and the next.
 See [saving the work](docs/saving.md).
 
 ![The comic style with the Mural palette applied inside a dragged rectangle,
-with the style panel open](docs/media/styles.webp)
+with the style shelf open](docs/media/styles.webp)
 
 The selection boundary runs through the near car, so the same object appears
-stylised and untouched at once. The controls a style declares are what the panel
+stylised and untouched at once. The controls a style declares are what the shelf
 draws, which is why adding a style needs no interface code.
 
 ## How it is put together

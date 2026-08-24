@@ -5,7 +5,7 @@ import { useTracking } from './use-tracking.ts';
 import { DropZone } from './DropZone.tsx';
 import { TopBar } from './TopBar.tsx';
 import { Toolbar } from './Toolbar.tsx';
-import { StylePanel } from './StylePanel.tsx';
+import { StyleShelf } from './StyleShelf.tsx';
 import { Viewport } from './Viewport.tsx';
 import { Timeline, timecode } from './Timeline.tsx';
 import { isWholeClip, movedEnd } from './range.ts';
@@ -372,7 +372,7 @@ export function App(): JSX.Element {
     Object.fromEntries(STYLES.map((candidate) => [candidate.id, defaultControls(candidate)])),
   );
   const controls = controlsByStyle[style.id] ?? defaultControls(style);
-  const [stylePanelOpen, setStylePanelOpen] = useState(false);
+  const [styleShelfOpen, setStyleShelfOpen] = useState(false);
   const [busy, setBusy] = useState<string | undefined>(undefined);
   const [pending, setPending] = useState<File | undefined>(undefined);
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -1671,48 +1671,62 @@ export function App(): JSX.Element {
                 setHistoryRevision(runtime.engine.document.revision);
               }}
             >
-              {/*
-              Rendered inside the viewport, not beside it. Positioned against
-              the editor it centred on the whole editor including the docked
-              panel, so it drifted off the image the moment the panel opened.
-            */}
-              <Toolbar
-                tool={tool}
-                onToolChange={setTool}
-                onClear={() => {
-                  runtime.engine.document.apply({ kind: 'clear', frame: runtime.engine.frame });
-                }}
-                onInvert={() => {
-                  runtime.engine.document.apply({ kind: 'invert', frame: runtime.engine.frame });
-                }}
-                stylePanelOpen={stylePanelOpen}
-                onToggleStylePanel={() => {
-                  setStylePanelOpen((open) => !open);
-                }}
-                {...(tracking.available
-                  ? {
-                      tracking: {
-                        running: tracking.running,
-                        // There has to be something to follow. Coverage is
-                        // inferred from the log rather than read back from the
-                        // GPU, which is the same thing the overlay does.
-                        disabled: !hasSelection || activity !== undefined,
-                        // And the title is what pressing it will do, which is
-                        // the rule the Clip button already follows: a selection
-                        // made of three answers is three objects to follow, and
-                        // a five-letter label cannot say so.
-                        title: manyObjects(trackedObjects)
-                          ? `Follow all ${String(trackedObjects)} selected objects forward through the clip`
-                          : 'Follow the selection forward through the clip',
-                        onTrack: () => {
-                          if (playingRef.current) pause();
-                          tracking.track(runtime.engine.frame);
+              <div class="control-dock">
+                {styleShelfOpen ? (
+                  <StyleShelf
+                    styles={STYLES}
+                    style={style}
+                    controls={controls}
+                    onStyleChange={setStyle}
+                    onChange={(next) => {
+                      setControlsByStyle((byStyle) => ({ ...byStyle, [style.id]: next }));
+                    }}
+                    onInteractionChange={(dragging) => {
+                      // Drop the flatten stage's resolution while a slider is moving,
+                      // then settle back to full quality on release.
+                      runtime.engine.setQuality(dragging ? 'draft' : 'full');
+                      setOverlayVisible(!dragging);
+                    }}
+                  />
+                ) : null}
+                <Toolbar
+                  tool={tool}
+                  onToolChange={setTool}
+                  onClear={() => {
+                    runtime.engine.document.apply({ kind: 'clear', frame: runtime.engine.frame });
+                  }}
+                  onInvert={() => {
+                    runtime.engine.document.apply({ kind: 'invert', frame: runtime.engine.frame });
+                  }}
+                  styleShelfOpen={styleShelfOpen}
+                  onToggleStyleShelf={() => {
+                    setStyleShelfOpen((open) => !open);
+                  }}
+                  {...(tracking.available
+                    ? {
+                        tracking: {
+                          running: tracking.running,
+                          // There has to be something to follow. Coverage is
+                          // inferred from the log rather than read back from the
+                          // GPU, which is the same thing the overlay does.
+                          disabled: !hasSelection || activity !== undefined,
+                          // And the title is what pressing it will do, which is
+                          // the rule the Clip button already follows: a selection
+                          // made of three answers is three objects to follow, and
+                          // a five-letter label cannot say so.
+                          title: manyObjects(trackedObjects)
+                            ? `Follow all ${String(trackedObjects)} selected objects forward through the clip`
+                            : 'Follow the selection forward through the clip',
+                          onTrack: () => {
+                            if (playingRef.current) pause();
+                            tracking.track(runtime.engine.frame);
+                          },
+                          onStop: tracking.stop,
                         },
-                        onStop: tracking.stop,
-                      },
-                    }
-                  : {})}
-              />
+                      }
+                    : {})}
+                />
+              </div>
             </Viewport>
             {loaded.video ? (
               <Timeline
@@ -1731,23 +1745,6 @@ export function App(): JSX.Element {
               />
             ) : null}
           </div>
-          {stylePanelOpen ? (
-            <StylePanel
-              styles={STYLES}
-              style={style}
-              controls={controls}
-              onStyleChange={setStyle}
-              onChange={(next) => {
-                setControlsByStyle((byStyle) => ({ ...byStyle, [style.id]: next }));
-              }}
-              onInteractionChange={(dragging) => {
-                // Drop the flatten stage's resolution while a slider is moving,
-                // then settle back to full quality on release.
-                runtime.engine.setQuality(dragging ? 'draft' : 'full');
-                setOverlayVisible(!dragging);
-              }}
-            />
-          ) : null}
         </div>
       ) : (
         <DropZone

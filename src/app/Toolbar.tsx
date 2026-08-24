@@ -18,8 +18,8 @@ export interface ToolbarProps {
   readonly onToolChange: (tool: Tool) => void;
   readonly onClear: () => void;
   readonly onInvert: () => void;
-  readonly stylePanelOpen: boolean;
-  readonly onToggleStylePanel: () => void;
+  readonly styleShelfOpen: boolean;
+  readonly onToggleStyleShelf: () => void;
   /**
    * Following the selection forward, when there is a clip to follow it through
    * and a selection to follow.
@@ -90,8 +90,8 @@ export function Toolbar({
   onToolChange,
   onClear,
   onInvert,
-  stylePanelOpen,
-  onToggleStylePanel,
+  styleShelfOpen,
+  onToggleStyleShelf,
   tracking,
 }: ToolbarProps): JSX.Element {
   return (
@@ -179,9 +179,9 @@ export function Toolbar({
       <ToolButton
         label="Style"
         icon={<SlidersIcon />}
-        expanded={stylePanelOpen}
-        className={stylePanelOpen ? 'tool--open' : ''}
-        onClick={onToggleStylePanel}
+        expanded={styleShelfOpen}
+        className={styleShelfOpen ? 'tool--open' : ''}
+        onClick={onToggleStyleShelf}
       />
     </div>
   );
