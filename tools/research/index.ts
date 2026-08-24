@@ -29,21 +29,25 @@ import { TRIALS } from './trials.ts';
  * stand-in, and it answers the question a reader actually has: is this current.
  * Absent outside a checkout, which is a missing date rather than a wrong one.
  */
-function lastChanged(path: string): string | undefined {
+function lastChanged(path: string): Pick<Entry, 'date' | 'revision'> {
   try {
-    const stamp = execFileSync('git', ['log', '-1', '--format=%cs', '--', path], {
+    const stamp = execFileSync('git', ['log', '-1', '--format=%cs%x09%H', '--', path], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
-    if (!stamp) return undefined;
-    return new Date(`${stamp}T00:00:00Z`).toLocaleDateString('en-GB', {
-      timeZone: 'UTC',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
+    const [date, revision] = stamp.split('\t');
+    if (!date || !revision) return {};
+    return {
+      date: new Date(`${date}T00:00:00Z`).toLocaleDateString('en-GB', {
+        timeZone: 'UTC',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }),
+      revision: revision.slice(0, 12),
+    };
   } catch {
-    return undefined;
+    return {};
   }
 }
 
@@ -230,11 +234,14 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
       title: 'Rejected approaches',
       standfirst:
         'Each entry names the evidence that killed or changed an approach, so the same dead end does not get repeated.',
-      harness: 'hand, from the other five',
+      kind: 'decision',
+      scope: 'Rotyl engineering choices supported by measurements elsewhere in this evidence library.',
+      repeatability: 'Each record links to the measurement or observation that decided it.',
+      harness: 'compiled from the recorded studies',
       results: 'tools/research/trials.ts',
       lede: [
-        `Every measurement on the other pages was taken on ${taken}. This one is the residue of all of them: what was tried, what it measured, and what happened to it.`,
-        'It exists because a rejected approach leaves no results file behind, and the reasoning survives only in a README paragraph or in nobody’s head, which is how the same idea gets proposed twice a year and re-measured each time. The rule for an entry is that it has to name a number, or an observation specific enough to argue with.',
+        `These records compile decisions supported by measurements from ${taken}. Each entry states the proposal, verdict, evidence and affected code or document.`,
+        'Rejected approaches leave no results file, so their reasoning is easy to lose and repeat. Each record must name a measurement or an observation specific enough to challenge.',
       ],
       sections: [],
       trials: TRIALS,
@@ -244,7 +251,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   const stamped = pages.map((entry) => ({
     ...entry,
     taken: entry.taken ?? taken,
-    date: lastChanged(entry.results),
+    ...lastChanged(entry.results),
   }));
 
   const meta = figureMeta(root);
