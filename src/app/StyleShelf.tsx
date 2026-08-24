@@ -1,5 +1,8 @@
+import { createPortal } from 'preact/compat';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import type { StyleControls, StyleDefinition } from '../core/style/style.ts';
+import { CheckIcon, ChevronUpIcon } from './icons.tsx';
 
 export interface StyleShelfProps {
   readonly styles: readonly StyleDefinition[];
@@ -56,6 +59,195 @@ function Slider({ controlKey, label, value, onInput, onInteractionChange }: Slid
   );
 }
 
+interface SelectOption {
+  readonly value: string;
+  readonly label: string;
+}
+
+interface ShelfSelectProps {
+  readonly id: string;
+  readonly label: string;
+  readonly options: readonly SelectOption[];
+  readonly value: string;
+  readonly className?: string;
+  readonly onChange: (value: string) => void;
+}
+
+interface MenuPosition {
+  readonly left: number;
+  readonly bottom: number;
+  readonly width: number;
+}
+
+/**
+ * The shelf's one choice instrument, shared by Style and Palette.
+ *
+ * Its list is portalled to the document surface so a palette near the right
+ * edge can rise above the shelf even while the parameter rail scrolls.
+ */
+function ShelfSelect({ id, label, options, value, className = '', onChange }: ShelfSelectProps): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<MenuPosition>({ left: 0, bottom: 0, width: 132 });
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const optionButtons = useRef<Array<HTMLButtonElement | null>>([]);
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((option) => option.value === value),
+  );
+  const selected = options[selectedIndex] ?? options[0];
+
+  const placeMenu = useCallback((): void => {
+    const bounds = trigger.current?.getBoundingClientRect();
+    if (!bounds) return;
+    const width = Math.max(132, bounds.width + 12);
+    setPosition({
+      left: Math.max(8, Math.min(bounds.left - 6, globalThis.innerWidth - width - 8)),
+      bottom: globalThis.innerHeight - bounds.top + 6,
+      width,
+    });
+  }, []);
+
+  const close = useCallback((restoreFocus: boolean): void => {
+    setOpen(false);
+    if (restoreFocus) requestAnimationFrame(() => trigger.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    placeMenu();
+    const frame = requestAnimationFrame(() => optionButtons.current[selectedIndex]?.focus());
+    const closeFromOutside = (event: PointerEvent): void => {
+      const path = event.composedPath();
+      if (root.current && path.includes(root.current)) return;
+      if (menu.current && path.includes(menu.current)) return;
+      setOpen(false);
+    };
+    globalThis.addEventListener('pointerdown', closeFromOutside);
+    globalThis.addEventListener('resize', placeMenu);
+    globalThis.addEventListener('scroll', placeMenu, true);
+    return () => {
+      cancelAnimationFrame(frame);
+      globalThis.removeEventListener('pointerdown', closeFromOutside);
+      globalThis.removeEventListener('resize', placeMenu);
+      globalThis.removeEventListener('scroll', placeMenu, true);
+    };
+  }, [open, placeMenu, selectedIndex]);
+
+  const handleKeyDown = (event: KeyboardEvent): void => {
+    if (!open && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+      event.preventDefault();
+      placeMenu();
+      setOpen(true);
+      return;
+    }
+    if (!open) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close(true);
+      return;
+    }
+    if (event.key === 'Tab') {
+      setOpen(false);
+      return;
+    }
+    const current = optionButtons.current.findIndex((button) => button === document.activeElement);
+    let next: number | undefined;
+    if (event.key === 'ArrowUp') next = current <= 0 ? options.length - 1 : current - 1;
+    if (event.key === 'ArrowDown') next = current >= options.length - 1 ? 0 : current + 1;
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = options.length - 1;
+    if (next === undefined) return;
+    event.preventDefault();
+    optionButtons.current[next]?.focus();
+  };
+
+  const choose = (next: string): void => {
+    onChange(next);
+    close(true);
+  };
+
+  const menuId = `${id}-menu`;
+
+  return (
+    <div
+      ref={root}
+      class={`style-control style-control--select ${className}`.trim()}
+      onKeyDown={(event) => {
+        handleKeyDown(event);
+      }}
+    >
+      <span class="style-control__name">{label}</span>
+      <div class="shelf-dropdown">
+        <button
+          ref={trigger}
+          type="button"
+          class="shelf-dropdown__trigger"
+          aria-label={`${label}: ${selected?.label ?? ''}`}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={open ? menuId : undefined}
+          onClick={() => {
+            if (open) close(false);
+            else {
+              placeMenu();
+              setOpen(true);
+            }
+          }}
+        >
+          <span class="shelf-dropdown__value">{selected?.label}</span>
+          <ChevronUpIcon />
+        </button>
+      </div>
+      {open
+        ? createPortal(
+            <div
+              ref={menu}
+              id={menuId}
+              class="shelf-dropdown__menu"
+              role="listbox"
+              aria-label={label}
+              style={{
+                left: `${String(position.left)}px`,
+                bottom: `${String(position.bottom)}px`,
+                width: `${String(position.width)}px`,
+              }}
+              onKeyDown={(event) => {
+                handleKeyDown(event);
+              }}
+            >
+              {options.map((option, index) => {
+                const active = option.value === value;
+                return (
+                  <button
+                    ref={(node) => {
+                      optionButtons.current[index] = node;
+                    }}
+                    key={option.value}
+                    type="button"
+                    class="shelf-dropdown__option"
+                    role="option"
+                    aria-selected={active}
+                    onClick={() => {
+                      choose(option.value);
+                    }}
+                  >
+                    <span>{option.label}</span>
+                    <span class="shelf-dropdown__check" aria-hidden={!active}>
+                      {active ? <CheckIcon /> : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
+    </div>
+  );
+}
+
 interface ChoiceProps {
   readonly controlKey: string;
   readonly label: string;
@@ -66,30 +258,17 @@ interface ChoiceProps {
 
 /** A short list with no meaningful midpoint, presented as a compact dropup. */
 function Choice({ controlKey, label, options, value, onChange }: ChoiceProps): JSX.Element {
-  const id = `style-${controlKey}`;
   return (
-    <div class="style-control style-control--choice">
-      <label class="style-control__name" for={id}>
-        {label}
-      </label>
-      <span class="style-select style-select--control">
-        <select
-          id={id}
-          class="style-select__input"
-          value={String(value)}
-          onChange={(event) => {
-            onChange(Number(event.currentTarget.value));
-          }}
-        >
-          {options.map((option, index) => (
-            <option key={option} value={String(index)}>
-              {option}
-            </option>
-          ))}
-        </select>
-        <span class="style-select__chevron" aria-hidden="true" />
-      </span>
-    </div>
+    <ShelfSelect
+      id={`style-${controlKey}`}
+      label={label}
+      className="style-control--choice"
+      options={options.map((option, index) => ({ value: String(index), label: option }))}
+      value={String(value)}
+      onChange={(next) => {
+        onChange(Number(next));
+      }}
+    />
   );
 }
 
@@ -111,29 +290,17 @@ export function StyleShelf({
 }: StyleShelfProps): JSX.Element {
   return (
     <aside class="style-shelf" aria-label="Style controls" data-controls={style.controls.length}>
-      <div class="style-shelf__type">
-        <label class="visually-hidden" for="style-family">
-          Style
-        </label>
-        <span class="style-select style-select--family">
-          <select
-            id="style-family"
-            class="style-select__input"
-            value={style.id}
-            onChange={(event) => {
-              const selected = styles.find((candidate) => candidate.id === event.currentTarget.value);
-              if (selected) onStyleChange(selected);
-            }}
-          >
-            {styles.map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {candidate.name}
-              </option>
-            ))}
-          </select>
-          <span class="style-select__chevron" aria-hidden="true" />
-        </span>
-      </div>
+      <ShelfSelect
+        id="style-family"
+        label="Style"
+        className="style-shelf__type"
+        options={styles.map((candidate) => ({ value: candidate.id, label: candidate.name }))}
+        value={style.id}
+        onChange={(next) => {
+          const selected = styles.find((candidate) => candidate.id === next);
+          if (selected) onStyleChange(selected);
+        }}
+      />
 
       <div class="style-shelf__controls">
         {style.controls.map((spec) =>
@@ -144,8 +311,8 @@ export function StyleShelf({
               label={spec.label}
               options={spec.options}
               value={Math.round(controls[spec.key] ?? spec.initial)}
-              onChange={(value) => {
-                onChange({ ...controls, [spec.key]: value });
+              onChange={(next) => {
+                onChange({ ...controls, [spec.key]: next });
               }}
             />
           ) : (
@@ -154,8 +321,8 @@ export function StyleShelf({
               controlKey={spec.key}
               label={spec.label}
               value={controls[spec.key] ?? spec.initial}
-              onInput={(value) => {
-                onChange({ ...controls, [spec.key]: value });
+              onInput={(next) => {
+                onChange({ ...controls, [spec.key]: next });
               }}
               onInteractionChange={onInteractionChange}
             />

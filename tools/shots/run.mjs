@@ -149,12 +149,13 @@ await page.locator('button[title="Undo"]:not([disabled])').waitFor();
 await page.waitForTimeout(400);
 await holdHero(4);
 
-await page.getByRole('button', { name: 'Style' }).click();
+await page.getByRole('button', { name: 'Style', exact: true }).click();
 await holdHero(3);
-await page.getByRole('combobox', { name: 'Style' }).selectOption('print');
+await page.getByRole('button', { name: 'Style: Comic' }).click();
+await page.getByRole('option', { name: 'Print', exact: true }).click();
 await page.waitForTimeout(250);
 await holdHero(3);
-await page.getByRole('button', { name: 'Style' }).click();
+await page.getByRole('button', { name: 'Style', exact: true }).click();
 await captureHero();
 await holdHero(6);
 
@@ -171,10 +172,12 @@ if (heroFrame !== GIF.frames) {
 console.log('stills: style shelf, and the object picker');
 await open(CLIP, 'street.mp4');
 await selectArea([0.5, 0.02], [0.99, 0.98]);
-await page.getByRole('button', { name: 'Style' }).click();
-await page.getByRole('combobox', { name: 'Style' }).selectOption('poster');
-await page.getByRole('combobox', { name: 'Palette' }).selectOption({ label: 'Riso' });
-await page.getByRole('button', { name: 'Style' }).click();
+await page.getByRole('button', { name: 'Style', exact: true }).click();
+await page.getByRole('button', { name: 'Style: Comic' }).click();
+await page.getByRole('option', { name: 'Poster', exact: true }).click();
+await page.getByRole('button', { name: /Palette:/ }).click();
+await page.getByRole('option', { name: 'Riso', exact: true }).click();
+await page.getByRole('button', { name: 'Style', exact: true }).click();
 await page.waitForTimeout(600);
 await page.screenshot({ path: `${OUT}/video.png` });
 
@@ -187,8 +190,9 @@ await page.getByText('Drop a file, or click to browse').waitFor();
 await open(SCENE, 'street.png');
 // Deliberately across the near car, so one object appears both ways at once.
 await selectArea([0.18, 0.32], [0.62, 0.96]);
-await page.getByRole('button', { name: 'Style' }).click();
-await page.getByRole('combobox', { name: 'Palette' }).selectOption({ label: 'Mural' });
+await page.getByRole('button', { name: 'Style', exact: true }).click();
+await page.getByRole('button', { name: /Palette:/ }).click();
+await page.getByRole('option', { name: 'Mural', exact: true }).click();
 await page.waitForTimeout(700);
 await page.screenshot({ path: `${OUT}/styles.png` });
 
