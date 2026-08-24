@@ -2526,6 +2526,14 @@ test('refuses a document whose media has been replaced by a different file', asy
   await expect(canvas).toBeVisible();
   await expect(page.getByText(/so the selection does not describe it/)).toBeVisible();
   await expect(page.getByText(/made on sample\.png/)).toBeVisible();
+  const dismiss = page.getByRole('button', { name: 'Dismiss message' });
+  await expect(dismiss).toBeVisible();
+  const dismissBounds = await dismiss.boundingBox();
+  expect(dismissBounds).not.toBeNull();
+  expect(dismissBounds?.width).toBeGreaterThanOrEqual(40);
+  expect(dismissBounds?.height).toBeGreaterThanOrEqual(40);
+  await dismiss.click();
+  await expect(page.getByText(/so the selection does not describe it/)).toBeHidden();
   // The file it named is open and has nothing on it, which is the honest
   // outcome: the clip is fine, the pairing is not.
   await expect(page.getByRole('button', { name: 'Undo' })).toBeDisabled();
