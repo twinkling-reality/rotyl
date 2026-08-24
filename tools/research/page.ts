@@ -62,6 +62,8 @@ export interface Section {
 
 export type Verdict = 'adopted' | 'rejected' | 'open';
 
+export type EvidenceKind = 'benchmark' | 'investigation' | 'decision' | 'audit' | 'historical';
+
 export interface Trial {
   readonly what: string;
   readonly verdict: Verdict;
@@ -76,6 +78,12 @@ export interface Entry {
   readonly title: string;
   /** The line under the title on the index: what this one is about. */
   readonly standfirst: string;
+  /** The kind of evidence, so unlike documents are not presented as peers. */
+  readonly kind: EvidenceKind;
+  /** The boundary of the claim in plain language. */
+  readonly scope: string;
+  /** What a reader must do to repeat the work. */
+  readonly repeatability: string;
   /** Where the numbers came from, and how to take them again. */
   readonly harness: string;
   /**
@@ -90,6 +98,8 @@ export interface Entry {
   readonly results: string;
   /** When the figures last changed, from the repository rather than from memory. */
   readonly date?: string | undefined;
+  /** The commit that last changed the source results. */
+  readonly revision?: string | undefined;
   /** The machine they were taken on, read out of the results themselves. */
   readonly taken?: string | undefined;
   readonly lede: readonly string[];
@@ -188,9 +198,38 @@ p a:hover, li a:hover { text-decoration: underline; }
 h1 { margin: 0; font-family: var(--serif); font-size: 34px; font-weight: 400; line-height: 42px; letter-spacing: -0.01em; }
 .standfirst { margin: 12px 0 0; color: var(--text-secondary); font-size: 15px; line-height: 24px; max-width: 60ch; }
 
+.evidence {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 30px 0 4px;
+  border-top: 2px solid var(--accent);
+  border-bottom: 1px solid var(--line);
+}
+.evidence div { padding: 12px 18px 13px 0; border-bottom: 1px solid var(--line-subtle); }
+.evidence div:nth-last-child(-n + 2) { border-bottom: 0; }
+.evidence dt {
+  margin: 0 0 3px;
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.evidence dd { margin: 0; color: var(--text-secondary); font-size: 12.5px; line-height: 19px; }
+.evidence code { color: var(--text-primary); }
+
 /* The index: a date and a title. Nothing else earns a column, which file
    produced a measurement is the entry's business, not the list's. */
 .list { margin-top: 56px; }
+.group { margin-top: 64px; }
+.group:first-child { margin-top: 0; }
+.group__head { display: grid; grid-template-columns: 130px 1fr; gap: 24px; margin-bottom: 14px; }
+.group__label {
+  color: var(--accent);
+  font-size: 10.5px;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+.group__about { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 21px; max-width: 62ch; }
 .row {
   display: grid;
   grid-template-columns: 130px 1fr;
@@ -314,6 +353,17 @@ footer {
 }
 footer p { margin: 0 0 10px; max-width: 68ch; }
 footer p:last-child { margin-bottom: 0; }
+
+@media (max-width: 640px) {
+  .top { padding: 18px 20px; }
+  .wrap { padding: 48px 20px 88px; }
+  .evidence { grid-template-columns: 1fr; }
+  .evidence div, .evidence div:nth-last-child(-n + 2) { border-bottom: 1px solid var(--line-subtle); }
+  .evidence div:last-child { border-bottom: 0; }
+  .group__head { display: block; }
+  .group__about { margin-top: 5px; }
+  .row { grid-template-columns: 1fr; gap: 4px; padding: 20px 12px; margin: 0 -12px; }
+}
 `;
 
 function shell(title: string, top: string, main: string): string {
@@ -373,6 +423,37 @@ const VERDICT_LABEL: Record<Verdict, string> = {
   open: 'open',
 };
 
+const EVIDENCE: Record<EvidenceKind, { label: string; description: string }> = {
+  benchmark: {
+    label: 'Benchmark',
+    description: 'Repeatable measurements of cost, capacity or reliability.',
+  },
+  investigation: {
+    label: 'Investigation',
+    description: 'Focused tests that identify a cause or validate a mechanism.',
+  },
+  decision: {
+    label: 'Decision record',
+    description: 'Product choices tied to measured evidence and stated tradeoffs.',
+  },
+  audit: {
+    label: 'Live audit',
+    description: 'Checks of a deployed or external system at a stated point in time.',
+  },
+  historical: {
+    label: 'Historical study',
+    description: 'Evidence collected before implementation and preserved for context.',
+  },
+};
+
+const EVIDENCE_ORDER: readonly EvidenceKind[] = [
+  'benchmark',
+  'investigation',
+  'decision',
+  'audit',
+  'historical',
+];
+
 function renderTrials(trials: readonly Trial[]): string {
   const rows = trials
     .map(
@@ -399,6 +480,19 @@ function renderSection(section: Section, meta: readonly FigureMeta[]): string {
       ? `<p class="cmd"><span class="cmd__label">Re-take this</span><code>${escape(section.command)}</code></p>`
       : '',
   ].join('');
+}
+
+function renderEvidence(entry: Entry): string {
+  const item = (label: string, value: string, code = false): string =>
+    `<div><dt>${escape(label)}</dt><dd>${code ? `<code>${escape(value)}</code>` : escape(value)}</dd></div>`;
+  return `<dl class="evidence">
+${item('Evidence', EVIDENCE[entry.kind].label)}
+${item('Scope', entry.scope)}
+${item('Measured', [entry.date, entry.taken].filter(Boolean).join(', '))}
+${item('Repeatability', entry.repeatability)}
+${item('Method', entry.harness, true)}
+  ${item('Source', `${entry.results}${entry.revision ? ` @ ${entry.revision}` : ''}`, true)}
+</dl>`;
 }
 
 /**
@@ -433,20 +527,17 @@ export function renderEntry(entry: Entry, meta: readonly FigureMeta[] = []): str
 <aside class="toc"><nav><div class="label">On this page</div><ol>${toc}</ol></nav></aside>
 <main class="body">
 <h1>${escape(entry.title)}</h1>
-<p class="meta">${escape(entry.date ?? '')}</p>
+${renderEvidence(entry)}
 <div class="lede">${entry.lede.map((paragraph) => `<p>${escape(paragraph)}</p>`).join('')}</div>
 ${entry.hero ? renderFigure(entry.hero, meta) : ''}
 ${entry.sections.map((section) => renderSection(section, meta)).join('')}
 ${entry.trials ? renderTrials(entry.trials) : ''}
 <footer>
-<p>Measured by <code>${escape(entry.harness)}</code>${entry.taken ? `, on ${escape(entry.taken)}` : ''}.
-Every GPU figure is fenced on the device that did the work, and the tables here
-are read out of that harness's own results when this page is built rather than
-typed into it, so a number on this page cannot disagree with the run that
-produced it.</p>
-<p>The commands beside each table re-take that measurement. Run them in real
-Chrome, on a machine doing nothing else; the arguments behind the numbers are in
-the README next to the code they justify.</p>
+<p>Tables are read directly from the recorded results when the page is built. A
+missing or renamed measurement fails the build instead of leaving an old value
+on the page.</p>
+<p>Commands beside the tables repeat the relevant measurement. Browser and GPU
+results should be repeated in Chrome on an otherwise idle machine.</p>
 </footer>
 </main></div></div>`;
 
@@ -454,23 +545,28 @@ the README next to the code they justify.</p>
 }
 
 export function renderIndex(entries: readonly Entry[]): string {
-  const rows = entries
-    .map(
-      (entry) =>
-        `<a class="row" href="/research/${entry.slug}.html">` +
-        `<div class="when">${escape(entry.date ?? '')}</div>` +
-        `<div><div class="what">${escape(entry.title)}</div>` +
-        `<p class="about">${escape(entry.standfirst)}</p></div></a>`,
-    )
-    .join('');
+  const row = (entry: Entry): string =>
+    `<a class="row" href="/research/${entry.slug}.html">` +
+    `<div class="when">${escape(entry.date ?? '')}</div>` +
+    `<div><div class="what">${escape(entry.title)}</div>` +
+    `<p class="about">${escape(entry.standfirst)}</p></div></a>`;
+  const groups = EVIDENCE_ORDER.map((kind) => {
+    const members = entries.filter((entry) => entry.kind === kind);
+    if (members.length === 0) return '';
+    return `<section class="group" aria-labelledby="group-${kind}">
+<div class="group__head"><div class="group__label" id="group-${kind}">${escape(EVIDENCE[kind].label)}</div>
+<p class="group__about">${escape(EVIDENCE[kind].description)}</p></div>
+${members.map(row).join('')}
+</section>`;
+  }).join('');
 
   // One line, about what a reader will find rather than about how the page is
   // built. How it is built is a property of the entries, and each of them says
   // so where it matters.
   const main = `<div class="wrap">
 <h1>Research</h1>
-<p class="standfirst">Benchmarks, failures and the numbers behind Rotyl’s engineering decisions.</p>
-<div class="list">${rows}</div>
+<p class="standfirst">Measured evidence behind Rotyl, grouped by the kind of claim each page can support.</p>
+<div class="list">${groups}</div>
 </div>`;
 
   return shell('Research. Rotyl', breadcrumb(), main);

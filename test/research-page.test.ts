@@ -96,6 +96,9 @@ describe('the research pages', () => {
       results: 'tools/style-bench/results.json',
       title: '<script>alert(1)</script>',
       standfirst: '&',
+      kind: 'benchmark',
+      scope: '<b>scope</b>',
+      repeatability: '<i>manual</i>',
       harness: '<i>y</i>',
       lede: ['<b>x</b>'],
       sections: [
@@ -122,5 +125,42 @@ describe('the research pages', () => {
     }
     expect(TRIALS.some((trial) => trial.verdict === 'adopted')).toBe(true);
     expect(TRIALS.some((trial) => trial.verdict === 'open')).toBe(true);
+  });
+
+  it('states the evidence type and scope before every article', () => {
+    const index = pages[0]?.html ?? '';
+    for (const label of ['Benchmark', 'Investigation', 'Decision record', 'Live audit', 'Historical study']) {
+      expect(index, label).toContain(label);
+    }
+    for (const page of pages.slice(1)) {
+      for (const label of ['Evidence', 'Scope', 'Measured', 'Repeatability', 'Method', 'Source']) {
+        expect(page.html, `${page.path}: ${label}`).toContain(`<dt>${label}</dt>`);
+      }
+      expect(page.html, page.path).toMatch(/<dt>Source<\/dt><dd><code>[^<]+ @ [0-9a-f]{12}<\/code>/);
+    }
+  });
+
+  it('keeps the published prose within the research writing standard', () => {
+    const publicText = html
+      .replaceAll(/<style>[\s\S]*?<\/style>/g, ' ')
+      .replaceAll(/<[^>]+>/g, ' ')
+      .replaceAll(/\s+/g, ' ');
+
+    expect(publicText).not.toMatch(/[\u2013\u2014]/u);
+    expect(publicText).not.toMatch(/\b(?:chapter|page before|page after|page next)\b/i);
+    expect(publicText).not.toMatch(/\b(?:anybody|everybody|nobody|somebody)\b/i);
+    expect(publicText).not.toMatch(/\b(?:three|four) things (?:were|are|came|stood)\b/i);
+    expect(publicText).not.toContain('Tracking does not exist yet');
+
+    for (const match of html.matchAll(/<p(?: class="[^"]*")?>([\s\S]*?)<\/p>/g)) {
+      const paragraph = (match[1] ?? '')
+        .replaceAll(/<[^>]+>/g, ' ')
+        .replaceAll(/\s+/g, ' ')
+        .trim();
+      expect(paragraph).not.toMatch(/^(?:So|And|But|What|This one|That is)\b/);
+      for (const sentence of paragraph.split(/(?<=[.!?])\s+/)) {
+        expect(sentence.split(/\s+/).filter(Boolean).length, sentence).toBeLessThanOrEqual(48);
+      }
+    }
   });
 });

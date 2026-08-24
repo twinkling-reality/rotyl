@@ -143,7 +143,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'An occlusion as a field on the command, rather than on the run that produced it',
     verdict: 'adopted',
     evidence:
-      'The model answers per frame whether the object is in it, the tracker acts on that three times, and the answer then reached nobody: what got into the log was an applyMask with an empty mask, which is the same shape as a selection erased down to nothing. A run is a thing that happened once in a session that ends and the question is asked of a document that was saved and reloaded, so the run was the wrong carrier. On the command it is 14 bytes on each of the 300 commands that carry it, 4.1 KB of a 64 MB ten-minute document, and it makes hasAnyCoverage exact for that case rather than approximate. The whole chapter is 0.60 KB gzipped on an application bundle whose size decided this project’s framework, and it adds no button',
+      'The tracker uses the model’s per-frame object-presence result internally, but the earlier command log stored only applyMask with an empty mask. That shape also represents a selection erased by the user. A run ends with the session, while the interpretation must survive save and reload, so the command is the correct carrier. The field adds 14 bytes to each of the 300 affected commands, or 4.1 KB in a 64 MB ten-minute document. It also makes hasAnyCoverage exact for this case. The complete change adds 0.60 KB gzipped and no new control',
     where: 'src/core/document/selection-command.ts, and "Occlusion handling"',
   },
   {
@@ -157,35 +157,35 @@ export const TRIALS: readonly Trial[] = [
     what: 'Asserting the frame the object comes back on, which is the frame a reader would look at',
     verdict: 'rejected',
     evidence:
-      'It is a five per cent sliver of a disc and the model’s own score sits within a tenth of a per cent of zero on it, which /research/the-host.html already says makes a run’s answer there a coin flip. Two things already in this repository land on opposite sides of it: the PyTorch reference is a frame late, which is its reacquisition_delay of 1, and the numpy host in host.py is not. Two more were found by running it. Encoding the same frames differently moves it, and so does the seed: the same clip seeded from the square inscribed in the disc rather than from its bounding box reports one more frame than the bounding box does. So the end-to-end test asserts the frames the bar covers and the frames the whole disc is in view on, and says nothing about the slivers at either end. An assertion on the flip would fail on somebody else’s GPU for a reason that is not a defect',
+      'The disputed frame contains a five-percent sliver of the disc, and the model score is within 0.1% of the presence threshold. The PyTorch reference reacquires one frame later than the NumPy host. Re-encoding the frames or changing the seed from the bounding box to its inscribed square also moves the boundary by one frame. The end-to-end test therefore asserts covered frames and frames where the complete disc is visible, but excludes the threshold slivers. An assertion on the boundary would vary across valid GPU executions',
     where: 'e2e/editor.spec.ts',
   },
   {
     what: 'Falling back to the head’s predicted IoU when a mask decoder has no object score',
     verdict: 'rejected',
     evidence:
-      'A silent wrong answer, and the only one of the two outputs the re-exported decoder exists for that had one: a missing object_pointer throws on the first frame because it is read like everything else, and a missing object_score_logits fell back to a different quantity compared against the same zero. A predicted IoU is essentially always positive, so such a graph would track perfectly and report the object present on every frame of every clip, including the ones it is behind something on. Asked of the session’s output names at load instead, and refused by the name of whichever is missing. What the first version of this entry got wrong is which file that was: asked of the published decoder at the pinned revision, in both precisions, it declares object_score_logits and no object_pointer, so serving it has always failed loudly rather than silently. The silent shape is one no release contains, which is the argument for checking names rather than recognising a file, and what the check buys for the mistake somebody actually makes is a sentence at load instead of an exception mid-gesture',
+      'A missing object_pointer already throws on the first frame. A missing object_score_logits had a more dangerous fallback: predicted IoU was compared with zero and would report the object present on almost every frame, including occlusions. The loader now validates output names and reports the missing name before inference. The pinned published decoder contains object_score_logits but no object_pointer, so the actual release already failed loudly; validation improves that failure from a mid-gesture exception to a specific load error and protects future graph variants',
     where: 'src/platform/perception/edgetam-tracker.ts',
   },
   {
     what: 'A stop as an exception thrown out of a tracking run, which is what it was',
     verdict: 'rejected',
     evidence:
-      'A stop keeps everything it found and is a button somebody pressed, so the only caller had to recognise the exception in order to say nothing about it. What made throwing defensible was that a stopped run had nothing to hand back; it has, which is how far it got and what it found, and that is what the interface owes anybody who pressed Stop. It is a field on the result instead and one catch arm shorter',
+      'Stopping preserves completed frames and follows an explicit user action. Throwing forced the caller to recognise the exception only to suppress it. The run now returns its completion state, final frame and collected results, which shortens the caller and lets the interface report the partial result',
     where: 'src/core/perception/tracking-job.ts',
   },
   {
     what: 'An Inspect mode, off by default, showing what the perception layer knows',
     verdict: 'rejected',
     evidence:
-      'It answers the wrong question by putting five unlike facts behind one switch. What a head scored and what a candidate covers are the same on every file anybody opens; where a tracked object went behind something is a numbered frame of THIS clip that somebody has to act on. The first belongs on /research/ and the second belongs where per-frame facts already are, which is a mark on a track that costs no button. A mode is also the one shape that cannot be judged: nobody turns it on, so nothing about it is ever wrong in front of anybody',
+      'The proposed mode combines unrelated diagnostic and document facts. Model scores and candidate area describe the tool; an occlusion identifies a numbered frame in the open clip and requires action there. Diagnostics belong in measured reports, while occlusion belongs in the existing track marks. An opt-in mode would also receive too little routine use to expose regressions reliably',
     where: '"Occlusion handling"',
   },
   {
     what: 'The model’s confidence in the interface, on the candidates or anywhere else',
     verdict: 'rejected',
     evidence:
-      'Re-asked rather than assumed, and the answer written in docs/selection.md holds: confidence is not a quantity anyone can see, so it decides which of three silhouettes is drawn first and the candidates are offered smallest first, which is the axis a person chooses along. Two readings agreeing to within a tenth are shown as one for the same reason. A number beside a silhouette invites somebody to pick the higher one, which is the model’s own preference rendered as advice',
+      'Confidence is not directly observable in the image, so it is used to choose which three silhouettes are offered, not displayed as advice. Candidates are then ordered by area, an attribute the user can compare visually. Readings within one tenth are merged. Showing a score beside each silhouette would restate the model’s preference rather than help the user judge the boundary',
     where: 'src/core/perception/mask-candidates.ts',
   },
   {
@@ -213,7 +213,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'A style declaring named views, so its structure tensor and streamlines can be drawn as a flow field',
     verdict: 'rejected',
     evidence:
-      'Re-argued against the entry above it rather than around it, and it loses on the same sentence: src/core/style/style.ts holds that nothing upstream knows what a cel band or a halftone dot is. A declared view is a weaker breach than handing out a working buffer and it is the same breach, because the names ARE what a style does. It also has no reader: an orientation field is a fact about the chain and identical on every photograph anybody opens, which is a figure on a research page rather than a thing to put over somebody’s work',
+      'src/core/style/style.ts keeps style-specific concepts such as cel bands and halftone dots out of upstream code. A declared diagnostic view still exposes those concepts and weakens that boundary. The proposed orientation field is also constant for a given chain rather than specific to the open image, so it belongs in a technical figure rather than on the editing canvas',
     where: 'src/core/style/style.ts',
   },
   {
@@ -227,7 +227,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Drawing a tracked run’s occluded frames as a gap in the bar rather than as a faint one',
     verdict: 'rejected',
     evidence:
-      'A gap is indistinguishable from the run not having reached those frames, which is the one thing it must not be confused with: a run that stopped and a run that got there and found nothing want opposite reactions from the user. Both facts have to survive at once, so the bar is continuous and the stretch is drawn at 0.28 opacity',
+      'A gap cannot distinguish an occlusion from frames the run never reached. Those states require different user responses, so both must remain visible. The track stays continuous, and occluded spans use 0.28 opacity',
     where: 'src/app/Timeline.tsx',
   },
   {
@@ -241,14 +241,14 @@ export const TRIALS: readonly Trial[] = [
     what: 'A set of selections in the interface, so a run can be told which objects to follow',
     verdict: 'rejected',
     evidence:
-      'It was the obvious answer to the one thing multi-object tracking was missing, which was never the loop: runTracking has taken a list of seeds since it landed, N tracks advance against one embedding so two objects are 226 ms a frame rather than 270, and the first writes replace while the rest add. What a set costs is a way to start one, a way to see which is active, a way to switch and a way to undo one separately, in a product whose interface is a canvas and eight buttons. None of it is needed. SelectIntent’s first value is `object`, documented as "a different thing; starts a fresh prompt", and a fresh prompt writes its own applyMask where shift-click and alt-click replace the last one. So the log has recorded which objects somebody pointed at since object selection landed, and reading it back is one core function, no new state and no ninth button',
+      'runTracking already accepts a list of seeds. Several tracks share one frame embedding, so two objects take 226 ms per frame instead of 270 ms, and the first command replaces while later commands add. A selection-set interface would require creation, active-state, switching and separate undo controls. The existing command log already records each model answer as a new object prompt, while shift-click and alt-click modify the current prompt. Reading those answers back requires one core function and no new interface state',
     where: 'src/core/perception/tracking-seeds.ts',
   },
   {
     what: 'Splitting a selection into connected components, so two blobs are two objects',
     verdict: 'rejected',
     evidence:
-      'The other way to get several objects out of one selection, and it cannot tell the two cases apart that matter: two cars are two components and one car behind a lamppost is also two, so it over-splits exactly where a seed is already hard. It also needs a threshold and a minimum area that nothing in the log justifies, where the answers a model gave are a partition somebody actually made. Kept in mind for the case the answers cannot express, which is two brushed blobs, and that case is in known limits rather than solved',
+      'Connected components cannot distinguish two cars from one car split by a lamppost, so it over-splits difficult seeds. It also requires a threshold and minimum area that the command log cannot justify. Separate model answers already provide an intentional partition. Two disconnected brushed regions remain a documented limit',
     where: 'src/core/perception/tracking-seeds.ts',
   },
   {
@@ -283,7 +283,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'One journal per media file, so several unfinished sessions can be offered back',
     verdict: 'rejected',
     evidence:
-      'It needs a policy for pruning them and a directory that grows without one, to serve a case nobody has described: this product holds one file open at a time, and the drop zone names the file it wants, so opening a different one is an informed choice rather than an accident',
+      'Multiple journals require a pruning policy and otherwise create an unbounded directory. Rotyl holds one file at a time, and the drop zone identifies the requested source, so opening a different file is an explicit choice. No measured workflow justified the added session manager',
     where: 'src/platform/document/journal-worker.ts',
   },
   {
@@ -318,21 +318,21 @@ export const TRIALS: readonly Trial[] = [
     what: 'Putting the document format behind a dynamic import, the way the container writer is',
     verdict: 'rejected',
     evidence:
-      'Measured both ways through the real build: split off it is 2.46 KB gzipped across three chunks and takes 1.58 KB off the application bundle, so it buys a kilobyte and a half back for a session that never saves and costs 0.9 KB more plus three round trips for one that does. The writer is split because it is 42.8 KB. A network fetch in front of Save is a failure mode invented for the one operation that exists to keep somebody’s afternoon',
+      'The production build measured 2.46 KB gzipped across three chunks when split, removing 1.58 KB from the initial application. A session that saves then pays 0.9 KB more and makes three additional requests. The container writer is split because it is 42.8 KB; applying the same strategy here adds network failure to a small operation whose purpose is preserving work',
     where: 'src/platform/document/document-file.ts',
   },
   {
     what: 'Saving the redo tail, so a reopened document can be redone as well as undone',
     verdict: 'rejected',
     evidence:
-      'A document holds work that was done and a redo tail is work that was undone. It is also self-defeating: SelectionDocument.apply discards the tail on the next edit, so a saved one would vanish the moment anybody drew a stroke, which is a feature that works exactly until it is used',
+      'A document records completed work, while the redo tail records commands that were undone. SelectionDocument.apply discards that tail on the next edit, so restored redo history would vanish after the first new stroke. The feature would therefore survive only until editing resumed',
     where: 'src/platform/document/document-file.ts',
   },
   {
-    what: 'Saving the view, so a document reopens where somebody was looking',
+    what: 'Saving the view so a document reopens at the previous canvas position',
     verdict: 'rejected',
     evidence:
-      'Zoom and pan are fitted against a canvas whose size belongs to the window rather than to the work, so a document reopened in a smaller window restores a pan into empty space. The project already treats it that way: use-rotyl.ts carries the view across a lost device separately from the document, because the log is the work and the view is where somebody was standing. The playhead and the range are saved, because both are statements about this clip that somebody made on purpose',
+      'Zoom and pan are fitted to a canvas whose size belongs to the window rather than the document. Reopening on a smaller window can therefore restore a pan into empty space. use-rotyl.ts already keeps view state separate from the command log during device recovery. The playhead and export range remain in the document because both are deliberate positions within the clip',
     where: 'src/platform/document/document-file.ts',
   },
   {
@@ -381,7 +381,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Blending the previous stylised frame into this one, to stop a clip boiling',
     verdict: 'rejected',
     evidence:
-      'Measured before it was built, on a clip where five cars move against a city that does not. Half of the last frame improves the residue from 3.6 codes to 2.0, which is the number everybody quotes, and costs 55.1 codes of deviation in the band a car has just left, 48.5 on the car itself and 13% of the gradient energy inside it. On the clip with no moving grain, where the residue is already at the codec floor, it makes the residue worse and costs the same fifty-five codes. It also ends "a render is a function of its frame"',
+      'Measured before implementation on a clip with five moving cars and a static city. Blending half of the previous frame improves the primary residue from 3.6 codes to 2.0, but adds 55.1 codes of deviation behind a car, 48.5 on the car and removes 13% of its gradient energy. On a clip already at the codec floor, blending makes residue worse and retains the same 55-code error. It also breaks the rule that a render is a function of its current frame',
     where: 'tools/style-bench, measurement 5',
   },
   {
@@ -437,7 +437,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Abandoning a clip export when it is stopped, which is what it used to do',
     verdict: 'rejected',
     evidence:
-      'A save dialog creates the file the moment it is chosen, so abandoning leaves an empty video file where somebody asked for a video. Finishing at the frame it reached gives a clip anything can open, which is the rule a stopped tracking run already follows',
+      'The save dialog creates the destination immediately, so abandoning export leaves an empty video file. Finalising at the last completed frame produces a valid partial clip and matches the existing stopped-tracking behaviour',
     where: 'src/platform/export/export.ts',
   },
   {
@@ -448,7 +448,7 @@ export const TRIALS: readonly Trial[] = [
     where: 'tools/video-bench, measurement 10',
   },
   {
-    what: 'Fetching a real input by URL and hash, rather than publishing a number nobody can re-take',
+    what: 'Fetching a real input by URL and hash so the measurement can be repeated',
     verdict: 'adopted',
     evidence:
       'The measurement it feeds reversed sign on a photograph: the poster chain amplified its input by five on a brick wall where the drawn scene reports it attenuating by two, which cost that style its outline operator',
@@ -472,7 +472,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Centring that threshold’s transition on itself, and flooring its half width',
     verdict: 'rejected',
     evidence:
-      'The correct shape and free, so it shipped for a chapter: 0.98% of pixels move more than 8 codes against the previous render, against 1.92% for the probe change. It still left the wall three times above the floor, and it went with the operator it was shaping',
+      'The transition had the correct shape and no measurable cost: 0.98% of pixels moved more than 8 codes, compared with 1.92% before the change. The brick-wall result still remained three times above the floor, so this adjustment was replaced with the new operator',
     where: 'src/core/style/poster/wgsl/poster.wgsl',
   },
   {
@@ -521,14 +521,14 @@ export const TRIALS: readonly Trial[] = [
     what: 'Closing the gap between the comic chain at full detail and the same chain at none',
     verdict: 'open',
     evidence:
-      'What is left is the sector weighting itself, which is a steep power of a variance estimated from a few dozen samples and is the amplifier at every setting rather than only at the top: a brick wall reads 1.75 at detail 1 against 0.63 at detail 0, and 8 codes out of 6 with the weighting removed against 25 with it. Every way of not taking that decision measured so far is a blur',
+      'The remaining amplifier is sector weighting, a steep power of variance estimated from a few dozen samples. A brick wall measures 1.75 at detail 1 and 0.63 at detail 0; removing the weighting changes 6 input codes to 8 instead of 25. Every tested alternative that avoids sector selection produces blur',
     where: 'docs/limits.md',
   },
   {
     what: 'Closing the last five codes between the poster outline and no outline at all',
     verdict: 'open',
     evidence:
-      'What is left is not the quantiser: it is the flatten’s own edge contrast moving under grain, and any weight that follows contrast follows that too. Widening the ramp buys it back in proportion and takes the outlines with it, measured at 12 codes for a ramp twice as wide and visibly grey lines',
+      'The remaining error comes from flattened edge contrast moving under grain, not from quantisation. Any weight tied to contrast follows that movement. Doubling the ramp width lowers the result to 12 codes but also produces visibly grey outlines',
     where: 'docs/limits.md',
   },
   {
@@ -787,7 +787,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'A colour path of its own for full-range video',
     verdict: 'rejected',
     evidence:
-      'Nothing it could do. Where the hardware decoder gets the clip the flag is already applied and the full-range encode lands within a code of the limited-range one; where the software decoder gets it the flag is ignored and the picture is thirteen codes contrast-stretched, and nothing in the frame says which happened. VideoFrame.colorSpace reports fullRange false in both cases. A correction needs to know whether the decoder acted, and that is the one thing that cannot be read. It is in docs/limits.md instead',
+      'The hardware decoder applies the flag and returns the full-range encode within one code of the limited-range control. The software decoder ignores the flag and contrast-stretches the image by thirteen codes. VideoFrame.colorSpace reports fullRange false in both cases, so Rotyl cannot determine whether a correction is required. The case is documented in docs/limits.md instead',
     where: 'tools/video-bench, measurement 16',
   },
   {
@@ -801,7 +801,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Reading VideoFrame.format to tell which of the two decoders produced a frame',
     verdict: 'rejected',
     evidence:
-      'It works here and it is not a signal. The same file comes back NV12 off the hardware decoder and I420 off the software one, which is the only readable difference between them measured anywhere in this harness and would be exactly what a correction for either of their two colour disagreements needs. It is a fact about this platform rather than anything the specification promises, and the field names a chroma layout rather than a decoder, so a colour decision taken on it is reading one thing in order to learn another and is silently wrong on the first machine whose software decoder hands back NV12',
+      'The tested hardware decoder returns NV12 and the software decoder returns I420 for the same file. That correlation is specific to this platform and is not promised by the specification. The field identifies a chroma layout, not a decoder, so using it for colour correction would fail on any software decoder that returns NV12',
     where: 'tools/video-bench, measurement 17',
   },
   {
@@ -815,7 +815,7 @@ export const TRIALS: readonly Trial[] = [
     what: 'Deciding anything from VideoFrame.colorSpace',
     verdict: 'rejected',
     evidence:
-      'It is a default rather than a reading. fullRange is false on a file whose own SPS flag is 1, and primaries and transfer are reported bt709 on a bitstream declaring 2, "unspecified", for both. One of its four fields, matrix_coefficients, is a value anybody wrote down. A branch taken on it is taken on a value the file contradicts, and there is nothing to gain by taking one: the conversion is driven by what the bitstream declares, and this object is not a reading of that. Measurement 17 is the same object being right for the wrong reason, reporting bt709 transfer on a clip whose transfer is bt709 because it reports bt709 on everything',
+      'The object exposes defaults rather than reliable bitstream readings. fullRange is false when the SPS flag is 1, and primaries and transfer report bt709 when both bitstream values are 2, or unspecified. Only matrix_coefficients matches an explicit file value. Branching on the object would therefore contradict the file. Measurement 17 reports bt709 correctly only because the same default is returned for every probe',
     where: 'tools/video-bench, measurement 16',
   },
   {

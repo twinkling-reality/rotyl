@@ -92,15 +92,18 @@ export function publicLaunchEntry(launch: unknown): Entry {
     title: 'Production deployment audit',
     standfirst:
       'An anonymous check of the live domain, cache rules, model digest and five paths that must never reveal private project files.',
+    kind: 'audit',
+    scope: 'The public Rotyl origin and the deployed artifact recorded on the measurement date.',
+    repeatability: 'Automated; requires network access to the live origin.',
     harness: 'tools/launch-check',
     taken: `Anonymous HTTPS from Node ${text(launch, ['environment', 'node'])}`,
     lede: [
-      'A build that passed locally is not proof of the origin a visitor receives. The public check reads the exact Sites output, then approaches the canonical hostname without browser credentials and without following a redirect.',
-      `The result is ${direct ? 'one direct HTTPS origin' : 'not a direct HTTPS origin'} for application code and the independently versioned ${text(launch, ['model_release'])} model release. It records only public response metadata, file sizes and derived digests.`,
+      'This audit checks the deployed artifact rather than inferring production state from a local build. It inspects the Sites output and requests the canonical hostname without credentials or redirect following.',
+      `The recorded deployment uses ${direct ? 'one direct HTTPS origin' : 'an origin that is not direct'} for application code and the independently versioned ${text(launch, ['model_release'])} model release. The audit stores public response metadata, file sizes and derived digests only.`,
     ],
     sections: [
       {
-        heading: 'The public artifact is the artifact that was checked',
+        heading: 'Deployment artifact inventory',
         prose: [
           `The deployment contains ${String(num(launch, ['build', 'deployment_files']))} files and occupies ${asFile(num(launch, ['build', 'deployment_bytes']))}. ${String(num(launch, ['build', 'public_files']))} of those files, occupying ${asFile(num(launch, ['build', 'public_bytes']))}, are below the worker's public asset root.`,
           `The largest public file is ${text(launch, ['build', 'largest_public_file', 'path'])} at ${asFile(num(launch, ['build', 'largest_public_file', 'bytes']))}. The output contains no source map and no temporary archive.`,
@@ -123,7 +126,7 @@ export function publicLaunchEntry(launch: unknown): Entry {
         command: 'node tools/launch-check/measure.mjs',
       },
       {
-        heading: 'HTML revalidates and immutable bytes do not',
+        heading: 'Cache policy by asset type',
         prose: [
           `The root, research page, hashed application code and versioned model all answered on ${text(launch, ['canonical_origin'])}. All four returned the worker's referrer, framing and content-type protections.`,
           'HTML must revalidate so an atomic deployment can replace it. A hashed application asset and a model path containing its release version can remain immutable for a year because changing either changes its URL.',
@@ -140,7 +143,7 @@ export function publicLaunchEntry(launch: unknown): Entry {
         command: 'node tools/launch-check/measure.mjs',
       },
       {
-        heading: 'The model crosses the deployment boundary with its digest',
+        heading: 'Model integrity after deployment',
         prose: [
           `${String(num(launch, ['models', 'emitted_files']))} model release files occupy ${asFile(num(launch, ['models', 'served_bytes']))} as served. The probe fetched ${text(launch, ['models', 'probe', 'path'])}, decompressed it and matched all ${String(num(launch, ['models', 'probe', 'decompressed_bytes']))} bytes to the committed SHA-256 digest.`,
           `${String(probes.length)} negative requests looked for deployment configuration, package metadata, worker source, repository data and a temporary site archive. ${String(exposed)} contained the marker that would identify the requested private source.`,
@@ -182,15 +185,18 @@ export function modelDeliveryEntry(models: unknown): Entry {
     results: 'tools/model-assets/results.json',
     title: 'Model delivery and caching',
     standfirst: `All ${asFile(group('deployment', 'served'))} are pinned and deployed on the same origin. The browser fetches only the features it uses and checks every file before inference.`,
+    kind: 'benchmark',
+    scope: 'Rotyl model assets, the current manifest and the current cache policy.',
+    repeatability: 'Automated; rebuilds the model artifact and verifies its digests.',
     harness: 'tools/model-assets',
-    taken: `${text(models, ['environment', 'cpu'])}, Node ${text(models, ['environment', 'node'])}`,
+    taken: `${text(models, ['environment', 'cpu'])}, ${text(models, ['environment', 'platform'])}/${text(models, ['environment', 'architecture'])}, OS version not recorded, Node ${text(models, ['environment', 'node'])}`,
     lede: [
-      'Object selection and tracking were local computations backed by somebody else’s availability. The selection graphs came from a third-party model host at runtime, while the tracking files existed only wherever a builder happened to put them. A clone could build an editor with no Track button, and a deployment could change its model without changing its application.',
-      'One manifest owns that boundary now. It pins the upstream revisions, every byte length and every SHA-256 digest. A build vendors the complete project release into its own output; the browser asks only that deployment for a model and checks the same digest before ONNX Runtime sees it.',
+      'The earlier delivery path fetched selection graphs from a third-party host and relied on locally supplied tracking files. That allowed a successful application build to omit tracking or to load a different model release at runtime.',
+      'The current manifest pins the upstream revisions, byte lengths and SHA-256 digests. The build vendors the complete release, and the browser verifies the same digest before passing any model to ONNX Runtime.',
     ],
     sections: [
       {
-        heading: 'The first page pays nothing for ownership',
+        heading: 'Model files do not delay the first render',
         prose: [
           `The committed application chunk is ${asDecimalBytes(before)} gzipped in the control build. The owned release build is ${asDecimalBytes(owned)}, ${asDecimalBytes(before - owned)} smaller, because the model loader itself moved behind first use with the model it loads. The first page makes ${String(num(models, ['initial_application', 'model_requests']))} model requests.`,
           'Ownership changes what a deployment contains, not what a person who opens the drop zone downloads. Object selection still pays on first selection use and tracking still pays on first Track.',
@@ -213,7 +219,7 @@ export function modelDeliveryEntry(models: unknown): Entry {
         command: 'node tools/model-assets/measure.mjs',
       },
       {
-        heading: 'First use, cache and serving are three different prices',
+        heading: 'Download, cache and decompression costs',
         prose: [
           `On hardware with half precision, a cold session that selects an object and then tracks it transfers ${asFile(halfServed)} of model data and keeps ${asFile(halfCached)} after decompression. One thousand such cold sessions are ${asFile(num(models, ['serving', 'thousand_full_feature_sessions_half']))} of origin traffic. A warm session transfers none of it.`,
           'The full-precision selection variant has to travel in the deployment for hardware that cannot compile half precision, but one browser fetches one variant and never both. Tracking has one variant.',
@@ -239,7 +245,7 @@ export function modelDeliveryEntry(models: unknown): Entry {
         command: 'node tools/model-assets/measure.mjs',
       },
       {
-        heading: 'A deployment carries both selection variants and only fetches one',
+        heading: 'Feature-specific model fetching',
         prose: [
           `The model part of a deployment is ${asFile(group('deployment', 'served'))}, against ${asFile(group('deployment', 'raw'))} uncompressed. That is storage and release bandwidth paid once per deployment, not first-load traffic.`,
           `The cache name and every URL contain the manifest version. On the next model use after an update, the browser deletes the previous Rotyl model cache before opening the new one. That gives back ${asFile(num(models, ['cache', 'invalidated_on_next_model_use_half']))} in the ordinary half-precision case, then downloads only whichever features are used again.`,
@@ -259,7 +265,7 @@ export function modelDeliveryEntry(models: unknown): Entry {
         command: 'node tools/model-assets/measure.mjs',
       },
       {
-        heading: 'The digest belongs at build and at fetch',
+        heading: 'Verification at build and runtime',
         prose: [
           `Checking the complete release at build takes ${ms(buildCheck)}. It catches a missing, stale or replaced release before a deployable directory exists. Checking the half-precision selection files after fetch takes ${ms(selectionCheck)}, and the tracking files ${ms(trackingCheck)}. That second check covers the origin response and Cache Storage, which did not exist at build time.`,
           'A mismatch is never handed to the runtime. The build names the file, expected length and expected digest and produces no deployment. The editor names the refused file and release, says the deployment or cache is incomplete, and tells the user to reload or contact the deployer. Retrying a changed graph under the same version would turn an integrity failure into a silent model swap.',
@@ -283,7 +289,7 @@ export function modelDeliveryEntry(models: unknown): Entry {
         command: 'node tools/model-assets/measure.mjs',
       },
       {
-        heading: 'A clone with no assets cannot produce a partial product',
+        heading: 'Clean-clone failure behaviour',
         prose: [
           'The normal build fills a local cache from Rotyl’s immutable release, verifies every file, then emits every feature. A maintainer may point that preparation step at a local export or another origin, but the override changes only where bytes are obtained; it cannot change the manifest or bypass a digest.',
           'Offline with an empty cache, an unavailable release, or one wrong byte, the build stops before Vite and says how to supply the complete release. There is no output with a Track button waiting to fail, and no successful output with the button missing.',
@@ -312,15 +318,18 @@ export function ciStabilityEntry(ci: unknown): Entry {
     title: 'Shader test reliability',
     standfirst:
       'Dawn crashed both after completed assertions and during unfinished files. The assertion report, not the process code, became the gate.',
+    kind: 'benchmark',
+    scope: 'The Rotyl shader suite on the recorded local machine and runtime.',
+    repeatability: 'Automated; the recorded study runs 32 complete suites.',
     harness: 'tools/ci-bench',
-    taken: `${text(ci, ['environment', 'cpu'])}, Node ${text(ci, ['environment', 'node'])}`,
+    taken: `${text(ci, ['environment', 'cpu'])}, ${text(ci, ['environment', 'platform'])}/${text(ci, ['environment', 'architecture'])}, OS version not recorded, Node ${text(ci, ['environment', 'node'])}`,
     lede: [
-      'A CI workflow that reruns until green teaches exactly the wrong lesson, and a workflow that trusts one native process exit flakes on code that passed. The unit suite needs a third answer: preserve every real shader assertion while recognising the one failure mode Dawn’s Node binding has after or between them.',
-      'The harness records Vitest’s machine-readable assertion report and the process exit separately. A failed assertion, a missing report and an incomplete file are therefore different outcomes before any policy is applied.',
+      'Dawn’s Node binding sometimes exited after all assertions passed and sometimes before a shader file finished. Treating every nonzero exit as a test failure produced false failures; rerunning a failed assertion would have hidden real defects.',
+      'The harness records Vitest’s assertion report separately from the process exit. The gate can therefore distinguish a failed assertion, a missing report, an incomplete file and a teardown failure after completed work.',
     ],
     sections: [
       {
-        heading: 'Exit code alone would reject nearly one change in ten',
+        heading: 'Native exit codes overstate failures',
         prose: [
           `${String(runs)} complete suites produced ${String(clean)} clean exits and ${String(aborts)} native exits, a raw gate failure rate of ${pct(rawRate)}. There were ${String(num(ci, ['summary', 'assertion_failures']))} failed assertions. One native exit came after all assertions had passed; two left a GPU file’s cases pending.`,
           'That last split is why accepting a recognisable Dawn exit is not safe. Some of these exits changed only teardown, while others stopped cases from running. The assertion report, not the native message, is the proof.',
@@ -340,7 +349,7 @@ export function ciStabilityEntry(ci: unknown): Entry {
         command: 'node tools/ci-bench/run.mjs --runs 32',
       },
       {
-        heading: 'Only the incomplete file gets another process',
+        heading: 'Retry scope and residual risk',
         prose: [
           `The observed rate is ${pct(processRate)} per Dawn process. At that rate, allowing an incomplete file three total processes leaves an estimated ${residualPct} incomplete suites, below one in ${oneIn}. A failed assertion is never run again, and neither is any file whose assertions already passed.`,
           'A nonzero process with a complete passing report passes because every claimed test ran. A report with pending cases names their file and only that file starts in a fresh Dawn process. No report, any failed assertion, or a file still incomplete at the measured bound fails the job.',
@@ -397,15 +406,18 @@ export function hostedCiEntry(native: HostedNativeResults, browser: unknown): En
     results: 'tools/ci-bench/browser-results.json',
     title: 'GPU tests on GitHub runners',
     standfirst: `No native runner completed the full suite. Installed Chrome finished all ${String(browserProcesses)} cycles with every shader assertion accounted for.`,
+    kind: 'benchmark',
+    scope: 'The named GitHub macOS runner images, Chrome build and Rotyl shader suite.',
+    repeatability: 'Automated in GitHub Actions; runner images may change over time.',
     harness: 'tools/ci-bench',
-    taken: `${text(browser, ['environment', 'cpu'])}, Node ${text(browser, ['environment', 'node'])}`,
+    taken: `${text(browser, ['environment', 'cpu'])}, ${text(browser, ['environment', 'image_os'])} image ${text(browser, ['environment', 'image_version'])}, Node ${text(browser, ['environment', 'node'])}`,
     lede: [
-      'The local measurement found a narrow native teardown failure and justified retrying only an incomplete shader file. That was a candidate policy, not permission to assume the same distribution on a different machine. The first GitHub run contradicted it, so the runner itself became the next measurement.',
-      'Every hosted variant was asked both questions: can the unchanged full suite complete, and does putting each shader file in its own native process remove the failure. The answer to both was no. The installed Chrome on the ordinary runner was then asked to execute the same WGSL assertions while the browser, rather than Vitest, owned Dawn’s process lifetime.',
+      'The local retry policy did not transfer to GitHub’s macOS runners. The hosted study tested the complete native suite and a process-isolated variant on each named runner shape.',
+      'Neither native arrangement completed reliably. The same WGSL assertions completed in installed Chrome when the browser owned Dawn’s lifetime, so the required hosted gate moved to that path.',
     ],
     sections: [
       {
-        heading: 'No hosted native runner completed a full suite',
+        heading: 'Native runner completion',
         prose: [
           `${String(fullComplete)} of ${String(fullProcesses)} unchanged full-suite processes completed across the three hosted Mac shapes. None reported a failed assertion; they stopped with cases still pending. A retry count cannot be derived from a runner on which the observed full-suite completion rate is zero.`,
           `One shader file per process improved the shape without fixing it: ${String(isolatedComplete)} of ${String(isolatedProcesses)} processes completed. The result also moved sharply with the runner, which rules out transplanting the local machine’s process rate into GitHub’s gate.`,
@@ -424,7 +436,7 @@ export function hostedCiEntry(native: HostedNativeResults, browser: unknown): En
         command: 'Run “Measure hosted Dawn” from GitHub Actions',
       },
       {
-        heading: 'The larger GPU runner made the native binding worse',
+        heading: 'Larger runner comparison',
         prose: [
           `The GPU larger Mac completed ${ratio(native.xlarge, 'isolated')} isolated processes, against ${ratio(native.standard, 'isolated')} on the standard virtual Mac and ${ratio(native.intel, 'isolated')} on Intel. Paying for a runner advertised with GPU acceleration does not change who owns the native binding’s teardown, and did not buy a usable gate.`,
           'This is why CI does not select a more expensive machine and does not hide the result behind a larger retry budget. Both approaches preserve the failure boundary the measurement identified.',
@@ -432,7 +444,7 @@ export function hostedCiEntry(native: HostedNativeResults, browser: unknown): En
         command: 'node tools/ci-bench/hosted.mjs --cycles 16',
       },
       {
-        heading: 'Installed Chrome completed every hosted cycle',
+        heading: 'Browser-owned Dawn stability',
         prose: [
           `${String(browserComplete)} of ${String(browserProcesses)} Chrome processes completed all ${String(browserAssertions)} shader assertions. That is ${String(browserComplete * browserAssertions)} assertion executions with none failed or pending on the same standard virtual Mac where native Node Dawn completed no full suite.`,
           'The shader files are discovered through their local import graph and assembled into one browser page. That keeps one Chrome-owned device across the shader suite, which is the lifetime the product has, while ordinary DOM-free unit tests remain parallel Node processes.',
@@ -455,7 +467,7 @@ export function hostedCiEntry(native: HostedNativeResults, browser: unknown): En
         command: 'node tools/ci-bench/browser.mjs --cycles 16',
       },
       {
-        heading: 'The gate has no retry path',
+        heading: 'Required workflow and failure policy',
         prose: [
           'The Node report and the Chrome report must each exist, exit cleanly, contain tests, and say that every collected assertion passed with none pending. A failed assertion, a missing installed Chrome, unavailable WebGPU, a missing report, or an incomplete report fails the job on that run.',
           'The required workflow runs the same pnpm verify command maintainers run locally, then builds and inspects the production Sites layout. Playwright remains separate because it exercises gestures, media and model-backed browser paths rather than unit assertions.',
@@ -477,7 +489,7 @@ function styleCost(style: unknown): Section {
   // flatten was bounded below the frame, and "200 times" survived the run.
   const times = (size: string): string => (median(size, 'comic') / median(size, 'print')).toFixed(0);
   return {
-    heading: 'What a style chain costs',
+    heading: 'Style-chain render cost',
     prose: [
       `Two of the three styles run in under two milliseconds at 720p. The third takes ${ms(
         median('720p', 'comic'),
@@ -504,11 +516,11 @@ function detailCost(style: unknown): Section {
   const faster = (size: string): string =>
     (cell(size, 'comic, detail 0') / cell(size, 'comic, detail 1')).toFixed(1);
   return {
-    heading: 'Higher detail is cheaper, and the quality tiers collapse',
+    heading: 'Detail and quality-tier cost',
     prose: [
       `Turning detail up makes the comic chain ${faster('720p')} times faster at 720p, and a draft frame there is the same render as an export. Both of those sound like bugs and are consequences of one decision.`,
       'Each stage declares the apparent scale it wants and derives its own resolution to hold it. When the picture cannot supply that resolution, the kernel shrinks rather than the fraction drifting. Cost falls, and the tiers converge.',
-      'The flatten reaches that bound sooner than it used to, because it is now held a root two below the frame rather than at it: the downsample onto it is this chain’s grain rejection and a buffer the size of the picture is not a downsample. What that cost is on the page it came from; what it bought here is the 720p column and the two megapixel one.',
+      'The flatten reaches that bound sooner because it is held a factor of root two below the frame. Its downsample provides the chain’s grain rejection, while a full-size buffer does not downsample. The current 720p and two-megapixel columns include that change.',
     ],
     table: {
       columns: ['comic, full tier', ...SIZES],
@@ -538,7 +550,7 @@ function stability(style: unknown): Section {
     ];
   };
   return {
-    heading: 'Nothing boils here, and not for the reason anyone expected',
+    heading: 'Synthetic clip stability',
     prose: [
       'On this picture no style amplifies its input, every one attenuates it, and the chain that looked most at risk is the steadiest of the three. Two of those three claims survived a photograph unchanged and the poster row did not: see what survived a real picture, which re-takes this table against four of them and a film, and which is where the outline this row depends on was rebuilt.',
       'The worry was reasonable. Every stage runs per frame with no knowledge of the last one, and two of them are winner-take-all decisions on a noisy field: a Kuwahara picking its most homogeneous sector, a difference of Gaussians thresholding a response. A pixel one code different between two frames could flip either.',
@@ -554,7 +566,7 @@ function stability(style: unknown): Section {
       ],
     },
     caveat:
-      'In output codes, over consecutive decoded frames of a fixed camera on a fixed scene, so everything that differs between two of them is grain and the encoder’s own noise. The mean is the least useful column: boiling is a small proportion of pixels moving a long way, which is what the other two measure. The scene is drawn rather than photographed, which is why every row here is read against the page that re-takes it on four that are not.',
+      'Measured in output codes over consecutive decoded frames of a fixed camera and scene. Differences are limited to grain and encoder noise. Mean change hides a small population of pixels moving a long distance, so the upper-percentile columns carry more weight. The separate real-image study checks whether the synthetic scene represents photographic texture.',
     command: 'node tools/style-bench/run.mjs clips',
   };
 }
@@ -563,7 +575,7 @@ function perturbation(style: unknown): Section {
   const p99 = (sigma: string, name: string): string =>
     `${num(style, ['perturbation', sigma, name, 'p99']).toFixed(0)} codes`;
   return {
-    heading: 'The same result with the codec taken out of it',
+    heading: 'Codec-free perturbation control',
     prose: [
       'The finding survives without a codec in the way. One frame is rendered twice, the second with grain of a known size added, so what is measured is the style and nothing else.',
       'Half a code is about the smallest perturbation an 8-bit pipeline can express, which is the "one code different between two frames" case exactly. Two codes is roughly a decent sensor at base ISO.',
@@ -583,9 +595,9 @@ function perturbation(style: unknown): Section {
 
 function transitionFloor(): Section {
   return {
-    heading: 'Every hard decision needs a floor under its transition',
+    heading: 'Transition floors for hard decisions',
     prose: [
-      'What does boil is a hard threshold against a fixed field. A halftone dot is one. So is a quantiser, if it is left hard: the poster style’s first version measured five to ten times worse than the comic chain on a still camera.',
+      'Hard thresholds against fixed fields cause the measured instability. Halftone dots and unfiltered quantisation are examples. The first Poster implementation measured five to ten times worse than Comic on a fixed camera.',
       'The cause is exact. Softening a step across one pixel is right for an edge and useless for a gradient, because where the field is nearly flat the local derivative is nearly zero. A band boundary then becomes a step of a whole level driven by a hundredth of one, and a frame of grain moves it.',
       'The fix is a floor under the transition width, expressed in the units of the thing being decided rather than in pixels. It caps the gain from input to output at about four. Chroma was the larger half: colour steps are as discontinuous as lightness ones and there are more of them, because chroma is small everywhere in a hazy picture.',
     ],
@@ -598,13 +610,13 @@ function transitionFloor(): Section {
       ],
     },
     caveat:
-      'Taken during development by re-running the clip measurement against each version. The last row is whatever the table above reports today; the first two are gone from the code and cannot be regenerated without reverting it. The fix costs nothing measurable and nothing visible: the transition only widens where the picture has no edge to sharpen. What it did not reach is the outline, which took its decision against a NEIGHBOUR’s rounded colour and so had no derivative to floor. That is the defect the real-picture page found, and what answered it there was a different operator rather than another floor.',
+      'Taken during development by rerunning the clip measurement against each version. The last row comes from the current results; reproducing the first two requires an earlier revision. The fix has no measurable cost and widens the transition only where the picture has no edge to sharpen. It cannot fix the Poster outline because that stage compared a neighbouring quantised colour and had no derivative to floor. Real-image testing led to a different outline operator.',
   };
 }
 
 function paletteFit(): Section {
   return {
-    heading: 'A palette has to be fitted to the picture',
+    heading: 'Per-frame palette fitting',
     prose: [
       'A hazy photograph uses two and a half of a palette’s five stops, and comes out in one colour. That looks like a palette chosen badly. It is a palette barely used.',
       'A palette is a claim about where a photograph’s lightness lives, and photographs disagree. The reference scene has a spread of 0.136 against 0.23 to 0.29 for every palette in the codebase.',
@@ -643,12 +655,11 @@ const REAL_CLIPS = [
 
 function realInputs(): Section {
   return {
-    heading: 'The input a benchmark cannot commit',
+    heading: 'Source-media controls',
     prose: [
-      'Every temporal and cost number on the page before this was taken against a scene drawn by a script, and that harness says plainly that a script cannot produce a photograph’s texture statistics. The headline finding on it, that no style amplifies its input, is the whole argument for why per-frame stylisation is acceptable at all. It had never been put to a picture a camera took.',
-      'Real footage cannot be checked in, so there were two honest ways to take this. Fetch a known input by URL and pin it by hash, or publish the number with a note saying nobody can reproduce it. The second is worse than it sounds: the measurement it applies to is the one the design rests on, and a number nobody can re-take is a number nobody can contradict.',
-      'So it is fetched, and pinned by SHA-256 before anything is derived from it. That leaves one failure the synthetic scene does not have, a URL that stops resolving, and removes the one that matters. If the bytes at the far end change, the script refuses to run rather than quietly measuring a different picture.',
-      'Three kinds of input, because no one of them settles it. The scene itself, re-taken in the same run rather than quoted from the page next door. Four photographs put through exactly the recipe that made the scene’s clip, so the picture is the only thing that differs. And two shots of a film, stream copied rather than re-encoded, which carry real sensor grain and real codec noise and also real subject motion, the one thing a fixed camera was isolating and no real shot can be without.',
+      'The synthetic fixture cannot reproduce photographic texture statistics. This study therefore repeats the cost and stability measurements on images captured by cameras.',
+      'The source media is fetched from fixed URLs and verified by SHA-256 before any derived input is created. A changed file fails the run instead of silently changing the benchmark.',
+      'The sample contains the synthetic control, four photographs processed with the same clip recipe, and two stream-copied film shots. The photographs isolate image content; the film shots add sensor grain, codec noise and subject motion.',
     ],
     table: {
       columns: ['input', 'what it is there for'],
@@ -687,13 +698,13 @@ function realCost(real: unknown): Section {
     Math.max(...REAL_PICTURES.map(against), 0) - Math.min(...REAL_PICTURES.map(against), 0)
   ).toFixed(0);
   return {
-    heading: 'Content barely moves the cost table, and not the way it was meant to',
+    heading: 'Content sensitivity in render cost',
     prose: [
-      'This was expected to move. The anisotropic Kuwahara’s sample bound grows with local anisotropy, so a frame of architecture should cost more than a frame of foliage, and the harness that took the original figures carries a caveat telling readers to treat the comic column as a hard case rather than a typical one.',
+      'The expected result was higher Comic cost on strongly directional architecture than on isotropic foliage. The anisotropic Kuwahara sample bound grows with local anisotropy, so the original synthetic scene was treated as a hard case rather than a typical frame.',
       `The prediction does not appear. Foliage is the dearest of the four photographs and a brick wall is not, which is the ordering backwards. What does appear is a smaller effect running the other way: the portrait is the cheapest of the five, ${cheaper(
         'portrait',
       )} below the scene, and large out-of-focus areas are exactly where anisotropy is low.`,
-      `So the caveat was right that the scene is not typical and wrong about how much that matters. All five sit inside a band ${band}% wide: the ${cheapest} is ${cheaper(
+      `The synthetic scene is atypical, but the effect is small. All five inputs sit inside a band ${band}% wide: the ${cheapest} is ${cheaper(
         cheapest,
       )} below the scene and the ${dearest} is within ${Math.abs(against(dearest)).toFixed(
         0,
@@ -718,12 +729,12 @@ function realStability(real: unknown): Section {
   const cell = (clip: string, name: string): string =>
     num(real, ['real-clips', clip, name, 'amplification', 'p99']).toFixed(2);
   return {
-    heading: 'The comic chain held. The poster chain had to be rebuilt.',
+    heading: 'Real-image stability results',
     prose: [
       'Half of the original finding survived a photograph untouched. The comic chain really is steadier than its input, on a photograph as on a drawing, which is the part that was surprising and the part the design leans on.',
-      'The other half was false, and it was the poster chain. On a brick wall it amplified by 5.7 and on foliage by 4.9, where the synthetic scene reports it attenuating by two. That is not a small drift in a number: it is the opposite sign, on the measurement that says whether stylised video is worth shipping, and it was invisible for as long as the input was drawn rather than photographed. The two sections below are what it turned out to be and what replaced it. This table is taken afterwards, and the wall now reads 1.36.',
+      'Poster failed the real-image control. The original outline amplified changes by 5.7 on brick and 4.9 on foliage, while the synthetic scene reported attenuation by a factor of two. The current table follows the operator replacement and reports 1.36 on the brick wall.',
       'The two rows that are not fixed cameras are read differently and are here for a different reason. An actor moving is a large honest change and it lands in the source column, so the ratio is the only thing those rows can say. What they said before the change was that the poster chain was four times its input on real footage while the other two were near one; what they say now is that all three sit between one and two.',
-      'The comic column is the middle of a control that has two other ends, and read across all three it is a slope rather than a number. What raising detail was doing has its own page, because it turned out not to be what this one said it was.',
+      'The Comic column reports the middle of the Detail control. Measurements across all three settings show a rising amplification curve, which the Comic detail investigation attributes to the flatten stage.',
     ],
     table: {
       columns: ['styled change over source change, p99', 'comic', 'poster', 'poster, no outline', 'print'],
@@ -745,11 +756,11 @@ function realOutline(real: unknown): Section {
   const p99 = (picture: string, name: string): string =>
     num(real, ['real-perturbation', picture, 'sigma 2', name, 'p99']).toFixed(0);
   return {
-    heading: 'It was the outline, and the quantiser inside it',
+    heading: 'Poster outline failure mechanism',
     prose: [
       'With the codec, the camera and the subject all taken out, the same result appeared and it had one cause. One picture is rendered twice with grain of a known size added the second time, so what is measured is the style and nothing else. On the wall a perturbation whose 99th percentile is six codes came out the far side at seventy-eight. Turned the outline off and it came out at eight.',
-      'The mechanism is exact. The outline compared the quantised colour here against the quantised colour a line away, and a quantised colour is what round() returns: it flips a whole band on an infinitesimal change, the flip moved the comparison by a fifth of the Oklab range, that crossed the line threshold, and a stroke appeared at full weight. The scene could not show it. It was drawn with large near-flat regions, so almost no pixel in it sits near a band edge, and the population that flickers is exactly that one. A brick wall is nothing but marginal boundaries.',
-      'What the quantiser was contributing was the flicker and nothing else. Two sides in different bands returned a whole band however far apart the picture had them, so which pixels along a faint boundary got a stroke was decided by where the band grid happened to fall: a faint line was drawn as a dotted one rather than as a fainter one. The outline now measures the flattened colour itself and its weight is that distance, ramped up to the threshold. The table is after that change, and the row it was written for reads fifteen against a floor of eight.',
+      'The outline compared each quantised colour with another one sample away. An infinitesimal change can move a rounded value across a complete band, shifting the comparison by one fifth of the Oklab range. That crosses the line threshold and produces a full-weight stroke. The synthetic scene contains large flat regions and few values near band edges; brick contains many such marginal boundaries.',
+      'The quantiser contributed flicker without improving the outline. Pixels on opposite sides of a band returned a full-band difference regardless of their source distance, turning faint boundaries into dotted strokes. The current outline measures flattened colour directly and ramps the stroke weight to the threshold. The corrected row measures fifteen codes against a floor of eight.',
     ],
     table: {
       columns: ['grain σ 2, p99 out', 'input', 'comic', 'poster', 'poster, no outline', 'print'],
@@ -772,11 +783,11 @@ function realOutline(real: unknown): Section {
 
 function outlineAttempts(): Section {
   return {
-    heading: 'Four tuning passes, and why the answer was a different operator',
+    heading: 'Rejected outline adjustments',
     prose: [
       'The old outline compared two quantised colours and thresholded the distance between them, so there were exactly two hard decisions in it and each could be softened independently. All four combinations were measured against the worst picture, and the useful result is the one that says none of them works.',
       'Softening the neighbour probe buys about a fifth and costs the look, because a soft probe reduces the distance at a genuine boundary as much as it reduces the noise at a marginal one. Centring the threshold’s transition rather than opening at it is free and buys nothing on its own. The two together get within three times of the floor and no closer, and the floor is the same picture with the outline switched off.',
-      'What that pattern means is not a tuning problem. The quantity being thresholded is a distance between two rounded colours and is therefore discrete: with a hard probe it takes a handful of values and a transition width has nothing to resolve, and with a soft probe the signal and the noise are the same quantity and softening moves both. So the probe stopped rounding. Reading the flattened colour instead makes the strength continuous in the picture by construction, and it stays a region boundary rather than becoming a difference of Gaussians because of WHICH picture it reads: the bilateral’s piecewise-constant answer, which is where smog, grain and the inside of foliage have already gone.',
+      'The failure cannot be tuned away because the threshold input is a discrete distance between rounded colours. A hard probe offers too few values for transition width to help; a soft probe moves signal and noise together. The replacement reads flattened colour directly, making stroke strength continuous while preserving region boundaries from the bilateral result.',
     ],
     table: {
       columns: ['what was changed, grain σ 2, p99 out of 6 in', 'facade', 'foliage'],
@@ -792,7 +803,7 @@ function outlineAttempts(): Section {
       ],
     },
     caveat:
-      'Taken during development by re-running the perturbation against each version; five of the eight rows are gone from the code and cannot be regenerated without reverting it, which is the same footing the transition-floor table on the look page is on. The last two are what the table above reports today. Every one of them was checked against the look as well as against the number, by rendering the reference scene through both chains and differencing: the shipped operator moves 7.8% of that picture more than eight codes, and what moves is the outlines the old one drew on the quantiser’s grid rather than on the picture.',
+      'The perturbation was rerun during development for each version. Five historical rows require an earlier revision; the last two come from the current results. Each candidate was also compared visually by differencing renders of the reference scene. The shipping operator changes 7.8% of that scene by more than eight codes, concentrated where the old operator followed the quantiser grid instead of image boundaries.',
     command: 'node tools/style-bench/run.mjs real-flicker',
   };
 }
@@ -818,10 +829,10 @@ function detailRows(real: unknown): Section {
   const cell = (clip: string, item: string): string =>
     ratio(num(real, ['real-clips', clip, item, 'amplification', 'p99']));
   return {
-    heading: 'The control has a broken end, and the column had been sitting here',
+    heading: 'Detail-response curve',
     prose: [
-      'The comic row on the page before this is read at the middle of its detail control, and the control has two other ends. Read across all three it is not one number, it is a slope, and on every input the slope runs the same way: the top of the control is where a chain that attenuates starts to amplify.',
-      'The figures that started this chapter are not the ones in the table below, which is taken after it. They were a brick wall at 0.63, 0.88 and 2.00, the film’s exterior at 1.40, 1.80 and 2.28, and the drawn scene reporting 0.28, 0.34 and 0.59 and saying nothing about any of it for the third time. Somebody who wanted the steadiest comic frame was told, in known limits, to turn detail down.',
+      'The middle Comic setting hides the shape of the response. Across detail 0, 0.5 and 1, amplification rises on every input and crosses above one at the top of the control.',
+      'Before the current flatten bound, the brick wall measured 0.63, 0.88 and 2.00 across the three settings; the exterior film shot measured 1.40, 1.80 and 2.28. The current table records the corrected implementation. Reproducing the earlier values requires the earlier revision.',
       'The explanation written beside those numbers was that raising detail shrinks the Kuwahara radius until the flatten stops flattening. That is the wrong mechanism, and the two sections below are how it was caught and what replaced it.',
     ],
     table: {
@@ -840,9 +851,9 @@ function filmStills(real: unknown): Section {
   const clip = (name: string, item: string): string =>
     ratio(num(real, ['real-clips', name, item, 'amplification', 'p99']));
   return {
-    heading: 'The film’s two rows were two different findings',
+    heading: 'Motion and shader amplification',
     prose: [
-      'The film amplifies at the BOTTOM of the control, where the flatten is at its widest and is supposed to be attenuating hardest, and no photograph does. So either there are two mechanisms or the one written down is not the one running, and which it is decides whether this chapter has one fix or two. Nothing was changed until it was separated.',
+      'The film shots also amplify at detail 0, where the flatten is widest, while the photographs do not. That difference requires separating subject motion from the shader response before attributing both findings to one mechanism.',
       'The separation is to stop using a clip. The two cuts of Tears of Steel are the only inputs here with real sensor noise in them and they are also the only ones with actors in them, so an amplification taken over consecutive frames carries a man walking in both of its columns. One frame of the film rendered twice, with grain of a known size added the second time, has no motion in it at all: it is the same picture twice, and it is the experiment the four photographs were already answering.',
       `Taken that way the two film rows separate. The exterior amplifies ${still(
         'a film, exterior',
@@ -856,7 +867,7 @@ function filmStills(real: unknown): Section {
       )} as a still against ${clip(
         'Tears of Steel, interior',
         'comic, detail 0',
-      )} as a clip, so its figure is the actors and not the chain. One page had been reading them as one thing.`,
+      )} as a clip, so its figure is dominated by the actors rather than the chain. Combining those results had obscured two separate mechanisms.`,
     ],
     table: {
       columns: [
@@ -884,17 +895,17 @@ function theFlatten(real: unknown): Section {
   const p99 = (picture: string, item: string): string =>
     num(real, ['real-perturbation', picture, 'sigma 2', item, 'p99']).toFixed(0);
   return {
-    heading: 'It was the downsample the derivation had stopped doing',
+    heading: 'Flatten-scale intervention',
     prose: [
-      'Detail moves three things: the flatten’s apparent scale, the ink’s apparent scale, and tau, which is how much of the local lightness the difference of Gaussians subtracts before it decides. Each was held at its detail-0 value in turn and the perturbation re-run, which is attribution by intervention rather than by scaffolding: the chain measured is the chain that ships, one quantity at a time.',
+      'Detail changes the flatten’s apparent scale, the ink’s apparent scale and tau, the local-lightness term in the difference-of-Gaussians decision. Each quantity was held at its detail-0 value while the production chain was rerun. This intervention attributes the result without replacing the shader under test.',
       'The sector weighting is the amplifier, and it is the amplifier at every setting rather than only at the top. Take it out, so that the eight sectors are averaged rather than chosen between, and a brick wall goes from 29 codes out of 6 to 8 and the film’s exterior from 17 to 5, at detail 1, and the wall’s detail-0 figure goes from 7 to 1. It cannot be taken out: an anisotropic Kuwahara that does not choose its sector is a blur, and the choosing is what makes this style painterly rather than smooth.',
       'A floor under the apparent scale, which is what known limits implied, is not the answer. Measured at four values it takes the wall from 29 down to 9 and takes the film’s exterior from 17 UP to 22 on the way, in the same run, because a wider ellipse spans more structure and a sector that flips then costs more codes. There is no radius that is right for both pictures, which is the honest reason the control exists.',
-      'What is uniformly right is the downsample. The flatten’s buffer resolution is derived to hold its radius near eight pixels, and at detail 1 that derivation asks for 1356 pixels of a 720 pixel frame; clamping the request at the frame’s own resolution turns the box downsample in front of the Kuwahara into a copy, and the downsample is the only thing in this chain that removes grain before the decision that amplifies it. Bounding the buffer a root two below the frame restores it at every setting, moves the apparent scale by nothing, and makes the chain cheaper rather than dearer.',
+      'The downsample is the consistent intervention. The flatten buffer targets a radius near eight pixels; at detail 1 the derivation requests 1,356 pixels from a 720-pixel frame. Clamping to full frame size turns the box downsample into a copy and removes the chain’s only grain reduction before sector selection. Bounding the buffer by a factor of root two restores averaging at every setting, preserves apparent scale and lowers cost.',
     ],
     figure: {
       name: 'detail',
       caption:
-        'What the detail control does now, at its two ends and its default, through the same compositor as every number here.',
+        'The current Detail control at both ends and its default, rendered through the production compositor.',
     },
     table: {
       columns: ['what was changed, grain σ 2 at detail 1, p99 out of 6 in', 'facade', 'a film, exterior'],
@@ -916,7 +927,7 @@ function theFlatten(real: unknown): Section {
       ],
     },
     caveat:
-      'Eight of the ten rows are gone from the code and cannot be regenerated without reverting it, which is the footing the outline’s tuning table on the page before this is on; the row that ships is read from the file like every other number here. Two of them were rejected on the look rather than on the number. Holding tau erases the contour around every window at detail 1, which is what the top of the control is for, and it moves 5.8% of the reference scene; bounding the flatten at a factor of two moves 9.0% of it at detail 1 and 1.2% at detail 0, where root two moves none at all, because at root two the derivation was already downsampling at the bottom of the control. What shipped moves 4.7% of the scene at detail 1 and 1.5% at the default, and detail 0 is byte for byte the render it was. The counter-metric on it is the same one a temporal method would have been judged by, read over a still: the mean gradient magnitude of the styled frame, which a bound on a flatten can only take away. It costs 6.9% of that at detail 1 and 1.0% at the default, against a quarter off the amplification on the wall and a half off it on the film.',
+      'Eight historical rows require an earlier revision; the shipping row is read from the current results. Two candidates were rejected on visual evidence rather than the primary metric. Holding tau removed window contours at detail 1 and changed 5.8% of the reference scene. A factor-of-two flatten bound changed 9.0% at detail 1 and 1.2% at detail 0. The shipping root-two bound changes 4.7% at detail 1, 1.5% at the default and no pixels at detail 0. It reduces mean gradient magnitude by 6.9% at detail 1 and 1.0% at the default, while reducing amplification by one quarter on the wall and one half on the film shot.',
     command: 'node tools/style-bench/run.mjs real-perturbation',
   };
 }
@@ -927,9 +938,9 @@ function realLightness(real: unknown): Section {
   const palette = (name: string, key: string): string =>
     num(real, ['real-lightness', 'palettes', name, key]).toFixed(3);
   return {
-    heading: 'A photograph does use less of a palette than a palette assumes',
+    heading: 'Palette range on photographs',
     prose: [
-      'This one survives, and it is worth saying because it was the claim most at risk. The levels pass exists because the scene occupies about half the lightness range every palette assumes, and the scene was drawn hazy. Measuring the property an input was built to have is not a measurement.',
+      'Real photographs support the palette-fitting decision. The synthetic scene was designed with a narrow, hazy lightness range and cannot validate a stage intended to correct that property.',
       'Every photograph here is narrower than every palette. The closest, a portrait at 0.213 against the narrowest palette’s 0.234, still reaches only nine tenths of it; the fog, which is the case the fitting was written for, sits at 0.196 against 0.288 for the widest.',
       'The scene does overstate it. At 0.135 it is narrower than any of the four, so the fitted map moves it further than it moves a photograph. The stage earns its place on all five, by less on real pictures than the argument for it implied.',
     ],
@@ -973,11 +984,11 @@ function decode(video: unknown): Section {
     format(num(video, ['decode', '1080p30-gop300', ...path])),
   ];
   return {
-    heading: 'Decode is free; seeking is not',
+    heading: 'Decode and seek latency',
     prose: [
       'The next frame costs 0.46 ms. A seek costs 12 ms, or 88 on the same content encoded with one keyframe instead of thirty.',
       'There is no such thing as decoding frame N. There is decoding from the keyframe at or before N and discarding what comes between, so the cost of a scrub is set by keyframe spacing and by nothing else.',
-      'That is a design constraint rather than a number to optimise. A scrub that moves forward must never re-seek: one decoder is held open and fed forward, and it starts again only for a backward or a distant jump.',
+      'The result sets a design constraint: forward scrubbing keeps one decoder open and feeds it sequentially. Rotyl starts a new decode only for backward or distant jumps.',
     ],
     table: {
       columns: ['1080p30 H.264', '1 s keyframes', 'one keyframe'],
@@ -997,7 +1008,7 @@ function decode(video: unknown): Section {
 function upload(video: unknown): Section {
   const path = ['decode', '1080p30-gop30', 'upload'];
   return {
-    heading: 'A decoded frame onto the GPU',
+    heading: 'GPU upload cost',
     prose: [
       'Three ways, fenced. The external-texture path is what playback uses; the copy is what anything that has to keep the frame uses.',
     ],
@@ -1023,13 +1034,13 @@ function colour(video: unknown): Section {
   const worst = (probe: string, view: string): string =>
     `${num(video, ['colour', probe, view, 'worst']).toFixed(0)} codes`;
   return {
-    heading: 'A decoded frame needs no colour path of its own',
+    heading: 'Colour reconstruction',
     prose: [
       'A video frame belongs in the same source texture a photograph does, sampled through the same sRGB view. Nothing downstream needed a special case, and the colour contract survived video with no shader changes at all.',
       'Both ways of being wrong here are silent, so it was measured rather than assumed: sixteen flat patches with known sRGB bytes, encoded to H.264 and brought back. What an external texture samples turns out to be sRGB-encoded, exactly like the bytes of a decoded image.',
       'Writing it through an sRGB view instead encodes it twice. The second row is what that costs, and it is the kind of mistake that is obvious in a measurement and invisible in a review.',
-      'The 4:2:0 column here is the limited-range clip. Whether the full-range one needs anything of its own was left open on this page for four chapters and is answered on its own: it does not, and the flag was in the bitstream the whole time.',
-      'The eleven codes in that column were attributed here to the browser for five chapters, and they are the browser converting from the transfer these clips declare, which is none. That is its own page as well, and what it changes is the attribution rather than the table: on a clip that says what it is, the upload above is the path that reads the declaration.',
+      'The 4:2:0 column uses the limited-range clip. A separate range-flag investigation confirms that the full-range clip needs no additional colour path and that its flag was present in the bitstream.',
+      'The eleven-code difference comes from Chrome applying the default transfer function to clips whose metadata is unspecified. The transfer-metadata investigation changes the attribution, not this table. For correctly tagged footage, the GPU upload path applies the declared transfer.',
     ],
     table: {
       columns: ['worst error, written through', '4:4:4 lossless', '4:2:0'],
@@ -1070,7 +1081,7 @@ function trackedFrame(video: unknown): Section {
       part,
     ]);
   return {
-    heading: 'Nine to eleven tracked frames a second, against thirty for playback',
+    heading: 'Projected tracking throughput',
     prose: [
       'A tracked frame costs about 90 ms against the 33 a playing clip has, summing the four graphs it is made of. Tracking cannot be a render-loop activity, and no amount of tidying makes it one.',
       'It runs behind the playhead instead, and the interface has to be honest that a mask arrives after the frame does. That is a product decision taken from a number, before any of it was built.',
@@ -1111,7 +1122,7 @@ function readback(video: unknown): Section {
     cell('4032x3024', part),
   ];
   return {
-    heading: 'The 12 MB readback, which does not bind and is avoidable anyway',
+    heading: 'GPU readback cost',
     prose: [
       'Two and a half milliseconds of a 33 ms frame is 7%. The readback that looked like the binding constraint is not one.',
       'The inference runtime declines an external GPUDevice, so the model’s input tensor is built on Rotyl’s GPU and read back: 12.58 MB per frame, and a worry about 360 MB/s across the bus at 30 frames a second.',
@@ -1141,10 +1152,10 @@ function tracksWhat(tracking: unknown): Section {
     return Array.isArray(list) && list.length > 0 ? `frames ${list.join(', ')}` : 'never';
   };
   return {
-    heading: 'It survives the three things the fixture did not have',
+    heading: 'Tracking under occlusion, blur and lighting change',
     prose: [
-      'The clip these graphs were verified against was two lookalikes on converging paths, and the harness that drew it said plainly what it left out: no occlusion, no motion blur and no lighting change, which are the three things a memory bank exists for. Passing it was therefore weak evidence for the claim it was quoted for.',
-      'Three more clips, each changing exactly one of those and keeping the paths and the seed. Nothing takes the wrong object on any of them. The one that costs something is motion blur, which is also the one nobody was worried about: a smeared boundary is genuinely ambiguous, and seven points of IoU is the tracker declining to guess where a smear ends rather than losing the thing.',
+      'The original verification clip showed similar objects on converging paths but omitted occlusion, motion blur and lighting change. Those are the conditions a memory bank is intended to address, so the fixture did not test the claim adequately.',
+      'The extended fixture changes each condition independently while preserving the paths and seed. The tracker keeps the correct object in every case. Motion blur lowers IoU by seven points because the visible boundary is ambiguous, not because identity switches.',
       'An illumination ramp of a stop and a half costs almost nothing, which is worth knowing because a memory entry encodes appearance and the obvious worry is that appearance from eight frames ago stops matching. It does not, at that size.',
     ],
     table: {
@@ -1177,11 +1188,11 @@ function pointers(tracking: unknown): Section {
   const worst = (scene: string, which: string): string =>
     num(tracking, [`${scene}, ${which}`, 'worst_iou']).toFixed(3);
   return {
-    heading: 'Object pointers buy back the frames it matters most to have',
+    heading: 'Object pointers and reacquisition',
     prose: [
       'The published mask decoder does not expose `object_pointer`, the token that carries an object’s identity between frames, so an implementation either re-exports the decoder or goes without. Measured on the old fixture, going without cost nothing, and that result was published with a warning attached to it: pointers exist for re-identification after occlusion, and the fixture had none. It has one now, the decoder has been re-exported, and both halves of that warning turned out to be right.',
       'With an occlusion in the clip the cost appears, and it is exactly where the warning said it would be. It is not a swap and it is not drift: without pointers the tracker produces no mask at all on the frame the object comes back on, and finds it again some frames later. The occlusion is eight frames long, which is more than the seven a memory bank holds, so by the time the object returns nothing in that bank has ever seen it and re-identification is the only thing that could work.',
-      'Every average hides that. The worst IoU over whole frames is a shade better without pointers on every clip, because a run that skips the hardest frame is not scored on it. What lengthening the occlusion from three hidden frames to eight adds is that both numbers grew and the gap between them did not: pointers buy back one frame either way, and the frame the object first shows again is a five per cent sliver that nothing segments well. Coming back late from a re-entry is a small thing on a fixture and a visible thing on a clip somebody exports, and it is the reason to re-export the decoder rather than a reason not to.',
+      'Averages obscure the reacquisition delay. Worst IoU over whole frames is slightly higher without pointers because a run that skips the hardest frame is not scored on it. Increasing the occlusion from three hidden frames to eight raises both delays without changing their gap: pointers recover one frame in either case. That frame contains only a five-percent sliver of the object, so its mask is poor under both configurations. The earlier re-entry remains visible in exported footage and justifies the decoder export.',
     ],
     table: {
       columns: ['', 'with pointers', 'without'],
@@ -1236,12 +1247,12 @@ function trackedCost(tracked: unknown): Section {
   const derived = (clip: string): number => trackedMs(tracked, clip, 2) - trackedMs(tracked, clip, 1);
   const perSecond = Math.round(1000 / trackedMs(tracked, TRACKED_CLIPS[0], 1));
   return {
-    heading: `${String(perSecond)} tracked frames a second, where the sum said nine to eleven`,
+    heading: `End-to-end tracking at ${String(perSecond)} frames per second`,
     prose: [
       'The figure this project designed tracking around was summed from four graphs measured separately, and published saying plainly that nothing had been run end to end because there was nothing to run. There is now, so this drives the product’s own code: the two engines it loads, the scene it walks, the loop it runs, writing into a real command log.',
       'The conclusion survives and gets firmer. Playback is thirty frames a second and this is seven, so tracking is a job, the playhead is free to ignore it, and no amount of tidying makes it a render-loop activity.',
       'Frame size does not enter into it, exactly as predicted: the vision encoder always works at 1024 square, and 720p and 1080p differ by two tenths of a millisecond.',
-      'The two-object row was a property of the loop when this was taken and is a thing the product does now. A selection made of two model answers is two objects to follow, which the command log has recorded since object selection landed, so the second row is what somebody who clicked two things waits for rather than a capability nothing could reach. What it costs is the row: not another frame, one more advance.',
+      'The two-object row measures a production path. A selection containing two model answers creates two tracked objects, and the command log records one advance for each. The additional cost is a second advance within the same frame.',
     ],
     table: {
       columns: ['a tracked frame', '720p', '1080p'],
@@ -1256,7 +1267,7 @@ function trackedCost(tracked: unknown): Section {
       ],
     },
     caveat:
-      'The split is derived rather than timed, and that is not fussiness. A run has two seams and a stopwatch on each of them does not add up to a frame: the segmentation engine asks for gpu-buffer outputs, so its run returns before the GPU has finished and reading a frame measures seven milliseconds, with the rest landing in whatever asks for those outputs next. A second tracked object is exactly one more advance and not one more read, so the difference between one object and two is an advance and what is left over is the read. Both are fenced by construction.',
+      'The split is derived because timers at the two API seams do not sum to a frame. The segmentation engine requests GPU-buffer outputs and returns before GPU completion, so downstream access absorbs part of the work. A second object adds one advance without another read. The difference between one-object and two-object runs isolates advance cost; the remainder is the fenced read.',
     command: 'node tools/video-bench/run.mjs tracked-frame',
   };
 }
@@ -1274,10 +1285,10 @@ function trackedArithmetic(tracked: unknown): Section {
     each('at_memory_resolution') +
     each('mask_for_memory');
   return {
-    heading: 'The missing forty-five milliseconds are not in a graph',
+    heading: 'Host-side latency',
     prose: [
       'Five passes over a million elements of JavaScript run per tracked object, and not one of them is a model, which is exactly why none of them was in the sum. With the three graphs an advance is 38 plus 19 plus 13, which is 70; plus these and a four-megabyte readback of the conditioned map it is 91, to within the noise.',
-      'So the sum was not wrong about the graphs. It was a sum of graphs, in a frame that is a third something else. That is the general shape of the finding rather than a detail of this one: a cost model built out of the expensive parts is a lower bound, and the arithmetic between them is where the rest lives.',
+      'The graph sum was accurate but incomplete. Host arithmetic accounts for roughly one third of the complete frame. A cost model built only from the expensive components is therefore a lower bound.',
       '`toChannelMajor` runs twice because attention answers token-major and both the memory encoder and the mask decoder want the other way round. One of the two is avoidable, since the memory encoder’s input is the vision encoder’s own layout with one constant subtracted, and it is being rebuilt from a transpose of itself. It is four per cent of a frame, so it is written down rather than done.',
     ],
     table: {
@@ -1322,11 +1333,11 @@ function hostArithmetic(host: unknown): Section {
     absoluteError(worstStage(host, stage)),
   ];
   return {
-    heading: 'The tracker is the reference, and three of the pieces were not',
+    heading: 'Host-stage agreement with the reference',
     prose: [
       'Two graphs of a tracked frame were exported here and verified against the modules they came from. The other half of a tracked frame is not in any graph: it is two published graphs either side of them, four transposes between four sessions, the layout of the memory bank and the arithmetic the memory encoder is fed. All of it is host code, and every one of those fails by producing a plausible mask of roughly the right object rather than by producing an error.',
-      'So each piece is run against the reference’s own inputs and its answer compared with the reference’s own. Teacher-forced on purpose: a free-running tracker diverges a little on every frame, and then every later stage is being compared against a slightly different frame, which turns several sharp answers into one blurred one.',
-      'Three of them were wrong when this was taken, and two of the three are in the table below this one. The bank was the third, and it is the one that is now exact: laid out from the entries the memory encoder produced, it reproduces the reference’s own bank to the bit, all 233,472 floats of it, on every frame of every clip.',
+      'Each host stage runs on the reference implementation’s inputs and is compared with the corresponding reference output. Teacher forcing is intentional: a free-running tracker diverges slightly on each frame, which would blur the source of later errors.',
+      'The first validation run found three host errors. Two remain in the historical comparison below. The corrected bank layout now matches all 233,472 reference floats on every frame of every test clip.',
     ],
     table: {
       columns: ['what the host computes', 'worst against the reference'],
@@ -1347,7 +1358,7 @@ function hostArithmetic(host: unknown): Section {
       ],
     },
     caveat:
-      'Everything above the mask decoder is a graph’s own numerical error rather than the arithmetic’s: the published vision encoder and the reference agree to about 2e-5 on features whose values run to 2.5, and the two exact rows are exact because a permutation of floats either is or is not the same permutation.',
+      'Differences above the mask decoder come from graph precision rather than host arithmetic. The published vision encoder agrees with the reference to about 2e-5 on feature values up to 2.5. Pure layout permutations match exactly.',
     command: 'python tools/edgetam-export/host.py --sweep',
   };
 }
@@ -1358,7 +1369,7 @@ function hostMistakes(host: unknown): Section {
     absoluteError(worstStage(host, stage)),
   ];
   return {
-    heading: 'The two that answered, answered plausibly, and answered wrongly',
+    heading: 'Plausible masks from invalid host inputs',
     prose: [
       'The mask decoder accepts empty `input_points` and empty `input_boxes` together. It was never sent them, because the object-selection path returns early when a prompt has neither, so the tracked-frame path was unexercised. It turns out to run, and to give a different answer from the reference’s.',
       'The reason is one line in the reference: a prompt made of points is padded with a trailing "not a point" token, and the published graph was traced with that padding baked in. So a graph handed zero points appends one and produces ONE such token where the reference has two. What a tracked frame has to send is one point with a label of -1, whose coordinates are then discarded and whose embedding is replaced wholesale. With that, the published decoder is the reference’s decoder to 1e-4.',
@@ -1375,7 +1386,7 @@ function hostMistakes(host: unknown): Section {
       ],
     },
     caveat:
-      'The second number is on a field the memory encoder receives in the range −10 to 10, so being out by twenty is being out by the whole of it, along every edge of every mask. Neither of these produces an error, a warning or an obviously wrong picture, which is the reason this page exists rather than a screenshot.',
+      'The second error affects a field whose valid memory-encoder range is −10 to 10. An error of twenty spans the complete range along every mask edge. Neither defect produces an exception, warning or obviously invalid picture, so intermediate reference comparisons are required.',
     command: 'python tools/edgetam-export/host.py --sweep',
   };
 }
@@ -1393,7 +1404,7 @@ function hostEndToEnd(host: unknown): Section {
     return frames.length;
   };
   return {
-    heading: 'What it takes for a clip to price any of this',
+    heading: 'Tracking fixture requirements',
     prose: [
       'The obvious way to judge the corrections above is to run the whole tracker with and without each of them and see which masks are better. For a long time that said nothing: every configuration, including three known-wrong ones, landed between 0.91 and 0.99 against the reference with an ordering that was not consistent between clips. That was the clips rather than the corrections, and the fixtures were rebuilt around it.',
       `The largest row is the object pointer, which is what the re-exported mask decoder exists for. Without it the tracker reports the object absent from ${absent(
@@ -1433,7 +1444,7 @@ function download(video: unknown, shrink: unknown): Section {
   const copies = num(shrink, ['memory_attention', 'removed']);
   const hoisted = num(shrink, ['memory_attention', 'hoisted_constants']);
   return {
-    heading: 'The download is not halved, it is quartered',
+    heading: 'Model compression and traffic',
     prose: [
       'The expensive graph exports at 69.6 MB and holds 11.8 MB of weights. Everything else is rotary tables, which the tracer captures once per layer and once per attention block because the module that produces them takes no inputs and can therefore be traced away. Turning constant folding off does not help: they are not folded, they are traced.',
       `Where they sit is the reason the obvious pass finds nothing. They are not initializers. They are ${hoisted.toFixed(
@@ -1442,7 +1453,7 @@ function download(video: unknown, shrink: unknown): Section {
         0,
       )} copies and ${duplicated.toFixed(1)} MB.`,
       'It costs nothing on either axis, which had to be checked rather than assumed: a tensor read from six places could plausibly be allocated differently by a WebGPU backend. The outputs are identical to the bit and the median run time moves by less than the run-to-run spread.',
-      'So tracking’s marginal download is the shared half-precision attention graph at 12 MB plus the encoder at 6.7, which stays at full precision for the reason above. Nineteen megabytes on top of the twenty already fetched for object selection, against seventy-six.',
+      'Tracking adds the shared 12 MB half-precision attention graph and the 6.7 MB full-precision encoder. The marginal download is 19 MB after the 20 MB already fetched for object selection, compared with 76 MB before compression and sharing.',
     ],
     table: {
       columns: ['memory attention', 'size', 'a frame', 'against fp32'],
@@ -1475,13 +1486,13 @@ function commandLog(video: unknown): Section {
   const sparse = (frames: string): string =>
     `${num(video, ['log', 'one_in_thirty', `${frames} frames`, 'packed_megabytes']).toFixed(1)} MB`;
   return {
-    heading: 'A tracked clip belongs in the command log, and the mask had to change shape to fit',
+    heading: 'Command-log mask storage',
     prose: [
       'Tracking contributes one applyMask command per frame it has followed the object to, which is the mechanism the document already has and needs no new command type. Whether that scales is a different question from whether it fits, and the log is what makes undo and device-loss recovery cheap enough to be free.',
       `The objection that looked most likely turns out not to be one. Folding a frame's commands filters and sorts the whole log, which is nothing at ten commands and could have been a per-frame cost at ten thousand. It is not: ${fold(
         '18000',
       )} for a ten-minute clip with a mask on every frame, against a 33 ms frame.`,
-      `What did not fit is the bytes. A mask at the engine's own 256 px square is 64 KB held plainly, so ten seconds was ${megabytes(
+      `Uncompressed masks do not fit the memory budget. A mask at the engine's own 256 px square is 64 KB, so ten seconds was ${megabytes(
         '300',
       )} and ten minutes ${megabytes(
         '18000',
@@ -1492,10 +1503,10 @@ function commandLog(video: unknown): Section {
       )} smaller, and the ragged end of the sweep is barely worse because the cost is the perimeter rather than the area. Ten minutes is ${packed(
         '18000',
       )}.`,
-      `What the packing does not pay for by itself is the replay. Unpacking is cheap once and is not once: a rebuild of the mask walks every command the frame folded to, and ${unpacking(
+      `Packing alone does not control replay cost. Rebuilding a mask walks every command retained by the frame fold, and ${unpacking(
         'roughness 0.5',
       )} of a 33 ms frame goes on three hundred masks before any of them reaches the GPU. So the fold cuts at the last command that decides the frame by itself, which a run of replaces makes the last one. Three hundred commands become one, and so does eighteen thousand.`,
-      'Per object, which every figure on this page is and none of them said until a run could follow more than one thing. A run replaces for its FIRST seed and adds for the rest, so the cut lands on the first one and a frame folds to one command per object rather than to one. What each of these figures comes back as at one, two and three objects is the page on the four figures that were about one object, in a file of its own so that asking did not re-take this one.',
+      'Every figure in this section is per object. A run writes replace for its first seed and add for each remaining seed, so a frame folds to one command per object. The multi-object benchmark reports the corresponding values at one, two and three objects without changing the date of this result.',
     ],
     table: {
       columns: ['a mask on every frame', 'held plainly', 'packed', 'folding one frame'],
@@ -1534,15 +1545,15 @@ function documentCost(document: unknown): Section {
   const of = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
   const held = num(document, ['document', 'ten minutes', 'held_megabytes']);
   return {
-    heading: 'A ten-minute tracked run is a 65 MB file that writes in eleven milliseconds',
+    heading: 'Document size and write time',
     prose: [
-      'What a brush stroke costs to write down is nothing and everybody knows it. What decides whether saving is a file format or a paragraph in known limits is what a TRACKED RUN costs: one command per frame PER OBJECT, a mask on each, packed, which the chapter before this one measured at 3.4 KB a mask and 62 MB for ten minutes of following one thing. Every figure on this page is per object for that reason, and none of them said so until the interface could reach a second seed; what they come back as at several is the page on the four figures that were about one object.',
+      'Tracked runs determine document capacity because they write one command with a packed mask per frame and object. The measured mask averages 3.4 KB, and a ten-minute one-object run occupies 62 MB in memory. Figures in this section are therefore per object; the multi-object benchmark reports how they scale.',
       `Those 62 MB survive the trip. The file is ${megabytes(
         of('ten minutes', ['container', 'bytes']),
       )} against ${held.toFixed(
         1,
       )} MB held, and the difference is the header rather than the masks: they are the log's own arrays handed to the writer, so a save touches every byte once and copies none of them.`,
-      'None of the three sizes is slow enough to need an indicator, which is the finding that made everything after it simple. A document can be an ordinary thing somebody presses rather than an operation with a progress bar on it.',
+      'None of the measured sizes is slow enough to require a progress indicator. Saving can remain a direct action instead of a separate operation state.',
     ],
     table: {
       columns: [
@@ -1563,7 +1574,7 @@ function documentCost(document: unknown): Section {
       ]),
     },
     caveat:
-      '"Building it" is the header and the chunk list. "Assembling the bytes" is the one pass over every one of them, measured through a real Blob, which is what a browser with nowhere to write the file does; given a file handle the chunks go straight into the stream and that column is the disk rather than the heap. "Reading it back" is the whole file returned as a command log, with the header parsed and every mask handed back as a view into the buffer it was read into rather than copied out of it.',
+      'Building covers the header and chunk list. Assembling measures one pass through every chunk using a real Blob, which represents a browser without a writable file handle. With a handle, chunks stream directly to disk. Reading parses the header and returns each mask as a view into the input buffer without another copy.',
     command: 'node tools/video-bench/run.mjs document',
   };
 }
@@ -1575,16 +1586,16 @@ function documentShape(document: unknown): Section {
     of('ten minutes', ['json_base64', 'write_ms', 'median']) /
     of('ten minutes', ['container', 'encode_ms', 'median']);
   return {
-    heading: 'JSON with the masks base64 encoded is a third larger and a hundred times slower',
+    heading: 'Binary masks versus base64 JSON',
     prose: [
       'The obvious shape for a document is the one the command log already nearly is: JSON, with each packed mask turned into text. It needs no format and no reader, and the argument against it was arithmetic, which is the half that does not decide anything on its own. Base64 is four bytes for every three before anything else happens.',
-      `It is that, and it is also ${slower.toFixed(0)} times slower to write and ${(
+      `Base64 also measures ${slower.toFixed(0)} times slower to write and ${(
         of('ten minutes', ['json_base64', 'read_ms', 'median']) /
         of('ten minutes', ['container', 'read_ms', 'median'])
       ).toFixed(
         0,
       )} times slower to read, because every mask has to be built into a string on the way out and taken apart on the way back. A second of work to press Save is a different product from eleven milliseconds.`,
-      'So the header is JSON and the payload is not, which is the shape every honest container has. Everything small enough to read in a text editor stays legible, and the one thing that is neither goes in a region the header points into. It needs no library, which a document format in a 46 KB application has to be able to say.',
+      'The header remains JSON while packed masks occupy a binary region referenced by offsets. Human-readable metadata stays legible, and the large binary payload avoids base64 overhead. The format requires no additional library.',
     ],
     table: {
       columns: ['ten minutes of tracking', 'the file', 'writing', 'reading'],
@@ -1603,9 +1614,9 @@ function documentShape(document: unknown): Section {
         ],
       ],
     },
-    caveat: `A third larger is ${((larger - 1) * 100).toFixed(
+    caveat: `The base64 document is ${((larger - 1) * 100).toFixed(
       1,
-    )}% here rather than the 33% base64 costs by itself, because the header is the same in both and the JSON one is marginally the smaller of the two on a photograph, where there are no masks at all and a container still pays twelve bytes of prefix. The comparison is written out in tools/video-bench/document.ts rather than shipped, which is the rule the sink that used to hold a whole clip follows: the thing being compared against has to exist next to the measurement that rejected it.`,
+    )}% larger, not the raw encoding overhead of 33%, because both formats share the header and the binary container adds a twelve-byte prefix even when no masks exist. The rejected JSON variant remains in tools/video-bench/document.ts beside the measurement rather than in production code.`,
     command: 'node tools/video-bench/run.mjs document',
   };
 }
@@ -1613,17 +1624,17 @@ function documentShape(document: unknown): Section {
 function documentReplay(document: unknown): Section {
   const of = (key: string, path: readonly string[]): number => num(document, ['document', key, ...path]);
   return {
-    heading: 'Opening one is a fold and one upload, so the file can be dumb',
+    heading: 'Document replay cost',
     prose: [
-      'This is the measurement that decided the shape of the file rather than its encoding. A document that could be read quickly and then took a second to become a picture would have to carry something a replay cannot recompute, which is a cached mask, which is a second source of truth in the one structure this architecture exists to have exactly one of.',
+      'Replay cost determines whether the file needs derived state. A document that parsed quickly but took a second to render would need a cached mask. That mask would duplicate state already defined by the command log.',
       `It does not. Folding a ten-minute log to the frame it was saved on cuts at the last command that decides that frame by itself, so eighteen thousand commands fold to ${of(
         'ten minutes',
         ['replay', 'folded_to'],
       ).toFixed(0)}, and unpacking that one mask and the fold together are ${ms(
         of('ten minutes', ['replay', 'ms', 'median']),
       )}. Everything after it is the texture upload the renderer does on every frame anyway.`,
-      'One per object, which is the one line on this page that following more than one thing did not merely re-scale. The cut lands on a run’s FIRST seed, because that is the one that replaces and the rest add, so a frame folds to one command per object and a replay unpacks that many masks. It is still a fraction of a frame and the file is still allowed to be dumb, and the arithmetic is on the page about the four figures that were about one object.',
-      'So the document carries the log and nothing derived from it. No mask, no thumbnail, no rendered anything: replaying is cheaper than reading whatever a cache of it would have been.',
+      'Replay unpacks one mask per object. The fold cuts at the run’s first seed because that command replaces the frame and later seeds add to it, leaving one command per object. The work remains a fraction of one frame; exact scaling appears in the multi-object benchmark.',
+      'The document stores the command log without derived masks, thumbnails or rendered output. Replaying the log is cheaper than reading an equivalent cache.',
     ],
     table: {
       columns: ['after loading', 'commands', 'folded to', 'fold and unpack'],
@@ -1647,10 +1658,10 @@ function documentIdentity(document: unknown): Section {
     num(document, ['document', 'identity', 'the_first_and_last_megabyte', size, 'ms', 'median']);
   const rate = whole('1024 MB', ['megabytes_per_second']);
   return {
-    heading: 'The whole file cannot be digested here, and does not need to be',
+    heading: 'Media identity checks',
     prose: [
-      'A browser has no paths. A document names media it cannot address, so somebody supplies the file again, and the only question left is whether it is the same file: a selection replayed over the wrong clip is a wrong answer that looks like a right one. A name and a byte length are cheap and weak. A digest of the whole file is strong.',
-      `And a digest of the whole file is not available here, which is a fact about the platform rather than a budget. crypto.subtle.digest takes a BufferSource and there is no streaming form of it, so digesting two gigabytes means holding two gigabytes at once, which is the exact thing a clip export was rebuilt to stop doing. Where it fits it runs at ${rate.toFixed(
+      'A browser document cannot reopen an arbitrary local path, so the user supplies the media again. Rotyl must then detect the wrong file before replaying selections over it. File name and byte length are weak identifiers; a whole-file digest is strong.',
+      `The platform offers no streaming whole-file digest. crypto.subtle.digest takes a BufferSource, so digesting two gigabytes requires holding two gigabytes at once. Where it fits, the operation runs at ${rate.toFixed(
         0,
       )} MB a second, so a two gigabyte clip would be a second of work on top of two gigabytes of heap.`,
       `A digest of the first megabyte, the last megabyte and the length costs ${ms(
@@ -1669,12 +1680,12 @@ function documentIdentity(document: unknown): Section {
         ['the first and last megabyte', ms(probe('2 MB')), ms(probe('64 MB')), ms(probe('1024 MB'))],
       ],
     },
-    caveat: `The first row is measured on 1, 16, 64, 256 and 1024 MB and is linear across all of them at ${whole(
+    caveat: `Whole-file digest cost was measured at 1, 16, 64, 256 and 1024 MB and remained linear at ${whole(
       '64 MB',
       ['megabytes_per_second'],
     ).toFixed(0)} to ${whole('1 MB', ['megabytes_per_second']).toFixed(
       0,
-    )} MB a second, so the 2 MB cell is the 1 MB figure doubled rather than a rung of its own. Below two megabytes the two slices of the second row meet and the whole file is digested anyway, which is the strong answer arriving free on the files small enough to give it away. What the comparison then decides is what happens on a mismatch, and that is two answers rather than one: a file of a different shape cannot replay the log at all and is refused, and a file of the same shape and different bytes replays perfectly and opens with a sentence beside its name.`,
+    )} MB per second. The 2 MB cell therefore doubles the 1 MB result. Below two megabytes, the first and last slices overlap and cover the complete file. A structural mismatch prevents replay; a same-shape byte mismatch remains replayable and opens with a warning.`,
     command: 'node tools/video-bench/run.mjs document',
   };
 }
@@ -1685,9 +1696,9 @@ function whereAJournalCanBeWritten(saved: unknown): Section {
   const opening = (held: string): string =>
     ms(num(saved, ['recovery', 'opening_a_writable', `${held} MB already in it`, 'ms', 'median']));
   return {
-    heading: 'The API a page can reach copies the file to open it',
+    heading: 'Main-thread file access cost',
     prose: [
-      'Saving is a thing somebody presses, so a crash costs whatever has happened since they last pressed it, which on a tracked run is three quarters of a minute per press they did not make. Writing the log down as it happens is the obvious answer, and whether it is affordable is a question about one API rather than about the log.',
+      'Saving is an explicit action, so a crash loses edits made since the last save. A tracked run can add roughly three quarters of a minute of work between saves. Continuous journalling addresses that gap, and its feasibility depends on the storage API.',
       'A browser with no save dialog still has the origin private file system, and there are two ways to write into it. createWritable is the one a page can reach, and it is not an append: opening a stream on a file copies what is already in it, so the cost of adding three and a half kilobytes to a journal is the cost of the journal.',
       `The other is createSyncAccessHandle, and asked of the browser rather than remembered, ${text(saved, [
         'recovery',
@@ -1699,7 +1710,7 @@ function whereAJournalCanBeWritten(saved: unknown): Section {
       rows: [['already in the file', opening('0'), opening('1'), opening('16'), opening('64')]],
     },
     caveat:
-      'Linear at about 1.8 ms per megabyte already there, which is a copy rather than a cost model anybody would design around. It is the right API for the thing it is for, which is writing a file once: a clip export opens one stream and writes a gigabyte through it. A journal opens one per edit.',
+      'Opening cost grows by about 1.8 ms per existing megabyte because the API copies the file. That is acceptable for a clip export, which opens one stream and writes through it once. A journal would reopen the stream for every edit.',
     command: 'node tools/video-bench/run.mjs recovery',
   };
 }
@@ -1710,13 +1721,13 @@ function whatAnEditCosts(saved: unknown): Section {
   const writable = (label: string): string => ms(of(label, ['through_create_writable_ms', 'median']));
   const worker = (label: string): string => `${of(label, ['inside_the_worker_per_append_ms']).toFixed(2)} ms`;
   return {
-    heading: 'In a worker it is flat, and the main thread pays nothing at all',
+    heading: 'Worker file access cost',
     prose: [
       'The same record, appended the two ways, onto journals that already hold nothing, a three hundred frame run, and ten minutes of tracking. One of the rows depends on how much is already there and the other does not.',
       `Ninety eight milliseconds per edit is not a journal, it is a stutter with a file underneath it. ${worker(
         'ten minutes already in it',
       )} is, and it is the same figure on an empty file, so the length of the session stops being a variable.`,
-      'And the interface pays none of it. The record is framed on the main thread and handed over, which measures below the clock’s own resolution at every size, because the write happens somewhere else. Nothing appears while it runs: no indicator, no line, because there is nothing to say about that.',
+      'The interface does not wait for the write. The main thread frames each record and transfers it to the worker in less than the measurable clock resolution at every size. The operation therefore needs no progress indicator.',
     ],
     table: {
       columns: ['appending one record', 'an empty journal', 'a 300-frame run in it', 'ten minutes in it'],
@@ -1753,11 +1764,11 @@ function whyNotTheDocument(saved: unknown): Section {
   const written = (label: string): string =>
     megabytes(num(saved, ['recovery', 'rewriting_the_whole_document', label, 'bytes']));
   return {
-    heading: 'And the format that needs no second format is 2.5 seconds an edit',
+    heading: 'Full-document journalling cost',
     prose: [
-      'There is already a way to write the log to a file, and it needs nothing new: the document a save produces. Writing that on every edit means no journal format, no records, no reader, and one shape for both. It is also the one thing here that gets worse the longer somebody works.',
+      'The saved document can also serve as the journal format, avoiding a second writer and reader. Its cost grows with the complete session, however, so each later edit rewrites more data than the previous edit.',
       'A document is one JSON header with the masks in a region behind it, so the header is at the front and grows with the log. Written once that is the right shape and 11 ms. Written per edit it is quadratic, and it crosses from unnoticeable to unusable somewhere between a stroke and a tracked run.',
-      'So there are two shapes of the same log, and the second one exists because of this row rather than because two formats seemed nicer than one. A record carries its own lengths, nothing points backwards, and a reader walks forward and stops where the bytes stop, which is also what makes a journal cut off mid-write recoverable up to the last whole record.',
+      'The journal uses a second framing of the same command log because full-document writes scale poorly. Each record carries its own lengths and no backward pointers. A reader walks forward until bytes end, which recovers every complete record after an interrupted write.',
     ],
     table: {
       columns: ['rewriting the whole document', 'the file', 'per edit'],
@@ -1779,10 +1790,10 @@ function comingBack(saved: unknown): Section {
   const records = (label: string): string =>
     num(saved, ['recovery', 'reading_a_journal_back', label, 'records']).toLocaleString('en-GB');
   return {
-    heading: 'Coming back is one read, so it can happen before anything is on screen',
+    heading: 'Recovery read time',
     prose: [
       'A recovery walks every record and turns it back into a command. That is the same work reading a document does, plus the framing, and it lands in the same place: a document, which then goes through the same path a dropped .rotyl takes. The media check is the same, the replay is the same, and a file that does not match is refused with the same sentence.',
-      'It is also on the main thread and without a worker, deliberately. It runs once, at start-up, before any file is open and therefore before any journal is being written, so it is an ordinary read of an ordinary file. Spinning a worker up to do it would cost every session that never opens anything a thread.',
+      'Recovery reads on the main thread by design. The read runs once at startup before a file is open or a journal is active. Starting a worker for it would allocate a thread in sessions that have nothing to recover.',
     ],
     table: {
       columns: ['reading a journal back', 'records', 'to a command log'],
@@ -1812,7 +1823,7 @@ function pipeline(exported: unknown): Section {
     rung('1080p', name),
   ];
   return {
-    heading: 'The encoder is the pipeline',
+    heading: 'Export pipeline breakdown',
     prose: [
       'A VideoEncoder is asynchronous and holds its own queue, so timing one frame answers nothing. What decides whether a clip export is a wait or an ordeal is sustained throughput with everything in flight at once, measured as a ladder where each rung adds exactly one step to the one below it.',
       'It does not add up, and that is the finding. The encoder handed the same picture with the GPU taken out of the loop measures 4.7 ms a frame at 1080p, against 5.0 for the whole thing: every rung below it runs on threads the encoder is not using. At 1080p with a style that fits in a frame there is nothing worth optimising except the encoder.',
@@ -1843,7 +1854,7 @@ function clipThroughput(exported: unknown): Section {
     `${ms(endToEnd('1080p', style, 'ms_per_frame'))} (${endToEnd('1080p', style, 'frames_per_s').toFixed(0)} fps)`,
   ];
   return {
-    heading: 'What a clip costs to write, per style',
+    heading: 'Export throughput by style',
     prose: [
       'Decode, style, composite, capture, encode and mux, end to end. Two of the three styles write a clip several times faster than it plays. The third is the style-cost table again with an encoder underneath it that never has to wait.',
       'A minute of 1080p through the comic chain is five and a half minutes of work. That is what makes progress and a way to stop part of the feature rather than polish on it.',
@@ -1866,13 +1877,13 @@ function rateControl(exported: unknown): Section {
     `${rate(name, 'megabits_per_s').toFixed(1)} Mbit/s`,
   ];
   return {
-    heading: 'Rate control is a decision about size, not about speed',
+    heading: 'Bitrate control',
     prose: [
       `A qualitative quality level resolves to a quantizer where the codec supports one, which is constant quality and therefore an unbounded file. It is also the default, so a clip export that says nothing about rate control ships ${(
         rate('high, quantizer', 'bytes') / rate('high, bitrate', 'bytes')
       ).toFixed(1)} times the bytes for no time at all.`,
       'Asking for the same level as a bitrate is a predictable file and a variable picture. Rotyl asks for very-high as a bitrate, which is about 12 Mbit/s at 1080p and scales with resolution.',
-      'The first row is the one figure here that is not repeatable to the tenth, and for the reason the row is about: a quantizer is constant QUALITY, so what it costs in bits belongs to the picture rather than to the setting, and the same three seconds came back at 30.0 Mbit/s on one run and 23.4 on another. The three bitrate rows agree to a hundredth of a megabyte between runs, which is the point of them.',
+      'The default quality row does not repeat to the nearest tenth because constant-quality bitrate depends on image content. The same three-second clip measured 30.0 Mbit/s in one run and 23.4 in another. Explicit bitrate rows agree within 0.01 MB between runs.',
     ],
     table: {
       columns: ['what was asked for', 'ms per frame', 'file', 'rate'],
@@ -1895,10 +1906,10 @@ function encodeColour(exported: unknown): Section {
   const median = (who: string): string =>
     `${num(exported, ['encode-colour', who, 'round_trip', 'median_abs']).toFixed(0)} codes`;
   return {
-    heading: 'The encoder is not what moves colour',
+    heading: 'Export colour round trip',
     prose: [
       'Colour had been measured on the way in and never on the way out, which is the direction a clip export depends on. Pixels leave through a canvas, become a video frame, are converted to YCbCr by the encoder and come back through the browser’s own conversion, and every one of those steps can apply a transfer function.',
-      'The same sixteen patches, put through the real composite at zero coverage, which returns the source byte for byte, then written out and decoded back. All sixteen come back bit-identical to ffmpeg’s round trip, not merely close: the error is entirely the midtone shift the upload puts into any 4:2:0 frame whose transfer is unspecified, which is measured and attributed on its own page and is the same on both sides of this comparison.',
+      'The same sixteen patches pass through the production composite at zero coverage, which returns the source byte for byte, before export and decode. All sixteen match ffmpeg’s round trip exactly. The remaining midtone shift comes from Chrome’s treatment of unspecified transfer metadata and appears on both sides of this comparison.',
       'The container is tagged correctly too, which matters for every player that is not this one. So there is no export colour path either; there is the colour path, and this is one more thing that already sits in it.',
     ],
     table: {
@@ -1920,12 +1931,12 @@ function containerBytes(bundle: unknown): Section {
   const gzip = (name: string): string => asBytes(num(bundle, ['cases', name, 'gzip']));
   const delta = (name: string): string => asBytes(num(bundle, ['deltas', name]));
   return {
-    heading: 'Writing a container costs as much as the application',
+    heading: 'Container writer bundle cost',
     prose: [
       'Measured through Rotyl’s own build, so the answer is what this bundler’s tree shaking actually produces rather than what a standalone one would.',
       `Writing costs ${delta('writing, on top of reading')} gzipped on top of a chunk that already reads, which is nine tenths of the entire application bundle and was all of it until saving a selection was added to that bundle. So the writer is its own dynamic import, fetched by an export and by nothing else, the same treatment the demuxer and the model get.`,
       `A second container to write costs ${delta('a second container to write')}: QuickTime is the same muxer with a different brand list, exactly as it is on the read side. A soundtrack copied across costs ${delta('a soundtrack copied across')}, which is a second track and a second source on a muxer that was already paid for. The encoder wrapper is ${delta('the encoder wrapper')} of the writer, and driving the encoder by hand instead would save that and cost five per cent a frame.`,
-      'Shipped, there are two consumers of one library and the bundler puts what they share in a chunk of its own, so opening a video costs 8.8 KB more than it did for somebody who never exports one. The alternative arrangements are worse: one chunk makes every video session pay for the writer, and no split at all puts it in the application.',
+      'The shipping build has two consumers of one library, so the bundler extracts their shared code. Opening a video costs 8.8 KB more even when the session never exports. A single video chunk would charge every session for the writer, while no split would place the writer in the initial application bundle.',
     ],
     table: {
       columns: ['gzipped', 'size'],
@@ -1976,7 +1987,7 @@ const mb = (value: number): string => `${value.toFixed(0)} MB`;
 function heldCeiling(long: unknown): Section {
   const rows = ladder(long);
   return {
-    heading: 'Where a clip export stopped working, which was not where the note said',
+    heading: 'In-memory export limit',
     prose: [
       'Every clip export this project had written was assembled in the tab and handed over at the end, and the known limits page said a ten-minute one would be about a gigabyte and that there was no answer to that beyond failing. The consequence was right and the number was a guess.',
       `Ten minutes works. It is ${numberIn(rows[1], 'file_mb', mb)} and it peaks at ${numberIn(rows[1], 'peak_heap_mb', mb)} against a heap limit of ${mb(num(long, ['long-clip', 'heap_limit_mb']))}. What fails is twenty-five, and it fails at finalize with a catchable RangeError after three and a half minutes of encoding, which is the worst possible moment for one and still better than a dead tab.`,
@@ -2005,10 +2016,10 @@ function intoAFile(long: unknown): Section {
   const row = (path: string, key: string, format: (value: number) => string): string =>
     format(num(long, ['long-clip', path, key]));
   return {
-    heading: 'Given a file to write into, nothing is held',
+    heading: 'Streaming export memory',
     prose: [
       'The same loop, the same sink, the same settings, with a file handle behind it instead of a buffer. The last column is the finding: writing into a file grows the heap by a fraction of a megabyte per thousand frames, which is the noise of a decode loop rather than a trend. One of the rungs fits a NEGATIVE slope, which is the same statement said more bluntly: there is nothing accumulating, so the length of the clip stops being a variable and there is no ceiling to quote.',
-      `And it costs nothing per frame. ${row('into a file', 'ms_per_frame', (value) => `${value.toFixed(2)} ms`)} a frame at 1080p against the 5.0 the encode ladder committed to, which is the encoder's own cost with the disk underneath it disappearing into threads it was not using.`,
+      `Streaming adds no measurable per-frame cost. The result is ${row('into a file', 'ms_per_frame', (value) => `${value.toFixed(2)} ms`)} at 1080p, compared with 5.0 ms in the encode ladder. Disk work runs on threads the encoder was not using.`,
       `A soundtrack changes neither. The last two rows are the same twenty-five minutes with and without one: ${row('into a file, with a soundtrack, discarded at the writer', 'ms_per_frame', (value) => `${value.toFixed(2)} ms`)} a frame against ${row('into a file, discarded at the writer', 'ms_per_frame', (value) => `${value.toFixed(2)} ms`)}, and ${mb(num(long, ['long-clip', 'into a file, with a soundtrack, discarded at the writer', 'peak_heap_mb']))} of peak heap against ${mb(num(long, ['long-clip', 'into a file, discarded at the writer', 'peak_heap_mb']))} on a file that is ${mb(num(long, ['long-clip', 'into a file, with a soundtrack, discarded at the writer', 'file_mb']))} rather than ${mb(num(long, ['long-clip', 'into a file, discarded at the writer', 'file_mb']))}. The eight megabytes are the second track's sample table in the reserved index, and they are a fact about the index rather than about the length: ${num(long, ['long-clip', 'into a file, with a soundtrack, discarded at the writer', 'audio_packets_written']).toLocaleString('en-GB')} packets went in, counted at the sink rather than predicted.`,
       `Read back through the product's own frame provider, the ten-minute file is a clip: ${num(long, ['long-clip', 'decoded back', 'frames']).toFixed(0)} frames, ${num(long, ['long-clip', 'decoded back', 'seconds']).toFixed(0)} seconds, ${num(long, ['long-clip', 'decoded back', 'keyframes']).toFixed(0)} keyframes, and its boxes are ftyp, moov, free, mdat in that order. The index is at the front, which a stream does not do by default: the room for it is reserved before the first frame and seeked back to at the end.`,
     ],
@@ -2071,11 +2082,11 @@ function theBudget(long: unknown): Section {
   const budgeted = (key: string, format: (value: number) => string): string =>
     format(num(long, ['long-clip', 'in memory, past the budget', key]));
   return {
-    heading: 'So the path with nowhere to write stops at a budget',
+    heading: 'Download-path memory budget',
     prose: [
-      'Four times the file is what has to fit at the moment it is finished: up to twice in the buffer it is assembled in, since that buffer grows by doubling, once more for the copy sliced out of it, and once more for the blob a download is handed. So the budget is the heap limit over four.',
-      `Asked for thirty minutes with nowhere to write it, the export stops at ${budgeted('minutes_written', (value) => value.toFixed(1))} minutes and ${budgeted('file_mb', mb)}, peaks at ${budgeted('peak_heap_mb', mb)}, and produces ftyp, moov, free, mdat: a valid clip of the part that was rendered, which is the same thing pressing Stop produces and for the same reason.`,
-      `That blob is the other thing with a limit. In a clean tab this browser gives a byte back out of ${mb(num(long, ['long-clip', 'handing it over', 'largest_readable_mb']))}, and a two gigabyte buffer cannot be allocated at all. But a finished export is not holding a clean tab: with the buffer the file was assembled in still alive alongside the blob made from it, which is exactly what the sink holds at the moment it hands one over, a 790 MB blob comes back unreadable on every attempt. As a download that is a file that never arrives and no word about why, so the download path asks for one byte before handing the blob to an anchor.`,
+      'Finalisation can require roughly four times the file size in memory. The growing assembly buffer may hold twice the final bytes, slicing creates another copy, and the download Blob creates a fourth. The practical file budget is therefore about one quarter of the heap limit.',
+      `A thirty-minute in-memory request stops after ${budgeted('minutes_written', (value) => value.toFixed(1))} minutes and ${budgeted('file_mb', mb)}, with a peak heap of ${budgeted('peak_heap_mb', mb)}. It still contains valid ftyp, moov, free and mdat boxes, producing the same valid partial clip as an explicit Stop.`,
+      `Blob handling has a separate limit. In a clean tab, this browser reads one byte from a ${mb(num(long, ['long-clip', 'handing it over', 'largest_readable_mb']))} Blob and cannot allocate a two-gigabyte buffer. During finalisation, the assembly buffer remains live beside the Blob; under that condition every 790 MB read failed. The download path now reads one byte before assigning the Blob to an anchor, turning silent failure into a reported error.`,
     ],
     table: {
       columns: ['blob handed over', 'made', 'one byte read back'],
@@ -2122,11 +2133,11 @@ function theArrangements(sound: unknown): Section {
   const worst = (arrangement: string, seconds: number): string =>
     numberIn(pick(sound, arrangement, seconds), 'worst_gap_mb', (value) => `${value.toFixed(1)} MB`);
   return {
-    heading: 'A file with its sound in one run is not a file anybody can stream',
+    heading: 'Packet layout and progressive playback',
     prose: [
       'The index goes at the front of every file this writes, so a player can start before the last byte has arrived. Adding a second track is the first thing capable of quietly undoing that. A file whose video is one contiguous run and whose audio is another satisfies "the index is at the front" on paper and violates it completely in practice, because a player has to hold the whole video to reach the first audio sample.',
-      `So this asks, for every whole second of the clip, how far away in the file the sound that plays with it is. Gathered at one end the answer is most of the file and it GROWS with the clip: ${worst('primed', 30)} at thirty seconds, ${worst('primed', 120)} at two minutes and ${worst('primed', 300)} at five. Interleaved it is a constant ${worst('interleaved', 300)} at every length measured, which is about two and a half seconds of media.`,
-      'And the cheapest arrangement of all does not produce a file at all. With the index reserved, the muxer cannot size the movie box until it has seen a packet from every track it was told about, so a run of video with the audio behind it queues every frame in memory, and on a track carrying B-frames it fails outright before a byte is written. One audio packet in front of the video is what makes the second row exist, and it is also all that separates the second row from the third: after that, interleaving is one comparison per frame.',
+      `The metric is the byte distance between audio and video that play at each whole second. Grouped tracks grow from ${worst('primed', 30)} at thirty seconds to ${worst('primed', 120)} at two minutes and ${worst('primed', 300)} at five. Interleaving holds the distance at ${worst('interleaved', 300)} for every measured length, or about two and a half seconds of media.`,
+      'The lowest-work arrangement does not produce a file. With a reserved index, the muxer cannot size the movie box until it receives a packet from every declared track. Video followed by audio therefore queues all video frames in memory and fails before writing when the track contains B-frames. Priming the muxer with one audio packet allows output; full interleaving then adds one timestamp comparison per frame.',
     ],
     table: {
       columns: ['arrangement', 'seconds', 'file', 'worst reach', 'median reach', 'of the file'],
@@ -2152,10 +2163,10 @@ function countingFirst(sound: unknown): Section {
   if (!Array.isArray(rows)) throw new Error('research: the counting rows are not a list');
   const longest = rows.at(-1);
   return {
-    heading: 'Knowing how much sound there is, before the first frame is rendered',
+    heading: 'Audio packet counting',
     prose: [
       'The movie box is reserved at the front of the file, which means its sample tables are sized before the first sample lands, which means every track needs a maximum packet count up front. The video has one for nothing: an export knows how many frames it is writing before it renders the first one. The audio does not, and the only way to get one is to walk the whole track.',
-      `It is a metadata-only walk, which reads the sample tables and none of the payload, and it is about a microsecond a packet: ${numberIn(longest, 'ms', (value) => `${value.toFixed(0)} ms`)} for the ${numberIn(longest, 'packets', (value) => value.toLocaleString('en-GB'))} packets in twenty minutes of 48 kHz audio. Linear, and paid once, before anything slow, which is the rule the destination already follows.`,
+      `The count reads sample tables without media payload and costs about one microsecond per packet. Twenty minutes of 48 kHz audio contains ${numberIn(longest, 'packets', (value) => value.toLocaleString('en-GB'))} packets and takes ${numberIn(longest, 'ms', (value) => `${value.toFixed(0)} ms`)}. The linear cost is paid once before rendering.`,
     ],
     table: {
       columns: ['audio', 'packets', 'to walk it', 'per packet'],
@@ -2178,10 +2189,10 @@ function whatItWillNotCarry(sound: unknown): Section {
   const codecs = at(sound, ['interleave', 'what the container will not carry', 'mp4_audio_codecs']);
   if (!Array.isArray(codecs)) throw new Error('research: the codec list is not a list');
   return {
-    heading: 'A soundtrack the container will not take, said before any of the work',
+    heading: 'Unsupported audio codecs',
     prose: [
-      'QuickTime carries mu-law and MP4 does not, so a .mov off an older camera is a perfectly ordinary file whose sound has nowhere to go. Losing it silently is the thing this chapter existed to fix, so the question is not whether it can be answered but when.',
-      `It is answered from the track and the format alone, with nothing decoded and nothing encoded, in no time at all: an MP4 holds ${String(codecs.length)} audio codecs and the file already says which one it has. So it is said while the file is merely open, in the same row as its name and its size, and again in the button's own sentence before the minutes of encoding rather than after them.`,
+      'QuickTime can carry mu-law audio while MP4 cannot. An older camera can therefore provide a valid .mov soundtrack that the target container cannot represent. Rotyl must report that incompatibility before rendering begins rather than discard the track silently.',
+      `Compatibility follows from the source track and destination format without decoding or encoding. MP4 supports ${String(codecs.length)} audio codecs, and the file identifies its source codec. Rotyl reports an unsupported track when the file opens and again before export starts.`,
     ],
     table: {
       columns: ['file', 'its soundtrack', 'an MP4 can carry it', 'to decide'],
@@ -2214,11 +2225,11 @@ function residueComesFrom(still: unknown): Section {
   const amp = (subject: string, item: string): string =>
     ratio(num(attributed(still, subject, 'as it is', item), ['amplification', 'p99']));
   return {
-    heading: 'The residue is the input, and what a chain does with it depends on the picture',
+    heading: 'Source noise and shader amplification',
     prose: [
       'Every stage runs per frame with no knowledge of the last one, so a chain is a pure function of its frame: hand it the same picture twice and it gives the same answer twice. That is not an argument, it is the second row of the table. On a clip encoded with no temporal grain the input moves by 1.4 codes at the 99th percentile, which is the codec, and every chain answers with 1.0, which is the floor. There is nothing in a styled frame that was not in the source frame.',
-      `So the question is only what a chain does with the change it was given, and the answer depends on the picture rather than on the chain. On the drawn scene every chain but print attenuates: comic ${amp('the synthetic scene, five cars moving', 'comic, default')}, poster ${amp('the synthetic scene, five cars moving', 'poster, default')}, print ${amp('the synthetic scene, five cars moving', 'print, default')}. On a photograph of a brick wall the same poster chain amplifies at ${amp('facade, fixed camera', 'poster, default')} and the comic chain at full detail at ${amp('facade, fixed camera', 'comic, detail 1')}.`,
-      `And where the amplification is has already been found once. Poster with its outline drawn is ${amp('facade, fixed camera', 'poster, default')} on the wall and ${amp('facade, fixed camera', 'poster, no line')} without it, ${amp('foliage, fixed camera', 'poster, default')} against ${amp('foliage, fixed camera', 'poster, no line')} on foliage. The comic chain's rises with the detail control: ${amp('facade, fixed camera', 'comic, detail 1')} at full detail against ${amp('facade, fixed camera', 'comic, detail 0')} at none. This sentence used to say that was the Kuwahara radius falling until the flatten stopped flattening, which is the wrong mechanism; what it turned out to be has its own page.`,
+      `Amplification depends on image content. On the synthetic scene, Comic measures ${amp('the synthetic scene, five cars moving', 'comic, default')}, Poster ${amp('the synthetic scene, five cars moving', 'poster, default')} and Print ${amp('the synthetic scene, five cars moving', 'print, default')}. On brick, Poster measures ${amp('facade, fixed camera', 'poster, default')} and Comic at detail 1 measures ${amp('facade, fixed camera', 'comic, detail 1')}.`,
+      `The affected stages are already isolated. Poster measures ${amp('facade, fixed camera', 'poster, default')} on the wall with its outline and ${amp('facade, fixed camera', 'poster, no line')} without it; foliage measures ${amp('foliage, fixed camera', 'poster, default')} and ${amp('foliage, fixed camera', 'poster, no line')} respectively. Comic rises from ${amp('facade, fixed camera', 'comic, detail 0')} at detail 0 to ${amp('facade, fixed camera', 'comic, detail 1')} at detail 1. Controlled interventions attribute the Comic change to sector selection in the flatten stage.`,
     ],
     table: {
       columns: ['amplification, p99', 'the drawn scene', 'facade', 'foliage', 'fog', 'portrait'],
@@ -2232,7 +2243,7 @@ function residueComesFrom(still: unknown): Section {
       ]),
     },
     caveat:
-      'Measured over the pixels no moving thing touched, which on a photograph is the whole frame and on the drawn scene is everything the five cars did not cross. The two film shots are not here: an input denoise applied to a clip with actors in it smears the actors, so the row would report a shrinking input for the wrong reason, and there is no still population to restrict to. What the film says about amplification is on the real-footage page.',
+      'Measured over pixels untouched by moving objects. That covers the full photograph and the static region of the synthetic traffic scene. The film shots are excluded because input averaging smears the actors and leaves no reliable static population for this comparison; their amplification results remain in the real-footage study.',
     command: 'node tools/style-bench/run.mjs motion',
   };
 }
@@ -2250,9 +2261,9 @@ function denoisingTheInput(still: unknown): Section {
     ratio(cell(subject, 'input denoised', item, ['amplification', 'p99'])),
   ];
   return {
-    heading: 'A cleaner input does not touch the thing that amplifies',
+    heading: 'Input averaging results',
     prose: [
-      'If the residue is the input, the cheapest fix is to give the chain a quieter one: average each frame against the one before it on the way IN, which is one pass, needs no motion estimation on a fixed camera, and is nothing like a temporal filter on the output. It was measured before it was argued about, at the weakest weight worth measuring, a quarter.',
+      'Input averaging is the lowest-cost response to source noise. It adds one pass and needs no motion estimation on a fixed camera. The benchmark uses a one-quarter previous-frame weight, the weakest setting expected to affect the metric.',
       'It works, and it works less than it looks. A quarter of the last frame takes the input down by about a fifth and the styled output down with it, roughly in proportion, on every chain and every picture.',
       'The last two columns are the finding, and they were not what this expected. Amplification goes UP wherever it was already above one: the poster chain on a brick wall goes from 1.36 to 1.54, on foliage from 1.46 to 1.63, and the comic chain at full detail from 1.75 to 2.15. What a denoise removes is the high-frequency part of the input, which is the part these chains attenuate hardest; what is left is the part they amplify. So a cleaner input lowers the number and leaves the mechanism exactly where it was.',
     ],
@@ -2289,11 +2300,11 @@ function theCounterMetric(still: unknown): Section {
   const detail = (name: string): string =>
     ratio(num(method(still, 'traffic-720p', 'poster, default', name), ['detail_against_per_frame']));
   return {
-    heading: 'And the expensive answer is worse than the disease, measured before it was built',
+    heading: 'Output blending and ghosting',
     prose: [
-      'Every temporal method improves flicker trivially, and some of them do it by making the picture worse. Blend enough of the last frame in and a fixed camera is perfectly steady while a moving one smears. Neither of the clips this project had could catch that: one has a fixed camera and nothing in it can expose a ghost, and the other pans a still, so every pixel moves together, which is the one case a warp of the last frame gets right by construction.',
-      'So this runs on a clip where five cars move against a city that does not, with a mask drawn from the same geometry as the picture saying which pixels a moving thing covered. And a straw man is measured beside every row, because a counter-metric with no failing case is not a check: the previous stylised frame blended in at a fixed weight, with no motion compensation, which is the cheapest thing anybody would try.',
-      `It fails, and the shape of the failure is the point. Half of the last frame takes the residue from ${cell('per frame', ['residue', 'p99'])} codes to ${cell('blend 0.5', ['residue', 'p99'])}, which is the number everybody quotes, improved by two fifths. It pays for it with ${cell('blend 0.5', ['deviation', 'vacated', 'p99'])} codes of deviation in the band a car has just left and ${cell('blend 0.5', ['deviation', 'moving', 'p99'])} on the car itself, and with ${detail('blend 0.5')} of the gradient energy inside a moving car, against ${detail('per frame')} for the render it replaced.`,
+      'A lower flicker metric does not guarantee a better moving image. Previous-frame blending can make a fixed camera perfectly steady while smearing motion. The existing fixed-camera and panning-still clips cannot expose that failure, so this test adds independently moving objects against a static scene.',
+      'The fixture contains five moving cars against a static city and supplies an exact moving-pixel mask from the scene geometry. Each row is compared with a fixed-weight blend of the previous stylised frame. That deliberately weak method provides a failing case for the ghosting counter-metric.',
+      `The primary residue metric improves by two fifths, from ${cell('per frame', ['residue', 'p99'])} codes to ${cell('blend 0.5', ['residue', 'p99'])}. The counter-metrics reject the method: deviation reaches ${cell('blend 0.5', ['deviation', 'vacated', 'p99'])} codes in the area a car has vacated and ${cell('blend 0.5', ['deviation', 'moving', 'p99'])} on the car itself. Gradient energy inside the moving car falls to ${detail('blend 0.5')}, compared with ${detail('per frame')} in the original render.`,
       'On the clip with no moving grain, where the residue is already at the codec floor, the same blend makes the residue flicker WORSE and still costs the same fifty-five codes of deviation. That is the cure being worse than the disease with nothing left to cure, in one row.',
     ],
     table: {
@@ -2326,12 +2337,12 @@ function theCounterMetric(still: unknown): Section {
 
 function whatDied(): Section {
   return {
-    heading: 'The model answers the question and the answer stopped three files short',
+    heading: 'Lost occlusion state',
     prose: [
-      'A tracker is asked, on every frame, whether the object is in it at all. EdgeTAM answers with an object score rather than with a pixel count, which is the right shape: an object behind something is not an object that got smaller. edgetam-tracker.ts reads that score and does three things with it. It swaps the mask for an empty one, so a decoder told there is nothing there cannot draw something anyway. It swaps the memory entry for a large negative placeholder, so an occlusion cannot teach the tracker what the occluder looks like. And it swaps the object pointer for the checkpoint’s own stand-in, so identity survives the gap.',
-      'Then it puts the verdict on the value it returns, and that is where it used to stop. tracking-job.ts read it once, to add one to a counter, and wrote an ordinary applyMask with op replace and an all-zero mask. The counter went into a TrackingResult that the store awaited and discarded. So what reached the log was a command that is indistinguishable, by shape, from a selection somebody erased down to nothing: hasAnyCoverage said the frame had a selection on it, the overlay lifted the whole picture toward paper on a frame with nothing selected, and the timeline drew a mark saying an edit was made there.',
-      'That is a defect in the log rather than in the interface, and it is worth separating the two, because the answer is different. Every other question this chapter could have asked, how confident the model was, how large each rejected candidate is, how many frames playback dropped, is a fact about the tool, the same on every file anybody opens, and this project has put every one of those on these pages. An occlusion is a fact about THIS clip, on a numbered frame, that somebody has to act on: the selection is gone there, and the only way to know whether that is a tracker failing or a tracker answering was to have been watching when it happened.',
-      'So it is a field on the command. Not on the run, which is the other candidate and the one that loses: a run is a thing that happened once in a session that ends, and the question "why is there no selection on frame 412" is asked of a document that was saved, reloaded and undone. group already established that a command may carry a fact about how it came to be rather than about what it does. This is the second of those, and it is the only shape that survives the file.',
+      'EdgeTAM reports object presence with an object score rather than a pixel count. When the score reports occlusion, edgetam-tracker.ts substitutes an empty mask, a negative memory placeholder and the checkpoint’s identity pointer. These substitutions prevent drawing the occluder, learning its appearance or losing the tracked identity.',
+      'The earlier host returned the verdict but tracking-job.ts used it only for a counter. It still wrote an ordinary replace command with an all-zero mask, and the store discarded the counter. The command log could not distinguish model-reported occlusion from a selection erased by the user. Coverage, overlay and timeline projections therefore interpreted the frame incorrectly.',
+      'This is a command-log defect rather than a missing diagnostic panel. Confidence, candidate area and dropped-frame counts describe the tool. An occlusion describes a numbered frame in the open document and changes how an empty selection should be interpreted. That document-specific fact must survive save, reload and undo.',
+      'The occlusion flag belongs on the command rather than the run. A run ends with the session, while the missing selection on a numbered frame must remain explainable after save, reload and undo. The existing group field establishes that commands may retain provenance as well as an operation, so the design fits the current log model.',
     ],
     caveat:
       'One consequence arrived for nothing. hasAnyCoverage is documented as deliberately approximate in one direction, because answering exactly would mean reading the mask back from the GPU on the render path. The occlusion case no longer needs a readback to be exact: a mask that says it is empty on purpose, applied with replace, means the frame has nothing on it, which is what clear already means there. Erasing a selection away by hand is still approximate, and still for the reason it always was.',
@@ -2345,7 +2356,7 @@ function whatTheTimelineDrew(hidden: unknown): Section {
   const projection = (run: string): string =>
     `${num(hidden, ['occlusion', 'timeline', run, 'projection_ms', 'median']).toFixed(1)} ms`;
   return {
-    heading: 'The timeline was drawing one gesture as three hundred edits, and one element each',
+    heading: 'Timeline representation of tracking',
     prose: [
       'The marks under the timeline exist because a selection that leaves no trace cannot be found again, and they were fed by a projection that returned the frame numbers an edit was made on and nothing else. That is exactly right for a stroke. For a tracking run it says the opposite of what happened: a run is ONE gesture, group has recorded that since the day tracking landed so that undo could take the whole thing back in one press, and the projection threw it away.',
       `It also drew one absolutely positioned element per entry, so a ten-minute run put ${marks(
@@ -2355,7 +2366,7 @@ function whatTheTimelineDrew(hidden: unknown): Section {
       )}: the user’s own command on the anchor frame, which the run deliberately writes nothing for, and the run itself. With the object going behind something three times it is ${elements(
         '18000 frames, hidden three times',
       )}, because each occlusion is a stretch the run reached and found nothing in, drawn faintly rather than left as a gap.`,
-      `So the projection that carries more information draws fewer things, which is the only reason it needed no argument about cost. It is run on every render of the editor, which is why it is timed at all: ${projection(
+      `The richer projection produces fewer timeline elements. It still runs on every editor render, so its cost is measured: ${projection(
         '18000 frames, hidden three times',
       )} at ten minutes of tracking, against the 33 ms frame the same log is folded inside.`,
     ],
@@ -2401,12 +2412,12 @@ function whatSayingSoCost(hidden: unknown): Section {
   const silhouette = (num(hidden, ['occlusion', 'a_packed_mask_bytes']) / 1024).toFixed(1);
   const nothing = num(hidden, ['occlusion', 'an_empty_packed_mask_bytes']).toFixed(0);
   return {
-    heading: 'What it costs to write down, in the file and in the application',
+    heading: 'Storage and bundle cost',
     prose: [
       `A document is a JSON object per command with the packed masks in a region behind it, so a field added to a command is added as many times as there are commands, and a ten-minute tracked run is eighteen thousand of them. That is a fair objection and it is answered with arithmetic: the same log written twice, once with the field and once without, at one occlusion of two seconds every hundred. ${carrying} of the eighteen thousand commands carry it, at ${perCommand} bytes each, which is ${asBytes(flagBytes)} and ${share.toFixed(3)}% of the file.`,
-      `The field is written only where it is true, which is why it is absent rather than false. It also has to be measured that way rather than read off two file sizes, because the frames it lands on differ from ordinary tracked frames in a second way at the same time and in the opposite direction: an occluded frame’s mask is empty, and an empty mask packs to ${nothing} bytes against a silhouette’s ${silhouette} KB. So the run WITH occlusions in it is the smaller document by ${saved} MB, and a comparison of the two files alone would price the field at better than free.`,
+      `The field is omitted when false. File-size comparison alone cannot price it because occluded frames also contain empty masks. An empty mask packs to ${nothing} bytes, compared with ${silhouette} KB for a silhouette, so the document with occlusions is ${saved} MB smaller despite the added field. Per-command arithmetic isolates the field cost.`,
       `A mask of nothing costing a kilobyte is worth a sentence of its own, because the obvious guess is a byte or two and this was written down as three before it was run. The packing caps a repeat at 128, so sixty-five thousand zeroes are five hundred and twelve repeats rather than one, and the number is three hundred times the guess. It is still under a third of what a silhouette costs, which is the claim this makes; it is not nothing, which is the claim the guess would have made.`,
-      'The application bundle is the other price and it is the one that had to be argued for, because this product’s position on its own interface is load-bearing enough to have decided a framework: React was rejected at 59.5 KB gzipped against Preact’s 6.1 for an application whose interface is a canvas and eight buttons. It is still eight buttons. Nothing here is a mode, a panel or a control, and the two things that changed were already on the screen: a mark on a track, and the line a finished export writes into.',
+      'Bundle size is the second cost. Rotyl previously chose Preact at 6.1 KB gzipped over React at 59.5 KB for an interface built around a canvas and eight buttons. This change adds no mode, panel or control. It reuses the existing track mark and completed-export message.',
       'Measured through the real build rather than asserted, the application goes from 50.8 KB gzipped to 51.4. Built twice to say which half: carrying the fact through the log, the file and the projection the marks are drawn from is 0.38 KB, and saying what a run found when it is over is the other 0.22. The second is nearly all sentence, and it is a sentence with three cases in it, because a run that walked to the end of the clip and found the object on every frame says nothing at all. The stylesheet is 0.02 KB, which is two rules.',
     ],
     table: {
@@ -2418,7 +2429,7 @@ function whatSayingSoCost(hidden: unknown): Section {
       ],
     },
     caveat:
-      'Its own command and its own results file, for both halves of this page, which is the harness’s own rule rather than a preference. Either would have fitted somewhere else: the file cost beside what a document costs, the projection beside what the fold costs. Measured there they re-took those measurements and moved figures six documents quote, by noise, on code paths neither touches.',
+      'Both measurements use a dedicated command and results file. Folding them into the document or replay benchmarks would rerun unrelated code paths and change the dates of several independent findings through measurement noise.',
     command: 'node tools/video-bench/run.mjs occlusion',
   };
 }
@@ -2441,7 +2452,7 @@ function fourFigures(perObject: unknown): Section {
   const against = (count: string, path: readonly string[]): string =>
     `${(cell(count, path) / cell('1 object', path)).toFixed(2)}×`;
   return {
-    heading: 'Three of the four move with the number of objects, and the fourth does not',
+    heading: 'Scaling with object count',
     prose: [
       'A run writes one applyMask per frame it followed an object to, and for as long as there was exactly one object a figure about a run and a figure about an object were the same figure. Four of them are quoted in three of this project’s documents, and each is exactly true of one object and says nothing about several. They are taken here at one, two and three.',
       `The file is the one that really is arithmetic, and it is measured anyway rather than multiplied: N objects is N commands per frame and N packed masks behind them, and the run comes back at ${against(
@@ -2449,14 +2460,14 @@ function fourFigures(perObject: unknown): Section {
         ['file_bytes'],
       )} and ${against('3 objects', ['file_bytes'])} of a single object’s ${asFile(
         cell('1 object', ['file_bytes']),
-      )}. So a ten-minute clip with three things followed through it is a ${asFile(
+      )}. A ten-minute clip with three tracked objects is a ${asFile(
         cell('3 objects', ['file_bytes']),
       )} document, and what had to change about that figure is the two missing words rather than the figure.`,
       `The projection is the one that matters most, because it is the only one of the four on the render path: editSpans runs over the whole log on every render of the editor. It is also the one that moves LEAST. Three times the commands is ${against(
         '3 objects',
         ['projection', 'ms', 'median'],
       )} the time, because what it sorts is the distinct frames a log touched and there are still eighteen thousand of those however many commands landed on each of them.`,
-      `And what it DRAWS does not move at all: ${cell('3 objects', ['projection', 'elements']).toFixed(
+      `Rendered timeline complexity does not change: ${cell('3 objects', ['projection', 'elements']).toFixed(
         0,
       )} elements at three objects, the same ${cell('1 object', ['projection', 'elements']).toFixed(
         0,
@@ -2485,7 +2496,7 @@ function foldsToN(perObject: unknown): Section {
   const cell = (count: string, path: readonly string[]): number =>
     num(perObject, ['objects', 'per_objects', count, ...path]);
   return {
-    heading: 'One of the four was not a figure that moved. It was a sentence that stopped being true',
+    heading: 'Multi-object fold semantics',
     prose: [
       'The fold cuts at the last command that decides a frame by itself, which is a clear or a mask applied with replace, because everything before one of those is discarded by it. A run following one object writes replace on every frame it reached, so eighteen thousand commands fold to one and a replay unpacks one mask. That is what made a document able to be dumb: nothing derived has to be stored in it, because rebuilding it is a fold and a texture upload.',
       `A run following several writes replace for the FIRST object and add for the rest, which is what makes two objects two regions rather than a race. So the cut lands on the first object’s command and everything after it survives: the frame folds to ${cell(
@@ -2495,14 +2506,14 @@ function foldsToN(perObject: unknown): Section {
         'replay',
         'masks_unpacked',
       ]).toFixed(0)} masks rather than one.`,
-      `That is the only one of the four where the correction is not a number. “A fold to one and a texture upload” had no N in it to be wrong about; it was a claim about shape, and the shape changed underneath it when the interface reached a second seed. What it costs is ${ms(
+      `Fold semantics require a structural correction rather than a revised constant. “A fold to one and a texture upload” omitted object count because the interface originally exposed one seed. The multi-object result is ${ms(
         cell('3 objects', ['replay', 'ms', 'median']),
       )} against ${ms(
         cell('1 object', ['replay', 'ms', 'median']),
       )}, which is linear in objects and is still a fraction of one frame, so the conclusion the sentence was written to support survives being said correctly.`,
     ],
     caveat:
-      'Its own command and its own results file, which is the rule the occlusion measurement was written to establish arriving at the door it was written for. Every one of the four figures above already has a home: the file cost belongs to what a document costs, the fold and the replay to what a tracked clip does to the command log, and the projection to what the timeline was given to draw. An objects dimension added to any of the three re-takes that measurement and moves figures this chapter did not change. The one-object column duplicates those three and is taken here rather than quoted from them for the opposite reason: a control that sits in another file taken on another day is not a control, and every ratio above is a ratio between two cells of one run.',
+      'This benchmark has its own command and results file. Adding object count to the document, replay or timeline studies would change the dates of findings whose implementations did not move. The one-object control is repeated in this run so every ratio compares cells produced together under the same conditions.',
     command: 'node tools/video-bench/run.mjs objects',
   };
 }
@@ -2529,7 +2540,7 @@ function theClipWasAlwaysRight(perRange: unknown): Section {
     render(CLIP.pc),
   ];
   return {
-    heading: 'Two files that differ in the flag and in the bytes, and one answer',
+    heading: 'Range-probe integrity',
     prose: [
       'The colour probe has always had two 4:2:0 clips in it, the same sixteen patches encoded limited range and full range. The measurement that owns them reported that both came back at the same values and that the browser called both of them limited, concluded that the range path had never been exercised, and asked for a clip whose flag is verifiably in the bitstream and actually differs.',
       `It already was that clip. Read out of the decoder configuration the browser is handed, rather than off the command line that produced the file, one carries video_full_range_flag ${of(
@@ -2540,7 +2551,7 @@ function theClipWasAlwaysRight(perRange: unknown): Section {
       )}. The files are ${of(CLIP.tv, ['file_bytes']).toLocaleString('en-GB')} and ${of(CLIP.pc, [
         'file_bytes',
       ]).toLocaleString('en-GB')} bytes, so they are not one clip measured twice.`,
-      `So two files that genuinely differ come back through the product’s own upload path within ${num(
+      `Two files with different payload bytes and range flags return through the production upload path within ${num(
         perRange,
         ['range', 'worst_between_the_two_codes', 'copyExternalImageToTexture'],
       ).toFixed(
@@ -2575,7 +2586,7 @@ function whichDecoder(perRange: unknown): Section {
   const asked = (key: string): number =>
     num(perRange, ['range', 'which_decoder', key, 'worst_against_its_twin']);
   return {
-    heading: 'The answer is not the same at every size, and the size is not the reason',
+    heading: 'Decoder-dependent range handling',
     prose: [
       `One pair of clips at one size cannot see this, and that is how it stayed open. On the 1920x1080 probes the flag is honoured and there is nothing to do. The same eight greys at 320x180 come back ${inCodes(
         rung('320x180'),
@@ -2585,7 +2596,7 @@ function whichDecoder(perRange: unknown): Section {
       )} from its twin; told to prefer software, a 1280x720 one is ${inCodes(
         asked('1280x720, prefer-software'),
       )}. The hardware decoder honours the flag at every size and the software decoder ignores it at every size. Frame size only decides which one the browser picks.`,
-      'That is worth having as a mechanism rather than as a threshold. Where the line falls belongs to this Mac and this build of Chrome; "the software decoder does not implement it" is a sentence somebody on other hardware can check, and it says why the boundary moves.',
+      'The decoder mechanism is more portable than the measured threshold. The boundary belongs to this Mac and Chrome build, while the software decoder’s handling can be tested independently on other hardware.',
     ],
     table: {
       columns: ['a full-range clip, against its limited-range twin', 'worst'],
@@ -2599,7 +2610,7 @@ function whichDecoder(perRange: unknown): Section {
       ],
     },
     caveat:
-      'Every figure here is against the limited-range encode of the same picture and never against the source, because the GPU upload puts eleven codes into the midtones of any 4:2:0 frame whichever range it is. That is Chrome converting from the transfer the file declares, which on these clips is nothing at all defaulted to BT.709, and it is the page after this one. It has nothing to do with the flag either way, and two encodes of one picture cancel it and leave only what the flag decided.',
+      'Every figure compares the full-range encode with the limited-range encode of the same picture, not with the source. Chrome’s GPU upload also changes the midtones of these 4:2:0 probes because their transfer metadata is unspecified. Comparing the paired encodes cancels that separate effect and isolates the range flag.',
     command: 'node tools/video-bench/run.mjs range',
   };
 }
@@ -2608,22 +2619,22 @@ function theMetadataIsNoHelp(perRange: unknown): Section {
   const of = (clip: string, path: readonly string[]): number =>
     num(perRange, ['range', 'clips', clip, ...path]);
   return {
-    heading: 'And nothing in the frame says which of the two you got',
+    heading: 'Unobservable decoder behaviour',
     prose: [
       `VideoFrame.colorSpace reports fullRange false on a full-range file, both where the decode was right and where it was wrong, so it is not a signal a page could branch on. Two more of that object\u2019s four fields are inventions rather than readings: both probes declare colour_primaries ${of(
         CLIP.pc,
         ['sps', 'colour_primaries'],
       ).toFixed(0)} and transfer_characteristics ${of(CLIP.pc, ['sps', 'transfer_characteristics']).toFixed(
         0,
-      )} in their SPS, which is "unspecified" for both, and the browser reports bt709 for both. Only matrix_coefficients, at ${of(
+      )} in their SPS, which is "unspecified" for both, and the browser reports bt709 for both. The matrix_coefficients field, at ${of(
         CLIP.pc,
         ['sps', 'matrix_coefficients'],
-      ).toFixed(0)}, is a value anybody wrote down.`,
-      'The flag itself is readable, out of the SPS in the avcC, which is how the rows above know the two clips differ. What is not readable is whether the decoder acted on it, and that is the one thing a correction would need. So what is left is a limit rather than a fix: a full-range clip small enough to land on the software decoder comes back contrast-stretched, and this product cannot tell that it did.',
-      'It is a narrow limit and it is worth saying how narrow. Camera and phone footage is limited range; full range on H.264 is mostly screen recordings and synthetic output, and it has to be small as well. What it is not is invisible: thirteen codes across the whole picture is a contrast error somebody would see and would have no way to explain.',
+      ).toFixed(0)}, is the only field that matches an explicit value in the file.`,
+      'The SPS range flag is readable from the avcC, but the frame does not reveal whether the decoder applied it. A reliable correction requires that missing signal. Rotyl therefore documents the case as a limit: a small full-range clip routed through the tested software decoder returns contrast-stretched, and the application cannot detect the failure.',
+      'The affected case is narrow. Camera and phone H.264 footage is usually limited range; full-range material is more common in screen recordings and synthetic output, and the tested failure also requires software decoding. The thirteen-code contrast error remains visible across the frame.',
     ],
     caveat:
-      'Its own command and its own results file, sharing its clips, its patches and its upload path with the colour probe, which is the reason rather than an objection to it: that probe is inside the run that writes the results the decode ladder, the readback ladder and two ONNX timings are read from. Adding a row there by re-running it would re-date every one of them for a question none of them touches.',
+      'This study has its own command and results file despite sharing clips and upload code with the colour probe. The general video run also produces decode, readback and ONNX results. Rerunning that complete set for a range-flag question would change the dates of unrelated findings.',
     command: 'node tools/video-bench/run.mjs range',
   };
 }
@@ -2647,10 +2658,10 @@ function theTagDecidesIt(declared: unknown): Section {
     num(declared, ['transfer', 'the_transfer_reaches_the_bitstream', clip]);
   const drawn = (label: string): number => num(declared, ['transfer', 'the_tag_decides_it', label]);
   return {
-    heading: 'The eleven codes are the transfer the file declares, and no probe here declared one',
+    heading: 'Unspecified transfer metadata',
     prose: [
-      'A decoded frame comes back eleven codes out in the midtones on the way to the GPU, which the page before this measured and attributed to the browser. It is the browser, and it is the browser doing what it was told: every clip this project has ever encoded declares transfer_characteristics 2, "unspecified", which Chrome defaults to BT.709, and the values inside them are sRGB. The probes have been asking a reader to convert a picture that was already converted.',
-      'So the same sixteen patches were encoded three more times, differing only in what the file says about itself. The content and the encode are identical; the declaration is the variable, and the answer follows it.',
+      'The GPU path differs by eleven midtone codes because the generated clips declare transfer_characteristics 2, or unspecified, while storing sRGB values. Chrome defaults the missing declaration to BT.709 and converts data that the probe had already encoded for display.',
+      'The same sixteen patches were encoded three times with identical content and settings but different transfer declarations. The decoded result follows the declaration, isolating metadata as the variable.',
       `Told sRGB, the upload converts nothing and the patches come back ${inCodes(
         drawn('says sRGB, and is sRGB'),
       )} from what was drawn, which is the 4:2:0 encode's own rounding. Told BT.709 it converts, by ${inCodes(
@@ -2689,9 +2700,9 @@ function whatAnHonestClipDoes(declared: unknown): Section {
   const stat = (which: string, part: string): number =>
     num(declared, ['transfer', 'on_a_clip_that_means_what_it_says', which, part]);
   return {
-    heading: 'And on a clip that means what it says, the two answers are not close',
+    heading: 'Explicit BT.709 control',
     prose: [
-      'The clip that settles it says BT.709 and is BT.709: the same patches taken into linear light and back out through the BT.709 curve, so what is stored is darker than the sRGB it was drawn from and a correct reader puts it back. ffmpeg is the control, because "correct" needs somebody who is not the browser, and it comes back at what was drawn to within a code. That is the check that the probe is honest, before anything is concluded from it.',
+      'The control clip declares BT.709 and stores BT.709 values. Its patches are converted to linear light and encoded through the BT.709 curve, so a correct reader reconstructs the original display values. ffmpeg provides an independent decoder control and returns the patches within one code.',
       `Against that reading, the upload this product already does is within a code from mid grey up and walks away below it: ${inCodes(
         stat(uploaded, 'worst'),
       )} at worst, at the patch drawn as 32. What it applies behaves like a pure power where BT.709 has a linear toe, so what is left of the error is entirely in the shadows.`,
@@ -2735,10 +2746,10 @@ function theHardwareDecoderAgain(declared: unknown): Section {
     return [label, value.format, value.converted];
   };
   return {
-    heading: 'And it belongs to the hardware decoder, which is the same pair of decoders again',
+    heading: 'Decoder-specific transfer handling',
     prose: [
-      'The page before this found that this browser has two H.264 decoders, that frame size picks one, and that only one of them applies the range flag. This is the same pair disagreeing about a second thing: asked of the one clip where converting and not converting look different, the software decoder converts nothing. So the eleven codes and the thirteen are two independent ways for one browser to answer a colour question twice.',
-      'It also closes the other half of what the decode page said. That page attributes the conversion to the NV12 path rather than the I444 one, which is true and is not the reason. Asked to decode the 4:4:4 probe on the hardware decoder, the browser answers that the configuration is only supported by the software decoder. The 4:4:4 probe was never converted because there was no hardware decoder that could have converted it.',
+      'Chrome 151 used separate hardware and software H.264 paths on the tested machine. The software path also skipped the transfer conversion on the tagged control clip. Its thirteen-code range error and the hardware path’s eleven-code transfer change are independent behaviours.',
+      'The earlier correlation with NV12 and I444 was incidental. Chrome reported that the 4:4:4 probe was supported only by the software decoder, so that probe was never eligible for the hardware path that applied the transfer conversion.',
     ],
     table: {
       columns: ['the clip that says BT.709 and is BT.709, decoded by', 'the frame', 'converted'],
@@ -2750,7 +2761,7 @@ function theHardwareDecoderAgain(declared: unknown): Section {
       ],
     },
     caveat:
-      'The two decoders hand back different pixel formats, NV12 from one and I420 from the other on the same file, which is a readable difference where VideoFrame.colorSpace has none. It is still not the signal the range measurement wanted. It is a fact about this platform rather than anything the specification promises, and it names a chroma layout rather than a decoder, so correcting colour from it would be reading one thing in order to learn another and would be silently wrong on the first machine whose software decoder hands back NV12.',
+      'The two decoders return different pixel formats for the same file: NV12 from hardware and I420 from software. VideoFrame.colorSpace exposes no corresponding distinction. Pixel format is a platform observation, not a decoder identity promised by the specification, so using it to correct colour would fail when another software decoder returns NV12.',
     command: 'node tools/video-bench/run.mjs transfer',
   };
 }
@@ -2759,11 +2770,11 @@ function whatACanvasWouldCost(declared: unknown): Section {
   const median = (label: string): number => num(declared, ['transfer', 'cost_ms', label, 'median']);
   const added = num(declared, ['transfer', 'cost_ms', 'added_by_the_canvas']);
   return {
-    heading: 'And what the other answer would cost per frame',
+    heading: 'Canvas detour cost',
     prose: [
-      'The canvas reading above is getImageData, which brings twelve megabytes back through system memory a frame and is a reading rather than a design. The version somebody would ship draws the frame into a canvas and uploads the canvas, and returns the same values, so the price and the picture are answered about one piece of code.',
-      `That is ${ms(added)} a frame at 1080p, taken as a difference between two rows of one run rather than between two runs, because the direct copy is the noisiest thing in this table on this machine. Against the 5.0 ms a 1080p export frame costs it is a quarter again; against the 33 ms a playing frame has it is nothing.`,
-      'It is also almost exactly the 1.4 ms the export ladder prices for the readback path and rejects, and it is a worse trade than that one was. The readback bought nothing. This buys the wrong answer on any clip that declares its transfer honestly, which is all real footage, in exchange for the right one on probes that declare nothing, which is only ever this repository.',
+      'The diagnostic getImageData path copies twelve megabytes through system memory per frame. The production candidate draws the frame into a canvas and uploads that canvas. It returns the same values, so its timing and colour result measure one shippable path.',
+      `The canvas detour adds ${ms(added)} per 1080p frame. The value is derived from two rows in one run because direct-copy timing is noisy on this machine. It adds roughly one quarter to a 5.0 ms export frame and remains small against a 33 ms playback frame.`,
+      'The detour costs almost the same 1.4 ms as the rejected export readback. It also removes the correct transfer conversion from properly tagged footage. The apparent benefit applies only to repository probes with unspecified metadata, not to valid real-world files.',
     ],
     table: {
       columns: ['1920×1080, per frame, fenced', 'median'],
@@ -2781,7 +2792,7 @@ function whatACanvasWouldCost(declared: unknown): Section {
       ],
     },
     caveat:
-      'Timed on the decode clip rather than on a probe, so the first row is the same call the decode page reports and this table can be read against it. A flat probe is not a fair thing to time an upload with. Its own command and its own results file, sharing its patches and its upload path with the colour probe and its pair of decoders with the range ladder, which is the argument for a file of its own rather than against one: the colour probe sits in the run that writes the decode ladder, the readback ladder and two ONNX timings, and the range ladder owns a finding two documents quote.',
+      'Timed on the decode clip rather than a flat probe, so the first row is directly comparable with the production upload measurement. This study has its own command and results file because rerunning it should not change the dates of the decode, readback, ONNX or range findings.',
     command: 'node tools/video-bench/run.mjs transfer',
   };
 }
@@ -2865,10 +2876,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Style timing and flicker',
       standfirst:
         'Comic, Poster and Print compared for render time, control cost and frame-to-frame stability.',
+      kind: 'benchmark',
+      scope: 'Rotyl shader chains on the synthetic reference scene and recorded test environment.',
+      repeatability: 'Automated in Chrome; uses committed synthetic inputs.',
       harness: 'tools/style-bench',
       lede: [
-        'Everything that decides whether a selection is correct was already built and measured. What was not settled was whether what comes out is worth looking at, and, on video, whether it stays worth looking at while it moves.',
-        'Three things were unknown, each capable of forcing a different architecture. One of the three was answered backwards.',
+        'This benchmark compares the Comic, Poster and Print shader chains by render cost, control setting and frame-to-frame change. The synthetic scene keeps geometry, camera motion and source noise fixed so the shader remains the only changing component.',
+        'The results establish local performance bounds and identify hard transitions that can turn small input changes into visible flicker. Real-image validation is reported separately because the synthetic scene does not represent photographic texture.',
       ],
       hero: {
         name: 'styles',
@@ -2893,11 +2907,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Style tests on real footage',
       standfirst:
         'Synthetic scenes hid an outline problem. Six real images exposed it and changed the shader.',
+      kind: 'investigation',
+      scope: 'Four photographs and two film shots processed by Rotyl on the recorded test environment.',
+      repeatability: 'Automated after downloading and verifying the pinned source media.',
       harness: 'tools/style-bench',
       lede: [
-        'Everything on the page before this was measured against a scene drawn by a script, including the finding that decided per-frame stylisation was acceptable at all. This is that page again, with the picture changed and nothing else.',
-        'Three things came back. The cost table does not depend on the content, which was expected to and was warned about. The comic chain is as steady on a photograph as it is on a drawing. And the poster chain, which the scene reports as the second steadiest of the three, amplified its input by five on a brick wall.',
-        'That third one is why the poster style’s outline is a different operator now than it was when this page was first written. The tables below are taken after that change and say so where the old number is worth keeping.',
+        'The synthetic fixture understated instability in the Poster outline. This study repeats the timing and stability tests with four photographs and two film shots whose source bytes are pinned by hash.',
+        'Render cost changed little across the sample. Comic remained stable, but the original Poster outline amplified small changes by roughly five times on brick and foliage. The current operator was selected from the controlled perturbation tests reported below.',
       ],
       sections: [
         realInputs(),
@@ -2914,10 +2930,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Comic detail response',
       standfirst:
         'High settings amplify changes between frames. Isolating the three moving parts traced the problem to the flatten stage.',
+      kind: 'investigation',
+      scope: 'The Comic shader at three detail settings across the pinned real-image set.',
+      repeatability: 'Automated after downloading and verifying the pinned source media.',
       harness: 'tools/style-bench',
       lede: [
-        'One column of the table on the page before this had been in the repository across six pictures and nobody had read it. The comic chain’s amplification is not a number, it is a slope in the detail control, and the top of that slope is the only measured defect left in what this product actually draws.',
-        'A control whose upper half is worse than its lower half is a control with a broken end, and this project has been here once before: the poster style’s outline came out of it with a different operator and a better picture. That finding does not transfer, which took a measurement to find out rather than an argument.',
+        'Comic becomes less stable as the Detail control rises. The study measures the full control range, then holds each affected shader quantity constant to identify the source of the change.',
+        'The amplification came from sector selection in the flatten stage, not from the outline mechanism found in Poster. Bounding the flatten scale reduced the instability while preserving the purpose of the Detail control.',
       ],
       sections: [detailRows(real), filmStills(real), theFlatten(real)],
     },
@@ -2927,10 +2946,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Frame-to-frame stability',
       standfirst:
         'The remaining flicker comes from one stage in Comic. Blending frames adds visible ghosts without fixing it.',
+      kind: 'investigation',
+      scope: 'Rotyl style chains on fixed-camera and moving-object test clips.',
+      repeatability: 'Automated in Chrome; uses committed and hash-verified inputs.',
       harness: 'tools/style-bench',
       lede: [
-        'Earlier chapters softened the individual decisions in each chain and the numbers moved a long way. What is left is the residue, and there were three stories about where it comes from: the input moves, a stage amplifies, or the decisions genuinely are per frame. They imply completely different features at completely different prices, and building the expensive one before finding out which dominates would have been this project’s first unforced error.',
-        'So the measurement came first, and so did the thing that catches a cure being worse than the disease. Both are here. Between them they say the expensive answer solves a problem that does not exist, the cheap one lowers a number without touching what causes it, and the residue that is left is in one stage of one chain, where this project has already been once.',
+        'This study separates source noise, shader amplification and independent frame decisions. It also measures visible ghosting so a lower change metric cannot be mistaken for a better moving image.',
+        'Input averaging lowers noise but does not change the stage that amplifies it. Output blending lowers the metric while adding ghosts around moving objects. The remaining defect is confined to the Comic flatten stage.',
       ],
       hero: {
         name: 'smear',
@@ -2945,9 +2967,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Video decode and colour',
       standfirst:
         'Demux, decode, seek and upload timed across two keyframe layouts, followed by a direct check of the colour path.',
+      kind: 'benchmark',
+      scope: 'Rotyl video ingestion in Chrome on the recorded machine and codec paths.',
+      repeatability: 'Automated in Chrome; results depend on browser and hardware decode support.',
       harness: 'tools/video-bench',
       lede: [
-        'Four things were unknown before video could be built, all of them capable of forcing a different design. These settled the shape of the frame provider and the colour contract; the model’s side of it is on its own page.',
+        'This benchmark measures demux, sequential decode, seeking, GPU upload and colour reconstruction through Rotyl’s browser video path. Two keyframe layouts expose the cost difference between playback and random access.',
+        'The findings determine the frame-provider interface and colour contract for the tested Chrome environment. They do not establish portable codec performance across browsers or hardware decoders.',
       ],
       sections: [decode(video), upload(video), colour(video)],
     },
@@ -2956,10 +2982,13 @@ export function entries(results: Results): readonly Entry[] {
       results: 'tools/video-bench/results-range.json',
       title: 'Full-range H.264 decoding',
       standfirst: 'Hardware decode honours the range flag at 1080p. Software decode ignores it at 320×180.',
+      kind: 'investigation',
+      scope: 'Chrome 151 H.264 decode paths on the recorded Apple hardware.',
+      repeatability: 'Automated in Chrome; decoder selection and thresholds may differ elsewhere.',
       harness: 'tools/video-bench',
       lede: [
-        'A decoded frame needs no colour path of its own, which is measured, and there was one case the measurement could not reach: a clip tagged full range rather than limited. Both probes came back identical and the browser called both of them limited, so the conclusion written down was that the range path had never been exercised and that a better clip was needed.',
-        'The clip was fine. What was missing was somebody reading the flag out of it, and what reading it turned up is that the reassuring answer was only half of one: the same picture at 320x180 is thirteen codes out where at 1080p it is exact, because this browser has two H.264 decoders and only one of them implements the flag.',
+        'The probe encodes the same grey patches as limited-range and full-range H.264, verifies the bitstreams, and compares the decoded values. Chrome 151 selected different decoder paths by frame size on the tested Apple hardware.',
+        'The hardware path honoured the range flag. The software path ignored it and contrast-stretched the full-range clip. The observed size boundary belongs to this environment; the decoder disagreement is the mechanism under test.',
       ],
       sections: [theClipWasAlwaysRight(perRange), whichDecoder(perRange), theMetadataIsNoHelp(perRange)],
     },
@@ -2969,10 +2998,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Video transfer metadata',
       standfirst:
         'The measured colour change was declared by the file, not introduced by decoding or the WebGPU path.',
+      kind: 'investigation',
+      scope: 'Chrome 151 transfer handling for the generated H.264 probes on the recorded machine.',
+      repeatability: 'Automated in Chrome with ffmpeg as an external control.',
       harness: 'tools/video-bench',
       lede: [
-        'A decoded frame needs no colour path of its own, which is measured, and one thing was filed beside that finding as a cost of doing business: the midtones come back eleven codes out, said to be Chrome\u2019s and beyond correcting. Then the range measurement, asking something else, found the same VideoFrame drawn into a 2D canvas does not have them. So it was never the decode, and one path in this browser gets a different answer from the other about a picture neither of them touched.',
-        'Which of them is right is not a question these probes could answer, because none of them says what it is. So three more were encoded that do, with ffmpeg as the control, and the answer is that the browser has been reading a declaration this project never wrote: the path the product already takes is the one that reads it, and the alternative costs a millisecond a frame to be wrong on every clip that means what it says.',
+        'A colour probe showed an eleven-code midtone difference between Chrome’s GPU and canvas paths. This study adds clips with explicit transfer metadata and uses ffmpeg as an external control.',
+        'The GPU path applied the declared transfer function correctly. Earlier Rotyl probes had left the transfer unspecified while storing sRGB values, which caused Chrome to apply a conversion the files did not describe accurately. Routing frames through a canvas removed the conversion but produced the wrong result for correctly tagged footage.',
       ],
       sections: [
         theTagDecidesIt(declared),
@@ -2987,10 +3019,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Video export performance',
       standfirst:
         'Composite, encode, bitrate, container overhead and colour measured as one complete pipeline.',
+      kind: 'benchmark',
+      scope: 'Rotyl video export in Chrome on the recorded machine, styles and output sizes.',
+      repeatability: 'Automated in Chrome; timings depend on browser and hardware.',
       harness: 'tools/video-bench',
       lede: [
-        'Export had only ever written one frame. Three things stood between that and a clip, all of them capable of forcing a different design: what an encoded frame costs when everything is in flight at once, what a container writer costs in bytes, and whether the colour contract survives being written back out.',
-        'A fourth turned up on the way. A canvas is presented rather than read, so capturing one is a claim about when as much as about what, and being one frame out would be invisible in every timing number here.',
+        'This benchmark runs Rotyl’s complete export path: source frame, style, composite, encoder and container writer. It measures throughput, bitrate, container overhead and colour on the tested browser and hardware.',
+        'A frame-identity check accompanies the timing data because canvas capture can be offset by one presentation cycle without changing aggregate performance figures.',
       ],
       sections: [
         pipeline(exported),
@@ -3006,10 +3041,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Long video exports',
       standfirst:
         'Buffering the whole export fails as clips grow. Writing packets directly to a file keeps memory bounded.',
+      kind: 'benchmark',
+      scope: 'Rotyl export memory and storage behaviour in the recorded Chrome environment.',
+      repeatability: 'Automated but resource intensive; browser memory and storage limits vary by machine.',
       harness: 'tools/video-bench',
       lede: [
-        'The known limits page said a ten-minute clip export would be about a gigabyte and that there was no answer to that beyond failing. It named a consequence and measured nothing, and the two failures worth telling apart are a tab that dies and a tab that swaps for four minutes and finishes.',
-        'So this drives the product’s own export loop over a source that hands the same clip round again, at the export’s own bitrate, for as long as it is asked for. One thing in it is not the product’s code, and it is the thing being compared against: the sink that shipped before this chapter, which held every encoded packet until the end and no longer exists to import.',
+        'This benchmark drives Rotyl’s export loop for progressively longer durations and separates slow memory pressure from an unrecoverable allocation or Blob failure.',
+        'The comparison covers the former in-memory packet sink and the current streaming file sink. Exact ceilings depend on the browser and machine, while bounded memory use follows from writing packets as they are produced.',
       ],
       sections: [heldCeiling(long), intoAFile(long), theBudget(long)],
     },
@@ -3019,10 +3057,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Audio interleaving',
       standfirst:
         'Copying encoded audio is cheap. Placing it beside the matching video packets is what keeps playback progressive.',
+      kind: 'investigation',
+      scope: 'Rotyl container output for the measured audio and video packet layouts.',
+      repeatability: 'Automated; structural findings are independent of benchmark speed.',
       harness: 'tools/video-bench',
       lede: [
-        'What audio passthrough costs was never the question worth asking. Copying packets that are already encoded costs nothing and everybody knows it. What nobody here had measured is interleaving, and it decides whether the last chapter\u2019s central commitment was real: the index goes at the front so a file starts playing before it has finished arriving, and a second track is the first thing capable of undoing that without moving a single box.',
-        'So this writes the same clip three ways and asks, for every second of it, how far away in the file the sound that plays with that second is. If the distance grows with the length of the clip, the file is not progressive whatever order the boxes are in.',
+        'Progressive playback requires matching audio and video packets to remain close in the file. A front-loaded index is insufficient if each track is written as one separate block.',
+        'The harness writes the same clip with three packet arrangements and measures the byte distance between media that plays at the same time. A distance that grows with clip length identifies a layout that cannot stream progressively.',
       ],
       sections: [theArrangements(sound), countingFirst(sound), whatItWillNotCarry(sound)],
     },
@@ -3032,10 +3073,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Rotyl file size and replay',
       standfirst:
         'Save size, load time, replay cost and media identity measured for tracked edits that need to survive a tab.',
+      kind: 'benchmark',
+      scope: 'The current Rotyl document format and measured tracked-edit fixtures.',
+      repeatability: 'Automated; time figures depend on the recorded machine.',
       harness: 'tools/video-bench',
       lede: [
-        'Strokes rather than pixels have been the source of truth since the first chapter. Undo is a cursor into the log, export replays it rather than asking the app what applies, and a lost graphics device is survivable because the log belongs to the work and not to the device. Reloading the page threw all of it away.',
-        'A photograph’s log is a handful of strokes and nobody needed a measurement for that. A tracked run is one command per frame per object with a mask on each, which the chapter before this one measured at 62 MB in memory for ten minutes of following one thing, and what happens to those 62 MB on the way to a disk is what decides whether saving is a file format or a paragraph in known limits.',
+        'Rotyl stores edits as commands rather than changed pixels. Undo moves through the command log, export replays it, and device recovery rebuilds the current state from it. The document format extends that model across a page reload.',
+        'Tracked edits are the capacity case because they store one packed mask per frame and object. This benchmark measures document size, write time, load time, replay cost and source-media identity for those logs.',
       ],
       sections: [documentCost(saved), documentShape(saved), documentReplay(saved), documentIdentity(saved)],
     },
@@ -3045,10 +3089,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Crash recovery performance',
       standfirst:
         'The edit journal now writes off the main thread, preserving unsaved work without making brush and tracking actions wait on storage.',
+      kind: 'benchmark',
+      scope: 'The current Rotyl recovery journal and browser storage implementation.',
+      repeatability: 'Automated in Chrome; storage timing depends on the machine and browser profile.',
       harness: 'tools/video-bench',
       lede: [
-        'The chapter before this one gave the command log a file and a button. What a button cannot do is protect the work between presses, and on a tracked run that is three quarters of a minute of following an object per press somebody did not make.',
-        'Writing it down as it happens is the obvious answer and is exactly the kind of obviously cheap that has been wrong here before. Three things were measured before any of it was built, and two of them ruled out the version anybody would write first.',
+        'Manual saves do not protect edits made after the last save. Rotyl therefore journals command changes to browser storage while the session is active.',
+        'The benchmark compares full-document writes with incremental records, measures main-thread and worker behaviour, and times recovery. Full-document journalling scaled with session length; worker-written incremental records kept editing work independent of storage latency.',
       ],
       sections: [
         whereAJournalCanBeWritten(kept),
@@ -3063,9 +3110,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'EdgeTAM tracking feasibility',
       standfirst:
         'Two missing graphs, model traffic, mask readback and command-log growth showed the feature could fit before implementation began.',
+      kind: 'historical',
+      scope: 'Pre-implementation estimates for the EdgeTAM design that Rotyl later shipped.',
+      repeatability: 'Mixed browser and Python harnesses; preserved to document the original decision.',
       harness: 'tools/video-bench, tools/edgetam-export',
       lede: [
-        'Tracking does not exist yet. These are the numbers that say what it would cost and what shape it would have to take, taken before writing it rather than after.',
+        'This study was completed before Rotyl implemented tracking. It estimated model execution, model delivery, GPU readback and command-log growth to determine whether EdgeTAM could fit the browser product.',
+        'Tracking has since shipped. The measurements remain here as a record of the constraints used to choose the original architecture, not as a statement of current end-to-end performance.',
       ],
       sections: [
         trackedFrame(video),
@@ -3082,10 +3133,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'EdgeTAM tracking performance',
       standfirst:
         'The complete path added 45 ms beyond the four ONNX graphs. Host-side work explained the gap.',
+      kind: 'benchmark',
+      scope: 'The complete Rotyl EdgeTAM path on the recorded model release and machine.',
+      repeatability: 'Automated after configuring access to the owned model files.',
       harness: 'tools/video-bench',
       lede: [
-        'Every number this project has quoted about tracking was taken before a tracked frame existed: four graphs timed one at a time and added up. That was the honest thing to do and it was published saying so. This is the same question asked of the thing itself.',
-        'It needs somewhere to fetch two graphs from, so unlike everything else here it is not part of a run anybody can take without setting one up. What it drives is the product’s own code and not a reimplementation of it, which is the only way the number is about the product.',
+        'The feasibility estimate added four graph timings but did not include the completed host loop. This benchmark measures the production tracking path against the earlier estimate.',
+        'The run uses Rotyl’s model loading, frame loop and command log. Repeating it requires access to the two owned model graphs that are not stored in the repository.',
       ],
       sections: [trackedCost(tracked), trackedArithmetic(tracked)],
     },
@@ -3095,10 +3149,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Occlusion handling',
       standfirst:
         'EdgeTAM knew which frames lost the object, but the command log discarded that answer. Carrying it costs 14 bytes per command.',
+      kind: 'decision',
+      scope: 'Rotyl command, timeline and document behaviour when EdgeTAM reports occlusion.',
+      repeatability: 'Automated with generated command logs and measured production builds.',
       harness: 'tools/video-bench',
       lede: [
-        'Everything measured in this project so far has been about what it draws. This one is about what it knows and never says. Five things the perception layer computes reached nobody: the model’s own occlusion verdict, each candidate’s area, each candidate’s confidence, a store’s prompt points, and the result a completed tracking run hands back. Two of them are carried now. The verdict is a field on a command, which is what this page is mostly about, and the run’s own result is a sentence in the line a finished export already writes into. The other three are still dropped, on purpose and with the reason written down.',
-        'What separates them is not how interesting they are. It is whether they are true of the tool or true of the document somebody has open. An occlusion is a numbered frame of this clip with no selection on it that somebody has to act on; a confidence score is the same thing on every file anybody ever opens. The first belongs in the editor. The second belongs on a page like this one, which is where it has stayed.',
+        'EdgeTAM reports whether the tracked object is absent, but the earlier command log stored only an empty mask. That made a model-reported occlusion indistinguishable from a selection erased by the user.',
+        'Rotyl now stores the occlusion verdict on the frame command and reports the run outcome at completion. The record measures the file-size and interface cost of carrying that document-specific fact while leaving diagnostic scores out of the document format.',
       ],
       sections: [whatDied(), whatTheTimelineDrew(hidden), whatSayingSoCost(hidden)],
     },
@@ -3108,10 +3165,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Multi-object tracking costs',
       standfirst:
         'Four published figures assumed one object. Three grow with object count; one barely moves.',
+      kind: 'benchmark',
+      scope: 'Rotyl tracking logs with one, two and three selected objects.',
+      repeatability: 'Automated with generated command logs and production code.',
       harness: 'tools/video-bench',
       lede: [
-        'The feature that reached this was small: the command log had been recording which objects somebody pointed at since object selection landed, so a run follows one object per answer the selection is made of and there is no new gesture, no mode and no list to manage. What it did do is turn a constant into a variable, and four numbers in three documents were written when it was still a constant.',
-        'None of the four is wrong. Each is still exactly true of one object, and not one of them says so, which leaves a reader holding a product that can multiply all four by however many things they clicked. Three of them move with N, one of them barely does, and one of the four is not a number at all.',
+        'Rotyl can follow several selected objects in one run, while earlier capacity figures assumed one object. This benchmark repeats the affected measurements with one, two and three objects.',
+        'File size, fold size and replay work grow with object count. The timeline projection changes little because it reports spans rather than masks. The results state which earlier figures are per object and which remain per run.',
       ],
       sections: [fourFigures(perObject), foldsToN(perObject)],
     },
@@ -3121,10 +3181,13 @@ export function entries(results: Results): readonly Entry[] {
       title: 'EdgeTAM host validation',
       standfirst:
         'Reference inputs exposed errors in transposes, memory and prompting that still produced plausible masks.',
+      kind: 'investigation',
+      scope: 'Rotyl EdgeTAM host code compared with the pinned PyTorch reference implementation.',
+      repeatability: 'Automated in Python with the pinned model and reference fixtures.',
       harness: 'tools/edgetam-export',
       lede: [
-        'The two graphs a tracker needs were exported and checked against the modules they came from. That leaves the other half of a tracked frame, which is host code: two published graphs either side of the exported pair, the transposes between four sessions, the bank’s layout, and the arithmetic the memory encoder is fed either side of it.',
-        'None of that is in a graph and all of it fails silently. A transposed field, a bank that forgets the frame the user pointed at, a mask resampled the wrong way and a prompt that is nearly the right prompt all produce a plausible mask of roughly the right object. So none of it is judged by looking at one.',
+        'Graph-level validation does not cover the host code that transposes tensors, arranges the memory bank, resamples masks and prepares prompts. Errors in those operations can still produce plausible masks.',
+        'The harness feeds reference inputs through each host stage and compares the intermediate values with the pinned PyTorch implementation. It also runs complete clips so local agreement and end-to-end tracking quality are checked together.',
       ],
       sections: [hostArithmetic(host), hostMistakes(host), hostEndToEnd(host)],
     },
@@ -3134,13 +3197,16 @@ export function entries(results: Results): readonly Entry[] {
       title: 'Editing latency',
       standfirst:
         'Hand-timed interaction figures that guide product decisions but are not reproducible enough for the benchmark set.',
+      kind: 'benchmark',
+      scope: 'A manual spot check of Rotyl editing interactions on the recorded machine.',
+      repeatability: 'Manual; use as a product check, not as a portable performance claim.',
       harness: 'measured by hand, in a browser',
       lede: [
-        'Nothing regenerates these and nothing notices if they drift. They are not less true than the rest, but a page that mixed them would be claiming a discipline it only has for half of what it shows.',
+        'These interaction timings were recorded by hand and are not regenerated by a benchmark harness. They are useful for spotting large product regressions, but they do not support portable or statistically precise performance claims.',
       ],
       sections: [
         {
-          heading: 'Editing is the composite, not the style chain',
+          heading: 'Brush and composite latency',
           prose: [
             'The style chain re-runs only when a style control changes, never while brushing, which is why these two rows are the numbers that decide how the tool feels. A brush stroke is one pass over the output; a stamp is one pass over the mask.',
           ],
@@ -3153,7 +3219,7 @@ export function entries(results: Results): readonly Entry[] {
           },
         },
         {
-          heading: 'Object selection, once the model is loaded',
+          heading: 'Object-selection latency',
           prose: [
             'Reading the frame is expensive and happens once; answering "which object is under this point" is cheap and happens per click. A click is flat in image size because the model always works at 1024 px square. Only building that input scales with the photograph.',
           ],
@@ -3166,7 +3232,7 @@ export function entries(results: Results): readonly Entry[] {
           },
         },
         {
-          heading: 'What ships',
+          heading: 'Release bundle size',
           prose: [
             'Three runtime dependencies, all but the framework code-split, so what a session downloads depends on what it opens. A photograph fetches the application and the fonts and nothing else.',
             'Shaders reach the bundle as strings and this codebase comments them as heavily as its TypeScript, so a build-time transform removes the comments and keeps every newline, which is why adding a third style made the bundle smaller rather than larger.',
@@ -3191,8 +3257,8 @@ export function entries(results: Results): readonly Entry[] {
 /** What the results say they were taken on, rather than what anyone remembers. */
 export function hardware(video: unknown): string {
   const agent = text(video, ['adapter', 'userAgent']);
-  const chrome = /Chrome\/(\d+)/.exec(agent)?.[1] ?? 'an unknown build';
+  const chrome = /Chrome\/([^ ]+)/.exec(agent)?.[1] ?? 'an unknown build';
   const vendor = text(video, ['adapter', 'vendor']);
   const architecture = text(video, ['adapter', 'architecture']);
-  return `an Apple M3 Pro, Chrome ${chrome}, adapter ${vendor} / ${architecture}`;
+  return `Apple M3 Pro, OS version not recorded, Chrome ${chrome}, adapter ${vendor} / ${architecture}`;
 }
