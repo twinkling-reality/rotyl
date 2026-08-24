@@ -291,6 +291,10 @@ test('opens an image, selects part of it, and exports', async ({ page }) => {
   await page.mouse.up();
 
   await expect(undo).toBeEnabled();
+  const save = page.getByRole('button', { name: 'Save' });
+  await expect(save).toBeEnabled();
+  await expect(save).toHaveClass(/save-button/);
+  await expect(save.locator('svg')).toBeVisible();
 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export' }).click();
@@ -485,7 +489,10 @@ test('closes a file, and opens another without a reload', async ({ page }) => {
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();
 
-  const close = page.getByRole('button', { name: 'Close' });
+  const close = page.getByRole('button', { name: 'Close file' });
+  await expect(
+    page.locator('.file-status__identity').getByRole('button', { name: 'Close file' }),
+  ).toBeVisible();
   await close.click();
   await expect(page.locator('canvas')).toHaveCount(0);
   await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
@@ -501,7 +508,7 @@ test('asks once before closing over work, and only then', async ({ page }) => {
   await expect(canvas).toBeVisible();
 
   // Nothing drawn yet, so nothing to lose: it just closes.
-  await page.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'Close file' }).click();
   await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
 
   await page.locator('input[type=file]').setInputFiles(fixture);
@@ -512,13 +519,26 @@ test('asks once before closing over work, and only then', async ({ page }) => {
   await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.5, { steps: 8 });
   await page.mouse.up();
 
-  await page.getByRole('button', { name: 'Close' }).click();
-  const confirm = page.getByRole('button', { name: 'Discard edits?' });
-  await expect(confirm).toBeVisible();
-  // Still open until the second click: the question is not the answer.
+  const close = page.getByRole('button', { name: 'Close file' });
+  await close.click();
+  const question = page.getByRole('group', { name: 'Discard edits?' });
+  const cancel = page.getByRole('button', { name: 'Cancel' });
+  await expect(question).toBeVisible();
+  await expect(cancel).toBeFocused();
   await expect(canvas).toBeVisible();
 
-  await confirm.click();
+  await cancel.click();
+  await expect(question).toBeHidden();
+  await expect(canvas).toBeVisible();
+
+  await close.click();
+  await expect(question).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(question).toBeHidden();
+  await expect(close).toBeFocused();
+
+  await close.click();
+  await page.getByRole('button', { name: 'Discard' }).click();
   await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
 });
 
