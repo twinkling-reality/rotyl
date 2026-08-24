@@ -11,11 +11,11 @@ Runs on your machine. Nothing is ever uploaded. On first use, the model comes
 from the same Rotyl deployment as the application and stays in the browser's
 cache.
 
-![The right half of a video frame stylised while the left half stays exactly as
-it was, as the camera pans across a street](docs/media/hero.gif)
+![A rectangle dragged across a photographer, with only the selected band
+switching from Comic ink to a Print halftone](docs/media/hero.gif)
 
-One rectangle, dragged once. Everything inside it is stylised on every frame;
-everything outside it is the source, unchanged.
+One rectangle, dragged once. The selected band changes while everything around
+it stays the photograph. The demo switches treatments, then undoes the edit.
 
 ## Running it
 

@@ -16,30 +16,36 @@ figures are: a binary artefact nobody can regenerate is a liability, and a
 screenshot that has quietly stopped matching the interface is worse than none.
 Re-run this after anything that changes the chrome.
 
-**The scene is synthesised, not photographed.** It is the same street the style
-bench measures against, drawn by `tools/style-bench/make-scene.mjs` with no
-dependencies. A photograph cannot be checked in, licensing aside, and a picture
-nobody else has is a picture nobody else can reproduce.
+**The hero uses a real CC0 portrait.** The generator fetches Cameron Kirby's
+_Photographer in close-up_ from Wikimedia Commons and verifies its pinned
+SHA-256 before opening it. The source stays in an ignored cache; the generated
+GIF is the only copy committed. The video and style-panel stills keep using the
+synthetic street scene because they document measured video behavior.
 
-**The hero selects the right half and nothing else.** A rectangle over part of
-the subject is what the Area tool is for, but a split down the middle is the
-clearest statement the product can make: the same content, plain on one side and
-stylised on the other, while the camera pans across both.
+**The hero records one complete edit.** It drags a rectangle through the
+photographer and camera, holds the default Comic result, switches that same
+selection to Print, then undoes it. The loop begins and ends on the photograph,
+so the change reads without an unexplained jump.
 
 ## What it costs, and why those numbers
 
 | file        | size   |
 | ----------- | ------ |
-| hero.gif    | 1.3 MB |
-| video.webp  | 40 KB  |
-| styles.webp | 48 KB  |
+| hero.gif    | 724 KB |
+| video.webp  | 44 KB  |
+| styles.webp | 52 KB  |
 
-A GIF is the only moving format GitHub renders from a repository path, and it is
-an expensive one, so it is held to 680 pixels across 32 frames of 48 colours.
-That is where the split still reads and the file stops being rude to anyone
-cloning. The stills are WebP, which is what flat interface chrome compresses to
-almost nothing, and the same format the research figures use.
+A GIF is the only moving format GitHub renders from a repository path. It is
+held to 680 pixels across 32 frames and 256 colours. The real portrait needs
+that palette to remain photographic before the edit, while its repeated frames
+still compress tightly. The stills are WebP, which is what flat interface
+chrome compresses to almost nothing, and the same format the research figures
+use.
 
-The palettes are not decoration. A stylised hazy street with no palette comes
-out grey, which is the failure the palette exists to fix rather than a fair
-picture of the chain, so the hero uses Riso and the style panel shows Mural.
+The stills use Riso and Mural because the hazy synthetic street otherwise gives
+the palette fitter almost no hue to preserve. The portrait needs no corrective
+palette: its skin, blue sky, black camera and warm landscape already give Comic
+and Print meaningful source colour.
+
+Hero source: [_Photographer in close-up_ by Cameron Kirby](https://commons.wikimedia.org/wiki/File:Photographer_in_close-up_%28Unsplash%29.jpg),
+CC0 1.0 via Wikimedia Commons.
