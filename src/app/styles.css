@@ -365,12 +365,14 @@ button {
 /* ---------- motion ---------- */
 
 /*
- * Two keyframes, and everything that moves uses one of them.
+ * Three keyframes, and everything that moves uses one of them.
  *
  * `rise` is how anything arrives: four pixels and a fade, over the standard
  * duration. Four rather than twelve because these are panels and status lines
  * appearing beside a photograph, and the photograph is the only thing on screen
  * allowed to draw the eye. Nothing scales, nothing bounces, nothing spins.
+ * `menu-rise` keeps a menu's paper opaque while moving it the same four pixels.
+ * Fading a white menu over a photograph briefly muddies both.
  *
  * There is no matching exit. An element that animates out has to stay mounted
  * while it does, which means every component that can disappear grows a piece
@@ -385,6 +387,15 @@ button {
   }
   to {
     opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes menu-rise {
+  from {
+    transform: translateY(4px);
+  }
+  to {
     transform: none;
   }
 }
@@ -878,7 +889,7 @@ button {
   display: flex;
   width: max-content;
   max-width: 100%;
-  min-height: 64px;
+  height: 62px;
   align-items: stretch;
   margin-bottom: -1px;
   overflow: visible;
@@ -890,11 +901,9 @@ button {
 }
 
 .style-shelf__type {
-  display: flex;
   width: 108px;
+  min-width: 108px;
   flex: none;
-  align-items: center;
-  padding: var(--s-2) var(--s-3);
   border-right: 1px solid var(--line-subtle);
 }
 
@@ -927,7 +936,7 @@ button {
   min-width: 116px;
   flex-direction: column;
   justify-content: center;
-  padding: var(--s-2) var(--s-3);
+  padding: 6px var(--s-3);
 }
 
 .style-control + .style-control {
@@ -944,6 +953,7 @@ button {
 
 .style-control__name {
   font-size: var(--fs-sm);
+  line-height: 16px;
   color: var(--text-secondary);
 }
 
@@ -952,61 +962,130 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-.style-select {
+.shelf-dropdown {
   position: relative;
+  width: calc(100% + var(--s-3));
+  min-width: 0;
+  margin-left: calc(var(--s-2) * -1);
+}
+
+.shelf-dropdown__trigger {
   display: flex;
-  min-width: 0;
+  width: 100%;
+  height: 28px;
   align-items: center;
-}
-
-.style-select--family {
-  width: 100%;
-}
-
-.style-select--control {
-  height: 24px;
-  margin-top: 2px;
-}
-
-.style-select__input {
-  appearance: none;
-  width: 100%;
-  min-width: 0;
-  height: 32px;
-  padding: 0 18px 0 0;
+  justify-content: space-between;
+  gap: var(--s-2);
+  padding: 0 var(--s-2);
   border: 0;
-  border-radius: var(--r-sm);
-  outline: 0;
+  border-radius: 7px;
   background: transparent;
   color: var(--text-primary);
   font: inherit;
   font-size: var(--fs-base);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.shelf-dropdown__trigger:hover {
+  background: var(--surface);
+}
+
+.shelf-dropdown__trigger[aria-expanded='true'] {
+  background: var(--surface-sunken);
+}
+
+.shelf-dropdown__trigger:focus-visible {
+  outline: 1.5px solid var(--accent);
+  outline-offset: 1px;
+  background: var(--accent-weak);
+}
+
+.shelf-dropdown__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shelf-dropdown__trigger .icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--text-secondary);
+  stroke-width: 1.6;
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.shelf-dropdown__trigger[aria-expanded='true'] .icon {
+  transform: rotate(180deg);
+}
+
+/* The menu lives on the document surface, outside the shelf's horizontal
+   scroller. That keeps Palette usable at narrow widths without clipping it. */
+.shelf-dropdown__menu {
+  animation: menu-rise var(--dur) var(--ease-out);
+  position: fixed;
+  display: grid;
+  gap: 2px;
+  padding: var(--s-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--bg);
+  box-shadow:
+    0 -2px 8px oklch(0% 0 0 / 0.05),
+    0 10px 30px oklch(0% 0 0 / 0.1);
+  z-index: calc(var(--z-toolbar) + 1);
+}
+
+.shelf-dropdown__option {
+  display: flex;
+  width: 100%;
+  height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: 0 var(--s-2);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-base);
+  text-align: left;
   cursor: pointer;
 }
 
-.style-select--control .style-select__input {
-  height: 24px;
-  font-size: var(--fs-sm);
+.shelf-dropdown__option:hover,
+.shelf-dropdown__option:focus-visible {
+  outline: 0;
+  background: var(--surface);
 }
 
-.style-select__input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+.shelf-dropdown__option:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
-/* An upward mark because the shelf lives at the bottom of the canvas and its
-   short menus have room above. It is geometry, not a text character whose
-   baseline would vary with the platform select. */
-.style-select__chevron {
-  position: absolute;
-  right: 2px;
-  width: 6px;
-  height: 6px;
-  border-top: 1px solid currentColor;
-  border-left: 1px solid currentColor;
+.shelf-dropdown__option[aria-selected='true'] {
+  background: var(--surface-sunken);
+}
+
+.shelf-dropdown__check {
+  display: grid;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  place-items: center;
+}
+
+.shelf-dropdown__check .icon {
+  width: 13px;
+  height: 13px;
   color: var(--text-secondary);
-  pointer-events: none;
-  transform: translateY(2px) rotate(45deg);
+  stroke-width: 1.8;
 }
 
 /*

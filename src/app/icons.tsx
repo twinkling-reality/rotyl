@@ -111,6 +111,24 @@ export function SlidersIcon(props: IconProps): JSX.Element {
   );
 }
 
+/** The shelf opens upward, so its disclosure mark names that direction. */
+export function ChevronUpIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <path d="m18 15-6-6-6 6" />
+    </Icon>
+  );
+}
+
+/** A selected menu item, kept as geometry rather than a text glyph. */
+export function CheckIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <path d="m20 6-11 11-5-5" />
+    </Icon>
+  );
+}
+
 export function DownloadIcon(props: IconProps): JSX.Element {
   return (
     <Icon {...props}>

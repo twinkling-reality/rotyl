@@ -247,6 +247,56 @@ const webm = join(fixtures, 'sample.webm');
 // which is the branch that would otherwise never be run.
 const mulaw = join(fixtures, 'sample-mulaw.mov');
 
+/** Select from one of the shelf's custom dropups by its visible control name. */
+async function chooseShelfOption(page: Page, label: 'Style' | 'Palette', option: string): Promise<void> {
+  await page.getByRole('button', { name: new RegExp(`^${label}: `) }).click();
+  await page.getByRole('listbox', { name: label }).getByRole('option', { name: option, exact: true }).click();
+}
+
+/** Compare screenshots after decoding them, rather than comparing PNG packing. */
+async function rasterDifference(
+  page: Page,
+  first: Buffer,
+  second: Buffer,
+): Promise<{ readonly maxChannelDelta: number; readonly meanChannelDelta: number }> {
+  return page.evaluate(
+    async ({ firstSource, secondSource }) => {
+      const decoded = await Promise.all(
+        [firstSource, secondSource].map(async (source) => {
+          const image = new Image();
+          image.src = source;
+          await image.decode();
+          const canvas = document.createElement('canvas');
+          canvas.width = image.naturalWidth;
+          canvas.height = image.naturalHeight;
+          const context = canvas.getContext('2d');
+          if (!context) throw new Error('no screenshot decoder');
+          context.drawImage(image, 0, 0);
+          return context.getImageData(0, 0, canvas.width, canvas.height);
+        }),
+      );
+      const [a, b] = decoded;
+      if (!a || !b) throw new Error('screenshot decoder returned no image');
+      if (a.width !== b.width || a.height !== b.height) throw new Error('screenshot dimensions changed');
+      let maxChannelDelta = 0;
+      let totalChannelDelta = 0;
+      for (let index = 0; index < a.data.length; index++) {
+        const delta = Math.abs((a.data[index] ?? 0) - (b.data[index] ?? 0));
+        maxChannelDelta = Math.max(maxChannelDelta, delta);
+        totalChannelDelta += delta;
+      }
+      return {
+        maxChannelDelta,
+        meanChannelDelta: totalChannelDelta / a.data.length,
+      };
+    },
+    {
+      firstSource: `data:image/png;base64,${first.toString('base64')}`,
+      secondSource: `data:image/png;base64,${second.toString('base64')}`,
+    },
+  );
+}
+
 /**
  * The product's own frame provider, reached the way the benchmarks reach
  * project code in a page: through the dev server, so its bare imports resolve.
@@ -547,12 +597,12 @@ test('reveals the style controls only when asked', async ({ page }) => {
   const shelf = page.getByRole('complementary', { name: 'Style controls' });
   await expect(shelf).toBeHidden();
 
-  await page.getByRole('button', { name: 'Style' }).click();
+  await page.getByRole('button', { name: 'Style', exact: true }).click();
   await expect(shelf).toBeVisible();
   await expect(page.getByLabel('Strength')).toBeVisible();
   await expect(page.getByLabel('Detail')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Style' }).click();
+  await page.getByRole('button', { name: 'Style', exact: true }).click();
   await expect(shelf).toBeHidden();
 });
 
@@ -562,22 +612,22 @@ test('switches styles and brings each one its own controls', async ({ page }) =>
   // hard-coded set of sliders.
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();
-  await page.getByRole('button', { name: 'Style' }).click();
+  await page.getByRole('button', { name: 'Style', exact: true }).click();
 
-  const style = page.getByRole('combobox', { name: 'Style' });
-  await expect(style).toHaveValue('comic');
+  const style = page.locator('.style-shelf__type').getByRole('button');
+  await expect(style).toHaveAttribute('aria-label', 'Style: Comic');
   await expect(page.getByLabel('Detail')).toBeVisible();
   await expect(page.getByLabel('Line')).toBeHidden();
 
   // Poster declares five controls where Comic has four, including one control
   // the other style does not have.
-  await style.selectOption('poster');
-  await expect(style).toHaveValue('poster');
+  await chooseShelfOption(page, 'Style', 'Poster');
+  await expect(style).toHaveAttribute('aria-label', 'Style: Poster');
   await expect(page.getByLabel('Line')).toBeVisible();
   await expect(page.getByLabel('Detail')).toBeVisible();
 
-  await style.selectOption('print');
-  await expect(style).toHaveValue('print');
+  await chooseShelfOption(page, 'Style', 'Print');
+  await expect(style).toHaveAttribute('aria-label', 'Style: Print');
   await expect(page.getByLabel('Coarseness')).toBeVisible();
   await expect(page.getByLabel('Colour')).toBeVisible();
   await expect(page.getByLabel('Detail')).toBeHidden();
@@ -585,9 +635,9 @@ test('switches styles and brings each one its own controls', async ({ page }) =>
   // A style's settings survive a look at the other one.
   const coarseness = page.getByLabel('Coarseness');
   await coarseness.fill('0.8');
-  await style.selectOption('comic');
+  await chooseShelfOption(page, 'Style', 'Comic');
   await expect(page.getByLabel('Detail')).toBeVisible();
-  await style.selectOption('print');
+  await chooseShelfOption(page, 'Style', 'Print');
   await expect(coarseness).toHaveValue('0.8');
 });
 
@@ -597,7 +647,7 @@ test('attaches the style shelf above the toolbar without narrowing the canvas', 
   await expect(page.locator('canvas')).toBeVisible();
 
   const viewportBefore = await page.locator('.viewport').boundingBox();
-  await page.getByRole('button', { name: 'Style' }).click();
+  await page.getByRole('button', { name: 'Style', exact: true }).click();
   await expect(page.getByRole('complementary', { name: 'Style controls' })).toBeVisible();
   // Geometry is the settled attachment, not an intermediate frame of its rise.
   await page.waitForTimeout(250);
@@ -621,7 +671,7 @@ test('keeps the toolbar and shelf inside a narrow viewport', async ({ page }) =>
   await page.setViewportSize({ width: 700, height: 700 });
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();
-  await page.getByRole('button', { name: 'Style' }).click();
+  await page.getByRole('button', { name: 'Style', exact: true }).click();
 
   const toolbar = await page.locator('.toolbar').boundingBox();
   const shelf = await page.locator('.style-shelf').boundingBox();
@@ -635,6 +685,50 @@ test('keeps the toolbar and shelf inside a narrow viewport', async ({ page }) =>
   expect(shelf.x + shelf.width).toBeLessThanOrEqual(viewport.x + viewport.width + 1);
   // Still operable, with the full labels now that no side panel takes width.
   await expect(page.getByRole('button', { name: 'Erase' })).toBeVisible();
+});
+
+test('gives Style and Palette the same custom dropup treatment', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.getByRole('button', { name: 'Style', exact: true }).click();
+  await chooseShelfOption(page, 'Style', 'Poster');
+
+  const style = page.getByRole('button', { name: 'Style: Poster' });
+  const palette = page.locator('.style-control--choice').getByRole('button');
+  await expect(style).toHaveClass(/shelf-dropdown__trigger/);
+  await expect(palette).toHaveClass(/shelf-dropdown__trigger/);
+
+  const styleBounds = await style.boundingBox();
+  const paletteBounds = await palette.boundingBox();
+  expect(styleBounds && paletteBounds).toBeTruthy();
+  if (!styleBounds || !paletteBounds) return;
+  expect(styleBounds.height).toBe(paletteBounds.height);
+
+  const idle = await palette.evaluate((element) => getComputedStyle(element).backgroundColor);
+  await palette.hover();
+  await page.waitForTimeout(150);
+  const hovered = await palette.evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(hovered).not.toBe(idle);
+  await expect(palette).toHaveCSS('border-radius', '7px');
+
+  await palette.click();
+  const menu = page.getByRole('listbox', { name: 'Palette' });
+  await expect(menu).toBeVisible();
+  const menuBounds = await menu.boundingBox();
+  expect(menuBounds).not.toBeNull();
+  if (!menuBounds) return;
+  expect(menuBounds.y + menuBounds.height).toBeLessThan(paletteBounds.y);
+
+  const none = menu.getByRole('option', { name: 'None', exact: true });
+  const mural = menu.getByRole('option', { name: 'Mural', exact: true });
+  await expect(none).toHaveAttribute('aria-selected', 'true');
+  await expect(none).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(mural).toBeFocused();
+
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
+  await expect(palette).toBeFocused();
 });
 
 test('rebuilds itself when the graphics device is lost', async ({ page }) => {
@@ -2167,12 +2261,12 @@ test('offers a palette as a choice, not as a slider', async ({ page }) => {
 
   // The whole frame, so what is compared is the style and nothing else.
   await page.getByRole('button', { name: 'Invert' }).click();
-  await page.getByRole('button', { name: 'Style' }).click();
+  await page.getByRole('button', { name: 'Style', exact: true }).click();
 
-  const palette = page.getByRole('combobox', { name: 'Palette' });
+  const palette = page.locator('.style-control--choice').getByRole('button');
   await expect(palette).toBeVisible();
-  // A choice has no meaningful midpoint, so it is a select rather than a range.
-  await expect(palette).toHaveValue('0');
+  // A choice has no meaningful midpoint, so it is a menu rather than a range.
+  await expect(palette).toHaveAttribute('aria-haspopup', 'listbox');
 
   // Parked between captures: clicking a control leaves the pointer on it, and
   // what is being compared is the picture, not where the mouse ended up.
@@ -2194,18 +2288,21 @@ test('offers a palette as a choice, not as a slider', async ({ page }) => {
 
   const before = await settled();
 
-  await palette.selectOption({ label: 'Riso' });
-  await expect(palette).toHaveValue('2');
+  await chooseShelfOption(page, 'Palette', 'Riso');
+  await expect(palette).toHaveAttribute('aria-label', 'Palette: Riso');
   await expect(async () => {
     expect(Buffer.compare(await park(), before)).not.toBe(0);
   }).toPass();
 
-  // And off again, exactly. A palette of None is a mix factor of zero, which
-  // returns the colour it was given rather than approximately returning it.
-  await palette.selectOption({ label: 'None' });
-  await expect(async () => {
-    expect(Buffer.compare(await park(), before)).toBe(0);
-  }).toPass();
+  // And off again. A palette of None is a mix factor of zero. The core suite
+  // proves the arithmetic identity; here the browser image must return within
+  // its isolated WebGPU screenshot edge noise.
+  await chooseShelfOption(page, 'Palette', 'None');
+  await expect(palette).toHaveAttribute('aria-label', 'Palette: None');
+  const restored = await settled();
+  const difference = await rasterDifference(page, restored, before);
+  expect(difference.maxChannelDelta).toBeLessThanOrEqual(32);
+  expect(difference.meanChannelDelta).toBeLessThan(0.001);
 });
 
 /**
