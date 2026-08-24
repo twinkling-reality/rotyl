@@ -2,14 +2,21 @@
 
 [![Verify](https://github.com/twinkling-reality/rotyl/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/twinkling-reality/rotyl/actions/workflows/verify.yml)
 
-**Select part of an image or a video, transform only that part, export at full
-resolution.** Everything outside the selection stays byte-identical.
+**Rotyl is a local graphics engine for selective, full-resolution image and
+video stylisation.** Selections come from direct drawing, on-device
+segmentation, or object tracking. Three WebGPU shader pipelines render Comic,
+Poster, and Print treatments.
+
+Each treatment is composited only inside the selection. A still export
+preserves every unselected pixel byte for byte. A video export preserves the
+same composite before H.264 encoding, where ordinary codec loss can move
+unselected pixels by a few code values.
 
 [Open Rotyl](https://rotyl.glendonchin.com/)
 
-Runs on your machine. Nothing is ever uploaded. On first use, the model comes
-from the same Rotyl deployment as the application and stays in the browser's
-cache.
+Media never leaves the browser. On first use, Rotyl fetches its versioned
+EdgeTAM model from the same deployment as the application and retains it in the
+browser cache.
 
 ![A rectangle dragged across a photographer, with only the selected band
 switching from Comic ink to a Print halftone](docs/media/hero.gif)
