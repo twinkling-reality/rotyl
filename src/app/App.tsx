@@ -58,6 +58,7 @@ import { editSpans } from '../core/document/selection-command.ts';
 import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
 import { isPrompt, type Tool } from './tool.ts';
 import type { PerceptionStatus, SelectIntent } from '../core/perception/perception-store.ts';
+import { CloseIcon } from './icons.tsx';
 import type { MaskCandidate } from '../core/perception/mask-candidates.ts';
 import type { TrackingStatus } from '../core/perception/tracking-store.ts';
 import type { TrackingResult } from '../core/perception/tracking-job.ts';
@@ -356,6 +357,7 @@ export function App(): JSX.Element {
 
   const [loaded, setLoaded] = useState<LoadedFile | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [dismissedNotice, setDismissedNotice] = useState<string | undefined>(undefined);
   const [tool, setTool] = useState<Tool>('paint');
   const [perception, setPerception] = useState<PerceptionStatus>({ kind: 'idle' });
   // Mirrored from the store rather than owned here: the store decides what the
@@ -848,6 +850,7 @@ export function App(): JSX.Element {
 
     setLoaded(undefined);
     setError(undefined);
+    setDismissedNotice(undefined);
     setReport(undefined);
     setBusy(undefined);
     setFrame(0);
@@ -1497,6 +1500,17 @@ export function App(): JSX.Element {
     };
   }, [openDocument, loaded]);
 
+  // A notice remains dismissed only while it is the same notice. A later
+  // failure must still be visible, even when an earlier one was closed.
+  const notice =
+    error ??
+    (tracking.status.kind === 'failed' ? tracking.status.message : undefined) ??
+    (perception.kind === 'failed' ? perception.message : undefined);
+  useEffect(() => {
+    if (dismissedNotice !== undefined && dismissedNotice !== notice) setDismissedNotice(undefined);
+  }, [dismissedNotice, notice]);
+  const visibleNotice = notice === dismissedNotice ? undefined : notice;
+
   if (state.status === 'unsupported') {
     return (
       <div class="app">
@@ -1560,12 +1574,6 @@ export function App(): JSX.Element {
   const status = activity
     ? { label: activity, progress: exportProgress }
     : (describeTracking(tracking.status) ?? describePerception(perception));
-  // Object selection can fail on its own, a download that will not complete,
-  // a runtime the browser will not start, and it has no other surface.
-  const notice =
-    error ??
-    (tracking.status.kind === 'failed' ? tracking.status.message : undefined) ??
-    (perception.kind === 'failed' ? perception.message : undefined);
   // historyRevision is read so that undo and redo re-evaluate when the log moves.
   void historyRevision;
   // What the log has to say about the clip, as stretches. A per-frame selection
@@ -1762,7 +1770,22 @@ export function App(): JSX.Element {
         image is loaded had no visible surface at all.
       */}
       <div class="announcer" role="status" aria-live="polite">
-        {loaded && notice ? <p class="notice notice--floating">{notice}</p> : null}
+        {loaded && visibleNotice ? (
+          <div class="notice notice--floating notice--dismissible">
+            <span class="notice__message">{visibleNotice}</span>
+            <button
+              type="button"
+              class="notice__dismiss"
+              title="Dismiss message"
+              aria-label="Dismiss message"
+              onClick={() => {
+                setDismissedNotice(visibleNotice);
+              }}
+            >
+              <CloseIcon />
+            </button>
+          </div>
+        ) : null}
         {loaded && !notice && report ? <p class="notice notice--quiet notice--floating">{report}</p> : null}
       </div>
     </div>
