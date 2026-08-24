@@ -128,7 +128,7 @@ async function holdHero(frames) {
 }
 
 console.log('hero: original, drag, Comic, Print, undo');
-await holdHero(4);
+await holdHero(3);
 await page.getByRole('button', { name: 'Area' }).click();
 const heroCanvas = await page.locator('canvas').boundingBox();
 if (!heroCanvas) throw new Error('hero: no canvas');
@@ -147,41 +147,48 @@ for (let i = 1; i <= 8; i++) {
 await page.mouse.up();
 await page.locator('button[title="Undo"]:not([disabled])').waitFor();
 await page.waitForTimeout(400);
-await holdHero(5);
+await holdHero(4);
 
 await page.getByRole('button', { name: 'Style' }).click();
-await captureHero();
-await page.getByRole('button', { name: 'Print' }).click();
-await captureHero();
+await holdHero(3);
+await page.getByRole('combobox', { name: 'Style' }).selectOption('print');
+await page.waitForTimeout(250);
+await holdHero(3);
 await page.getByRole('button', { name: 'Style' }).click();
 await captureHero();
-await holdHero(7);
+await holdHero(6);
 
 await page.getByRole('button', { name: 'Undo' }).click();
 await page.getByRole('button', { name: 'Object' }).click();
 await page.waitForTimeout(300);
-await holdHero(5);
+await holdHero(4);
 if (heroFrame !== GIF.frames) {
   throw new Error(`hero: expected ${String(GIF.frames)} frames, captured ${String(heroFrame)}`);
 }
 
 // --- the stills --------------------------------------------------------------
 
-console.log('stills: style panel, and the object picker');
+console.log('stills: style shelf, and the object picker');
 await open(CLIP, 'street.mp4');
 await selectArea([0.5, 0.02], [0.99, 0.98]);
 await page.getByRole('button', { name: 'Style' }).click();
-await page.getByRole('button', { name: 'Poster' }).click();
-await page.getByRole('button', { name: 'Riso' }).click();
+await page.getByRole('combobox', { name: 'Style' }).selectOption('poster');
+await page.getByRole('combobox', { name: 'Palette' }).selectOption({ label: 'Riso' });
 await page.getByRole('button', { name: 'Style' }).click();
 await page.waitForTimeout(600);
 await page.screenshot({ path: `${OUT}/video.png` });
+
+// A new source is a new document. Close the edited clip through the product's
+// own discard flow so its saved selection is not offered against the still.
+await page.getByRole('button', { name: 'Close file' }).click();
+await page.getByRole('button', { name: 'Discard' }).click();
+await page.getByText('Drop a file, or click to browse').waitFor();
 
 await open(SCENE, 'street.png');
 // Deliberately across the near car, so one object appears both ways at once.
 await selectArea([0.18, 0.32], [0.62, 0.96]);
 await page.getByRole('button', { name: 'Style' }).click();
-await page.getByRole('button', { name: 'Mural' }).click();
+await page.getByRole('combobox', { name: 'Palette' }).selectOption({ label: 'Mural' });
 await page.waitForTimeout(700);
 await page.screenshot({ path: `${OUT}/styles.png` });
 

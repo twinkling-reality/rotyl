@@ -66,7 +66,6 @@
   --h-toolbar: 44px;
   --h-tool: 36px;
   --h-control: 32px;
-  --w-panel: 280px;
 
   --fs-md: 15px;
   --fs-base: 13px;
@@ -87,8 +86,8 @@
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Exactly one elevation, on exactly one element: the floating toolbar, which
-     sits over arbitrary photographic content a border alone cannot separate. */
+  /* One elevation for the floating control dock. The toolbar uses the full
+     shadow; the attached shelf uses its upward half so both read as one unit. */
   --shadow-toolbar: 0 1px 2px oklch(0% 0 0 / 0.04), 0 8px 24px oklch(0% 0 0 / 0.06);
 
   --z-overlay: 10;
@@ -645,8 +644,8 @@ button {
   position: relative;
   flex: 1;
   min-width: 0;
-  /* So the toolbar can respond to the space it actually has, which changes
-     when the style panel docks. A window-width media query cannot see that. */
+  /* So the floating controls respond to the canvas width rather than to the
+     browser window. The video timeline and surrounding chrome are irrelevant. */
   container-type: inline-size;
   /* One step darker than the page, so the image reads as an object on a
      surface rather than as the surface itself. */
@@ -773,13 +772,23 @@ button {
   display: block;
 }
 
-.toolbar {
+.control-dock {
   position: absolute;
   bottom: var(--s-5);
   left: 50%;
   transform: translateX(-50%);
-  max-width: calc(100% - var(--s-6));
   display: flex;
+  max-width: calc(100% - var(--s-6));
+  flex-direction: column;
+  align-items: center;
+  z-index: var(--z-toolbar);
+}
+
+.toolbar {
+  position: relative;
+  display: flex;
+  max-width: 100%;
+  flex: none;
   align-items: center;
   gap: var(--s-1);
   height: var(--h-toolbar);
@@ -788,7 +797,7 @@ button {
   border-radius: var(--r-lg);
   background: var(--bg);
   box-shadow: var(--shadow-toolbar);
-  z-index: var(--z-toolbar);
+  z-index: 1;
 }
 
 .toolbar__divider {
@@ -856,85 +865,148 @@ button {
   }
 }
 
-/* ---------- style panel ---------- */
+/* ---------- style shelf ---------- */
 
-.style-panel {
+/*
+ * One control surface in two tiers. The shelf overlaps the toolbar border by
+ * one pixel, so it reads as a part pulled out of the dock rather than as a
+ * second floating panel. Its width comes from the current style, not the
+ * viewport, and the canvas never changes size when it opens.
+ */
+.style-shelf {
   animation: rise var(--dur) var(--ease-out);
-  flex: none;
-  width: var(--w-panel);
-  max-width: 45vw;
-  padding: var(--s-5) var(--s-4);
-  border-left: 1px solid var(--line-subtle);
+  display: flex;
+  width: max-content;
+  max-width: 100%;
+  min-height: 64px;
+  align-items: stretch;
+  margin-bottom: -1px;
+  overflow: visible;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg) var(--r-lg) var(--r-sm) var(--r-sm);
   background: var(--bg);
-  z-index: var(--z-panel);
-  overflow-y: auto;
+  box-shadow: 0 -8px 24px oklch(0% 0 0 / 0.04);
+  z-index: 0;
 }
 
-.style-panel__header {
+.style-shelf__type {
+  display: flex;
+  width: 108px;
+  flex: none;
+  align-items: center;
+  padding: var(--s-2) var(--s-3);
+  border-right: 1px solid var(--line-subtle);
+}
+
+.style-shelf__controls {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.style-shelf__controls::-webkit-scrollbar {
+  display: none;
+}
+
+@container (max-width: 720px) {
+  /* Poster is the only five-control style. Tightening its cells by five pixels
+     keeps the complete instrument visible beside the full labelled toolbar at
+     this width; smaller canvases still scroll the parameter rail. */
+  .style-shelf[data-controls='5'] .style-control {
+    width: 111px;
+    min-width: 111px;
+    padding-inline: var(--s-2);
+  }
+}
+
+.style-control {
+  display: flex;
+  width: 116px;
+  min-width: 116px;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--s-2) var(--s-3);
+}
+
+.style-control + .style-control {
+  border-left: 1px solid var(--line-subtle);
+}
+
+.style-control__labels {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: var(--s-4);
+  gap: var(--s-2);
+  margin-bottom: 2px;
 }
 
-/*
- * The style picker. A segmented control would box in two words and read as a
- * form; these are labels that light up, which is what a choice between two
- * looks should feel like. The active one is marked by colour and a hairline,
- * never by weight.
- */
-.style-choice {
-  display: flex;
-  gap: var(--s-3);
-}
-
-.style-choice__option {
-  padding: 0 0 var(--s-1);
-  border: 0;
-  border-bottom: 1px solid transparent;
-  background: none;
-  /* Not --text-tertiary: at 3.47:1 it is below the 4.5:1 AA minimum, and this
-     is 12px text. */
-  color: var(--text-secondary);
-  font: inherit;
+.style-control__name {
   font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.style-control__value {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.style-select {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.style-select--family {
+  width: 100%;
+}
+
+.style-select--control {
+  height: 24px;
+  margin-top: 2px;
+}
+
+.style-select__input {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 18px 0 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-base);
   cursor: pointer;
 }
 
-.style-choice__option:hover {
-  color: var(--text-primary);
-}
-
-.style-choice__option--active {
-  color: var(--text-primary);
-  border-bottom-color: var(--text-primary);
-}
-
-.style-panel__hint {
-  /* Not --text-tertiary: at 3.47:1 it is below the 4.5:1 AA minimum, and this
-     is 11.5px text. Tertiary is reserved for non-text marks. */
-  color: var(--text-secondary);
-}
-
-.slider-field {
-  margin-bottom: var(--s-4);
-}
-
-.slider-field__labels {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: var(--s-2);
-}
-
-.slider-field__name {
+.style-select--control .style-select__input {
+  height: 24px;
   font-size: var(--fs-sm);
-  color: var(--text-secondary);
 }
 
-.slider-field__value {
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
+.style-select__input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* An upward mark because the shelf lives at the bottom of the canvas and its
+   short menus have room above. It is geometry, not a text character whose
+   baseline would vary with the platform select. */
+.style-select__chevron {
+  position: absolute;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-top: 1px solid currentColor;
+  border-left: 1px solid currentColor;
+  color: var(--text-secondary);
+  pointer-events: none;
+  transform: translateY(2px) rotate(45deg);
 }
 
 /*
@@ -1057,7 +1129,7 @@ button {
  *
  * Docked under the canvas rather than floated over it: a scrubber that covers
  * the bottom of the picture hides the thing being scrubbed. It borrows the
- * style panel's slider wholesale, because it is the same instrument.
+ * style shelf's slider wholesale, because it is the same instrument.
  */
 .timeline {
   animation: rise var(--dur) var(--ease-out);

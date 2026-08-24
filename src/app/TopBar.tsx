@@ -277,7 +277,7 @@ function CloseFile({ onClose, hasEdits }: { onClose: () => void; hasEdits: boole
 
   const cancelAsking = useCallback((): void => {
     setAsking(false);
-    closeButton.current?.focus();
+    requestAnimationFrame(() => closeButton.current?.focus());
   }, []);
 
   useEffect(() => {
@@ -286,20 +286,20 @@ function CloseFile({ onClose, hasEdits }: { onClose: () => void; hasEdits: boole
     const timer = setTimeout(() => {
       setAsking(false);
     }, ASKS_FOR);
-    const cancelWithEscape = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      cancelAsking();
-    };
-    globalThis.addEventListener('keydown', cancelWithEscape);
     return () => {
       clearTimeout(timer);
-      globalThis.removeEventListener('keydown', cancelWithEscape);
     };
-  }, [asking, cancelAsking]);
+  }, [asking]);
 
   return (
-    <span class="close-file">
+    <span
+      class="close-file"
+      onKeyUp={(event) => {
+        if (!asking || event.key !== 'Escape') return;
+        event.preventDefault();
+        cancelAsking();
+      }}
+    >
       <button
         ref={closeButton}
         type="button"

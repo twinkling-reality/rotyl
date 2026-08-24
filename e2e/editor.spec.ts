@@ -396,7 +396,7 @@ test('offers the research page from the empty state, and generates it from the r
 
   // One entry per finding rather than one page of everything, so the index is
   // a list and the figures are a page deeper.
-  await page.getByRole('link', { name: /whether it holds still/i }).click();
+  await page.getByRole('link', { name: /style timing and flicker/i }).click();
   await expect(page).toHaveURL(/research\/the-look\.html$/);
   // Read out of the results rather than written here. A literal would make this
   // test fail every time a benchmark is re-taken, which teaches whoever re-took
@@ -416,9 +416,7 @@ test('offers the research page from the empty state, and generates it from the r
   // own because it is a finding of its own and it reversed one of the above.
   await page.goto('/research/real-footage.html');
   await expect(page.getByRole('cell', { name: 'the synthetic scene' }).first()).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: 'It was the outline, and the quantiser inside it' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Poster outline failure mechanism' })).toBeVisible();
 
   // A figure out of the other harness's results, so both are known to be read.
   await page.goto('/research/video.html');
@@ -546,43 +544,40 @@ test('reveals the style controls only when asked', async ({ page }) => {
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();
 
-  const panel = page.getByRole('complementary', { name: 'Style controls' });
-  await expect(panel).toBeHidden();
+  const shelf = page.getByRole('complementary', { name: 'Style controls' });
+  await expect(shelf).toBeHidden();
 
   await page.getByRole('button', { name: 'Style' }).click();
-  await expect(panel).toBeVisible();
+  await expect(shelf).toBeVisible();
   await expect(page.getByLabel('Strength')).toBeVisible();
   await expect(page.getByLabel('Detail')).toBeVisible();
 
   await page.getByRole('button', { name: 'Style' }).click();
-  await expect(panel).toBeHidden();
+  await expect(shelf).toBeHidden();
 });
 
 test('switches styles and brings each one its own controls', async ({ page }) => {
-  // The seam, from the outside: the panel has no per-style code, so a style
-  // arriving with three controls where the last had two is the observable
-  // difference between a real boundary and a hard-coded pair of sliders.
+  // The seam, from the outside: the shelf has no per-style code. Its declared
+  // controls are the observable difference between a real boundary and a
+  // hard-coded set of sliders.
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();
   await page.getByRole('button', { name: 'Style' }).click();
 
-  const comic = page.getByRole('button', { name: 'Comic' });
-  const poster = page.getByRole('button', { name: 'Poster' });
-  const print = page.getByRole('button', { name: 'Print' });
-  await expect(comic).toHaveAttribute('aria-pressed', 'true');
+  const style = page.getByRole('combobox', { name: 'Style' });
+  await expect(style).toHaveValue('comic');
   await expect(page.getByLabel('Detail')).toBeVisible();
   await expect(page.getByLabel('Line')).toBeHidden();
 
-  // A style with five controls where the last had four, and one control name
-  // shared with it: the panel has no per-style code, so this is the observable
-  // difference between a real seam and a hard-coded set of sliders.
-  await poster.click();
-  await expect(poster).toHaveAttribute('aria-pressed', 'true');
+  // Poster declares five controls where Comic has four, including one control
+  // the other style does not have.
+  await style.selectOption('poster');
+  await expect(style).toHaveValue('poster');
   await expect(page.getByLabel('Line')).toBeVisible();
   await expect(page.getByLabel('Detail')).toBeVisible();
 
-  await print.click();
-  await expect(print).toHaveAttribute('aria-pressed', 'true');
+  await style.selectOption('print');
+  await expect(style).toHaveValue('print');
   await expect(page.getByLabel('Coarseness')).toBeVisible();
   await expect(page.getByLabel('Colour')).toBeVisible();
   await expect(page.getByLabel('Detail')).toBeHidden();
@@ -590,48 +585,55 @@ test('switches styles and brings each one its own controls', async ({ page }) =>
   // A style's settings survive a look at the other one.
   const coarseness = page.getByLabel('Coarseness');
   await coarseness.fill('0.8');
-  await comic.click();
+  await style.selectOption('comic');
   await expect(page.getByLabel('Detail')).toBeVisible();
-  await print.click();
+  await style.selectOption('print');
   await expect(coarseness).toHaveValue('0.8');
 });
 
-test('keeps the toolbar over the image when the style panel opens', async ({ page }) => {
-  // The toolbar is positioned against the viewport, not the editor. Against the
-  // editor it centred on the docked panel too and drifted off the image.
+test('attaches the style shelf above the toolbar without narrowing the canvas', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();
 
+  const viewportBefore = await page.locator('.viewport').boundingBox();
   await page.getByRole('button', { name: 'Style' }).click();
   await expect(page.getByRole('complementary', { name: 'Style controls' })).toBeVisible();
+  // Geometry is the settled attachment, not an intermediate frame of its rise.
+  await page.waitForTimeout(250);
 
   const toolbar = await page.locator('.toolbar').boundingBox();
-  const viewport = await page.locator('.viewport').boundingBox();
-  const panel = await page.locator('.style-panel').boundingBox();
-  expect(toolbar && viewport && panel).toBeTruthy();
-  if (!toolbar || !viewport || !panel) return;
+  const viewportAfter = await page.locator('.viewport').boundingBox();
+  const shelf = await page.locator('.style-shelf').boundingBox();
+  expect(toolbar && viewportBefore && viewportAfter && shelf).toBeTruthy();
+  if (!toolbar || !viewportBefore || !viewportAfter || !shelf) return;
 
-  expect(toolbar.x + toolbar.width).toBeLessThanOrEqual(panel.x + 1);
+  expect(viewportAfter.width).toBe(viewportBefore.width);
+  expect(Math.abs(shelf.y + shelf.height - toolbar.y)).toBeLessThan(2);
   const toolbarCentre = toolbar.x + toolbar.width / 2;
-  const viewportCentre = viewport.x + viewport.width / 2;
+  const shelfCentre = shelf.x + shelf.width / 2;
+  const viewportCentre = viewportAfter.x + viewportAfter.width / 2;
+  expect(Math.abs(toolbarCentre - shelfCentre)).toBeLessThan(2);
   expect(Math.abs(toolbarCentre - viewportCentre)).toBeLessThan(2);
 });
 
-test('collapses the toolbar rather than clipping it on a narrow viewport', async ({ page }) => {
+test('keeps the toolbar and shelf inside a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 700, height: 700 });
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(page.locator('canvas')).toBeVisible();
   await page.getByRole('button', { name: 'Style' }).click();
 
   const toolbar = await page.locator('.toolbar').boundingBox();
+  const shelf = await page.locator('.style-shelf').boundingBox();
   const viewport = await page.locator('.viewport').boundingBox();
-  expect(toolbar && viewport).toBeTruthy();
-  if (!toolbar || !viewport) return;
+  expect(toolbar && shelf && viewport).toBeTruthy();
+  if (!toolbar || !shelf || !viewport) return;
 
   expect(toolbar.x).toBeGreaterThanOrEqual(viewport.x - 1);
   expect(toolbar.x + toolbar.width).toBeLessThanOrEqual(viewport.x + viewport.width + 1);
-  // Still operable, just without visible labels.
+  expect(shelf.x).toBeGreaterThanOrEqual(viewport.x - 1);
+  expect(shelf.x + shelf.width).toBeLessThanOrEqual(viewport.x + viewport.width + 1);
+  // Still operable, with the full labels now that no side panel takes width.
   await expect(page.getByRole('button', { name: 'Erase' })).toBeVisible();
 });
 
@@ -2167,10 +2169,10 @@ test('offers a palette as a choice, not as a slider', async ({ page }) => {
   await page.getByRole('button', { name: 'Invert' }).click();
   await page.getByRole('button', { name: 'Style' }).click();
 
-  const palette = page.getByRole('group', { name: 'Palette' });
+  const palette = page.getByRole('combobox', { name: 'Palette' });
   await expect(palette).toBeVisible();
-  // A choice has no meaningful midpoint, so it is buttons.
-  await expect(palette.getByRole('button', { name: 'None' })).toHaveAttribute('aria-pressed', 'true');
+  // A choice has no meaningful midpoint, so it is a select rather than a range.
+  await expect(palette).toHaveValue('0');
 
   // Parked between captures: clicking a control leaves the pointer on it, and
   // what is being compared is the picture, not where the mouse ended up.
@@ -2179,9 +2181,7 @@ test('offers a palette as a choice, not as a slider', async ({ page }) => {
     return canvas.screenshot();
   };
 
-  // Docking the panel narrows the viewport, so the canvas resizes and redraws.
-  // Capturing before that settles compares two different-sized images, which
-  // can never match however long it is retried.
+  // The style render settles asynchronously after a control changes.
   const settled = async (): Promise<Buffer> => {
     let last = await park();
     for (let attempt = 0; attempt < 20; attempt++) {
@@ -2194,15 +2194,15 @@ test('offers a palette as a choice, not as a slider', async ({ page }) => {
 
   const before = await settled();
 
-  await palette.getByRole('button', { name: 'Riso' }).click();
-  await expect(palette.getByRole('button', { name: 'Riso' })).toHaveAttribute('aria-pressed', 'true');
+  await palette.selectOption({ label: 'Riso' });
+  await expect(palette).toHaveValue('2');
   await expect(async () => {
     expect(Buffer.compare(await park(), before)).not.toBe(0);
   }).toPass();
 
   // And off again, exactly. A palette of None is a mix factor of zero, which
   // returns the colour it was given rather than approximately returning it.
-  await palette.getByRole('button', { name: 'None' }).click();
+  await palette.selectOption({ label: 'None' });
   await expect(async () => {
     expect(Buffer.compare(await park(), before)).toBe(0);
   }).toPass();
@@ -2289,8 +2289,8 @@ test('saves a selection and rebuilds the same mask after the tab is reloaded', a
   // with it. Not tidiness: without it the next load would offer the same work
   // back out of the journal, and this test would pass on a document that had
   // never been read.
-  await page.getByRole('button', { name: 'Close' }).click();
-  await page.getByRole('button', { name: 'Discard edits?' }).click();
+  await page.getByRole('button', { name: 'Close file' }).click();
+  await page.getByRole('button', { name: 'Discard' }).click();
 
   // The tab, closed.
   await page.goto('/');
@@ -2358,8 +2358,8 @@ test('takes a document dropped onto the editor, and restores where the playhead 
 
   // Given back on purpose, so the crash journal goes with it and what is tested
   // below is the document rather than the journal underneath it.
-  await page.getByRole('button', { name: 'Close' }).click();
-  await page.getByRole('button', { name: 'Discard edits?' }).click();
+  await page.getByRole('button', { name: 'Close file' }).click();
+  await page.getByRole('button', { name: 'Discard' }).click();
 
   // A fresh tab, the clip open again, and nothing selected on it.
   await page.goto('/');
@@ -2792,8 +2792,8 @@ test('offers nothing back after the file was closed on purpose', async ({ page }
   expect(await journalSettles(page)).toBeGreaterThan(0);
 
   // Closing over work asks once, in place.
-  await page.getByRole('button', { name: 'Close' }).click();
-  await page.getByRole('button', { name: 'Discard edits?' }).click();
+  await page.getByRole('button', { name: 'Close file' }).click();
+  await page.getByRole('button', { name: 'Discard' }).click();
   await expect(page.getByText('Drop a file, or click to browse')).toBeVisible();
   await expect(page.getByText('is waiting for it')).toHaveCount(0);
 
