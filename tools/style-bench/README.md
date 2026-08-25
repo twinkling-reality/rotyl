@@ -27,7 +27,10 @@ node tools/style-bench/run.mjs real        # the same three, on photographs
 `figures`, the five that need `fetch-real.sh` to have run: `real-chain`,
 `real-perturbation`, `real-clips`, `real-lightness`, `real-flicker`, and the
 three about what would hold a clip still: `motion`, `motion-pictures`,
-`attribution`. `real-perturbation` and `real-flicker` take the two film cuts as
+`attribution`. Person-to-animation evaluation is its own pair, `anime` and
+`anime-selective`, and writes under gitignored `out/evaluation/`. Official
+DCT-Net inference is `tools/style-bench/dct-infer.py`, offline TensorFlow, not
+a product path. The verdicts live in `docs/stylization-decision-log.md`. `real-perturbation` and `real-flicker` take the two film cuts as
 STILLS as well as the four photographs, at the film's own 1280x534, which is the
 only way to ask what a chain does to real sensor noise with no actor moving
 through it; see [measurement 6](#6-the-detail-control-had-a-broken-end-and-it-was-not-the-radius). `all` is the first six, `real` is the next five and `motion` is

@@ -632,6 +632,12 @@ test('switches styles and brings each one its own controls', async ({ page }) =>
   await expect(page.getByLabel('Colour')).toBeVisible();
   await expect(page.getByLabel('Detail')).toBeHidden();
 
+  await chooseShelfOption(page, 'Style', 'Anime');
+  await expect(style).toHaveAttribute('aria-label', 'Style: Anime');
+  await expect(page.getByLabel('Line')).toBeVisible();
+  await expect(page.getByLabel('Detail')).toBeVisible();
+  await expect(page.getByLabel('Coarseness')).toBeHidden();
+
   // A style's settings survive a look at the other one.
   const coarseness = page.getByLabel('Coarseness');
   await coarseness.fill('0.8');

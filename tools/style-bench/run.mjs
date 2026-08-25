@@ -26,18 +26,31 @@ const REAL = ['real-chain', 'real-perturbation', 'real-clips', 'real-lightness',
 // answers a question about a method rather than about a chain, and re-taking it
 // must not re-date the tables the existing findings come from.
 const MOTION = ['motion', 'motion-pictures', 'attribution'];
+const ANIME = ['anime-eval'];
+const ANIME_SELECTIVE = ['anime-selective'];
 
 const args = process.argv.slice(2);
-const named = { all: ALL, real: REAL, motion: MOTION };
+const named = { all: ALL, real: REAL, motion: MOTION, anime: ANIME, 'anime-selective': ANIME_SELECTIVE };
 const which = args.length === 1 && named[args[0]] ? named[args[0]] : args;
 if (which.length === 0) {
   console.error(
-    `usage: node tools/style-bench/run.mjs <all|real|motion|${[...ALL, ...REAL, ...MOTION].join('|')}>...`,
+    `usage: node tools/style-bench/run.mjs <all|real|motion|anime|anime-selective|${[...ALL, ...REAL, ...MOTION, ...ANIME, ...ANIME_SELECTIVE].join('|')}>...`,
   );
   process.exit(1);
 }
 
-const browser = await chromium.launch({ channel: 'chrome', headless: false });
+const browser = await chromium.launch({
+  channel: 'chrome',
+  headless: true,
+  args: [
+    '--enable-unsafe-webgpu',
+    '--enable-webgpu-developer-features',
+    '--use-webgpu-adapter=swiftshader',
+    '--ignore-gpu-blocklist',
+    '--disable-gpu-sandbox',
+    '--disable-dev-shm-usage',
+  ],
+});
 const page = await browser.newPage();
 page.on('pageerror', (error) => console.error(`  [page] ${error.message}`));
 
@@ -105,6 +118,99 @@ if (figures.length > 0) {
     } catch {
       console.log(`  ${png}  (cwebp not found, left as PNG)  [${figure.tiles.join(' | ')}]`);
     }
+  }
+}
+
+const selectiveStills = result['anime-selective'];
+delete result['anime-selective'];
+if (Array.isArray(selectiveStills)) {
+  result['anime-selective'] = selectiveStills.map((image) => ({
+    name: image.name,
+    width: image.width,
+    height: image.height,
+    outsideMax: image.outsideMax,
+    method: image.method,
+  }));
+  mkdirSync('tools/style-bench/out/evaluation/sheets', { recursive: true });
+  mkdirSync('tools/style-bench/out/evaluation/masks', { recursive: true });
+  for (const image of selectiveStills) {
+    const written = {};
+    for (const [label, rgb] of [
+      ['source', image.source],
+      ['mask', image.mask],
+      ['full', image.full],
+      ['composite', image.composite],
+    ]) {
+      const file = `tools/style-bench/out/evaluation/${image.name}-selective-${label}.png`;
+      writeFileSync(file, encodePng(Buffer.from(rgb, 'base64'), image.width, image.height));
+      written[label] = file;
+      console.log(`  ${file}`);
+    }
+    const sheet = `tools/style-bench/out/evaluation/sheets/${image.name}-selective.jpg`;
+    execFileSync('ffmpeg', [
+      '-nostdin',
+      '-v',
+      'error',
+      '-y',
+      '-i',
+      written.source,
+      '-i',
+      written.mask,
+      '-i',
+      written.full,
+      '-i',
+      written.composite,
+      '-filter_complex',
+      '[0][1][2][3]hstack=inputs=4,format=yuv420p',
+      '-q:v',
+      '2',
+      sheet,
+    ]);
+    console.log(`  ${sheet}  outsideMax=${image.outsideMax}`);
+  }
+}
+
+const animeStills = result['anime-eval'];
+delete result['anime-eval'];
+if (Array.isArray(animeStills)) {
+  result['anime-eval'] = animeStills.map((image) => ({
+    name: image.name,
+    width: image.width,
+    height: image.height,
+    animeMs: image.animeMs,
+  }));
+  mkdirSync('tools/style-bench/out/evaluation/sheets', { recursive: true });
+  for (const image of animeStills) {
+    const written = {};
+    for (const [label, rgb] of [
+      ['source', image.source],
+      ['comic', image.comic],
+      ['anime', image.anime],
+    ]) {
+      const file = `tools/style-bench/out/evaluation/${image.name}-${label}.png`;
+      writeFileSync(file, encodePng(Buffer.from(rgb, 'base64'), image.width, image.height));
+      written[label] = file;
+      console.log(`  ${file}`);
+    }
+    const sheet = `tools/style-bench/out/evaluation/sheets/${image.name}-source-comic-anime.jpg`;
+    execFileSync('ffmpeg', [
+      '-nostdin',
+      '-v',
+      'error',
+      '-y',
+      '-i',
+      written.source,
+      '-i',
+      written.comic,
+      '-i',
+      written.anime,
+      '-filter_complex',
+      '[0][1][2]hstack=inputs=3,format=yuv420p',
+      '-q:v',
+      '2',
+      sheet,
+    ]);
+    console.log(`  ${sheet}`);
   }
 }
 

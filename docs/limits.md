@@ -405,6 +405,16 @@ one, and the measurement behind it is on `/research.html`.
 - Preview is capped at 4096 px on the long edge to bound memory. Export always
   renders at full resolution, so for larger images the preview is a downscale of
   the export rather than identical to it.
+- **Anime is not publish-ready as a person-to-animation treatment.** It is a
+  hue-preserving cel pass over the comic flatten and ink. On the licensed
+  evaluation set it still reads as a posterise-and-ink filter: eyes stay
+  photographic patches, hair becomes a mass, and a paused face does not look
+  drawn. The background stays outside the style pass only through the
+  compositor, the same as every other style. Official DCT-Net on the same
+  stills, including FaceAna alignment, also fails the bar (sticker or melted
+  faces, whole-frame background stylisation). The hosted option that would be
+  required to clear it is in
+  [the stylisation decision log](stylization-decision-log.md).
 - A lost GPU device is rebuilt around, but object selection pays for it: the
   inference runtime's own device goes with ours, so the model is loaded again on
   the next click. Its weights are in Cache Storage, so nothing is re-downloaded.

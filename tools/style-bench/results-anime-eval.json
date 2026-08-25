@@ -1,0 +1,109 @@
+{
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "0xc0de",
+    "description": "SwiftShader Device (Subzero)",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 4
+  },
+  "anime-eval:wall-seconds": 261.4,
+  "anime-eval": [
+    {
+      "name": "portrait-close",
+      "width": 1200,
+      "height": 800,
+      "animeMs": 14832.3
+    },
+    {
+      "name": "portrait-glasses",
+      "width": 900,
+      "height": 1200,
+      "animeMs": 14191.3
+    },
+    {
+      "name": "portrait-somali",
+      "width": 951,
+      "height": 1200,
+      "animeMs": 13181.1
+    },
+    {
+      "name": "portrait-lehna",
+      "width": 1200,
+      "height": 801,
+      "animeMs": 14328.7
+    },
+    {
+      "name": "portrait-doorway",
+      "width": 801,
+      "height": 1200,
+      "animeMs": 14512.8
+    },
+    {
+      "name": "portrait-hands",
+      "width": 1200,
+      "height": 800,
+      "animeMs": 13486.5
+    },
+    {
+      "name": "tos-crossing-early",
+      "width": 1200,
+      "height": 501,
+      "animeMs": 5141.1
+    },
+    {
+      "name": "tos-crossing-mid",
+      "width": 1200,
+      "height": 501,
+      "animeMs": 5090.4
+    },
+    {
+      "name": "tos-crossing-late",
+      "width": 1200,
+      "height": 501,
+      "animeMs": 5148.6
+    },
+    {
+      "name": "tos-crossing-adj-01",
+      "width": 1200,
+      "height": 501,
+      "animeMs": 5109.8
+    },
+    {
+      "name": "tos-crossing-adj-02",
+      "width": 1200,
+      "height": 501,
+      "animeMs": 5168.4
+    },
+    {
+      "name": "tos-occlusion-early",
+      "width": 1200,
+      "height": 501,
+      "animeMs": 5146.4
+    },
+    {
+      "name": "tos-occlusion-mid",
+      "width": 1200,
+      "height": 501,
+      "animeMs": 5065.7
+    },
+    {
+      "name": "tos-occlusion-late",
+      "width": 1200,
+      "height": 501,
+      "animeMs": 5154.4
+    },
+    {
+      "name": "tos-occlusion-adj-01",
+      "width": 1200,
+      "height": 501,
+      "animeMs": 5090.9
+    },
+    {
+      "name": "tos-occlusion-adj-02",
+      "width": 1200,
+      "height": 501,
+      "animeMs": 5119.7
+    }
+  ]
+}

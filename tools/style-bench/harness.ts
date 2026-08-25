@@ -100,6 +100,30 @@ export class StyleStage {
     );
   }
 
+  /**
+   * Replace the full-coverage bench mask.
+   *
+   * `coverage` is one byte per pixel, 255 selected. Used by the selective
+   * Anime eval so the compositor, not a CPU mix, is what is being judged.
+   */
+  uploadMask(coverage: Uint8Array): void {
+    const { width, height } = this.size;
+    if (coverage.length !== width * height) {
+      throw new Error(`mask is ${coverage.length} bytes, expected ${width * height}`);
+    }
+    const paddedRow = Math.ceil(width / 256) * 256;
+    const block = new Uint8Array(paddedRow * height);
+    for (let y = 0; y < height; y++) {
+      block.set(coverage.subarray(y * width, (y + 1) * width), y * paddedRow);
+    }
+    this.#device.queue.writeTexture(
+      { texture: this.#mask },
+      block,
+      { bytesPerRow: paddedRow, rowsPerImage: height },
+      { width, height },
+    );
+  }
+
   /** Bytes straight in, for a perturbation whose exact size has to be known. */
   uploadBytes(rgba: Uint8Array): void {
     this.#device.queue.writeTexture(

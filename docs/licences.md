@@ -40,3 +40,8 @@ checks a weight, and refuses to produce a deployment if either is absent or
 different. The model release therefore does not rely on a deployer remembering
 the Apache-2.0 obligations after copying the files; the licence and notice are
 part of the release contract.
+
+**Anime does not add a model.** It is original WGSL under the same MIT licence
+as the rest of Rotyl. Neural portrait stylizers that were considered, and the
+exact licence and training-data reasons they were not shipped, are recorded in
+[the stylisation decision log](stylization-decision-log.md).

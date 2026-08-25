@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { useRotyl, type RotylRuntime } from './use-rotyl.ts';
 import { useTracking } from './use-tracking.ts';
@@ -56,6 +56,7 @@ import { SessionJournal, type SessionState } from '../platform/document/journal.
 import { defaultControls, type StyleControls, type StyleDefinition } from '../core/style/style.ts';
 import { editSpans } from '../core/document/selection-command.ts';
 import { DEFAULT_STYLE, STYLES } from '../core/style/styles.ts';
+import { parseReviewQuery, reviewFileName } from './review-query.ts';
 import { isPrompt, type Tool } from './tool.ts';
 import type { PerceptionStatus, SelectIntent } from '../core/perception/perception-store.ts';
 import { CloseIcon } from './icons.tsx';
@@ -995,6 +996,51 @@ export function App(): JSX.Element {
     runtime?.engine.setStyle(style);
     runtime?.engine.setControls(controls);
   }, [runtime, style, controls]);
+
+  /**
+   * Local review query. Opens a sample, selects a style, and optionally clicks
+   * through the real perception path. Used to repeat a measured case without
+   * building a second editor.
+   */
+  const review = useMemo(
+    () => ('location' in globalThis ? parseReviewQuery(globalThis.location.search) : undefined),
+    [],
+  );
+  const reviewOpened = useRef(false);
+  const reviewPicked = useRef(false);
+
+  useEffect(() => {
+    if (!review || reviewOpened.current || !runtime || restoring) return;
+    reviewOpened.current = true;
+    setStyle(review.style);
+    setStyleShelfOpen(true);
+    if (review.pick) setTool('object');
+    void (async () => {
+      try {
+        const response = await fetch(review.sample);
+        if (!response.ok) {
+          setError(`Could not open the review sample (${String(response.status)}).`);
+          return;
+        }
+        const bytes = await response.arrayBuffer();
+        await openFile(new File([bytes], reviewFileName(review.sample)));
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : 'Could not open the review sample.');
+      }
+    })();
+  }, [review, runtime, restoring, openFile]);
+
+  useEffect(() => {
+    const pick = review?.pick;
+    if (!pick || reviewPicked.current || !runtime || !loaded || restoring) return;
+    if (perception.kind !== 'ready') return;
+    reviewPicked.current = true;
+    const rank = review.rank;
+    void (async () => {
+      await runtime.perception.select(pick, 'object');
+      if (rank !== undefined) runtime.perception.choose(rank);
+    })();
+  }, [review, runtime, loaded, restoring, perception.kind]);
 
   const pause = useCallback((): void => {
     playingRef.current = false;

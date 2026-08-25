@@ -1,0 +1,41 @@
+{
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "0xc0de",
+    "description": "SwiftShader Device (Subzero)",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 4
+  },
+  "anime-selective:wall-seconds": 94.8,
+  "anime-selective": [
+    {
+      "name": "portrait-somali",
+      "width": 951,
+      "height": 1200,
+      "outsideMax": 3,
+      "method": "grabcut-substitute"
+    },
+    {
+      "name": "portrait-lehna",
+      "width": 1200,
+      "height": 801,
+      "outsideMax": 12,
+      "method": "grabcut-substitute"
+    },
+    {
+      "name": "portrait-hands",
+      "width": 1200,
+      "height": 800,
+      "outsideMax": 2,
+      "method": "grabcut-substitute"
+    },
+    {
+      "name": "tos-occlusion-mid",
+      "width": 1200,
+      "height": 501,
+      "outsideMax": 1,
+      "method": "grabcut-substitute"
+    }
+  ]
+}

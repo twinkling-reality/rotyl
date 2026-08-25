@@ -181,13 +181,24 @@ left of the flicker is the flatten's own edge contrast, and that is in
 its own angle, over warm paper, slightly misregistered. Three passes, only the
 last at output resolution.
 
-What the three share is the colour maths, a box downsample, the palette and its
-fitting, and the shape of a fullscreen pass. Nothing else, and in particular not
-a line of the compositor: each landed without one changing, and all three are
-held to the same contract by the same harness in `test/style-harness.ts`. What
-they deliberately do not share is the stage that makes each one what it is.
-a Kuwahara flatten and a bilateral flatten are not two settings of one thing,
-they are the difference between painterly and printed.
+**Anime** is a hue-preserving cel pass on the same flatten and ink the comic
+chain uses. It is in the style table so a selection can be treated without a
+second model download. Rendered against the licensed evaluation set, it still
+reads as a posterise-and-ink filter rather than as a drawn character. Official
+DCT-Net on the same stills, including the published FaceAna 5-point warp, also
+fails that bar. Those renders, and the reasons a licensed neural substitute
+was not shipped, are in
+[the stylisation decision log](stylization-decision-log.md).
+
+What the four share is the colour maths, a box downsample, and the shape of a
+fullscreen pass. Comic, Poster and Print also share the palette and its
+fitting. Anime does not: it keeps the photograph's hue. Nothing shares a line
+of the compositor: each landed without one changing, and all four are held to
+the same contract by the same harness in `test/style-harness.ts`. What they
+deliberately do not share is the stage that makes each one what it is. A
+Kuwahara flatten and a bilateral flatten are not two settings of one thing,
+they are the difference between painterly and printed, and a cel lighting pass
+that keeps hue is not a palette.
 
 ## Resolution is derived, not configured
 

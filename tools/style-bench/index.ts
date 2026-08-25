@@ -16,6 +16,8 @@ import { lightnessStats } from './lightness.ts';
 import { flicker } from './flicker.ts';
 import { motion, motionPictures } from './motion.ts';
 import { attribution } from './attribution.ts';
+import { animeEval } from './anime-eval.ts';
+import { selectiveEval } from './selective-eval.ts';
 
 export const MEASUREMENTS = [
   'chain',
@@ -41,6 +43,10 @@ export const MEASUREMENTS = [
   // And where the residue comes from, which is the question the counter-metric
   // exists to let anybody answer honestly. Same clip, same group.
   'attribution',
+  // Person-to-animation stills. Own name so it cannot re-date the tables above.
+  'anime-eval',
+  // Selective composites through the real compositor. Own name for the same reason.
+  'anime-selective',
 ] as const;
 
 export type Measurement = (typeof MEASUREMENTS)[number];
@@ -86,6 +92,8 @@ export async function run(which: readonly string[]): Promise<unknown> {
   await step('motion', () => motion(dev));
   await step('motion-pictures', () => motionPictures(dev));
   await step('attribution', () => attribution(dev));
+  await step('anime-eval', () => animeEval(dev));
+  await step('anime-selective', () => selectiveEval(dev));
 
   if (failures.length > 0) out['gpu-errors'] = failures;
   dev.destroy();
