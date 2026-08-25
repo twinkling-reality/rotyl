@@ -1,18 +1,24 @@
 // Configured hosted illustrated run. publishReady stays false here.
 //
-//   FAL_KEY=... pnpm exec vite-node tools/style-bench/illustrated-eval.ts
+//   FAL_KEY=... node --experimental-strip-types tools/style-bench/illustrated-eval.ts
+//   FAL_KEY=... pnpm exec vite-node --config /dev/null tools/style-bench/illustrated-eval.ts
 
 import { spawn } from 'node:child_process';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { handleIllustrated } from '../../worker/illustrated.ts';
 import { readField } from '../../src/core/illustrated/request.ts';
+import {
+  ILLUSTRATED_STEPS,
+  ILLUSTRATED_STRENGTH,
+  ILLUSTRATED_STYLE_STRENGTH,
+} from '../../src/core/illustrated/prompt.ts';
 import {
   ILLUSTRATED_LONG_EDGE,
   ILLUSTRATED_TERMS,
   ILLUSTRATED_TERMS_VERSION,
 } from '../../src/core/illustrated/terms.ts';
+import { runPhotomaker } from '../../worker/illustrated.ts';
 
 /**
  * Same long-edge shrink the editor applies before a still leaves. The licensed
@@ -66,6 +72,10 @@ if (!key) {
   throw new Error('FAL_KEY is not set. node tools/style-bench/illustrated-eval.mjs records the skip.');
 }
 
+// Product strength plus one quieter and one harder pull. Four candidates each.
+const strengths = [0.4, ILLUSTRATED_STRENGTH, 0.58];
+const candidates = 4;
+
 await mkdir(outDir, { recursive: true });
 const results: {
   schema: 1;
@@ -74,6 +84,10 @@ const results: {
   termsVersion: string;
   skipped: false;
   note: string;
+  steps: number;
+  styleStrength: number;
+  candidates: number;
+  strengths: number[];
   stills: Array<Record<string, unknown>>;
 } = {
   schema: 1,
@@ -81,7 +95,11 @@ const results: {
   path: ILLUSTRATED_TERMS.path,
   termsVersion: ILLUSTRATED_TERMS_VERSION,
   skipped: false,
-  note: 'Sheets were written. Publish-ready stays false until a person judges the licensed set.',
+  note: 'High-step PhotoMaker sheets were written. Publish-ready stays false until a person judges the licensed set.',
+  steps: ILLUSTRATED_STEPS,
+  styleStrength: ILLUSTRATED_STYLE_STRENGTH,
+  candidates,
+  strengths,
   stills: [],
 };
 
@@ -98,26 +116,51 @@ for (const still of stills) {
     continue;
   }
   const bytes = await prepareStill(file);
-  const started = Date.now();
-  const response = await handleIllustrated(
-    new Request('http://rotyl.local/api/illustrated', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        consent: { version: ILLUSTRATED_TERMS_VERSION, accepted: true },
-        image: { mime: 'image/jpeg', data: bytes.toString('base64') },
-      }),
-    }),
-    { FAL_KEY: key },
-  );
-  const elapsedMs = Date.now() - started;
-  if (!response.ok) {
-    results.stills.push({ id: still.id, ok: false, elapsedMs, error: await response.text() });
-    continue;
+  for (const strength of strengths) {
+    const tag = `s${String(Math.round(strength * 100)).padStart(3, '0')}`;
+    const variantDir = join(outDir, tag);
+    await mkdir(variantDir, { recursive: true });
+    const started = Date.now();
+    try {
+      console.log(`illustrated-eval: ${still.id} strength ${String(strength)}`);
+      const images = await runPhotomaker({
+        still: new Uint8Array(bytes),
+        mime: 'image/jpeg',
+        host: { FAL_KEY: key },
+        numImages: candidates,
+        strength,
+        steps: ILLUSTRATED_STEPS,
+        styleStrength: ILLUSTRATED_STYLE_STRENGTH,
+        giveUpMs: 240_000,
+      });
+      const elapsedMs = Date.now() - started;
+      const outputs: string[] = [];
+      for (const [index, image] of images.entries()) {
+        const relative = `out/illustrated/${tag}/${still.id}-${String(index)}.jpg`;
+        await writeFile(join(here, relative), image.bytes);
+        outputs.push(relative);
+      }
+      results.stills.push({
+        id: still.id,
+        ok: true,
+        strength,
+        elapsedMs,
+        outputs,
+      });
+      await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`);
+      console.log(`illustrated-eval: ${still.id} strength ${String(strength)} ${String(elapsedMs)}ms ${String(outputs.length)} sheets`);
+    } catch (cause) {
+      const elapsedMs = Date.now() - started;
+      const error = cause instanceof Error ? cause.message : 'The illustrated job failed.';
+      results.stills.push({ id: still.id, ok: false, strength, elapsedMs, error });
+      await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`);
+      console.error(`illustrated-eval: ${still.id} strength ${String(strength)} failed: ${error}`);
+      if (error.includes('403') || error.includes('Exhausted balance')) {
+        await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`);
+        throw cause;
+      }
+    }
   }
-  const output = join(outDir, `${still.id}.jpg`);
-  await writeFile(output, Buffer.from(await response.arrayBuffer()));
-  results.stills.push({ id: still.id, ok: true, elapsedMs, output: `out/illustrated/${still.id}.jpg` });
 }
 
 await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`);

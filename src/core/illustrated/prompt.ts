@@ -18,6 +18,17 @@ export const ILLUSTRATED_NEGATIVE_PROMPT =
 /** PhotoMaker's stacked-ID style pipeline, not the photoreal one. */
 export const ILLUSTRATED_PIPELINE = 'photomaker-style';
 
+/** Fal's upper bound. More steps is the quality spend, not a new look. */
+export const ILLUSTRATED_STEPS = 100;
+
+export const ILLUSTRATED_GUIDANCE = 5;
+
+/**
+ * How hard the style adapter may pull. Mid-high of Fal's 15-50 range, so the
+ * still can leave the photograph without becoming a sticker.
+ */
+export const ILLUSTRATED_STYLE_STRENGTH = 40;
+
 /**
  * How far the generator may move from the still.
  *

@@ -84,6 +84,8 @@ describe('illustrated host', () => {
             const body: unknown = JSON.parse(typeof init?.body === 'string' ? init.body : '{}');
             expect(readField(body, 'base_pipeline')).toBe('photomaker-style');
             expect(readField(body, 'style')).toBe('(No style)');
+            expect(readField(body, 'num_inference_steps')).toBe(100);
+            expect(readField(body, 'style_strength')).toBe(40);
             expect(String(readField(body, 'prompt'))).toContain('img');
             expect(String(readField(body, 'image_archive_url'))).toMatch(/^data:application\/zip;base64,/);
             expect(String(readField(body, 'initial_image_url'))).toMatch(/^data:image\/jpeg;base64,/);

@@ -1,10 +1,13 @@
 import { illustratedStatus, readField, readIllustratedJob } from '../src/core/illustrated/request.ts';
 import { ILLUSTRATED_TERMS } from '../src/core/illustrated/terms.ts';
 import {
+  ILLUSTRATED_GUIDANCE,
   ILLUSTRATED_NEGATIVE_PROMPT,
   ILLUSTRATED_PIPELINE,
   ILLUSTRATED_PROMPT,
+  ILLUSTRATED_STEPS,
   ILLUSTRATED_STRENGTH,
+  ILLUSTRATED_STYLE_STRENGTH,
 } from '../src/core/illustrated/prompt.ts';
 import { zipStore } from '../src/core/illustrated/zip.ts';
 
@@ -13,10 +16,27 @@ export interface IllustratedHost {
   readonly fetch?: typeof fetch;
 }
 
+export interface PhotomakerJob {
+  readonly still: Uint8Array;
+  readonly mime: string;
+  readonly host: IllustratedHost;
+  readonly numImages?: number;
+  readonly strength?: number;
+  readonly steps?: number;
+  readonly styleStrength?: number;
+  readonly seed?: number;
+  readonly giveUpMs?: number;
+}
+
+export interface PhotomakerImage {
+  readonly bytes: Uint8Array;
+  readonly mime: string;
+}
+
 const FAL_MODEL = 'fal-ai/photomaker';
 const FAL_QUEUE = `https://queue.fal.run/${FAL_MODEL}`;
 const POLL_MS = 2_000;
-const GIVE_UP_MS = 90_000;
+const GIVE_UP_MS = 180_000;
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = '';
@@ -84,25 +104,25 @@ export async function handleIllustrated(request: Request, host: IllustratedHost)
 
   try {
     const still = base64ToBytes(parsed.value.image.data);
-    const result = await runPhotomaker(still, parsed.value.image.mime, host);
-    return imageResponse(result.bytes, result.mime);
+    const result = await runPhotomaker({ still, mime: parsed.value.image.mime, host });
+    const image = result[0];
+    if (!image) throw new Error('Fal finished without a still.');
+    return imageResponse(image.bytes, image.mime);
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : 'The illustrated job failed.';
     return jsonResponse({ error: message }, 502);
   }
 }
 
-async function runPhotomaker(
-  still: Uint8Array,
-  mime: string,
-  host: IllustratedHost,
-): Promise<{ bytes: Uint8Array; mime: string }> {
-  const key = host.FAL_KEY;
+export async function runPhotomaker(job: PhotomakerJob): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
   if (!key) throw new Error('The host has not configured the illustrated stills job.');
-  const runtimeFetch = host.fetch ?? fetch;
-  const stillUri = `data:${mime};base64,${bytesToBase64(still)}`;
-  const archive = zipStore('id.jpg', still);
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const stillUri = `data:${job.mime};base64,${bytesToBase64(job.still)}`;
+  const archive = zipStore('id.jpg', job.still);
   const archiveUri = `data:application/zip;base64,${bytesToBase64(archive)}`;
+  const numImages = job.numImages ?? 1;
+  const giveUpMs = job.giveUpMs ?? GIVE_UP_MS;
 
   const submitted = await runtimeFetch(FAL_QUEUE, {
     method: 'POST',
@@ -118,14 +138,17 @@ async function runPhotomaker(
       style: '(No style)',
       image_archive_url: archiveUri,
       initial_image_url: stillUri,
-      initial_image_strength: ILLUSTRATED_STRENGTH,
-      num_images: 1,
-      num_inference_steps: 40,
-      guidance_scale: 5,
+      initial_image_strength: job.strength ?? ILLUSTRATED_STRENGTH,
+      style_strength: job.styleStrength ?? ILLUSTRATED_STYLE_STRENGTH,
+      num_images: numImages,
+      num_inference_steps: job.steps ?? ILLUSTRATED_STEPS,
+      guidance_scale: ILLUSTRATED_GUIDANCE,
+      ...(job.seed === undefined ? {} : { seed: job.seed }),
     }),
   });
   if (!submitted.ok) {
-    throw new Error(`Fal refused the job (${String(submitted.status)}).`);
+    const detail = await submitted.text();
+    throw new Error(`Fal refused the job (${String(submitted.status)}). ${detail}`.trim());
   }
   const requestId = readField(await submitted.json(), 'request_id');
   if (typeof requestId !== 'string' || requestId.length === 0) {
@@ -133,7 +156,7 @@ async function runPhotomaker(
   }
 
   const started = Date.now();
-  while (Date.now() - started < GIVE_UP_MS) {
+  while (Date.now() - started < giveUpMs) {
     const statusResponse = await runtimeFetch(`${FAL_QUEUE}/requests/${requestId}/status`, {
       headers: { Authorization: `Key ${key}`, 'X-Fal-Store-IO': '0' },
     });
@@ -145,24 +168,28 @@ async function runPhotomaker(
       });
       if (!resultResponse.ok) throw new Error('Fal finished and then would not hand the still back.');
       const images = readField(await resultResponse.json(), 'images');
-      const image = Array.isArray(images) ? images[0] : undefined;
-      const url = readField(image, 'url');
-      if (typeof url !== 'string' || url.length === 0) throw new Error('Fal finished without a still.');
-      const download = await runtimeFetch(url);
-      if (!download.ok) throw new Error('The generated still could not be fetched.');
-      const contentType = readField(image, 'content_type');
-      return {
-        bytes: new Uint8Array(await download.arrayBuffer()),
-        mime:
-          typeof contentType === 'string'
-            ? contentType
-            : (download.headers.get('content-type') ?? 'image/jpeg'),
-      };
+      if (!Array.isArray(images) || images.length === 0) throw new Error('Fal finished without a still.');
+      const collected: PhotomakerImage[] = [];
+      for (const image of images) {
+        const url = readField(image, 'url');
+        if (typeof url !== 'string' || url.length === 0) throw new Error('Fal finished without a still.');
+        const download = await runtimeFetch(url);
+        if (!download.ok) throw new Error('The generated still could not be fetched.');
+        const contentType = readField(image, 'content_type');
+        collected.push({
+          bytes: new Uint8Array(await download.arrayBuffer()),
+          mime:
+            typeof contentType === 'string'
+              ? contentType
+              : (download.headers.get('content-type') ?? 'image/jpeg'),
+        });
+      }
+      return collected;
     }
     if (status === 'FAILED') throw new Error('Fal could not finish the illustrated still.');
     await wait(POLL_MS);
   }
-  throw new Error(`The illustrated job took longer than ${String(GIVE_UP_MS / 1000)} seconds.`);
+  throw new Error(`The illustrated job took longer than ${String(giveUpMs / 1000)} seconds.`);
 }
 
 function wait(ms: number): Promise<void> {
