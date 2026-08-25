@@ -227,6 +227,7 @@ export async function runPhotomaker(job: PhotomakerJob): Promise<PhotomakerImage
 export const FAL_KONTEXT_PRO = 'fal-ai/flux-pro/kontext';
 export const FAL_KONTEXT_MAX = 'fal-ai/flux-pro/kontext/max';
 export const FAL_FLUX2_EDIT = 'fal-ai/flux-2-pro/edit';
+export const FAL_NANO_EDIT = 'fal-ai/nano-banana-2/edit';
 
 export interface FalKontextJob {
   readonly still: Uint8Array;
@@ -357,6 +358,97 @@ export async function runFalFlux2Edit(job: FalKontextJob): Promise<PhotomakerIma
       image_urls: [stillUrl],
       image_size: 'auto',
       output_format: 'jpeg',
+      ...(job.seed === undefined ? {} : { seed: job.seed }),
+    }),
+  });
+  if (!submitted.ok) {
+    const detail = await submitted.text();
+    throw new Error(`Fal refused the job (${String(submitted.status)}). ${detail}`.trim());
+  }
+  const submittedBody: unknown = await submitted.json();
+  const requestId = readField(submittedBody, 'request_id');
+  const statusUrl = readField(submittedBody, 'status_url');
+  const responseUrl = readField(submittedBody, 'response_url');
+  if (typeof requestId !== 'string' || requestId.length === 0) {
+    throw new Error('Fal did not name the job.');
+  }
+  if (typeof statusUrl !== 'string' || typeof responseUrl !== 'string') {
+    throw new Error('Fal did not name the job status.');
+  }
+
+  const started = Date.now();
+  while (Date.now() - started < giveUpMs) {
+    const statusResponse = await runtimeFetch(statusUrl, {
+      headers: { Authorization: `Key ${key}` },
+    });
+    if (!statusResponse.ok) {
+      const detail = await statusResponse.text();
+      throw new Error(
+        `Fal would not say how the job was doing (${String(statusResponse.status)}). ${detail}`.trim(),
+      );
+    }
+    const status = readField(await statusResponse.json(), 'status');
+    if (status === 'COMPLETED') {
+      const resultResponse = await runtimeFetch(responseUrl, {
+        headers: { Authorization: `Key ${key}` },
+      });
+      if (!resultResponse.ok) {
+        const detail = await resultResponse.text();
+        throw new Error(
+          `Fal finished and then would not hand the still back (${String(resultResponse.status)}). ${detail}`.trim(),
+        );
+      }
+      const images = readField(await resultResponse.json(), 'images');
+      if (!Array.isArray(images) || images.length === 0) throw new Error('Fal finished without a still.');
+      const collected: PhotomakerImage[] = [];
+      for (const image of images) {
+        const url = readField(image, 'url');
+        if (typeof url !== 'string' || url.length === 0) throw new Error('Fal finished without a still.');
+        const download = await runtimeFetch(url);
+        if (!download.ok) throw new Error('The generated still could not be fetched.');
+        const contentType = readField(image, 'content_type');
+        collected.push({
+          bytes: new Uint8Array(await download.arrayBuffer()),
+          mime:
+            typeof contentType === 'string'
+              ? contentType
+              : (download.headers.get('content-type') ?? 'image/jpeg'),
+        });
+      }
+      return collected;
+    }
+    if (status === 'FAILED') throw new Error('Fal could not finish the illustrated still.');
+    await wait(POLL_MS);
+  }
+  throw new Error(`The illustrated job took longer than ${String(giveUpMs / 1000)} seconds.`);
+}
+
+/**
+ * Nano Banana 2 edit of this still. Eval-only. Product POST is still PhotoMaker.
+ */
+export async function runFalNanoEdit(job: FalKontextJob): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const queue = `https://queue.fal.run/${FAL_NANO_EDIT}`;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  const giveUpMs = job.giveUpMs ?? GIVE_UP_MS;
+
+  const submitted = await runtimeFetch(queue, {
+    method: 'POST',
+    headers: {
+      Authorization: `Key ${key}`,
+      'Content-Type': 'application/json',
+      'X-Fal-Store-IO': '0',
+    },
+    body: JSON.stringify({
+      prompt: job.prompt,
+      image_urls: [stillUrl],
+      aspect_ratio: 'auto',
+      output_format: 'jpeg',
+      resolution: '1K',
+      num_images: 1,
+      limit_generations: true,
       ...(job.seed === undefined ? {} : { seed: job.seed }),
     }),
   });

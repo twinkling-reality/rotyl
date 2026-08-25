@@ -1,0 +1,20 @@
+/**
+ * Per-still keep lists for Fal edit evals. These name the costume failures
+ * already judged on Kontext and FLUX.2. Not a claim that the bar is cleared.
+ */
+
+const DRAW =
+  'Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person.';
+
+export const ILLUSTRATED_KEEP: Record<string, string> = {
+  'portrait-close': `${DRAW} Keep the black baseball cap facing the same way as in this photograph. Do not add a red strap and do not turn the cap backward. Keep this exact camera. Keep the landscape.`,
+  'portrait-glasses': `${DRAW} Keep the dark textured knit sweater, not a t-shirt or jacket. Keep the glasses. Keep this window and this room. Do not invent a new eye colour.`,
+  'portrait-somali': `${DRAW} Keep the cream shawl with the dark floral border only on the edge of the cloth.`,
+  'portrait-lehna': `${DRAW} Keep the gold and black patterned headpiece, the magenta cardigan, the black turtleneck, the nose ring, and the dangling geometric silver earrings. Do not add a necklace.`,
+  'portrait-doorway': `${DRAW} Keep the older man, the mustard turban, the white mustache, the kurta, the dark interior, and the red doors.`,
+  'portrait-hands': `${DRAW} Keep the grey crew-neck shirt and the leopard-print headband.`,
+};
+
+export function keepPrompt(id: string): string {
+  return ILLUSTRATED_KEEP[id] ?? DRAW;
+}

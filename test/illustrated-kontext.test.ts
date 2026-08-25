@@ -3,9 +3,11 @@ import { readField } from '../src/core/illustrated/request.ts';
 import {
   FAL_FLUX2_EDIT,
   FAL_KONTEXT_PRO,
+  FAL_NANO_EDIT,
   handleIllustrated,
   runFalFlux2Edit,
   runFalKontext,
+  runFalNanoEdit,
 } from '../worker/illustrated.ts';
 import { ILLUSTRATED_TERMS_VERSION } from '../src/core/illustrated/terms.ts';
 
@@ -172,6 +174,62 @@ describe('illustrated kontext eval helper', () => {
             return new Response(JSON.stringify({ status: 'COMPLETED' }), { status: 200 });
           }
           if (href === 'https://queue.fal.run/fal-ai/flux-2-pro/requests/job-2') {
+            return new Response(
+              JSON.stringify({
+                images: [{ url: 'https://fal.example/out.jpg', content_type: 'image/jpeg' }],
+              }),
+              { status: 200 },
+            );
+          }
+          if (href === 'https://fal.example/out.jpg') {
+            return new Response(jpeg, { headers: { 'Content-Type': 'image/jpeg' } });
+          }
+          return new Response('unexpected', { status: 500 });
+        },
+      },
+    });
+    expect(images).toHaveLength(1);
+  });
+
+  it('edits the still on Nano Banana 2 with image_urls', async () => {
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+    const images = await runFalNanoEdit({
+      still: jpeg,
+      mime: 'image/jpeg',
+      prompt: 'Redraw this photograph as a cel-animation illustration.',
+      host: {
+        FAL_KEY: 'test-key',
+        fetch: async (url, init) => {
+          const href = requestHref(url);
+          if (href === 'https://rest.fal.ai/storage/upload/initiate') {
+            return new Response(
+              JSON.stringify({
+                upload_url: 'https://fal.example/upload/1',
+                file_url: 'https://fal.example/file/1',
+              }),
+              { status: 200 },
+            );
+          }
+          if (href.startsWith('https://fal.example/upload/')) {
+            return new Response(null, { status: 200 });
+          }
+          if (href === `https://queue.fal.run/${FAL_NANO_EDIT}`) {
+            const body: unknown = JSON.parse(typeof init?.body === 'string' ? init.body : '{}');
+            expect(readField(body, 'image_urls')).toEqual(['https://fal.example/file/1']);
+            expect(readField(body, 'resolution')).toBe('1K');
+            return new Response(
+              JSON.stringify({
+                request_id: 'job-n',
+                status_url: 'https://queue.fal.run/fal-ai/nano-banana-2/requests/job-n/status',
+                response_url: 'https://queue.fal.run/fal-ai/nano-banana-2/requests/job-n',
+              }),
+              { status: 200 },
+            );
+          }
+          if (href === 'https://queue.fal.run/fal-ai/nano-banana-2/requests/job-n/status') {
+            return new Response(JSON.stringify({ status: 'COMPLETED' }), { status: 200 });
+          }
+          if (href === 'https://queue.fal.run/fal-ai/nano-banana-2/requests/job-n') {
             return new Response(
               JSON.stringify({
                 images: [{ url: 'https://fal.example/out.jpg', content_type: 'image/jpeg' }],
