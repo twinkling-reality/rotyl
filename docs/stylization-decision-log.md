@@ -298,6 +298,78 @@ No claim about `portrait-close` on any family stands until it is judged again
 on the corrected prompt. `publishReady` stays false and product POST stays
 PhotoMaker.
 
+## Hosted run, six more edit families, judged
+
+Leftover Fal spend went past Seedream 4.5 to six edit families, run on the
+corrected keep list: Seedream 5 Pro, Seedream 5 Lite, Nano Banana Pro, Qwen
+image edit 2511, Grok Imagine edit, and FLUX.2 Flex edit. Thirty six sheets,
+six licensed stills each. Sheets are local under
+`tools/style-bench/out/illustrated/` in `seedream5-pro/`, `seedream5-lite/`,
+`nano-pro/`, `qwen-edit/`, `grok-edit/` and `flux2-flex/`, and are not
+committed.
+
+**The close cap, settled.** All six families draw the black snapback worn
+backward with the red adjuster strap across the forehead, because that is what
+the photograph shows. Six of six. Nothing was invented on this still by any
+family, on this sweep or on the earlier ones. The correction above stands.
+
+**Skin tone on dark-skinned sitters.** A forehead patch was sampled on the
+three dark-skinned sitters and averaged, in luma out of 255, against the same
+patch in the photograph. The sample box was rendered onto both images first to
+confirm it lands on skin.
+
+| family          | somali | lehna | hands | mean absolute |
+| --------------- | ------ | ----- | ----- | ------------- |
+| Grok Imagine    | +23.8  | +4.0  | +13.8 | 13.9          |
+| Nano Banana Pro | +26.6  | -16.6 | +4.1  | 15.8          |
+| Seedream 5 Pro  | +44.6  | -19.1 | +22.1 | 28.6          |
+| FLUX.2 Flex     | +41.1  | -29.2 | +48.1 | 39.5          |
+| Qwen 2511       | +69.6  | -18.5 | +32.0 | 40.0          |
+| Seedream 5 Lite | +72.5  | +17.0 | +53.1 | 47.5          |
+
+The somali photograph is an aged, underexposed print, so part of a positive
+number is shadow resolving into flat fill rather than a change of complexion.
+That does not account for the size of the drift on Seedream 5 Lite, Qwen, or
+FLUX.2 Flex. On `portrait-somali` and `portrait-hands` those three draw a
+visibly lighter complexion than the sitter, and Lite also draws a younger face.
+The `DRAW` prompt pins "the same face, age, skin", so this is an identity miss,
+not a style choice. Grok and Nano Banana Pro hold skin closest.
+
+**Seedream 5 Pro.** The best drawing of the six. Lehna keeps the magenta
+cardigan, the gold headpiece, the turtleneck, the silver earring, and the
+backdrop pattern row for row. Doorway keeps the turban, the white mustache, the
+kurta pocket, the red doors, the door latch, and the wall stencils. Hands keeps
+the leopard headband, the top knot, the grey crew neck, and draws a coherent
+five-fingered hand at the chin. Close keeps the camera lettering. Glasses keeps
+the tortoiseshell frames and the knit, and invents a lit face and a visible eye
+where the photograph is nearly a silhouette. Somali lightens the skin.
+
+**Seedream 5 Lite.** Holds the same costume list at a lower price and a cruder
+line. It has the worst skin drift of the six and draws a younger face on
+somali.
+
+**Nano Banana Pro.** Flat vector line with heavy outlines. Costume holds on all
+six and skin holds best after Grok. Faces are more generic than Seedream 5 Pro
+and the smile is lost on lehna.
+
+**Qwen image edit 2511.** Costume holds, but it rewrites the camera lettering
+on close, from `iya 645` to `Iya 5A6`. The keep list names that lettering. Skin
+drift is large.
+
+**Grok Imagine edit.** Holds skin best of the six and holds costume on all six.
+The line is flatter and more like clip art than a desirable character, and the
+brow is furrowed on hands where the photograph is serene. Close reads `iya 643`
+for `iya 645`.
+
+**FLUX.2 Flex edit.** Costume holds and the cap and lettering are right. Skin
+drift is large on somali and hands.
+
+No family is adopted. `publishReady` stays false, product POST stays
+PhotoMaker, and terms stay `illustrated-v2`. Whether any of these sheets clear
+the bar is the user's call, not this page's. The skin drift above should be
+settled before any family is adopted, because it falls on the sitters the
+product would be drawing.
+
 ## Measurements
 
 Hosted latency and cost are Fal's, not this machine's. A 100-step still on
@@ -321,6 +393,16 @@ measured 15 s to 32 s wall. GPT Image 1.5 edit lists $0.133 a still at
 high quality 1024, plus token charges, and measured 46 s to 77 s wall.
 No new compute-second bill was read. Product terms stay
 `illustrated-v2` and still quote PhotoMaker.
+
+The six-family sweep measured wall times of 50 s to 116 s for Seedream 5 Pro,
+43 s to 79 s for Seedream 5 Lite, 22 s to 39 s for Nano Banana Pro, 5 s to 28 s
+for Qwen 2511, 18 s to 20 s for Grok Imagine, and 16 s to 20 s for FLUX.2 Flex.
+Fal list prices were published for two of the six: Seedream 5 Lite at $0.035 a
+still and Grok Imagine edit at $0.022 a still. The other four publish no price
+in their endpoint metadata and none is guessed here. The account balance fell
+from $4.394375 to $0.982175 across the thirty six jobs, $3.41 measured in
+total. Fal settles billing with a lag, so a balance read straight after a
+family finishes is low.
 
 The compositor contract for an adopted layer is the existing style harness:
 unselected pixels stay byte-identical. That test is in
