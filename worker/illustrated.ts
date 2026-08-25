@@ -158,15 +158,20 @@ export async function runPhotomaker(job: PhotomakerJob): Promise<PhotomakerImage
   const started = Date.now();
   while (Date.now() - started < giveUpMs) {
     const statusResponse = await runtimeFetch(`${FAL_QUEUE}/requests/${requestId}/status`, {
-      headers: { Authorization: `Key ${key}`, 'X-Fal-Store-IO': '0' },
+      headers: { Authorization: `Key ${key}` },
     });
     if (!statusResponse.ok) throw new Error('Fal would not say how the job was doing.');
     const status = readField(await statusResponse.json(), 'status');
     if (status === 'COMPLETED') {
       const resultResponse = await runtimeFetch(`${FAL_QUEUE}/requests/${requestId}`, {
-        headers: { Authorization: `Key ${key}`, 'X-Fal-Store-IO': '0' },
+        headers: { Authorization: `Key ${key}` },
       });
-      if (!resultResponse.ok) throw new Error('Fal finished and then would not hand the still back.');
+      if (!resultResponse.ok) {
+        const detail = await resultResponse.text();
+        throw new Error(
+          `Fal finished and then would not hand the still back (${String(resultResponse.status)}). ${detail}`.trim(),
+        );
+      }
       const images = readField(await resultResponse.json(), 'images');
       if (!Array.isArray(images) || images.length === 0) throw new Error('Fal finished without a still.');
       const collected: PhotomakerImage[] = [];
