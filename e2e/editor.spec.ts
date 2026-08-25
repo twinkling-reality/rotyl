@@ -664,6 +664,7 @@ test('states privacy, cost, latency and retention before a still can leave', asy
   await expect(panel.getByText('Cost', { exact: true })).toBeVisible();
   await expect(panel.getByText('Latency', { exact: true })).toBeVisible();
   await expect(panel.getByText('Retention', { exact: true })).toBeVisible();
+  await expect(panel.getByText(/Separate from Comic, Poster, Print and Anime/)).toBeVisible();
 
   const send = page.getByRole('button', { name: 'Send this still' });
   await expect(send).toBeDisabled();
