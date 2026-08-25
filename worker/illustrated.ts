@@ -275,20 +275,31 @@ export async function runFalKontext(job: FalKontextJob): Promise<PhotomakerImage
     const detail = await submitted.text();
     throw new Error(`Fal refused the job (${String(submitted.status)}). ${detail}`.trim());
   }
-  const requestId = readField(await submitted.json(), 'request_id');
+  const submittedBody: unknown = await submitted.json();
+  const requestId = readField(submittedBody, 'request_id');
+  const statusUrl = readField(submittedBody, 'status_url');
+  const responseUrl = readField(submittedBody, 'response_url');
   if (typeof requestId !== 'string' || requestId.length === 0) {
     throw new Error('Fal did not name the job.');
+  }
+  if (typeof statusUrl !== 'string' || typeof responseUrl !== 'string') {
+    throw new Error('Fal did not name the job status.');
   }
 
   const started = Date.now();
   while (Date.now() - started < giveUpMs) {
-    const statusResponse = await runtimeFetch(`${queue}/requests/${requestId}/status`, {
+    const statusResponse = await runtimeFetch(statusUrl, {
       headers: { Authorization: `Key ${key}` },
     });
-    if (!statusResponse.ok) throw new Error('Fal would not say how the job was doing.');
+    if (!statusResponse.ok) {
+      const detail = await statusResponse.text();
+      throw new Error(
+        `Fal would not say how the job was doing (${String(statusResponse.status)}). ${detail}`.trim(),
+      );
+    }
     const status = readField(await statusResponse.json(), 'status');
     if (status === 'COMPLETED') {
-      const resultResponse = await runtimeFetch(`${queue}/requests/${requestId}`, {
+      const resultResponse = await runtimeFetch(responseUrl, {
         headers: { Authorization: `Key ${key}` },
       });
       if (!resultResponse.ok) {

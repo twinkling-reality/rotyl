@@ -95,12 +95,19 @@ describe('illustrated kontext eval helper', () => {
             expect(readField(body, 'image_url')).toBe('https://fal.example/file/1');
             expect(readField(body, 'prompt')).toMatch(/cel-animation/);
             expect(readField(body, 'image_archive_url')).toBeUndefined();
-            return new Response(JSON.stringify({ request_id: 'job-k' }), { status: 200 });
+            return new Response(
+              JSON.stringify({
+                request_id: 'job-k',
+                status_url: 'https://queue.fal.run/fal-ai/flux-pro/requests/job-k/status',
+                response_url: 'https://queue.fal.run/fal-ai/flux-pro/requests/job-k',
+              }),
+              { status: 200 },
+            );
           }
-          if (href.endsWith('/requests/job-k/status')) {
+          if (href === 'https://queue.fal.run/fal-ai/flux-pro/requests/job-k/status') {
             return new Response(JSON.stringify({ status: 'COMPLETED' }), { status: 200 });
           }
-          if (href.endsWith('/requests/job-k')) {
+          if (href === 'https://queue.fal.run/fal-ai/flux-pro/requests/job-k') {
             return new Response(
               JSON.stringify({
                 images: [{ url: 'https://fal.example/out.jpg', content_type: 'image/jpeg' }],
