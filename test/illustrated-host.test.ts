@@ -78,6 +78,19 @@ describe('illustrated host', () => {
         fetch: async (url, init) => {
           const href = requestHref(url);
           calls.push(`${init?.method ?? 'GET'} ${href}`);
+          if (href === 'https://rest.fal.ai/storage/upload/initiate') {
+            const name = calls.filter((entry) => entry.includes('upload/initiate')).length;
+            return new Response(
+              JSON.stringify({
+                upload_url: `https://fal.example/upload/${String(name)}`,
+                file_url: `https://fal.example/file/${String(name)}`,
+              }),
+              { status: 200 },
+            );
+          }
+          if (href.startsWith('https://fal.example/upload/')) {
+            return new Response(null, { status: 200 });
+          }
           if (href === 'https://queue.fal.run/fal-ai/photomaker') {
             expect(headerValue(init?.headers, 'Authorization')).toBe('Key test-key');
             expect(headerValue(init?.headers, 'X-Fal-Store-IO')).toBe('0');
@@ -87,8 +100,8 @@ describe('illustrated host', () => {
             expect(readField(body, 'num_inference_steps')).toBe(100);
             expect(readField(body, 'style_strength')).toBe(40);
             expect(String(readField(body, 'prompt'))).toContain('img');
-            expect(String(readField(body, 'image_archive_url'))).toMatch(/^data:application\/zip;base64,/);
-            expect(String(readField(body, 'initial_image_url'))).toMatch(/^data:image\/jpeg;base64,/);
+            expect(String(readField(body, 'image_archive_url'))).toMatch(/^https:\/\/fal\.example\/file\//);
+            expect(String(readField(body, 'initial_image_url'))).toMatch(/^https:\/\/fal\.example\/file\//);
             return new Response(JSON.stringify({ request_id: 'job-1' }), { status: 200 });
           }
           if (href.endsWith('/requests/job-1/status')) {
@@ -112,7 +125,8 @@ describe('illustrated host', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('image/jpeg');
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(jpeg);
-    expect(calls[0]).toBe('POST https://queue.fal.run/fal-ai/photomaker');
+    expect(calls).toContain('POST https://queue.fal.run/fal-ai/photomaker');
+    expect(calls.filter((entry) => entry === 'POST https://rest.fal.ai/storage/upload/initiate')).toHaveLength(2);
   });
 
   it('refuses a consented still when the host has no key', async () => {

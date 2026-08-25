@@ -35,17 +35,9 @@ export interface PhotomakerImage {
 
 const FAL_MODEL = 'fal-ai/photomaker';
 const FAL_QUEUE = `https://queue.fal.run/${FAL_MODEL}`;
+const FAL_UPLOAD = 'https://rest.fal.ai/storage/upload/initiate';
 const POLL_MS = 2_000;
 const GIVE_UP_MS = 180_000;
-
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = '';
-  const chunk = 0x8000;
-  for (let offset = 0; offset < bytes.length; offset += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunk));
-  }
-  return btoa(binary);
-}
 
 function base64ToBytes(data: string): Uint8Array {
   const binary = atob(data);
@@ -114,13 +106,48 @@ export async function handleIllustrated(request: Request, host: IllustratedHost)
   }
 }
 
+async function uploadFalAsset(
+  bytes: Uint8Array,
+  mime: string,
+  fileName: string,
+  runtimeFetch: typeof fetch,
+  key: string,
+): Promise<string> {
+  const initiated = await runtimeFetch(FAL_UPLOAD, {
+    method: 'POST',
+    headers: {
+      Authorization: `Key ${key}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ content_type: mime, file_name: fileName }),
+  });
+  if (!initiated.ok) {
+    throw new Error(`Fal would not take the still (${String(initiated.status)}).`);
+  }
+  const body: unknown = await initiated.json();
+  const uploadUrl = readField(body, 'upload_url');
+  const fileUrl = readField(body, 'file_url');
+  if (typeof uploadUrl !== 'string' || typeof fileUrl !== 'string') {
+    throw new Error('Fal did not name an upload.');
+  }
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  const uploaded = await runtimeFetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': mime },
+    body: copy,
+  });
+  if (!uploaded.ok) throw new Error(`Fal would not store the still (${String(uploaded.status)}).`);
+  return fileUrl;
+}
+
 export async function runPhotomaker(job: PhotomakerJob): Promise<PhotomakerImage[]> {
   const key = job.host.FAL_KEY;
   if (!key) throw new Error('The host has not configured the illustrated stills job.');
   const runtimeFetch = job.host.fetch ?? fetch;
-  const stillUri = `data:${job.mime};base64,${bytesToBase64(job.still)}`;
   const archive = zipStore('id.jpg', job.still);
-  const archiveUri = `data:application/zip;base64,${bytesToBase64(archive)}`;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  const archiveUrl = await uploadFalAsset(archive, 'application/zip', 'id.zip', runtimeFetch, key);
   const numImages = job.numImages ?? 1;
   const giveUpMs = job.giveUpMs ?? GIVE_UP_MS;
 
@@ -136,8 +163,8 @@ export async function runPhotomaker(job: PhotomakerJob): Promise<PhotomakerImage
       negative_prompt: ILLUSTRATED_NEGATIVE_PROMPT,
       base_pipeline: ILLUSTRATED_PIPELINE,
       style: '(No style)',
-      image_archive_url: archiveUri,
-      initial_image_url: stillUri,
+      image_archive_url: archiveUrl,
+      initial_image_url: stillUrl,
       initial_image_strength: job.strength ?? ILLUSTRATED_STRENGTH,
       style_strength: job.styleStrength ?? ILLUSTRATED_STYLE_STRENGTH,
       num_images: numImages,
