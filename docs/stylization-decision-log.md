@@ -335,6 +335,14 @@ visibly lighter complexion than the sitter, and Lite also draws a younger face.
 The `DRAW` prompt pins "the same face, age, skin", so this is an identity miss,
 not a style choice. Grok and Nano Banana Pro hold skin closest.
 
+The number ranks fidelity, not the bar. A family that barely stylises scores
+well on it by doing nothing. Grok is the case in point: its somali sheet keeps
+the photograph's mottled shading, the individual hair strands, and the small
+blue mark on the shawl, and reads as a traced and posterised photograph rather
+than a drawn character. The bar fails posterised photographs. So the drift
+column is a check to run against a family that already draws, not a ranking of
+which family to adopt.
+
 **Seedream 5 Pro.** The best drawing of the six. Lehna keeps the magenta
 cardigan, the gold headpiece, the turtleneck, the silver earring, and the
 backdrop pattern row for row. Doorway keeps the turban, the white mustache, the
@@ -356,10 +364,11 @@ and the smile is lost on lehna.
 on close, from `iya 645` to `Iya 5A6`. The keep list names that lettering. Skin
 drift is large.
 
-**Grok Imagine edit.** Holds skin best of the six and holds costume on all six.
-The line is flatter and more like clip art than a desirable character, and the
-brow is furrowed on hands where the photograph is serene. Close reads `iya 643`
-for `iya 645`.
+**Grok Imagine edit.** Holds skin best of the six and holds costume on all six,
+but it holds them by tracing. Somali is a posterised photograph with the
+original shading blotches intact. That is the failure this ledger named for the
+Anime shader, reached from the other direction. The brow is furrowed on hands
+where the photograph is serene. Close reads `iya 643` for `iya 645`.
 
 **FLUX.2 Flex edit.** Costume holds and the cap and lettering are right. Skin
 drift is large on somali and hands.
