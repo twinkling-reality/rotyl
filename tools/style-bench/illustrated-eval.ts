@@ -5,6 +5,7 @@
 
 import { spawn } from 'node:child_process';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { constants as fsConstants } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readField } from '../../src/core/illustrated/request.ts';
@@ -122,6 +123,27 @@ for (const still of stills) {
     const tag = `s${String(Math.round(strength * 100)).padStart(3, '0')}`;
     const variantDir = join(outDir, tag);
     await mkdir(variantDir, { recursive: true });
+    const existing: string[] = [];
+    for (let index = 0; index < candidates; index++) {
+      const relative = `out/illustrated/${tag}/${still.id}-${String(index)}.jpg`;
+      try {
+        await access(join(here, relative), fsConstants.R_OK);
+        existing.push(relative);
+      } catch {
+        /* this candidate is still missing */
+      }
+    }
+    if (existing.length === candidates) {
+      results.stills.push({
+        id: still.id,
+        ok: true,
+        strength,
+        reused: true,
+        outputs: existing,
+      });
+      console.log(`illustrated-eval: ${still.id} strength ${String(strength)} reused`);
+      continue;
+    }
     const started = Date.now();
     try {
       console.log(`illustrated-eval: ${still.id} strength ${String(strength)}`);
