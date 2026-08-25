@@ -275,6 +275,29 @@ Seedream holds clothes better than Kontext close-seeds or GPT Image.
 The set still does not clear the bar. `publishReady` stays false.
 Product POST is still PhotoMaker. No demo reel.
 
+## Correction, the close cap
+
+The source photograph for `portrait-close` was read again, at full size and at
+a crop of the head. It shows a black snapback worn backward: the flat brim
+points behind the head, and the red band across the forehead is the adjuster
+strap, visible because the cap is backward.
+
+Earlier entries on this page recorded a backward cap and a red strap as
+inventions, on Kontext, on the keep-list sweep, on the four close-cap seeds,
+and on Seedream. That reading was wrong. Those sheets were drawing the
+photograph. The Seedream entry had already noticed the strap is in the still
+and still counted the backward cap as a miss.
+
+The keep-list prompt carried the same error. It asked for a cap facing the
+other way and for no red strap, which asked the model to depart from the
+still. That is against the visual bar, which keeps costume and silhouette
+coherent with the photograph. The prompt now describes the cap as photographed.
+
+The four close-cap Kontext seeds were spent against a miss that was not there.
+No claim about `portrait-close` on any family stands until it is judged again
+on the corrected prompt. `publishReady` stays false and product POST stays
+PhotoMaker.
+
 ## Measurements
 
 Hosted latency and cost are Fal's, not this machine's. A 100-step still on
