@@ -29,7 +29,24 @@ async function prepareStill(file: string): Promise<Buffer> {
   const scale = `scale='if(gte(iw,ih),${String(ILLUSTRATED_LONG_EDGE)},-1)':'if(gt(ih,iw),${String(ILLUSTRATED_LONG_EDGE)},-1)'`;
   const child = spawn(
     'ffmpeg',
-    ['-nostdin', '-v', 'error', '-i', file, '-vf', scale, '-frames:v', '1', '-q:v', '2', '-f', 'image2pipe', '-vcodec', 'mjpeg', 'pipe:1'],
+    [
+      '-nostdin',
+      '-v',
+      'error',
+      '-i',
+      file,
+      '-vf',
+      scale,
+      '-frames:v',
+      '1',
+      '-q:v',
+      '2',
+      '-f',
+      'image2pipe',
+      '-vcodec',
+      'mjpeg',
+      'pipe:1',
+    ],
     { stdio: ['ignore', 'pipe', 'pipe'] },
   );
   const chunks: Buffer[] = [];
@@ -98,7 +115,7 @@ const results: {
   path: ILLUSTRATED_TERMS.path,
   termsVersion: ILLUSTRATED_TERMS_VERSION,
   skipped: false,
-  note: 'High-step PhotoMaker sheets were written. Publish-ready stays false until a person judges the licensed set.',
+  note: 'Sheets were written. Publish-ready stays false until a person judges the licensed set and it clears.',
   steps: ILLUSTRATED_STEPS,
   styleStrength: ILLUSTRATED_STYLE_STRENGTH,
   candidates,
@@ -172,7 +189,9 @@ for (const still of stills) {
         outputs,
       });
       await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`);
-      console.log(`illustrated-eval: ${still.id} strength ${String(strength)} ${String(elapsedMs)}ms ${String(outputs.length)} sheets`);
+      console.log(
+        `illustrated-eval: ${still.id} strength ${String(strength)} ${String(elapsedMs)}ms ${String(outputs.length)} sheets`,
+      );
     } catch (cause) {
       const elapsedMs = Date.now() - started;
       const error = cause instanceof Error ? cause.message : 'The illustrated job failed.';

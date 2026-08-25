@@ -12,7 +12,7 @@
  * request is not that bar.
  */
 
-export const ILLUSTRATED_TERMS_VERSION = 'illustrated-v1';
+export const ILLUSTRATED_TERMS_VERSION = 'illustrated-v2';
 
 /**
  * Longest edge sent to the host.
@@ -47,9 +47,9 @@ export const ILLUSTRATED_TERMS: IllustratedTerms = {
   stillsOnly: true,
   privacy:
     "The whole still leaves this machine. It goes to Rotyl's same-origin worker, then to Fal, which runs PhotoMaker. The selection stays here. Fal's API terms say they do not train on client content. The key never enters the browser.",
-  cost: "The host pays Fal's compute bill. A still is typically well under a dollar. Comic, Poster and Print stay free and local.",
+  cost: "The host pays Fal's compute bill. A 100-step still measured about twenty cents at $0.00125 a compute second. Comic, Poster and Print stay free and local.",
   latency:
-    'About twenty to sixty seconds. The editor stays usable. Nothing comes back until the job finishes.',
+    'About two minutes on the licensed set. The editor stays usable. Nothing comes back until the job finishes.',
   retention:
     'Rotyl keeps nothing. The worker asks Fal not to store the request payload. Fal may still hold the generated file on its CDN for up to seven days. Export the PNG if you want the result. Closing the file drops the layer.',
   background:

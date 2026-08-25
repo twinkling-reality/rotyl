@@ -25,7 +25,7 @@ const skipped = {
   schema: 1,
   publishReady: false,
   path: 'PhotoMaker (Tencent ARC, Apache-2.0) on Fal, photomaker-style, img2img from this still',
-  termsVersion: 'illustrated-v1',
+  termsVersion: 'illustrated-v2',
   skipped: true,
   reason: 'FAL_KEY is not set. The visual bar has not been run.',
   stills: set.stills.map((still) => still.id),

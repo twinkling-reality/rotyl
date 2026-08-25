@@ -194,8 +194,8 @@ the person-to-animation bar. The authorised next path is a hosted PhotoMaker
 job on a still, opt-in, after the terms are shown. It produces a texture. The
 compositor blends that texture through the mask and does not learn what
 PhotoMaker is. The Style list is unchanged. See
-[stylisation decisions](stylization-decision-log.md). The job is not
-publish-ready.
+[stylisation decisions](stylization-decision-log.md). The licensed set was
+run on this path and failed the visual bar. The job is not publish-ready.
 
 ## Resolution is derived, not configured
 

@@ -6,8 +6,8 @@ Evidence ledger for the selective person-to-animation treatment. Local paths
 were tried first. This page records why they failed and which hosted path was
 then authorised.
 
-Nothing here is publish-ready. No demo reel until the licensed set clears the
-visual bar.
+Nothing here is publish-ready. The licensed set was run on PhotoMaker. The
+pictures failed the bar. No demo reel.
 
 ## Visual bar
 
@@ -88,17 +88,54 @@ are still the original still at the original resolution.
 The job is not configured in an ordinary clone. `FAL_KEY` is a host secret.
 Without it the panel still opens, so the terms can be read, and nothing leaves.
 
-**Not publish-ready.** No licensed-set renders from this path have cleared the
-bar. A request that returns a picture is not a desirable character. Do not put
-this on a demo reel. Do not describe the control as a character generator until
-the stills say so.
+**Not publish-ready.** The licensed set was run on this path. The pictures
+failed the bar. A request that returns a picture is not a desirable character.
+Do not put this on a demo reel. Do not describe the control as a character
+generator.
+
+## Hosted run, judged
+
+A configured host ran `fal-ai/photomaker` with `photomaker-style`, img2img from
+the still, 100 steps, style strength 40, and strengths 0.48 and 0.40. Identity
+archives were uploaded to Fal storage because a data-URI zip is refused. Sheets
+are local under `tools/style-bench/out/illustrated/` and are not committed.
+
+**portrait-close.** Hands and camera stay, and so does the landscape. The
+result is still a photograph. Red hair is invented. Not an illustrated
+character.
+
+**portrait-glasses.** The glasses disappear. Hair and window light stay
+cinematic. Identity is a neighbour of the sitter, not the sitter.
+
+**portrait-somali.** A young woman in a floral headscarf becomes a man with
+stubble and loose hair. Clothes and expression do not survive.
+
+**portrait-lehna.** Magenta knit, gold headpiece, nose ring and earrings do
+not hold. One strength grows a beard. The backdrop is restyled, not left as
+the photograph.
+
+**portrait-doorway.** An older man in a mustard turban becomes a young blonde
+in an anime doorway. Pose is kept. The person is not.
+
+**portrait-hands.** Closest sheet. The thinking hand and grey shirt remain.
+The leopard headband is gone. That is still not the same person, dressed.
+
+None of the six read as a desirable illustrated character who is still that
+person, with the photograph around them still the photograph. PhotoMaker
+invents a new face more readily than it draws this one.
+
+This work does not reopen Anime, DCT-Net, InstantID, PuLID, or
+IP-Adapter-FaceID.
 
 ## Measurements
 
-Hosted latency and cost are Fal's, not this machine's. The terms quote twenty
-to sixty seconds and a typical still well under a dollar. Those are the
-figures the user is shown. They will be replaced with measured numbers from
-the licensed set once a configured host has run it.
+Hosted latency and cost are Fal's, not this machine's. A 100-step still on
+this set waited about two minutes (99 s to 163 s wall time on the jobs that
+actually ran that long) and billed at $0.00125 a compute second, about twenty
+cents if the whole wait were compute. Queue time is not billed. Fal locked
+the account several times mid-run with an exhausted-balance 403 even while
+`users/current` then reported unlocked. The terms now quote those measured
+figures.
 
 The compositor contract for an adopted layer is the existing style harness:
 unselected pixels stay byte-identical. That test is in

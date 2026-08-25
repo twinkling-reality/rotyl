@@ -31,8 +31,10 @@ node tools/style-bench/illustrated-eval.mjs
 ```
 
 Without `FAL_KEY` that writes a skipped result and does not claim a pass. A
-configured host runs `pnpm exec vite-node tools/style-bench/illustrated-eval.ts`.
-`publishReady` stays false until a person judges the licensed set.
+configured host runs `node --experimental-strip-types tools/style-bench/illustrated-eval.ts`
+(or `pnpm exec vite-node` if the app Vite config is not required). The licensed
+set was judged on PhotoMaker and failed the visual bar. `publishReady` stays
+false.
 
 `run.mjs` takes any subset: `chain`, `perturbation`, `clips`, `stills`, `sweep`,
 `figures`, the five that need `fetch-real.sh` to have run: `real-chain`,

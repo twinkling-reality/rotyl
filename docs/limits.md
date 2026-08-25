@@ -438,8 +438,9 @@ one, and the measurement behind it is on `/research.html`.
   on.
 - **The hosted illustrated still is not publish-ready.** It is a separate
   opt-in job, stills only, and it sends the whole still to Fal after the terms
-  are accepted. The compositor keeps unselected pixels. The licensed set has
-  not been judged on this path. Do not call it a character generator and do
-  not cut a demo from it. Clips are refused. Without a host `FAL_KEY` the
-  panel still opens and nothing leaves. See
-  [stylisation decisions](stylization-decision-log.md).
+  are accepted. The compositor keeps unselected pixels. The licensed set was
+  run on PhotoMaker and failed the visual bar: identity, clothes, and
+  silhouette do not hold, and several sheets invent a different person. Do
+  not call it a character generator and do not cut a demo from it. Clips are
+  refused. Without a host `FAL_KEY` the panel still opens and nothing leaves.
+  See [stylisation decisions](stylization-decision-log.md).
