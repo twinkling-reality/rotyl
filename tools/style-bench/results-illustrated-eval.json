@@ -3,14 +3,45 @@
   "publishReady": false,
   "path": "PhotoMaker (Tencent ARC, Apache-2.0) on Fal, photomaker-style, img2img from this still",
   "termsVersion": "illustrated-v1",
-  "skipped": true,
-  "reason": "FAL_KEY is not set. The visual bar has not been run.",
+  "skipped": false,
+  "note": "Configured host ran the licensed set. Fal refused every job with 403: exhausted balance. No sheets were written. Publish-ready stays false.",
+  "error": "User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing.",
   "stills": [
-    "portrait-close",
-    "portrait-glasses",
-    "portrait-somali",
-    "portrait-lehna",
-    "portrait-doorway",
-    "portrait-hands"
+    {
+      "id": "portrait-close",
+      "ok": false,
+      "elapsedMs": 337,
+      "error": "{\"error\":\"Fal refused the job (403).\"}"
+    },
+    {
+      "id": "portrait-glasses",
+      "ok": false,
+      "elapsedMs": 105,
+      "error": "{\"error\":\"Fal refused the job (403).\"}"
+    },
+    {
+      "id": "portrait-somali",
+      "ok": false,
+      "elapsedMs": 84,
+      "error": "{\"error\":\"Fal refused the job (403).\"}"
+    },
+    {
+      "id": "portrait-lehna",
+      "ok": false,
+      "elapsedMs": 144,
+      "error": "{\"error\":\"Fal refused the job (403).\"}"
+    },
+    {
+      "id": "portrait-doorway",
+      "ok": false,
+      "elapsedMs": 82,
+      "error": "{\"error\":\"Fal refused the job (403).\"}"
+    },
+    {
+      "id": "portrait-hands",
+      "ok": false,
+      "elapsedMs": 59,
+      "error": "{\"error\":\"Fal refused the job (403).\"}"
+    }
   ]
 }
