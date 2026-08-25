@@ -18,6 +18,8 @@ Pre-releases stop receiving fixes when a final release supersedes them. Model
 assets have their own immutable release version and are never replaced in
 place.
 
-Rotyl processes media locally. A report that shows media, credentials, or model
-bytes leaving the documented same-origin boundary is treated as a security and
-privacy issue.
+Rotyl processes media locally, with one documented exception. The hosted
+illustrated stills job sends a consented still from the same-origin worker to
+Fal. The Fal key never enters the browser. A report that shows media,
+credentials, or model bytes leaving that documented path is treated as a
+security and privacy issue.

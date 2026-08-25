@@ -191,6 +191,14 @@ export interface ExportRequest {
   readonly commands: readonly SelectionCommand[];
   readonly style: StyleDefinition;
   readonly controls: StyleControls;
+  /**
+   * A hosted illustrated still, when one is showing.
+   *
+   * Stills only. A clip export must not pass this: the layer is one frame of
+   * one photograph, and drawing it on every frame of a clip would be faking
+   * a video treatment that does not exist.
+   */
+  readonly illustrated?: GPUTexture;
   /** Called after each frame, so a long export can say how far along it is. */
   readonly onProgress?: (written: number, total: number) => void;
   readonly signal?: AbortSignal;
@@ -351,7 +359,14 @@ export async function runExport(request: ExportRequest): Promise<ExportResult> {
       // frame five hundred says so at frame five hundred.
       device.pushErrorScope('out-of-memory');
       device.pushErrorScope('validation');
-      await exporter.render(context.getCurrentTexture(), commands, frame.index, style, controls);
+      await exporter.render(
+        context.getCurrentTexture(),
+        commands,
+        frame.index,
+        style,
+        controls,
+        request.illustrated,
+      );
       const validationError = await device.popErrorScope();
       const memoryError = await device.popErrorScope();
       if (memoryError) throw new Error('Not enough graphics memory to export this at full size.');

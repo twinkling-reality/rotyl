@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "purpose": "Licensed stills and film windows for judging person-to-animation treatments. Nothing listed here is committed or redistributed.",
+  "stills": [
+    {
+      "id": "portrait-close",
+      "file": "real/evaluation/portrait-close.jpg",
+      "licence": "CC0",
+      "source": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Photographer_in_close-up_%28Unsplash%29.jpg",
+      "sha256": "643d6477faf515340c758e140e0851247a4b02bffd7e899a8e1ab02c6638fb7b",
+      "notes": "Close framing, light skin, hands and a camera covering most of the face. Same photograph as fetch-real.sh portrait. Used for hands and silhouette, not as a facial-identity case."
+    },
+    {
+      "id": "portrait-glasses",
+      "file": "real/evaluation/portrait-glasses.jpg",
+      "licence": "CC0",
+      "attribution": "Caleb George",
+      "source": "https://upload.wikimedia.org/wikipedia/commons/0/05/Woman_waiting_near_a_window_%28Unsplash%29.jpg",
+      "commons": "https://commons.wikimedia.org/wiki/File:Woman_waiting_near_a_window_(Unsplash).jpg",
+      "sha256": "971b57395b29ce3fa74f2d1b9b1aef45ad48012ad82d800269575079a96038fc",
+      "notes": "Close-medium, light skin, glasses, blonde hair. Unsplash upload published before 5 June 2017, so the Commons CC0 dedication applies."
+    },
+    {
+      "id": "portrait-somali",
+      "file": "real/evaluation/portrait-somali.jpg",
+      "licence": "CC0",
+      "attribution": "Anna Frodesiak",
+      "source": "https://upload.wikimedia.org/wikipedia/commons/c/c4/Somali_girl_01.jpg",
+      "sha256": "96d0514bd2b13fb5f59f4c973c696dcb2114493d133d803e26671aa10c0b238d",
+      "notes": "Medium framing, darker skin."
+    },
+    {
+      "id": "portrait-lehna",
+      "file": "real/evaluation/portrait-lehna.jpg",
+      "licence": "CC0",
+      "attribution": "Kay Hickman / Black Lunch Table",
+      "source": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Lehna_Huie%2C_artist_%2833398617908%29.jpg",
+      "sha256": "be879ed68c55a5fd0186b1e2eee93643c05840af2a46074297db3465b085ae6d",
+      "notes": "Medium-close, textured hair, layered clothing."
+    },
+    {
+      "id": "portrait-doorway",
+      "file": "real/evaluation/portrait-doorway.jpg",
+      "licence": "CC0",
+      "attribution": "Abhas Mishra",
+      "source": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Indian_man_standing_in_doorway_%28Unsplash%29.jpg",
+      "commons": "https://commons.wikimedia.org/wiki/File:Indian_man_standing_in_doorway_(Unsplash).jpg",
+      "sha256": "47eb4419c469469205bd8d2ace11c8f109e8f613051a3c1e4d36b3a08ccc2085",
+      "notes": "Full-body, turban, layered clothing. Unsplash upload published before 5 June 2017, so the Commons CC0 dedication applies."
+    },
+    {
+      "id": "portrait-hands",
+      "file": "real/evaluation/portrait-hands.jpg",
+      "licence": "CC0",
+      "attribution": "Tachina Lee",
+      "source": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Woman_looking_up_%28Unsplash%29.jpg",
+      "commons": "https://commons.wikimedia.org/wiki/File:Woman_looking_up_(Unsplash).jpg",
+      "sha256": "38d23d8857f5f57e56ca2abba17c79901cf64d5ef82c772e784fda3dd3aa4886",
+      "notes": "Medium framing, headscarf, hand under the chin. Unsplash upload published before 5 June 2017, so the Commons CC0 dedication applies."
+    }
+  ],
+  "video": [
+    {
+      "id": "tos-crossing",
+      "file": "real/evaluation/tos-crossing.mp4",
+      "licence": "CC BY 3.0",
+      "attribution": "(CC) Blender Foundation, mango.blender.org",
+      "source": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
+      "sha256Film": "efa9062d9cdb7a338e40ad530dfdf234806743f29ae6a1a136b97ece4e588e8f",
+      "sha256": "3a4b1af884a69da0da175976901811289eb98d9943da7340b38ee5b9d738f5e9",
+      "cut": {
+        "startSeconds": 25.75,
+        "requestedSeconds": 8.0,
+        "frames": 193,
+        "note": "stream-copied; duration follows the next keyframe after the requested window"
+      },
+      "notes": "Amsterdam canal bridge. Two people in frame with gesture and a railing in front of the bodies."
+    },
+    {
+      "id": "tos-occlusion",
+      "file": "real/evaluation/tos-occlusion.mp4",
+      "licence": "CC BY 3.0",
+      "attribution": "(CC) Blender Foundation, mango.blender.org",
+      "source": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
+      "sha256Film": "efa9062d9cdb7a338e40ad530dfdf234806743f29ae6a1a136b97ece4e588e8f",
+      "sha256": "234c796e07ae62c1bca77cc6208dbe1c798d23bb68c22a31deea72e10333f322",
+      "cut": {
+        "startSeconds": 360.0,
+        "requestedSeconds": 5.5,
+        "frames": 149,
+        "note": "stream-copied; duration follows the next keyframe after the requested window"
+      },
+      "notes": "Celia close-up with a foreground head and shoulder occupying the left of the frame."
+    },
+    {
+      "id": "tos-bridge",
+      "file": "real/tos-bridge.mp4",
+      "licence": "CC BY 3.0",
+      "attribution": "(CC) Blender Foundation, mango.blender.org",
+      "source": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
+      "sha256Film": "efa9062d9cdb7a338e40ad530dfdf234806743f29ae6a1a136b97ece4e588e8f",
+      "notes": "Existing fetch-real.sh two-second cut of the same bridge shot, used by the real-chain measurements."
+    }
+  ]
+}

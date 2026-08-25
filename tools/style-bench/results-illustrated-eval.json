@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "PhotoMaker (Tencent ARC, Apache-2.0) on Fal, photomaker-style, img2img from this still",
+  "termsVersion": "illustrated-v1",
+  "skipped": true,
+  "reason": "FAL_KEY is not set. The visual bar has not been run.",
+  "stills": [
+    "portrait-close",
+    "portrait-glasses",
+    "portrait-somali",
+    "portrait-lehna",
+    "portrait-doorway",
+    "portrait-hands"
+  ]
+}

@@ -641,6 +641,43 @@ test('switches styles and brings each one its own controls', async ({ page }) =>
   await expect(coarseness).toHaveValue('0.8');
 });
 
+test('keeps the hosted illustrated still off the style shelf', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  await expect(page.locator('canvas')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Style', exact: true }).click();
+  await page.getByRole('button', { name: /^Style: / }).click();
+  await expect(
+    page.getByRole('listbox', { name: 'Style' }).getByRole('option', { name: 'Illustrated' }),
+  ).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Illustrated' })).toBeVisible();
+});
+
+test('states privacy, cost, latency and retention before a still can leave', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(fixture);
+  await expect(page.locator('canvas')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Illustrated' }).click();
+  const panel = page.getByRole('complementary', { name: 'Hosted illustrated still' });
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText('Privacy', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Cost', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Latency', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Retention', { exact: true })).toBeVisible();
+
+  const send = page.getByRole('button', { name: 'Send this still' });
+  await expect(send).toBeDisabled();
+  await send.click({ force: true });
+  await expect(page.getByText('Sending the still')).toHaveCount(0);
+});
+
+test('does not offer the hosted illustrated still on a clip', async ({ page }) => {
+  await page.locator('input[type=file]').setInputFiles(clip);
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Illustrated' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Style', exact: true })).toBeVisible();
+});
+
 test('attaches the style shelf above the toolbar without narrowing the canvas', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.locator('input[type=file]').setInputFiles(fixture);

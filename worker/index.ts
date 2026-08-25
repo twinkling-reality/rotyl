@@ -4,6 +4,7 @@ interface AssetFetcher {
 
 interface Environment {
   readonly ASSETS: AssetFetcher;
+  readonly FAL_KEY?: string;
 }
 
 /**
@@ -16,6 +17,10 @@ export default {
   async fetch(request: Request, environment: Environment): Promise<Response> {
     const url = new URL(request.url);
     const pathname = url.pathname;
+    if (pathname === '/api/illustrated') {
+      const { handleIllustrated } = await import('./illustrated.ts');
+      return handleIllustrated(request, environment);
+    }
     const html = pathname === '/' || pathname.endsWith('.html');
     const assetPath = pathname === '/' ? '/index.html.page' : `${pathname}${html ? '.page' : ''}`;
     url.pathname = `/__rotyl${assetPath}`;

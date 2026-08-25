@@ -23,6 +23,17 @@ node tools/style-bench/run.mjs all         # real Chrome, headed
 node tools/style-bench/run.mjs real        # the same three, on photographs
 ```
 
+The hosted illustrated still is a separate job, not a style-bench chain.
+
+```bash
+./tools/style-bench/fetch-evaluation.sh
+node tools/style-bench/illustrated-eval.mjs
+```
+
+Without `FAL_KEY` that writes a skipped result and does not claim a pass. A
+configured host runs `pnpm exec vite-node tools/style-bench/illustrated-eval.ts`.
+`publishReady` stays false until a person judges the licensed set.
+
 `run.mjs` takes any subset: `chain`, `perturbation`, `clips`, `stills`, `sweep`,
 `figures`, the five that need `fetch-real.sh` to have run: `real-chain`,
 `real-perturbation`, `real-clips`, `real-lightness`, `real-flicker`, and the

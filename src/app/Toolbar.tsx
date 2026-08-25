@@ -5,6 +5,7 @@ import {
   BrushIcon,
   ContrastIcon,
   EraserIcon,
+  PencilIcon,
   PointerClickIcon,
   RouteIcon,
   SlidersIcon,
@@ -38,6 +39,19 @@ export interface ToolbarProps {
     readonly title: string;
     readonly onTrack: () => void;
     readonly onStop: () => void;
+  };
+  /**
+   * The hosted illustrated still, when the open file is a photograph.
+   *
+   * ABSENT on a clip, which this job will not take. A greyed button there
+   * would promise a video treatment that does not exist.
+   */
+  readonly illustrated?: {
+    readonly open: boolean;
+    readonly active: boolean;
+    readonly disabled: boolean;
+    readonly title: string;
+    readonly onToggle: () => void;
   };
 }
 
@@ -93,6 +107,7 @@ export function Toolbar({
   styleShelfOpen,
   onToggleStyleShelf,
   tracking,
+  illustrated,
 }: ToolbarProps): JSX.Element {
   return (
     <div class="toolbar" role="toolbar" aria-label="Selection and style">
@@ -183,6 +198,17 @@ export function Toolbar({
         className={styleShelfOpen ? 'tool--open' : ''}
         onClick={onToggleStyleShelf}
       />
+      {illustrated ? (
+        <ToolButton
+          label="Illustrated"
+          title={illustrated.title}
+          icon={<PencilIcon />}
+          expanded={illustrated.open}
+          disabled={illustrated.disabled}
+          className={illustrated.open || illustrated.active ? 'tool--open' : ''}
+          onClick={illustrated.onToggle}
+        />
+      ) : null}
     </div>
   );
 }
