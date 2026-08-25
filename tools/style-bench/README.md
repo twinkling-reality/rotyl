@@ -34,7 +34,8 @@ Without `FAL_KEY` that writes a skipped result and does not claim a pass. A
 configured host runs `node --experimental-strip-types tools/style-bench/illustrated-eval.ts`
 (or `pnpm exec vite-node` if the app Vite config is not required). The licensed
 set was judged on PhotoMaker at 0.48 / 0.40 and again at strength 0.30,
-style strength 20. Both failed the visual bar. `publishReady` stays false.
+style strength 20. Both failed the visual bar. A later Fal spend runs
+`illustrated-eval-kontext.ts` on FLUX Kontext. `publishReady` stays false.
 
 `run.mjs` takes any subset: `chain`, `perturbation`, `clips`, `stills`, `sweep`,
 `figures`, the five that need `fetch-real.sh` to have run: `real-chain`,
