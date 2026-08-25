@@ -126,7 +126,9 @@ describe('illustrated host', () => {
     expect(response.headers.get('Content-Type')).toBe('image/jpeg');
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(jpeg);
     expect(calls).toContain('POST https://queue.fal.run/fal-ai/photomaker');
-    expect(calls.filter((entry) => entry === 'POST https://rest.fal.ai/storage/upload/initiate')).toHaveLength(2);
+    expect(
+      calls.filter((entry) => entry === 'POST https://rest.fal.ai/storage/upload/initiate'),
+    ).toHaveLength(2);
   });
 
   it('refuses a consented still when the host has no key', async () => {
