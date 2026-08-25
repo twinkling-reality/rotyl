@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "FLUX.1 Kontext on Fal, edit this still, pro then max",
+  "skipped": false,
+  "note": "Kontext sheets were judged. Closer than PhotoMaker. The set does not clear the bar. Publish-ready stays false.",
+  "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, glasses, jewelry, headwear, clothes, hands, pose, and framing. Do not invent a different person. Do not drop or replace accessories.",
+  "models": [
+    {
+      "id": "fal-ai/flux-pro/kontext",
+      "tag": "kontext-pro",
+      "listPriceUsd": 0.04
+    },
+    {
+      "id": "fal-ai/flux-pro/kontext/max",
+      "tag": "kontext-max",
+      "listPriceUsd": 0.08
+    }
+  ],
+  "falListPriceUsd": {
+    "pro": 0.04,
+    "max": 0.08,
+    "unit": "image"
+  },
+  "measuredWallMs": {
+    "proMin": 11473,
+    "proMax": 143856,
+    "maxMin": 11575,
+    "maxMax": 17405
+  },
+  "judgement": {
+    "clearsBar": false,
+    "summary": "Kontext draws this still. Doorway keeps the mustard turban. Hands keep the leopard headband. Glasses stay on. It is still not a pass: the glasses sweater becomes a tee, close invents a red cap strap, lehna drops the gold headpiece on max, and some shirts change colour. No demo reel."
+  },
+  "stills": [
+    {
+      "id": "portrait-close",
+      "model": "fal-ai/flux-pro/kontext",
+      "ok": true,
+      "elapsedMs": 11858,
+      "clearsBar": false,
+      "aspectRatio": "3:2",
+      "outputs": ["out/illustrated/kontext-pro/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "model": "fal-ai/flux-pro/kontext",
+      "ok": true,
+      "elapsedMs": 13373,
+      "clearsBar": false,
+      "aspectRatio": "3:4",
+      "outputs": ["out/illustrated/kontext-pro/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "model": "fal-ai/flux-pro/kontext",
+      "ok": true,
+      "elapsedMs": 12936,
+      "clearsBar": false,
+      "aspectRatio": "3:4",
+      "outputs": ["out/illustrated/kontext-pro/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "model": "fal-ai/flux-pro/kontext",
+      "ok": true,
+      "elapsedMs": 11473,
+      "clearsBar": false,
+      "aspectRatio": "3:2",
+      "outputs": ["out/illustrated/kontext-pro/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "model": "fal-ai/flux-pro/kontext",
+      "ok": true,
+      "elapsedMs": 143429,
+      "clearsBar": false,
+      "aspectRatio": "2:3",
+      "outputs": ["out/illustrated/kontext-pro/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "model": "fal-ai/flux-pro/kontext",
+      "ok": true,
+      "elapsedMs": 143856,
+      "clearsBar": false,
+      "aspectRatio": "3:2",
+      "outputs": ["out/illustrated/kontext-pro/portrait-hands-0.jpg"]
+    },
+    {
+      "id": "portrait-close",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 11585,
+      "clearsBar": false,
+      "aspectRatio": "3:2",
+      "outputs": ["out/illustrated/kontext-max/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 17405,
+      "clearsBar": false,
+      "aspectRatio": "3:4",
+      "outputs": ["out/illustrated/kontext-max/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 11575,
+      "clearsBar": false,
+      "aspectRatio": "3:4",
+      "outputs": ["out/illustrated/kontext-max/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 15412,
+      "clearsBar": false,
+      "aspectRatio": "3:2",
+      "outputs": ["out/illustrated/kontext-max/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 13340,
+      "clearsBar": false,
+      "aspectRatio": "2:3",
+      "outputs": ["out/illustrated/kontext-max/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 12973,
+      "clearsBar": false,
+      "aspectRatio": "3:2",
+      "outputs": ["out/illustrated/kontext-max/portrait-hands-0.jpg"]
+    }
+  ]
+}

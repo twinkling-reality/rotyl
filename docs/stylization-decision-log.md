@@ -6,8 +6,8 @@ Evidence ledger for the selective person-to-animation treatment. Local paths
 were tried first. This page records why they failed and which hosted path was
 then authorised.
 
-Nothing here is publish-ready. The licensed set was run on PhotoMaker. The
-pictures failed the bar. No demo reel.
+Nothing here is publish-ready. The licensed set was run on PhotoMaker and
+then on FLUX Kontext. The pictures failed the bar. No demo reel.
 
 ## Visual bar
 
@@ -150,9 +150,40 @@ again. Pose and kurta stay. The person does not.
 remain. The leopard headband is gone.
 
 Pulling toward the still fixes some of the costume failures. It does not
-stop PhotoMaker inventing a new face. None of the six clear the bar. This
-work does not spend more on PhotoMaker knobs, and it does not reopen Anime,
-DCT-Net, InstantID, PuLID, or IP-Adapter-FaceID.
+stop PhotoMaker inventing a new face. None of the six clear the bar.
+
+## Hosted run, FLUX Kontext, judged
+
+PhotoMaker invents a new face, so leftover Fal spend went to an edit of
+this still: `fal-ai/flux-pro/kontext` and `fal-ai/flux-pro/kontext/max`.
+No InsightFace. Product POST is still PhotoMaker. Sheets are local under
+`tools/style-bench/out/illustrated/kontext-pro/` and `kontext-max/` and
+are not committed.
+
+**portrait-close.** Now drawn, not a photograph. Hands, camera, and
+landscape stay. A red strap is invented on a backward cap.
+
+**portrait-glasses.** The glasses stay. The dark sweater becomes an olive
+tee. The eye colour is invented.
+
+**portrait-somali.** Stays a young woman. Max keeps the cream shawl and
+the floral border. Pro moves the pattern onto the wrap.
+
+**portrait-lehna.** Magenta knit stays. Max drops the gold headpiece.
+Earrings drift.
+
+**portrait-doorway.** An older man in a mustard turban stays an older man
+in a mustard turban. Pose and kurta stay. This is the PhotoMaker failure
+that Kontext actually holds.
+
+**portrait-hands.** The thinking hand and the leopard headband stay. Shirt
+colour drifts on max.
+
+Kontext draws this still instead of stacking a new identity. Doorway and
+hands are the first hosted sheets that still read as these people,
+dressed, and as drawings. The set as a whole does not clear the bar.
+`publishReady` stays false. This work does not reopen Anime, DCT-Net,
+InstantID, PuLID, or IP-Adapter-FaceID.
 
 ## Measurements
 
@@ -167,6 +198,11 @@ figures.
 The identity follow-up measured one long job at 232 s wall and five jobs at
 9 s to 27 s. No new compute-second bill was read. Terms stay
 `illustrated-v2`.
+
+Kontext list prices on Fal are $0.04 a still for pro and $0.08 for max.
+Measured wall on this set: pro 11 s to 144 s, max 12 s to 17 s. No new
+compute-second bill was read. Product terms stay `illustrated-v2` and
+still quote PhotoMaker.
 
 The compositor contract for an adopted layer is the existing style harness:
 unselected pixels stay byte-identical. That test is in
