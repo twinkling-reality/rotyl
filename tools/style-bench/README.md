@@ -35,7 +35,8 @@ configured host runs `node --experimental-strip-types tools/style-bench/illustra
 (or `pnpm exec vite-node` if the app Vite config is not required). The licensed
 set was judged on PhotoMaker at 0.48 / 0.40 and again at strength 0.30,
 style strength 20. Both failed the visual bar. A later Fal spend ran
-`illustrated-eval-kontext.ts` on FLUX Kontext. Closer. Still not a pass.
+`illustrated-eval-kontext.ts` on FLUX Kontext and
+`illustrated-eval-flux2.ts` on FLUX.2 Pro edit. Closer. Still not a pass.
 `publishReady` stays false.
 
 `run.mjs` takes any subset: `chain`, `perturbation`, `clips`, `stills`, `sweep`,

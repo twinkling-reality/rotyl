@@ -182,8 +182,33 @@ colour drifts on max.
 Kontext draws this still instead of stacking a new identity. Doorway and
 hands are the first hosted sheets that still read as these people,
 dressed, and as drawings. The set as a whole does not clear the bar.
-`publishReady` stays false. This work does not reopen Anime, DCT-Net,
-InstantID, PuLID, or IP-Adapter-FaceID.
+`publishReady` stays false.
+
+## Hosted run, FLUX.2 Pro edit, judged
+
+Same leftover Fal spend. `fal-ai/flux-2-pro/edit` on the same six stills.
+Sheets are local under `tools/style-bench/out/illustrated/flux2-edit/` and
+are not committed.
+
+**portrait-close.** Drawn. Hands and camera stay. A red snapback strap is
+still invented.
+
+**portrait-glasses.** Glasses stay. The sweater becomes a teal jacket and
+the room is a new scene.
+
+**portrait-somali.** Stays a young woman with the floral border.
+
+**portrait-lehna.** Gold headpiece and nose ring stay. A gold pendant is
+invented.
+
+**portrait-doorway.** Mustard turban and white mustache stay. The dark
+interior becomes a pale room.
+
+**portrait-hands.** Thinking hand, grey shirt, and leopard headband stay.
+
+FLUX.2 is not a step past Kontext on the set. Lehna holds more. Glasses
+holds less. The set does not clear the bar. This work does not reopen
+Anime, DCT-Net, InstantID, PuLID, or IP-Adapter-FaceID.
 
 ## Measurements
 
@@ -200,9 +225,9 @@ The identity follow-up measured one long job at 232 s wall and five jobs at
 `illustrated-v2`.
 
 Kontext list prices on Fal are $0.04 a still for pro and $0.08 for max.
-Measured wall on this set: pro 11 s to 144 s, max 12 s to 17 s. No new
-compute-second bill was read. Product terms stay `illustrated-v2` and
-still quote PhotoMaker.
+Measured wall on this set: pro 11 s to 144 s, max 12 s to 17 s. FLUX.2
+Pro edit measured 16 s to 36 s wall. No new compute-second bill was
+read. Product terms stay `illustrated-v2` and still quote PhotoMaker.
 
 The compositor contract for an adopted layer is the existing style harness:
 unselected pixels stay byte-identical. That test is in

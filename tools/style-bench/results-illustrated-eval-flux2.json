@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "FLUX.2 Pro edit on Fal, this still",
+  "skipped": false,
+  "note": "FLUX.2 sheets were judged. Still not a pass. Publish-ready stays false.",
+  "model": "fal-ai/flux-2-pro/edit",
+  "measuredWallMs": {
+    "min": 15929,
+    "max": 35823
+  },
+  "judgement": {
+    "clearsBar": false,
+    "summary": "FLUX.2 draws the still. Doorway and hands hold. Lehna keeps the gold headpiece and the nose ring. Glasses invents a teal jacket and a new room. Close still invents a red cap strap. No demo reel."
+  },
+  "stills": [
+    {
+      "id": "portrait-close",
+      "ok": true,
+      "elapsedMs": 15929,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/flux2-edit/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "ok": true,
+      "elapsedMs": 25541,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/flux2-edit/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "ok": true,
+      "elapsedMs": 29552,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/flux2-edit/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "ok": true,
+      "elapsedMs": 35823,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/flux2-edit/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "ok": true,
+      "elapsedMs": 32813,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/flux2-edit/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "ok": true,
+      "elapsedMs": 17570,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/flux2-edit/portrait-hands-0.jpg"]
+    }
+  ]
+}
