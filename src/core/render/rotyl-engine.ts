@@ -303,19 +303,6 @@ export class RotylEngine {
   }
 
   /**
-   * Release the loaded media and go back to having none.
-   *
-   * A full-resolution photograph and its mask are hundreds of megabytes, so
-   * closing one has to give them back rather than wait for the next open to
-   * displace them. The engine itself survives: its pipelines, its refiner and
-   * its display pass are per-device, not per-file, and rebuilding them to show
-   * a drop zone would be work done to look tidy.
-   *
-   * The document is reset with it. A command log describes strokes on a
-   * particular picture, and carrying one across to the next file would apply
-   * somebody's careful selection to an image it was never drawn on.
-   */
-  /**
    * Show a hosted illustrated still through the existing compositor.
    *
    * The engine takes the texture. The caller must not destroy it.
@@ -338,6 +325,19 @@ export class RotylEngine {
     return this.#illustrated;
   }
 
+  /**
+   * Release the loaded media and go back to having none.
+   *
+   * A full-resolution photograph and its mask are hundreds of megabytes, so
+   * closing one has to give them back rather than wait for the next open to
+   * displace them. The engine itself survives: its pipelines, its refiner and
+   * its display pass are per-device, not per-file, and rebuilding them to show
+   * a drop zone would be work done to look tidy.
+   *
+   * The document is reset with it. A command log describes strokes on a
+   * particular picture, and carrying one across to the next file would apply
+   * somebody's careful selection to an image it was never drawn on.
+   */
   unloadMedia(): void {
     if (!this.#media) return;
     this.clearIllustratedLayer();

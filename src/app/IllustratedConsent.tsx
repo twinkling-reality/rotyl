@@ -38,7 +38,8 @@ export function IllustratedConsent({
     <aside class="illustrated-shelf" aria-label="Hosted illustrated still">
       <p class="illustrated-shelf__title">{terms.title}</p>
       <p class="illustrated-shelf__lede">
-        Separate from Comic, Poster and Print. Stills only. The still leaves this machine only if you send it.
+        Separate from Comic, Poster, Print and Anime. Stills only. The still leaves this machine only if you
+        send it.
       </p>
       <dl class="illustrated-shelf__terms">
         <div>

@@ -77,10 +77,10 @@ authorization boundary, and it was not taken.
 ## What ships, and what does not
 
 The option is a toolbar control named Illustrated, only on a photograph. It is
-not in the Style list. Opening it prints the terms. Send is disabled until
-there is a selection and the host has configured a Fal key. The worker refuses
-a job whose consent is missing or stale. Closing the file drops the layer.
-Clips are not sent.
+not in the Style list and it is not Comic, Poster, Print or Anime. Opening it
+prints the terms. Send is disabled until there is a selection and the host has
+configured a Fal key. The worker refuses a job whose consent is missing or
+stale. Closing the file drops the layer. Clips are not sent.
 
 The generated layer is at most 1280 pixels on the long edge. Unselected pixels
 are still the original still at the original resolution.

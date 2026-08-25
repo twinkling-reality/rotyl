@@ -3,6 +3,22 @@ import { handleIllustrated } from '../worker/illustrated.ts';
 import { readField } from '../src/core/illustrated/request.ts';
 import { ILLUSTRATED_TERMS_VERSION } from '../src/core/illustrated/terms.ts';
 
+function requestHref(url: Parameters<typeof fetch>[0]): string {
+  if (typeof url === 'string') return url;
+  if (url instanceof URL) return url.href;
+  if (url instanceof Request) return url.url;
+  return '';
+}
+
+function headerValue(headers: HeadersInit | undefined, name: string): unknown {
+  if (headers instanceof Headers) return headers.get(name);
+  if (Array.isArray(headers)) {
+    const found = headers.find((entry) => entry[0].toLowerCase() === name.toLowerCase());
+    return found?.[1];
+  }
+  return headers && typeof headers === 'object' ? Reflect.get(headers, name) : undefined;
+}
+
 function post(body: unknown, host: Parameters<typeof handleIllustrated>[1]): Promise<Response> {
   return handleIllustrated(
     new Request('http://rotyl.local/api/illustrated', {
@@ -47,6 +63,54 @@ describe('illustrated host', () => {
     expect(called).toBe(false);
     const error = readField(await response.json(), 'error');
     expect(typeof error === 'string' ? error : '').toMatch(/terms/);
+  });
+
+  it('sends a consented still through PhotoMaker and returns the layer', async () => {
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+    const calls: string[] = [];
+    const response = await post(
+      {
+        consent: { version: ILLUSTRATED_TERMS_VERSION, accepted: true },
+        image: { mime: 'image/jpeg', data: 'aaaa' },
+      },
+      {
+        FAL_KEY: 'test-key',
+        fetch: async (url, init) => {
+          const href = requestHref(url);
+          calls.push(`${init?.method ?? 'GET'} ${href}`);
+          if (href === 'https://queue.fal.run/fal-ai/photomaker') {
+            expect(headerValue(init?.headers, 'Authorization')).toBe('Key test-key');
+            expect(headerValue(init?.headers, 'X-Fal-Store-IO')).toBe('0');
+            const body: unknown = JSON.parse(typeof init?.body === 'string' ? init.body : '{}');
+            expect(readField(body, 'base_pipeline')).toBe('photomaker-style');
+            expect(readField(body, 'style')).toBe('(No style)');
+            expect(String(readField(body, 'prompt'))).toContain('img');
+            expect(String(readField(body, 'image_archive_url'))).toMatch(/^data:application\/zip;base64,/);
+            expect(String(readField(body, 'initial_image_url'))).toMatch(/^data:image\/jpeg;base64,/);
+            return new Response(JSON.stringify({ request_id: 'job-1' }), { status: 200 });
+          }
+          if (href.endsWith('/requests/job-1/status')) {
+            return new Response(JSON.stringify({ status: 'COMPLETED' }), { status: 200 });
+          }
+          if (href.endsWith('/requests/job-1')) {
+            return new Response(
+              JSON.stringify({
+                images: [{ url: 'https://fal.example/out.jpg', content_type: 'image/jpeg' }],
+              }),
+              { status: 200 },
+            );
+          }
+          if (href === 'https://fal.example/out.jpg') {
+            return new Response(jpeg, { headers: { 'Content-Type': 'image/jpeg' } });
+          }
+          return new Response('unexpected', { status: 500 });
+        },
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('image/jpeg');
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(jpeg);
+    expect(calls[0]).toBe('POST https://queue.fal.run/fal-ai/photomaker');
   });
 
   it('refuses a consented still when the host has no key', async () => {
