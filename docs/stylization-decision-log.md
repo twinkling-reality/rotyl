@@ -230,8 +230,17 @@ Kontext keep still paints a red strap.
 **portrait-hands.** Leopard headband and the thinking hand stay.
 
 Naming the clothes helped. The set still does not clear the bar.
-`publishReady` stays false. This work does not reopen Anime, DCT-Net,
-InstantID, PuLID, or IP-Adapter-FaceID.
+`publishReady` stays false.
+
+## Hosted run, close-cap seeds, judged
+
+Four more Kontext max jobs on portrait-close, seeds 11, 23, 41, and 67,
+told not to add a red strap or flip the cap. Every sheet still invents
+a backward cap and a red strap. Seed 67 puts the strap on the forehead.
+Prompting and reseeding do not stop that invention. Sheets are local
+under `tools/style-bench/out/illustrated/close-seeds/` and are not
+committed. This work does not reopen Anime, DCT-Net, InstantID, PuLID,
+or IP-Adapter-FaceID.
 
 ## Measurements
 
@@ -250,9 +259,9 @@ The identity follow-up measured one long job at 232 s wall and five jobs at
 Kontext list prices on Fal are $0.04 a still for pro and $0.08 for max.
 Measured wall on this set: pro 11 s to 144 s, max 12 s to 17 s. FLUX.2
 Pro edit measured 16 s to 36 s wall. Nano Banana 2 edit lists $0.08 at
-1K. Keep-list wall: Kontext max 11 s to 148 s, Nano 13 s to 38 s. No new
-compute-second bill was read. Product terms stay `illustrated-v2` and
-still quote PhotoMaker.
+1K. Keep-list wall: Kontext max 11 s to 148 s, Nano 13 s to 38 s. Close-cap
+seeds measured 13 s to 182 s. No new compute-second bill was read.
+Product terms stay `illustrated-v2` and still quote PhotoMaker.
 
 The compositor contract for an adopted layer is the existing style harness:
 unselected pixels stay byte-identical. That test is in

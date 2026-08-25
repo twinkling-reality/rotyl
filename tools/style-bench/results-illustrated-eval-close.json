@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "Kontext max, portrait-close, four seeds, no red strap",
+  "skipped": false,
+  "note": "Four seeds were judged. Every sheet still invents a backward cap and a red strap. Publish-ready stays false.",
+  "falListPriceUsd": 0.08,
+  "falUnit": "image",
+  "measuredWallMs": {
+    "min": 13034,
+    "max": 181758
+  },
+  "judgement": {
+    "clearsBar": false,
+    "summary": "Seeds 11, 23, 41, and 67 all keep a backward black cap and a red strap. Seed 67 puts the strap on the forehead. Prompting and reseeding do not stop that invention. No demo reel."
+  },
+  "stills": [
+    {
+      "id": "portrait-close",
+      "seed": 11,
+      "ok": true,
+      "elapsedMs": 15597,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/close-seeds/portrait-close-11.jpg"]
+    },
+    {
+      "id": "portrait-close",
+      "seed": 23,
+      "ok": true,
+      "elapsedMs": 181758,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/close-seeds/portrait-close-23.jpg"]
+    },
+    {
+      "id": "portrait-close",
+      "seed": 41,
+      "ok": true,
+      "elapsedMs": 177419,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/close-seeds/portrait-close-41.jpg"]
+    },
+    {
+      "id": "portrait-close",
+      "seed": 67,
+      "ok": true,
+      "elapsedMs": 13034,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/close-seeds/portrait-close-67.jpg"]
+    }
+  ]
+}
