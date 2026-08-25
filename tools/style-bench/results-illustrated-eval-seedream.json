@@ -27,9 +27,7 @@
       "elapsedMs": 15789,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the black baseball cap facing the same way as in this photograph. Do not add a red strap and do not turn the cap backward. Keep this exact camera. Keep the landscape.",
       "clearsBar": false,
-      "outputs": [
-        "out/illustrated/seedream-edit/portrait-close-0.jpg"
-      ]
+      "outputs": ["out/illustrated/seedream-edit/portrait-close-0.jpg"]
     },
     {
       "id": "portrait-glasses",
@@ -37,9 +35,7 @@
       "ok": true,
       "elapsedMs": 22016,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the dark textured knit sweater, not a t-shirt or jacket. Keep the glasses. Keep this window and this room. Do not invent a new eye colour.",
-      "outputs": [
-        "out/illustrated/seedream-edit/portrait-glasses-0.jpg"
-      ],
+      "outputs": ["out/illustrated/seedream-edit/portrait-glasses-0.jpg"],
       "clearsBar": false
     },
     {
@@ -48,9 +44,7 @@
       "ok": true,
       "elapsedMs": 31358,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the cream shawl with the dark floral border only on the edge of the cloth.",
-      "outputs": [
-        "out/illustrated/seedream-edit/portrait-somali-0.jpg"
-      ],
+      "outputs": ["out/illustrated/seedream-edit/portrait-somali-0.jpg"],
       "clearsBar": false
     },
     {
@@ -59,9 +53,7 @@
       "ok": true,
       "elapsedMs": 15632,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the gold and black patterned headpiece, the magenta cardigan, the black turtleneck, the nose ring, and the dangling geometric silver earrings. Do not add a necklace.",
-      "outputs": [
-        "out/illustrated/seedream-edit/portrait-lehna-0.jpg"
-      ],
+      "outputs": ["out/illustrated/seedream-edit/portrait-lehna-0.jpg"],
       "clearsBar": false
     },
     {
@@ -70,9 +62,7 @@
       "ok": true,
       "elapsedMs": 31885,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the older man, the mustard turban, the white mustache, the kurta, the dark interior, and the red doors.",
-      "outputs": [
-        "out/illustrated/seedream-edit/portrait-doorway-0.jpg"
-      ],
+      "outputs": ["out/illustrated/seedream-edit/portrait-doorway-0.jpg"],
       "clearsBar": false
     },
     {
@@ -81,9 +71,7 @@
       "ok": true,
       "elapsedMs": 14527,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the grey crew-neck shirt and the leopard-print headband.",
-      "outputs": [
-        "out/illustrated/seedream-edit/portrait-hands-0.jpg"
-      ],
+      "outputs": ["out/illustrated/seedream-edit/portrait-hands-0.jpg"],
       "clearsBar": false
     },
     {
@@ -92,9 +80,7 @@
       "ok": true,
       "elapsedMs": 58507,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the black baseball cap facing the same way as in this photograph. Do not add a red strap and do not turn the cap backward. Keep this exact camera. Keep the landscape.",
-      "outputs": [
-        "out/illustrated/gpt-edit/portrait-close-0.jpg"
-      ],
+      "outputs": ["out/illustrated/gpt-edit/portrait-close-0.jpg"],
       "clearsBar": false
     },
     {
@@ -103,9 +89,7 @@
       "ok": true,
       "elapsedMs": 76723,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the dark textured knit sweater, not a t-shirt or jacket. Keep the glasses. Keep this window and this room. Do not invent a new eye colour.",
-      "outputs": [
-        "out/illustrated/gpt-edit/portrait-glasses-0.jpg"
-      ],
+      "outputs": ["out/illustrated/gpt-edit/portrait-glasses-0.jpg"],
       "clearsBar": false
     },
     {
@@ -114,9 +98,7 @@
       "ok": true,
       "elapsedMs": 58167,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the cream shawl with the dark floral border only on the edge of the cloth.",
-      "outputs": [
-        "out/illustrated/gpt-edit/portrait-somali-0.jpg"
-      ],
+      "outputs": ["out/illustrated/gpt-edit/portrait-somali-0.jpg"],
       "clearsBar": false
     },
     {
@@ -125,9 +107,7 @@
       "ok": true,
       "elapsedMs": 55743,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the gold and black patterned headpiece, the magenta cardigan, the black turtleneck, the nose ring, and the dangling geometric silver earrings. Do not add a necklace.",
-      "outputs": [
-        "out/illustrated/gpt-edit/portrait-lehna-0.jpg"
-      ],
+      "outputs": ["out/illustrated/gpt-edit/portrait-lehna-0.jpg"],
       "clearsBar": false
     },
     {
@@ -136,9 +116,7 @@
       "ok": true,
       "elapsedMs": 54066,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the older man, the mustard turban, the white mustache, the kurta, the dark interior, and the red doors.",
-      "outputs": [
-        "out/illustrated/gpt-edit/portrait-doorway-0.jpg"
-      ],
+      "outputs": ["out/illustrated/gpt-edit/portrait-doorway-0.jpg"],
       "clearsBar": false
     },
     {
@@ -147,9 +125,7 @@
       "ok": true,
       "elapsedMs": 46000,
       "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep the grey crew-neck shirt and the leopard-print headband.",
-      "outputs": [
-        "out/illustrated/gpt-edit/portrait-hands-0.jpg"
-      ],
+      "outputs": ["out/illustrated/gpt-edit/portrait-hands-0.jpg"],
       "clearsBar": false
     }
   ]
