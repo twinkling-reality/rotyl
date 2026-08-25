@@ -228,6 +228,8 @@ export const FAL_KONTEXT_PRO = 'fal-ai/flux-pro/kontext';
 export const FAL_KONTEXT_MAX = 'fal-ai/flux-pro/kontext/max';
 export const FAL_FLUX2_EDIT = 'fal-ai/flux-2-pro/edit';
 export const FAL_NANO_EDIT = 'fal-ai/nano-banana-2/edit';
+export const FAL_SEEDREAM_EDIT = 'fal-ai/bytedance/seedream/v4.5/edit';
+export const FAL_GPT_EDIT = 'fal-ai/gpt-image-1.5/edit';
 
 export interface FalKontextJob {
   readonly still: Uint8Array;
@@ -512,6 +514,132 @@ export async function runFalNanoEdit(job: FalKontextJob): Promise<PhotomakerImag
     await wait(POLL_MS);
   }
   throw new Error(`The illustrated job took longer than ${String(giveUpMs / 1000)} seconds.`);
+}
+
+async function pollFalImages(
+  key: string,
+  runtimeFetch: typeof fetch,
+  statusUrl: string,
+  responseUrl: string,
+  giveUpMs: number,
+): Promise<PhotomakerImage[]> {
+  const started = Date.now();
+  while (Date.now() - started < giveUpMs) {
+    const statusResponse = await runtimeFetch(statusUrl, {
+      headers: { Authorization: `Key ${key}` },
+    });
+    if (!statusResponse.ok) {
+      const detail = await statusResponse.text();
+      throw new Error(
+        `Fal would not say how the job was doing (${String(statusResponse.status)}). ${detail}`.trim(),
+      );
+    }
+    const status = readField(await statusResponse.json(), 'status');
+    if (status === 'COMPLETED') {
+      const resultResponse = await runtimeFetch(responseUrl, {
+        headers: { Authorization: `Key ${key}` },
+      });
+      if (!resultResponse.ok) {
+        const detail = await resultResponse.text();
+        throw new Error(
+          `Fal finished and then would not hand the still back (${String(resultResponse.status)}). ${detail}`.trim(),
+        );
+      }
+      const images = readField(await resultResponse.json(), 'images');
+      if (!Array.isArray(images) || images.length === 0) throw new Error('Fal finished without a still.');
+      const collected: PhotomakerImage[] = [];
+      for (const image of images) {
+        const url = readField(image, 'url');
+        if (typeof url !== 'string' || url.length === 0) throw new Error('Fal finished without a still.');
+        const download = await runtimeFetch(url);
+        if (!download.ok) throw new Error('The generated still could not be fetched.');
+        const contentType = readField(image, 'content_type');
+        collected.push({
+          bytes: new Uint8Array(await download.arrayBuffer()),
+          mime:
+            typeof contentType === 'string'
+              ? contentType
+              : (download.headers.get('content-type') ?? 'image/jpeg'),
+        });
+      }
+      return collected;
+    }
+    if (status === 'FAILED') throw new Error('Fal could not finish the illustrated still.');
+    await wait(POLL_MS);
+  }
+  throw new Error(`The illustrated job took longer than ${String(giveUpMs / 1000)} seconds.`);
+}
+
+async function runFalQueuedEdit(
+  job: FalKontextJob,
+  model: string,
+  payload: Record<string, unknown>,
+): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const giveUpMs = job.giveUpMs ?? GIVE_UP_MS;
+  const submitted = await runtimeFetch(`https://queue.fal.run/${model}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Key ${key}`,
+      'Content-Type': 'application/json',
+      'X-Fal-Store-IO': '0',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!submitted.ok) {
+    const detail = await submitted.text();
+    throw new Error(`Fal refused the job (${String(submitted.status)}). ${detail}`.trim());
+  }
+  const submittedBody: unknown = await submitted.json();
+  const requestId = readField(submittedBody, 'request_id');
+  const statusUrl = readField(submittedBody, 'status_url');
+  const responseUrl = readField(submittedBody, 'response_url');
+  if (typeof requestId !== 'string' || requestId.length === 0) {
+    throw new Error('Fal did not name the job.');
+  }
+  if (typeof statusUrl !== 'string' || typeof responseUrl !== 'string') {
+    throw new Error('Fal did not name the job status.');
+  }
+  return pollFalImages(key, runtimeFetch, statusUrl, responseUrl, giveUpMs);
+}
+
+/**
+ * Seedream 4.5 edit of this still. Eval-only. Product POST is still PhotoMaker.
+ */
+export async function runFalSeedreamEdit(job: FalKontextJob): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  return runFalQueuedEdit(job, FAL_SEEDREAM_EDIT, {
+    prompt: job.prompt,
+    image_urls: [stillUrl],
+    image_size: 'auto_2K',
+    num_images: 1,
+    max_images: 1,
+    ...(job.seed === undefined ? {} : { seed: job.seed }),
+  });
+}
+
+/**
+ * GPT Image 1.5 edit of this still. Eval-only. Product POST is still PhotoMaker.
+ */
+export async function runFalGptEdit(job: FalKontextJob): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  return runFalQueuedEdit(job, FAL_GPT_EDIT, {
+    prompt: job.prompt,
+    image_urls: [stillUrl],
+    image_size: 'auto',
+    quality: 'high',
+    input_fidelity: 'high',
+    num_images: 1,
+    output_format: 'jpeg',
+  });
 }
 
 function wait(ms: number): Promise<void> {

@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { readField } from '../src/core/illustrated/request.ts';
 import {
   FAL_FLUX2_EDIT,
+  FAL_GPT_EDIT,
   FAL_KONTEXT_PRO,
   FAL_NANO_EDIT,
+  FAL_SEEDREAM_EDIT,
   handleIllustrated,
   runFalFlux2Edit,
+  runFalGptEdit,
   runFalKontext,
   runFalNanoEdit,
+  runFalSeedreamEdit,
 } from '../worker/illustrated.ts';
 import { ILLUSTRATED_TERMS_VERSION } from '../src/core/illustrated/terms.ts';
 
@@ -230,6 +234,119 @@ describe('illustrated kontext eval helper', () => {
             return new Response(JSON.stringify({ status: 'COMPLETED' }), { status: 200 });
           }
           if (href === 'https://queue.fal.run/fal-ai/nano-banana-2/requests/job-n') {
+            return new Response(
+              JSON.stringify({
+                images: [{ url: 'https://fal.example/out.jpg', content_type: 'image/jpeg' }],
+              }),
+              { status: 200 },
+            );
+          }
+          if (href === 'https://fal.example/out.jpg') {
+            return new Response(jpeg, { headers: { 'Content-Type': 'image/jpeg' } });
+          }
+          return new Response('unexpected', { status: 500 });
+        },
+      },
+    });
+    expect(images).toHaveLength(1);
+  });
+
+  it('edits the still on Seedream 4.5 with image_urls', async () => {
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+    const images = await runFalSeedreamEdit({
+      still: jpeg,
+      mime: 'image/jpeg',
+      prompt: 'Redraw this photograph as a cel-animation illustration.',
+      host: {
+        FAL_KEY: 'test-key',
+        fetch: async (url, init) => {
+          const href = requestHref(url);
+          if (href === 'https://rest.fal.ai/storage/upload/initiate') {
+            return new Response(
+              JSON.stringify({
+                upload_url: 'https://fal.example/upload/1',
+                file_url: 'https://fal.example/file/1',
+              }),
+              { status: 200 },
+            );
+          }
+          if (href.startsWith('https://fal.example/upload/')) {
+            return new Response(null, { status: 200 });
+          }
+          if (href === `https://queue.fal.run/${FAL_SEEDREAM_EDIT}`) {
+            const body: unknown = JSON.parse(typeof init?.body === 'string' ? init.body : '{}');
+            expect(readField(body, 'image_urls')).toEqual(['https://fal.example/file/1']);
+            expect(readField(body, 'image_size')).toBe('auto_2K');
+            return new Response(
+              JSON.stringify({
+                request_id: 'job-s',
+                status_url: 'https://queue.fal.run/fal-ai/bytedance/seedream/requests/job-s/status',
+                response_url: 'https://queue.fal.run/fal-ai/bytedance/seedream/requests/job-s',
+              }),
+              { status: 200 },
+            );
+          }
+          if (href === 'https://queue.fal.run/fal-ai/bytedance/seedream/requests/job-s/status') {
+            return new Response(JSON.stringify({ status: 'COMPLETED' }), { status: 200 });
+          }
+          if (href === 'https://queue.fal.run/fal-ai/bytedance/seedream/requests/job-s') {
+            return new Response(
+              JSON.stringify({
+                images: [{ url: 'https://fal.example/out.jpg', content_type: 'image/jpeg' }],
+              }),
+              { status: 200 },
+            );
+          }
+          if (href === 'https://fal.example/out.jpg') {
+            return new Response(jpeg, { headers: { 'Content-Type': 'image/jpeg' } });
+          }
+          return new Response('unexpected', { status: 500 });
+        },
+      },
+    });
+    expect(images).toHaveLength(1);
+  });
+
+  it('edits the still on GPT Image 1.5 with high input fidelity', async () => {
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+    const images = await runFalGptEdit({
+      still: jpeg,
+      mime: 'image/jpeg',
+      prompt: 'Redraw this photograph as a cel-animation illustration.',
+      host: {
+        FAL_KEY: 'test-key',
+        fetch: async (url, init) => {
+          const href = requestHref(url);
+          if (href === 'https://rest.fal.ai/storage/upload/initiate') {
+            return new Response(
+              JSON.stringify({
+                upload_url: 'https://fal.example/upload/1',
+                file_url: 'https://fal.example/file/1',
+              }),
+              { status: 200 },
+            );
+          }
+          if (href.startsWith('https://fal.example/upload/')) {
+            return new Response(null, { status: 200 });
+          }
+          if (href === `https://queue.fal.run/${FAL_GPT_EDIT}`) {
+            const body: unknown = JSON.parse(typeof init?.body === 'string' ? init.body : '{}');
+            expect(readField(body, 'image_urls')).toEqual(['https://fal.example/file/1']);
+            expect(readField(body, 'input_fidelity')).toBe('high');
+            expect(readField(body, 'quality')).toBe('high');
+            return new Response(
+              JSON.stringify({
+                request_id: 'job-g',
+                status_url: 'https://queue.fal.run/fal-ai/gpt-image-1.5/requests/job-g/status',
+                response_url: 'https://queue.fal.run/fal-ai/gpt-image-1.5/requests/job-g',
+              }),
+              { status: 200 },
+            );
+          }
+          if (href === 'https://queue.fal.run/fal-ai/gpt-image-1.5/requests/job-g/status') {
+            return new Response(JSON.stringify({ status: 'COMPLETED' }), { status: 200 });
+          }
+          if (href === 'https://queue.fal.run/fal-ai/gpt-image-1.5/requests/job-g') {
             return new Response(
               JSON.stringify({
                 images: [{ url: 'https://fal.example/out.jpg', content_type: 'image/jpeg' }],
