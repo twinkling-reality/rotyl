@@ -10,6 +10,13 @@
 const DRAW =
   'Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person.';
 
+/**
+ * Pins complexion. The six-family sweep measured every family lightening the
+ * skin of the dark-skinned sitters, so this asks whether that is promptable.
+ */
+export const SKIN_CLAUSE =
+  "Keep this person's complexion exactly as photographed. Do not lighten the skin. Match the original skin tone and its depth, including the shadowed areas.";
+
 export const ILLUSTRATED_KEEP: Record<string, string> = {
   'portrait-close': `${DRAW} Keep the black snapback cap worn backward, its red adjuster strap across the forehead, and the flat brim pointing behind the head. Keep this exact camera and its lettering. Keep the landscape.`,
   'portrait-glasses': `${DRAW} Keep the dark textured knit sweater, not a t-shirt or jacket. Keep the glasses. Keep this window and this room. Do not invent a new eye colour.`,

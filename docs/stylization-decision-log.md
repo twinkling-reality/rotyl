@@ -379,6 +379,48 @@ the bar is the user's call, not this page's. The skin drift above should be
 settled before any family is adopted, because it falls on the sitters the
 product would be drawing.
 
+## Probe, is the skin drift promptable
+
+The sweep above measured every family lightening the dark-skinned sitters. That
+matters more than which family draws best, so the remaining spend asked one
+question: is the drift a prompt problem or a model problem. The same stills were
+run again with `SKIN_CLAUSE` appended, so the sheets differ from the sweep only
+by that clause. Sheets are local under
+`tools/style-bench/out/illustrated/skin-pinned/` and are not committed.
+
+**Seedream 5 Pro does not respond.** Somali moved from +44.6 to +41.2 and hands
+from +22.1 to +20.8. Naming the complexion does not move it. On this family the
+drift is in the weights, not the prompt.
+
+**Nano Banana Pro responds, and overshoots.** Forehead patch, luma out of 255,
+against the same patch in the photograph.
+
+| still            | photo | sweep | pinned |
+| ---------------- | ----- | ----- | ------ |
+| portrait-somali  | 47.0  | +26.6 | +9.2   |
+| portrait-glasses | 53.9  | +78.5 | -1.7   |
+| portrait-hands   | 66.6  | +4.1  | -20.9  |
+| portrait-lehna   | 101.6 | -16.6 | -45.1  |
+
+Mean absolute drift falls from 31.5 to 19.2, but the clause is blunt. It
+corrects the two stills that were far out and pushes the two that were already
+close too far the other way. The pinned lehna is visibly darker than the sitter
+and has lost the facial modelling and the smile. That is a different identity
+miss, not a fix.
+
+**What this decides.** Seedream 5 Pro is the better drawing and cannot be
+corrected at the prompt layer. Nano Banana Pro is a slightly plainer drawing
+whose complexion is controllable. Grok holds skin best of all and holds it by
+tracing, which the bar fails. For a control whose whole job is drawing a real
+person, correctable beats prettier, so Nano Banana Pro is the path this evidence
+points at.
+
+It is not adopted yet. The clause is proven as a direction and is not calibrated.
+It needs to be a strength that scales with how far the family actually drifts on
+that still, not one sentence applied the same way to every sitter. Until that is
+dialled in and the full six are judged on it, `publishReady` stays false, product
+POST stays PhotoMaker, and terms stay `illustrated-v2`.
+
 ## Measurements
 
 Hosted latency and cost are Fal's, not this machine's. A 100-step still on
