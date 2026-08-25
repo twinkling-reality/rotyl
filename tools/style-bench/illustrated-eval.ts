@@ -9,11 +9,7 @@ import { constants as fsConstants } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readField } from '../../src/core/illustrated/request.ts';
-import {
-  ILLUSTRATED_STEPS,
-  ILLUSTRATED_STRENGTH,
-  ILLUSTRATED_STYLE_STRENGTH,
-} from '../../src/core/illustrated/prompt.ts';
+import { ILLUSTRATED_STEPS } from '../../src/core/illustrated/prompt.ts';
 import {
   ILLUSTRATED_LONG_EDGE,
   ILLUSTRATED_TERMS,
@@ -83,17 +79,19 @@ if (Array.isArray(listed)) {
   }
 }
 const outDir = join(here, 'out', 'illustrated');
-const resultsPath = join(here, 'results-illustrated-eval.json');
+const resultsPath = join(here, 'results-illustrated-eval-identity.json');
 const key = process.env.FAL_KEY;
 
 if (!key) {
   throw new Error('FAL_KEY is not set. node tools/style-bench/illustrated-eval.mjs records the skip.');
 }
 
-// Product path first, then a more photo-faithful pull. One 100-step still is
-// about three minutes and about twenty cents. Two strengths on six stills
-// stays inside the $10 Fal top-up.
-const strengths = [ILLUSTRATED_STRENGTH, 0.4];
+// 0.48 and 0.40 at style strength 40 invented new faces. This follow-up
+// stays on the same PhotoMaker path and pulls toward the still. Product
+// defaults stay 0.48 / 40. Sheets land in s030 so the judged set is not
+// overwritten.
+const strengths = [0.3];
+const styleStrength = 20;
 const candidates = 1;
 
 await mkdir(outDir, { recursive: true });
@@ -115,9 +113,9 @@ const results: {
   path: ILLUSTRATED_TERMS.path,
   termsVersion: ILLUSTRATED_TERMS_VERSION,
   skipped: false,
-  note: 'Sheets were written. Publish-ready stays false until a person judges the licensed set and it clears.',
+  note: 'Identity-preserving follow-up. Publish-ready stays false until a person judges the licensed set and it clears.',
   steps: ILLUSTRATED_STEPS,
-  styleStrength: ILLUSTRATED_STYLE_STRENGTH,
+  styleStrength,
   candidates,
   strengths,
   stills: [],
@@ -171,7 +169,7 @@ for (const still of stills) {
         numImages: candidates,
         strength,
         steps: ILLUSTRATED_STEPS,
-        styleStrength: ILLUSTRATED_STYLE_STRENGTH,
+        styleStrength,
         giveUpMs: 360_000,
       });
       const elapsedMs = Date.now() - started;
