@@ -72,9 +72,11 @@ if (!key) {
   throw new Error('FAL_KEY is not set. node tools/style-bench/illustrated-eval.mjs records the skip.');
 }
 
-// Product strength plus one quieter and one harder pull. Four candidates each.
-const strengths = [0.4, ILLUSTRATED_STRENGTH, 0.58];
-const candidates = 4;
+// Product path first, then a more photo-faithful pull. One 100-step still is
+// about three minutes and about twenty cents. Two strengths on six stills
+// stays inside the $10 Fal top-up.
+const strengths = [ILLUSTRATED_STRENGTH, 0.4];
+const candidates = 1;
 
 await mkdir(outDir, { recursive: true });
 const results: {
@@ -131,7 +133,7 @@ for (const still of stills) {
         strength,
         steps: ILLUSTRATED_STEPS,
         styleStrength: ILLUSTRATED_STYLE_STRENGTH,
-        giveUpMs: 240_000,
+        giveUpMs: 360_000,
       });
       const elapsedMs = Date.now() - started;
       const outputs: string[] = [];
