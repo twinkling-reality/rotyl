@@ -124,8 +124,35 @@ None of the six read as a desirable illustrated character who is still that
 person, with the photograph around them still the photograph. PhotoMaker
 invents a new face more readily than it draws this one.
 
-This work does not reopen Anime, DCT-Net, InstantID, PuLID, or
-IP-Adapter-FaceID.
+## Hosted run, identity follow-up, judged
+
+Same authorized path. One more licensed sweep after leftover Fal spend was
+named: 100 steps, strength 0.30, style strength 20, one candidate. Product
+defaults stay 0.48 and 40. Sheets are local under
+`tools/style-bench/out/illustrated/s030/` and are not committed.
+
+**portrait-close.** Hands, camera, and landscape stay. The result is still a
+photograph. A red band is invented on the cap.
+
+**portrait-glasses.** The glasses stay this time. The sheet is still a
+cinematic painting of a neighbour, not a drawn character who is this person.
+
+**portrait-somali.** The sitter stays a young woman. The floral border leaves
+the headscarf. The smile does not.
+
+**portrait-lehna.** No beard. Magenta knit, gold headpiece, nose ring, and
+earrings still do not hold. Hair is restyled.
+
+**portrait-doorway.** An older man in a mustard turban becomes a young blonde
+again. Pose and kurta stay. The person does not.
+
+**portrait-hands.** Closest sheet again. The thinking hand and grey shirt
+remain. The leopard headband is gone.
+
+Pulling toward the still fixes some of the costume failures. It does not
+stop PhotoMaker inventing a new face. None of the six clear the bar. This
+work does not spend more on PhotoMaker knobs, and it does not reopen Anime,
+DCT-Net, InstantID, PuLID, or IP-Adapter-FaceID.
 
 ## Measurements
 
@@ -136,6 +163,10 @@ cents if the whole wait were compute. Queue time is not billed. Fal locked
 the account several times mid-run with an exhausted-balance 403 even while
 `users/current` then reported unlocked. The terms now quote those measured
 figures.
+
+The identity follow-up measured one long job at 232 s wall and five jobs at
+9 s to 27 s. No new compute-second bill was read. Terms stay
+`illustrated-v2`.
 
 The compositor contract for an adopted layer is the existing style harness:
 unselected pixels stay byte-identical. That test is in
