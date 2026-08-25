@@ -230,6 +230,12 @@ export const FAL_FLUX2_EDIT = 'fal-ai/flux-2-pro/edit';
 export const FAL_NANO_EDIT = 'fal-ai/nano-banana-2/edit';
 export const FAL_SEEDREAM_EDIT = 'fal-ai/bytedance/seedream/v4.5/edit';
 export const FAL_GPT_EDIT = 'fal-ai/gpt-image-1.5/edit';
+export const FAL_SEEDREAM5_PRO_EDIT = 'bytedance/seedream/v5/pro/edit';
+export const FAL_SEEDREAM5_LITE_EDIT = 'bytedance/seedream/v5/lite/edit';
+export const FAL_NANO_PRO_EDIT = 'fal-ai/nano-banana-pro/edit';
+export const FAL_QWEN_EDIT = 'fal-ai/qwen-image-edit-2511';
+export const FAL_GROK_EDIT = 'xai/grok-imagine-image/edit';
+export const FAL_FLUX2_FLEX_EDIT = 'fal-ai/flux-2-flex/edit';
 
 export interface FalKontextJob {
   readonly still: Uint8Array;
@@ -639,6 +645,116 @@ export async function runFalGptEdit(job: FalKontextJob): Promise<PhotomakerImage
     input_fidelity: 'high',
     num_images: 1,
     output_format: 'jpeg',
+  });
+}
+
+/**
+ * Seedream 5 Pro edit of this still. Eval-only. Product POST is still PhotoMaker.
+ */
+export async function runFalSeedream5ProEdit(job: FalKontextJob): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  return runFalQueuedEdit(job, FAL_SEEDREAM5_PRO_EDIT, {
+    prompt: job.prompt,
+    image_urls: [stillUrl],
+    image_size: 'auto_2K',
+    num_images: 1,
+    output_format: 'jpeg',
+  });
+}
+
+/**
+ * Seedream 5 Lite edit of this still. Eval-only. Product POST is still PhotoMaker.
+ */
+export async function runFalSeedream5LiteEdit(job: FalKontextJob): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  return runFalQueuedEdit(job, FAL_SEEDREAM5_LITE_EDIT, {
+    prompt: job.prompt,
+    image_urls: [stillUrl],
+    image_size: 'auto_2K',
+    num_images: 1,
+    max_images: 1,
+  });
+}
+
+/**
+ * Nano Banana Pro edit of this still. Eval-only. Product POST is still PhotoMaker.
+ */
+export async function runFalNanoProEdit(job: FalKontextJob): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  return runFalQueuedEdit(job, FAL_NANO_PRO_EDIT, {
+    prompt: job.prompt,
+    image_urls: [stillUrl],
+    aspect_ratio: 'auto',
+    resolution: '1K',
+    output_format: 'jpeg',
+    num_images: 1,
+    limit_generations: true,
+    ...(job.seed === undefined ? {} : { seed: job.seed }),
+  });
+}
+
+/**
+ * Qwen image edit of this still. Eval-only. Product POST is still PhotoMaker.
+ * image_size is left off so Qwen keeps the framing of the still it was given.
+ */
+export async function runFalQwenEdit(job: FalKontextJob): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  return runFalQueuedEdit(job, FAL_QWEN_EDIT, {
+    prompt: job.prompt,
+    image_urls: [stillUrl],
+    num_images: 1,
+    output_format: 'jpeg',
+    guidance_scale: job.guidance ?? 4.5,
+    ...(job.seed === undefined ? {} : { seed: job.seed }),
+  });
+}
+
+/**
+ * Grok Imagine edit of this still. Eval-only. Product POST is still PhotoMaker.
+ */
+export async function runFalGrokEdit(job: FalKontextJob): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  return runFalQueuedEdit(job, FAL_GROK_EDIT, {
+    prompt: job.prompt,
+    image_urls: [stillUrl],
+    resolution: '2k',
+    aspect_ratio: 'auto',
+    num_images: 1,
+    output_format: 'jpeg',
+  });
+}
+
+/**
+ * FLUX.2 Flex edit of this still. Eval-only. Product POST is still PhotoMaker.
+ */
+export async function runFalFlux2FlexEdit(job: FalKontextJob): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  return runFalQueuedEdit(job, FAL_FLUX2_FLEX_EDIT, {
+    prompt: job.prompt,
+    image_urls: [stillUrl],
+    image_size: 'auto',
+    num_inference_steps: 28,
+    guidance_scale: job.guidance ?? 3.5,
+    output_format: 'jpeg',
+    ...(job.seed === undefined ? {} : { seed: job.seed }),
   });
 }
 
