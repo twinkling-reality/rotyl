@@ -139,6 +139,27 @@ const results: {
   stills: [],
 };
 
+// One family per invocation is normal, so carry forward rows this run does not
+// touch. Without this a later family would drop the earlier ones from the file.
+try {
+  const prior: unknown = JSON.parse(await readFile(resultsPath, 'utf8'));
+  const priorStills = readField(prior, 'stills');
+  if (Array.isArray(priorStills)) {
+    const rerunning = new Set(chosen.map((family) => family.model));
+    const rows: readonly unknown[] = priorStills;
+    for (const row of rows) {
+      const model = readField(row, 'model');
+      if (typeof model !== 'string' || rerunning.has(model)) continue;
+      if (typeof row !== 'object' || row === null) continue;
+      const carried: Record<string, unknown> = {};
+      for (const [field, value] of Object.entries(row)) carried[field] = value;
+      results.stills.push(carried);
+    }
+  }
+} catch {
+  /* first run */
+}
+
 for (const family of chosen) {
   await mkdir(join(here, 'out', 'illustrated', family.tag), { recursive: true });
   for (const still of stills) {
