@@ -189,6 +189,14 @@ they deliberately do not share is the stage that makes each one what it is.
 a Kuwahara flatten and a bilateral flatten are not two settings of one thing,
 they are the difference between painterly and printed.
 
+**Illustrated is not a style.** A local shader and official DCT-Net both failed
+the person-to-animation bar. The authorised next path is a hosted PhotoMaker
+job on a still, opt-in, after the terms are shown. It produces a texture. The
+compositor blends that texture through the mask and does not learn what
+PhotoMaker is. The Style list is unchanged. See
+[stylisation decisions](stylization-decision-log.md). The job is not
+publish-ready.
+
 ## Resolution is derived, not configured
 
 Every style has a characteristic length. A Kuwahara radius, a bilateral sigma,

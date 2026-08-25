@@ -32,6 +32,7 @@
   },
   "include": [
     "src",
+    "worker",
     "test",
     "e2e",
     "tools/video-bench",
@@ -39,5 +40,6 @@
     "tools/research",
     "tools/model-assets",
     "*.config.ts"
-  ]
+  ],
+  "exclude": ["tools/style-bench/illustrated-eval.ts"]
 }

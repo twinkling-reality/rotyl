@@ -6,6 +6,15 @@ import { DropZone } from './DropZone.tsx';
 import { TopBar } from './TopBar.tsx';
 import { Toolbar } from './Toolbar.tsx';
 import { StyleShelf } from './StyleShelf.tsx';
+import { IllustratedConsent } from './IllustratedConsent.tsx';
+import {
+  createIllustratedTexture,
+  fetchIllustratedStatus,
+  prepareIllustratedStill,
+  sendIllustratedStill,
+} from '../platform/illustrated/client.ts';
+import { ILLUSTRATED_TERMS } from '../core/illustrated/terms.ts';
+import type { IllustratedStatus } from '../core/illustrated/request.ts';
 import { Viewport } from './Viewport.tsx';
 import { Timeline, timecode } from './Timeline.tsx';
 import { isWholeClip, movedEnd } from './range.ts';
@@ -375,6 +384,15 @@ export function App(): JSX.Element {
   );
   const controls = controlsByStyle[style.id] ?? defaultControls(style);
   const [styleShelfOpen, setStyleShelfOpen] = useState(false);
+  const [illustratedOpen, setIllustratedOpen] = useState(false);
+  const [illustratedActive, setIllustratedActive] = useState(false);
+  const [illustratedSending, setIllustratedSending] = useState(false);
+  const [illustratedStatus, setIllustratedStatus] = useState<IllustratedStatus>({
+    available: false,
+    configured: false,
+    terms: ILLUSTRATED_TERMS,
+    reason: 'The host has not configured the illustrated stills job.',
+  });
   const [busy, setBusy] = useState<string | undefined>(undefined);
   const [pending, setPending] = useState<File | undefined>(undefined);
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -788,6 +806,11 @@ export function App(): JSX.Element {
       setLoaded(opened);
       setHistoryRevision(runtime.engine.document.revision);
       setRestyledNote(undefined);
+      setIllustratedOpen(false);
+      setIllustratedActive(false);
+      if (!opened.video) {
+        void fetchIllustratedStatus().then(setIllustratedStatus);
+      }
 
       // Once per file rather than once per question. Two slices of a megabyte,
       // and from here the journal, the save and the document check all read it
@@ -862,6 +885,9 @@ export function App(): JSX.Element {
     setPromptAnchor(undefined);
     setPerception({ kind: 'idle' });
     setHistoryRevision(0);
+    setIllustratedOpen(false);
+    setIllustratedActive(false);
+    setIllustratedSending(false);
     // A claim about the file that is going, so it goes with it.
     setRestyledNote(undefined);
     setIdentity(undefined);
@@ -940,6 +966,10 @@ export function App(): JSX.Element {
   // the work, and replaying it is what the renderer does with it anyway.
   useEffect(() => {
     if (!runtime || !loaded || mediaGeneration === runtime.generation) return;
+    // The illustrated texture died with the old device. The terms have to be
+    // accepted again if they want it back.
+    setIllustratedActive(false);
+    setIllustratedOpen(false);
     // The frame index is carried across too: a video comes back where it was,
     // for the same reason the view does.
     void uploadInto(runtime, loaded, 'keep', frame);
@@ -1293,6 +1323,9 @@ export function App(): JSX.Element {
           commands: runtime.engine.document.appliedCommands,
           style,
           controls,
+          ...(!clip && runtime.engine.illustratedLayer
+            ? { illustrated: runtime.engine.illustratedLayer }
+            : {}),
           onProgress: (written, total) => {
             const percent = Math.round((written / total) * 100);
             if (percent === shownPercent) return;
@@ -1348,6 +1381,40 @@ export function App(): JSX.Element {
     },
     [runtime, loaded, style, controls, frame, range, pause],
   );
+
+  const onIllustratedSend = useCallback(async (): Promise<void> => {
+    if (!runtime || !loaded || loaded.video || illustratedSending) return;
+    setIllustratedSending(true);
+    setBusy('Sending the still');
+    setError(undefined);
+    setReport(undefined);
+    try {
+      const prepared = await prepareIllustratedStill(loaded.file);
+      const result = await sendIllustratedStill(prepared, {
+        version: illustratedStatus.terms.version,
+        accepted: true,
+      });
+      const bitmap = await createImageBitmap(result);
+      try {
+        runtime.engine.setIllustratedLayer(createIllustratedTexture(runtime.device, bitmap));
+      } finally {
+        bitmap.close();
+      }
+      setIllustratedActive(true);
+      setIllustratedOpen(false);
+      setReport('The illustrated still is on the selection.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The illustrated job failed.');
+    } finally {
+      setIllustratedSending(false);
+      setBusy(undefined);
+    }
+  }, [runtime, loaded, illustratedSending, illustratedStatus.terms.version]);
+
+  const onIllustratedClear = useCallback((): void => {
+    runtime?.engine.clearIllustratedLayer();
+    setIllustratedActive(false);
+  }, [runtime]);
 
   // --- keyboard ---
   useEffect(() => {
@@ -1591,7 +1658,7 @@ export function App(): JSX.Element {
   // object per answer the model gave to a prompt somebody started, which the
   // log has recorded since object selection landed. From the log rather than
   // from the GPU, exactly as the coverage question is.
-  const frameCommands = tracking.available && runtime ? runtime.engine.frameCommands : undefined;
+  const frameCommands = runtime ? runtime.engine.frameCommands : undefined;
   const hasSelection = frameCommands ? hasAnyCoverage(frameCommands) : false;
   const trackedObjects = frameCommands && hasSelection ? objectsInSelection(frameCommands) : 1;
   // A soundtrack that will not survive an export, said while the file is merely
@@ -1697,6 +1764,16 @@ export function App(): JSX.Element {
                     }}
                   />
                 ) : null}
+                {illustratedOpen && !loaded.video ? (
+                  <IllustratedConsent
+                    status={illustratedStatus}
+                    hasSelection={hasSelection}
+                    sending={illustratedSending}
+                    active={illustratedActive}
+                    onSend={() => void onIllustratedSend()}
+                    onClear={onIllustratedClear}
+                  />
+                ) : null}
                 <Toolbar
                   tool={tool}
                   onToolChange={setTool}
@@ -1708,8 +1785,25 @@ export function App(): JSX.Element {
                   }}
                   styleShelfOpen={styleShelfOpen}
                   onToggleStyleShelf={() => {
+                    setIllustratedOpen(false);
                     setStyleShelfOpen((open) => !open);
                   }}
+                  {...(!loaded.video
+                    ? {
+                        illustrated: {
+                          open: illustratedOpen,
+                          active: illustratedActive,
+                          disabled: activity !== undefined && !illustratedSending,
+                          title: illustratedActive
+                            ? 'The hosted illustrated still is on the selection. Open to clear it.'
+                            : 'Hosted illustrated still. Separate from Style. The still leaves this machine only if you send it.',
+                          onToggle: () => {
+                            setStyleShelfOpen(false);
+                            setIllustratedOpen((open) => !open);
+                          },
+                        },
+                      }
+                    : {})}
                   {...(tracking.available
                     ? {
                         tracking: {

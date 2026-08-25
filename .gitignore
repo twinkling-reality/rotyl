@@ -14,3 +14,7 @@ tsconfig.tsbuildinfo
 # Kept only as an exporter work directory. The application serves the complete,
 # verified release from .model-assets through Vite now.
 public/edgetam/
+
+# Evaluation media and rendered sheets. Provenance is in evaluation-set.json.
+tools/style-bench/real/
+tools/style-bench/out/

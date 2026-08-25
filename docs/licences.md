@@ -7,13 +7,13 @@ Rotyl is MIT. See `LICENSE`.
 What it depends on is not all MIT, and one of them has an obligation attached,
 so it is written down here rather than left to whoever reads a lockfile:
 
-| what                 | licence     | how it is used                                    |
-| -------------------- | ----------- | ------------------------------------------------- |
-| preact               | MIT         | bundled                                           |
-| onnxruntime-web      | MIT         | bundled, code-split                               |
-| mediabunny 1.55.1    | MPL-2.0     | bundled unmodified, code-split                    |
-| Geist and Geist Mono | SIL OFL 1.1 | subset and served, see `public/fonts/LICENSE.txt` |
-| sixteen Lucide paths | ISC         | inlined into `src/app/icons.tsx`                  |
+| what                   | licence     | how it is used                                    |
+| ---------------------- | ----------- | ------------------------------------------------- |
+| preact                 | MIT         | bundled                                           |
+| onnxruntime-web        | MIT         | bundled, code-split                               |
+| mediabunny 1.55.1      | MPL-2.0     | bundled unmodified, code-split                    |
+| Geist and Geist Mono   | SIL OFL 1.1 | subset and served, see `public/fonts/LICENSE.txt` |
+| seventeen Lucide paths | ISC         | inlined into `src/app/icons.tsx`                  |
 
 **mediabunny is the one that asks for something.** MPL-2.0 is file-level
 copyleft: it reaches the files it covers and no further, so it does not touch
@@ -40,3 +40,18 @@ checks a weight, and refuses to produce a deployment if either is absent or
 different. The model release therefore does not rely on a deployer remembering
 the Apache-2.0 obligations after copying the files; the licence and notice are
 part of the release contract.
+
+**The hosted illustrated still is a separate licence surface.** It is not
+bundled. When a host configures `FAL_KEY`, a consented still is sent to Fal
+and run through PhotoMaker.
+
+| what       | licence                  | how it is used                                      |
+| ---------- | ------------------------ | --------------------------------------------------- |
+| PhotoMaker | Apache-2.0 (Tencent ARC) | hosted inference only, never shipped in the bundle  |
+| SDXL base  | CreativeML Open RAIL++-M | used by the PhotoMaker host, not redistributed here |
+| Fal API    | Fal API Services terms   | the worker is the only caller; the key stays there  |
+
+InstantID, PuLID and IP-Adapter-FaceID were not chosen because their official
+face encoders depend on InsightFace weights that are not licensed for
+commercial redistribution. That refusal is in
+[stylisation decisions](stylization-decision-log.md).

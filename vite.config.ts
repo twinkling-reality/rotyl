@@ -60,6 +60,45 @@ function wgslComments(): Plugin {
  * from, and rendering it per request in development means re-running a
  * benchmark shows up on a refresh.
  */
+/**
+ * The hosted illustrated stills job, in development.
+ *
+ * Production goes through the Cloudflare worker. `pnpm dev` does not load that
+ * worker, so the same handler is mounted here and reads FAL_KEY from the
+ * environment. Without a key the panel still opens and Send stays disabled.
+ */
+function illustratedApi(): Plugin {
+  return {
+    name: 'rotyl:illustrated-api',
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        const path = request.url?.split('?')[0];
+        if (path !== '/api/illustrated') return next();
+        void (async () => {
+          const { handleIllustrated } = await import('./worker/illustrated.ts');
+          const chunks: Buffer[] = [];
+          for await (const chunk of request) chunks.push(Buffer.from(chunk));
+          const headers = new Headers();
+          for (const [key, value] of Object.entries(request.headers)) {
+            if (typeof value === 'string') headers.set(key, value);
+          }
+          const init: RequestInit = { method: request.method ?? 'GET', headers };
+          if (request.method === 'POST') init.body = Buffer.concat(chunks);
+          const incoming = new Request(new URL(path, 'http://rotyl.local'), init);
+          const falKey = process.env.FAL_KEY;
+          const outgoing = await handleIllustrated(incoming, falKey ? { FAL_KEY: falKey } : {});
+          response.statusCode = outgoing.status;
+          outgoing.headers.forEach((value, key) => {
+            response.setHeader(key, value);
+          });
+          const body = Buffer.from(await outgoing.arrayBuffer());
+          response.end(body);
+        })().catch(next);
+      });
+    },
+  };
+}
+
 function researchPage(): Plugin {
   return {
     name: 'rotyl:research',
@@ -102,7 +141,7 @@ function researchPage(): Plugin {
 // honours it. The plugin exists to add Babel-based Fast Refresh, which is not
 // worth reintroducing Babel to this build for.
 export default defineConfig(async ({ mode }) => {
-  const plugins: Plugin[] = [wgslComments(), modelAssets(), researchPage()];
+  const plugins: Plugin[] = [wgslComments(), modelAssets(), researchPage(), illustratedApi()];
   if (mode === 'sites') {
     const { cloudflare } = await import('@cloudflare/vite-plugin');
     plugins.push(

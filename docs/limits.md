@@ -379,7 +379,7 @@ one, and the measurement behind it is on `/research.html`.
   100% zoom on a very large photograph the dots are correspondingly large.
 - Object selection needs the network once, to fetch the code-split runtime and
   the model. On half-precision hardware its model files are 18.57 MB served and
-  20.59 MB in Cache Storage. The image never leaves the machine; the checked
+  20.59 MB in Cache Storage. Ordinary styles never send the image; the checked
   model arrives from the same Rotyl deployment. Tracking adds 22.24 MB served
   and 29.78 MB cached. A cold session using both therefore transfers 40.81 MB
   of model data. The full-precision selection alternative costs more and is
@@ -436,3 +436,10 @@ one, and the measurement behind it is on `/research.html`.
   Playwright remains a separate real-Chrome command rather than part of the CI
   unit gate, because it is evidence about the browser and GPU it actually ran
   on.
+- **The hosted illustrated still is not publish-ready.** It is a separate
+  opt-in job, stills only, and it sends the whole still to Fal after the terms
+  are accepted. The compositor keeps unselected pixels. The licensed set has
+  not been judged on this path. Do not call it a character generator and do
+  not cut a demo from it. Clips are refused. Without a host `FAL_KEY` the
+  panel still opens and nothing leaves. See
+  [stylisation decisions](stylization-decision-log.md).
