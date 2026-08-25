@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "Kontext max keep-list, then Nano Banana 2 edit",
+  "skipped": false,
+  "note": "Keep-list sheets were judged. Closer on clothes. Close still invents a backward cap. Publish-ready stays false.",
+  "falListPriceUsd": {
+    "kontextMax": 0.08,
+    "nanoEdit1k": 0.08,
+    "unit": "image"
+  },
+  "measuredWallMs": {
+    "kontextKeepMin": 11261,
+    "kontextKeepMax": 148083,
+    "nanoMin": 13338,
+    "nanoMax": 37635
+  },
+  "judgement": {
+    "clearsBar": false,
+    "summary": "Naming the failed clothes helped. Glasses keeps a dark knit. Lehna keeps the gold headpiece and the nose ring on Nano. Doorway and hands still hold. Close still invents a backward cap, and Kontext keep still paints a red strap. No demo reel."
+  },
+  "stills": [
+    {
+      "id": "portrait-close",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 148083,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/kontext-keep/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 15367,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/kontext-keep/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 11345,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/kontext-keep/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 13679,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/kontext-keep/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 11261,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/kontext-keep/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "model": "fal-ai/flux-pro/kontext/max",
+      "ok": true,
+      "elapsedMs": 13239,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/kontext-keep/portrait-hands-0.jpg"]
+    },
+    {
+      "id": "portrait-close",
+      "model": "fal-ai/nano-banana-2/edit",
+      "ok": true,
+      "elapsedMs": 13338,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/nano-edit/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "model": "fal-ai/nano-banana-2/edit",
+      "ok": true,
+      "elapsedMs": 19558,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/nano-edit/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "model": "fal-ai/nano-banana-2/edit",
+      "ok": true,
+      "elapsedMs": 31592,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/nano-edit/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "model": "fal-ai/nano-banana-2/edit",
+      "ok": true,
+      "elapsedMs": 17605,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/nano-edit/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "model": "fal-ai/nano-banana-2/edit",
+      "ok": true,
+      "elapsedMs": 22007,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/nano-edit/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "model": "fal-ai/nano-banana-2/edit",
+      "ok": true,
+      "elapsedMs": 37635,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/nano-edit/portrait-hands-0.jpg"]
+    }
+  ]
+}

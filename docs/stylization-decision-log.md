@@ -207,8 +207,31 @@ interior becomes a pale room.
 **portrait-hands.** Thinking hand, grey shirt, and leopard headband stay.
 
 FLUX.2 is not a step past Kontext on the set. Lehna holds more. Glasses
-holds less. The set does not clear the bar. This work does not reopen
-Anime, DCT-Net, InstantID, PuLID, or IP-Adapter-FaceID.
+holds less. The set does not clear the bar.
+
+## Hosted run, keep-list spend, judged
+
+Leftover Fal spend named the costume failures and ran them again:
+Kontext max, then `fal-ai/nano-banana-2/edit` at 1K. Sheets are local
+under `tools/style-bench/out/illustrated/kontext-keep/` and `nano-edit/`
+and are not committed.
+
+**portrait-close.** Still drawn. Both still invent a backward cap.
+Kontext keep still paints a red strap.
+
+**portrait-glasses.** A dark knit sweater stays this time. Glasses stay.
+
+**portrait-somali.** Cream shawl with the floral border on the edge.
+
+**portrait-lehna.** Gold headpiece stays. Nano keeps the nose ring.
+
+**portrait-doorway.** Mustard turban and the older man stay.
+
+**portrait-hands.** Leopard headband and the thinking hand stay.
+
+Naming the clothes helped. The set still does not clear the bar.
+`publishReady` stays false. This work does not reopen Anime, DCT-Net,
+InstantID, PuLID, or IP-Adapter-FaceID.
 
 ## Measurements
 
@@ -226,8 +249,10 @@ The identity follow-up measured one long job at 232 s wall and five jobs at
 
 Kontext list prices on Fal are $0.04 a still for pro and $0.08 for max.
 Measured wall on this set: pro 11 s to 144 s, max 12 s to 17 s. FLUX.2
-Pro edit measured 16 s to 36 s wall. No new compute-second bill was
-read. Product terms stay `illustrated-v2` and still quote PhotoMaker.
+Pro edit measured 16 s to 36 s wall. Nano Banana 2 edit lists $0.08 at
+1K. Keep-list wall: Kontext max 11 s to 148 s, Nano 13 s to 38 s. No new
+compute-second bill was read. Product terms stay `illustrated-v2` and
+still quote PhotoMaker.
 
 The compositor contract for an adopted layer is the existing style harness:
 unselected pixels stay byte-identical. That test is in
