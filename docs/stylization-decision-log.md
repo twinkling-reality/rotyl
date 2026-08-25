@@ -242,6 +242,39 @@ under `tools/style-bench/out/illustrated/close-seeds/` and are not
 committed. This work does not reopen Anime, DCT-Net, InstantID, PuLID,
 or IP-Adapter-FaceID.
 
+## Hosted run, Seedream and GPT Image, judged
+
+Leftover Fal spend left Kontext close alone and ran the keep-list on two
+other edit families: `fal-ai/bytedance/seedream/v4.5/edit` at the $0.04
+list price, then `fal-ai/gpt-image-1.5/edit` at high quality and high
+input fidelity. Sheets are local under
+`tools/style-bench/out/illustrated/seedream-edit/` and `gpt-edit/` and
+are not committed.
+
+**portrait-close.** Both are drawings of these hands, this camera, and
+this landscape. The photograph already shows a red adjustment strap on
+the black cap. Seedream keeps that strap and still draws the cap
+backward. GPT replaces the strap with brown leather and rewrites the
+camera lettering.
+
+**portrait-glasses.** Both keep the glasses and a dark knit. Seedream
+warms the hair toward auburn. GPT invents stickers on the glass.
+
+**portrait-somali.** Cream shawl with the floral border stays on both.
+
+**portrait-lehna.** Seedream keeps the magenta cardigan, gold headpiece,
+nose ring, and earrings. GPT turns the cardigan red.
+
+**portrait-doorway.** Mustard turban, white mustache, kurta, and red
+doors stay on both.
+
+**portrait-hands.** Thinking hand, grey shirt, and leopard headband stay
+on both.
+
+Seedream holds clothes better than Kontext close-seeds or GPT Image.
+The set still does not clear the bar. `publishReady` stays false.
+Product POST is still PhotoMaker. No demo reel.
+
 ## Measurements
 
 Hosted latency and cost are Fal's, not this machine's. A 100-step still on
@@ -260,8 +293,11 @@ Kontext list prices on Fal are $0.04 a still for pro and $0.08 for max.
 Measured wall on this set: pro 11 s to 144 s, max 12 s to 17 s. FLUX.2
 Pro edit measured 16 s to 36 s wall. Nano Banana 2 edit lists $0.08 at
 1K. Keep-list wall: Kontext max 11 s to 148 s, Nano 13 s to 38 s. Close-cap
-seeds measured 13 s to 182 s. No new compute-second bill was read.
-Product terms stay `illustrated-v2` and still quote PhotoMaker.
+seeds measured 13 s to 182 s. Seedream 4.5 edit lists $0.04 a still and
+measured 15 s to 32 s wall. GPT Image 1.5 edit lists $0.133 a still at
+high quality 1024, plus token charges, and measured 46 s to 77 s wall.
+No new compute-second bill was read. Product terms stay
+`illustrated-v2` and still quote PhotoMaker.
 
 The compositor contract for an adopted layer is the existing style harness:
 unselected pixels stay byte-identical. That test is in
