@@ -28,6 +28,10 @@ versioned model and code paths immutable. HTML is explicitly revalidated, so
 an application release can move immediately while an existing model version
 cannot change.
 
+The hosted illustrated stills job reads `FAL_KEY` from the worker environment.
+Without that secret the option still opens, prints its terms, and refuses to
+send. The key is never written into the client bundle.
+
 The project release in `models/edgetam/manifest.json` is only a build input. A
 deployed browser never reaches through to it: all runtime requests stay on the
 Sites origin. Replacing model bytes requires a new manifest version and a new

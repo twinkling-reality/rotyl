@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "PhotoMaker (Tencent ARC, Apache-2.0) on Fal, photomaker-style, img2img from this still",
+  "termsVersion": "illustrated-v2",
+  "skipped": false,
+  "note": "Licensed sheets were judged. They fail the visual bar. Publish-ready stays false.",
+  "steps": 100,
+  "styleStrength": 40,
+  "candidates": 1,
+  "strengths": [0.48, 0.4],
+  "falUnitPriceUsd": 0.00125,
+  "falUnit": "compute seconds",
+  "measuredWallMs": {
+    "minLongJob": 99322,
+    "maxLongJob": 163154,
+    "typicalLongJob": 132067
+  },
+  "judgement": {
+    "clearsBar": false,
+    "summary": "PhotoMaker returned pictures and invented people. Identity, clothes, glasses, turbans, and headscarves do not hold. portrait-close stays a photograph. No demo reel."
+  },
+  "stills": [
+    {
+      "id": "portrait-close",
+      "ok": true,
+      "strength": 0.48,
+      "elapsedMs": 132067,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s048/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-close",
+      "ok": true,
+      "strength": 0.4,
+      "elapsedMs": 11635,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s040/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "ok": true,
+      "strength": 0.48,
+      "elapsedMs": 131877,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s048/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "ok": true,
+      "strength": 0.4,
+      "elapsedMs": 13463,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s040/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "ok": true,
+      "strength": 0.48,
+      "elapsedMs": 11507,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s048/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "ok": true,
+      "strength": 0.4,
+      "elapsedMs": 119315,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s040/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "ok": true,
+      "strength": 0.48,
+      "elapsedMs": 163154,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s048/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "ok": true,
+      "strength": 0.4,
+      "elapsedMs": 10024,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s040/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "ok": true,
+      "strength": 0.48,
+      "elapsedMs": 12245,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s048/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "ok": true,
+      "strength": 0.4,
+      "elapsedMs": 99322,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s040/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "ok": true,
+      "strength": 0.48,
+      "elapsedMs": 15539,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s048/portrait-hands-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "ok": true,
+      "strength": 0.4,
+      "elapsedMs": 9394,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s040/portrait-hands-0.jpg"]
+    }
+  ]
+}

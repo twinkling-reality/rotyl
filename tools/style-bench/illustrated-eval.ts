@@ -1,0 +1,208 @@
+// Configured hosted illustrated run. publishReady stays false here.
+//
+//   FAL_KEY=... node --experimental-strip-types tools/style-bench/illustrated-eval.ts
+//   FAL_KEY=... pnpm exec vite-node --config /dev/null tools/style-bench/illustrated-eval.ts
+
+import { spawn } from 'node:child_process';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { constants as fsConstants } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { readField } from '../../src/core/illustrated/request.ts';
+import { ILLUSTRATED_STEPS } from '../../src/core/illustrated/prompt.ts';
+import {
+  ILLUSTRATED_LONG_EDGE,
+  ILLUSTRATED_TERMS,
+  ILLUSTRATED_TERMS_VERSION,
+} from '../../src/core/illustrated/terms.ts';
+import { runPhotomaker } from '../../worker/illustrated.ts';
+
+/**
+ * Same long-edge shrink the editor applies before a still leaves. The licensed
+ * files are several megapixels; the worker cap is a 1280 JPEG.
+ */
+async function prepareStill(file: string): Promise<Buffer> {
+  const scale = `scale='if(gte(iw,ih),${String(ILLUSTRATED_LONG_EDGE)},-1)':'if(gt(ih,iw),${String(ILLUSTRATED_LONG_EDGE)},-1)'`;
+  const child = spawn(
+    'ffmpeg',
+    [
+      '-nostdin',
+      '-v',
+      'error',
+      '-i',
+      file,
+      '-vf',
+      scale,
+      '-frames:v',
+      '1',
+      '-q:v',
+      '2',
+      '-f',
+      'image2pipe',
+      '-vcodec',
+      'mjpeg',
+      'pipe:1',
+    ],
+    { stdio: ['ignore', 'pipe', 'pipe'] },
+  );
+  const chunks: Buffer[] = [];
+  const errors: Buffer[] = [];
+  child.stdout.on('data', (chunk: Buffer) => {
+    chunks.push(chunk);
+  });
+  child.stderr.on('data', (chunk: Buffer) => {
+    errors.push(chunk);
+  });
+  const code = await new Promise<number>((resolve, reject) => {
+    child.on('error', reject);
+    child.on('close', (status) => {
+      resolve(status ?? 1);
+    });
+  });
+  if (code !== 0) {
+    const detail = Buffer.concat(errors).toString().trim();
+    throw new Error(detail.length > 0 ? detail : 'ffmpeg could not shrink the still.');
+  }
+  const bytes = Buffer.concat(chunks);
+  if (bytes.byteLength === 0) throw new Error('ffmpeg wrote an empty still.');
+  return bytes;
+}
+
+const here = dirname(fileURLToPath(import.meta.url));
+const listed = readField(JSON.parse(await readFile(join(here, 'evaluation-set.json'), 'utf8')), 'stills');
+const stills: Array<{ readonly id: string; readonly file: string }> = [];
+if (Array.isArray(listed)) {
+  for (const still of listed) {
+    const id = readField(still, 'id');
+    const file = readField(still, 'file');
+    if (typeof id === 'string' && typeof file === 'string') stills.push({ id, file });
+  }
+}
+const outDir = join(here, 'out', 'illustrated');
+const resultsPath = join(here, 'results-illustrated-eval-identity.json');
+const key = process.env.FAL_KEY;
+
+if (!key) {
+  throw new Error('FAL_KEY is not set. node tools/style-bench/illustrated-eval.mjs records the skip.');
+}
+
+// 0.48 and 0.40 at style strength 40 invented new faces. This follow-up
+// stays on the same PhotoMaker path and pulls toward the still. Product
+// defaults stay 0.48 / 40. Sheets land in s030 so the judged set is not
+// overwritten.
+const strengths = [0.3];
+const styleStrength = 20;
+const candidates = 1;
+
+await mkdir(outDir, { recursive: true });
+const results: {
+  schema: 1;
+  publishReady: false;
+  path: string;
+  termsVersion: string;
+  skipped: false;
+  note: string;
+  steps: number;
+  styleStrength: number;
+  candidates: number;
+  strengths: number[];
+  stills: Array<Record<string, unknown>>;
+} = {
+  schema: 1,
+  publishReady: false,
+  path: ILLUSTRATED_TERMS.path,
+  termsVersion: ILLUSTRATED_TERMS_VERSION,
+  skipped: false,
+  note: 'Identity-preserving follow-up. Publish-ready stays false until a person judges the licensed set and it clears.',
+  steps: ILLUSTRATED_STEPS,
+  styleStrength,
+  candidates,
+  strengths,
+  stills: [],
+};
+
+for (const still of stills) {
+  const file = join(here, still.file);
+  try {
+    await access(file);
+  } catch {
+    results.stills.push({
+      id: still.id,
+      skipped: true,
+      reason: 'still is not local; run fetch-evaluation.sh',
+    });
+    continue;
+  }
+  const bytes = await prepareStill(file);
+  for (const strength of strengths) {
+    const tag = `s${String(Math.round(strength * 100)).padStart(3, '0')}`;
+    const variantDir = join(outDir, tag);
+    await mkdir(variantDir, { recursive: true });
+    const existing: string[] = [];
+    for (let index = 0; index < candidates; index++) {
+      const relative = `out/illustrated/${tag}/${still.id}-${String(index)}.jpg`;
+      try {
+        await access(join(here, relative), fsConstants.R_OK);
+        existing.push(relative);
+      } catch {
+        /* this candidate is still missing */
+      }
+    }
+    if (existing.length === candidates) {
+      results.stills.push({
+        id: still.id,
+        ok: true,
+        strength,
+        reused: true,
+        outputs: existing,
+      });
+      console.log(`illustrated-eval: ${still.id} strength ${String(strength)} reused`);
+      continue;
+    }
+    const started = Date.now();
+    try {
+      console.log(`illustrated-eval: ${still.id} strength ${String(strength)}`);
+      const images = await runPhotomaker({
+        still: new Uint8Array(bytes),
+        mime: 'image/jpeg',
+        host: { FAL_KEY: key },
+        numImages: candidates,
+        strength,
+        steps: ILLUSTRATED_STEPS,
+        styleStrength,
+        giveUpMs: 360_000,
+      });
+      const elapsedMs = Date.now() - started;
+      const outputs: string[] = [];
+      for (const [index, image] of images.entries()) {
+        const relative = `out/illustrated/${tag}/${still.id}-${String(index)}.jpg`;
+        await writeFile(join(here, relative), image.bytes);
+        outputs.push(relative);
+      }
+      results.stills.push({
+        id: still.id,
+        ok: true,
+        strength,
+        elapsedMs,
+        outputs,
+      });
+      await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`);
+      console.log(
+        `illustrated-eval: ${still.id} strength ${String(strength)} ${String(elapsedMs)}ms ${String(outputs.length)} sheets`,
+      );
+    } catch (cause) {
+      const elapsedMs = Date.now() - started;
+      const error = cause instanceof Error ? cause.message : 'The illustrated job failed.';
+      results.stills.push({ id: still.id, ok: false, strength, elapsedMs, error });
+      await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`);
+      console.error(`illustrated-eval: ${still.id} strength ${String(strength)} failed: ${error}`);
+      if (error.includes('403') || error.includes('Exhausted balance')) {
+        await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`);
+        throw cause;
+      }
+    }
+  }
+}
+
+await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`);
+console.log('illustrated-eval: wrote sheets. publishReady remains false.');

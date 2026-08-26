@@ -1,0 +1,261 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "Seedream 5 Pro and Lite, Nano Banana Pro, Qwen, Grok Imagine, FLUX.2 Flex, keep-list",
+  "skipped": false,
+  "note": "Sheets were written. Publish-ready stays false until a person judges the licensed set and it clears.",
+  "stills": [
+    {
+      "id": "portrait-close",
+      "model": "bytedance/seedream/v5/pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-pro/portrait-close-0.jpg"],
+      "elapsedMs": 108870
+    },
+    {
+      "id": "portrait-glasses",
+      "model": "bytedance/seedream/v5/pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-pro/portrait-glasses-0.jpg"],
+      "elapsedMs": 115655
+    },
+    {
+      "id": "portrait-somali",
+      "model": "bytedance/seedream/v5/pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-pro/portrait-somali-0.jpg"],
+      "elapsedMs": 49854
+    },
+    {
+      "id": "portrait-lehna",
+      "model": "bytedance/seedream/v5/pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-pro/portrait-lehna-0.jpg"],
+      "elapsedMs": 103541
+    },
+    {
+      "id": "portrait-doorway",
+      "model": "bytedance/seedream/v5/pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-pro/portrait-doorway-0.jpg"],
+      "elapsedMs": 106120
+    },
+    {
+      "id": "portrait-hands",
+      "model": "bytedance/seedream/v5/pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-pro/portrait-hands-0.jpg"],
+      "elapsedMs": 95367
+    },
+    {
+      "id": "portrait-close",
+      "model": "bytedance/seedream/v5/lite/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-lite/portrait-close-0.jpg"],
+      "elapsedMs": 43288
+    },
+    {
+      "id": "portrait-glasses",
+      "model": "bytedance/seedream/v5/lite/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-lite/portrait-glasses-0.jpg"],
+      "elapsedMs": 44818
+    },
+    {
+      "id": "portrait-somali",
+      "model": "bytedance/seedream/v5/lite/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-lite/portrait-somali-0.jpg"],
+      "elapsedMs": 43185
+    },
+    {
+      "id": "portrait-lehna",
+      "model": "bytedance/seedream/v5/lite/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-lite/portrait-lehna-0.jpg"],
+      "elapsedMs": 47226
+    },
+    {
+      "id": "portrait-doorway",
+      "model": "bytedance/seedream/v5/lite/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-lite/portrait-doorway-0.jpg"],
+      "elapsedMs": 78955
+    },
+    {
+      "id": "portrait-hands",
+      "model": "bytedance/seedream/v5/lite/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/seedream5-lite/portrait-hands-0.jpg"],
+      "elapsedMs": 49236
+    },
+    {
+      "id": "portrait-close",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/nano-pro/portrait-close-0.jpg"],
+      "elapsedMs": 31983
+    },
+    {
+      "id": "portrait-glasses",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/nano-pro/portrait-glasses-0.jpg"],
+      "elapsedMs": 39156
+    },
+    {
+      "id": "portrait-somali",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/nano-pro/portrait-somali-0.jpg"],
+      "elapsedMs": 22509
+    },
+    {
+      "id": "portrait-lehna",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/nano-pro/portrait-lehna-0.jpg"],
+      "elapsedMs": 22454
+    },
+    {
+      "id": "portrait-doorway",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/nano-pro/portrait-doorway-0.jpg"],
+      "elapsedMs": 23836
+    },
+    {
+      "id": "portrait-hands",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/nano-pro/portrait-hands-0.jpg"],
+      "elapsedMs": 24070
+    },
+    {
+      "id": "portrait-close",
+      "model": "fal-ai/qwen-image-edit-2511",
+      "ok": true,
+      "outputs": ["out/illustrated/qwen-edit/portrait-close-0.jpg"],
+      "elapsedMs": 5255
+    },
+    {
+      "id": "portrait-glasses",
+      "model": "fal-ai/qwen-image-edit-2511",
+      "ok": true,
+      "outputs": ["out/illustrated/qwen-edit/portrait-glasses-0.jpg"],
+      "elapsedMs": 7105
+    },
+    {
+      "id": "portrait-somali",
+      "model": "fal-ai/qwen-image-edit-2511",
+      "ok": true,
+      "outputs": ["out/illustrated/qwen-edit/portrait-somali-0.jpg"],
+      "elapsedMs": 28398
+    },
+    {
+      "id": "portrait-lehna",
+      "model": "fal-ai/qwen-image-edit-2511",
+      "ok": true,
+      "outputs": ["out/illustrated/qwen-edit/portrait-lehna-0.jpg"],
+      "elapsedMs": 9685
+    },
+    {
+      "id": "portrait-doorway",
+      "model": "fal-ai/qwen-image-edit-2511",
+      "ok": true,
+      "outputs": ["out/illustrated/qwen-edit/portrait-doorway-0.jpg"],
+      "elapsedMs": 6171
+    },
+    {
+      "id": "portrait-hands",
+      "model": "fal-ai/qwen-image-edit-2511",
+      "ok": true,
+      "outputs": ["out/illustrated/qwen-edit/portrait-hands-0.jpg"],
+      "elapsedMs": 6140
+    },
+    {
+      "id": "portrait-close",
+      "model": "xai/grok-imagine-image/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/grok-edit/portrait-close-0.jpg"],
+      "elapsedMs": 18386
+    },
+    {
+      "id": "portrait-glasses",
+      "model": "xai/grok-imagine-image/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/grok-edit/portrait-glasses-0.jpg"],
+      "elapsedMs": 17537
+    },
+    {
+      "id": "portrait-somali",
+      "model": "xai/grok-imagine-image/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/grok-edit/portrait-somali-0.jpg"],
+      "elapsedMs": 20026
+    },
+    {
+      "id": "portrait-lehna",
+      "model": "xai/grok-imagine-image/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/grok-edit/portrait-lehna-0.jpg"],
+      "elapsedMs": 18045
+    },
+    {
+      "id": "portrait-doorway",
+      "model": "xai/grok-imagine-image/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/grok-edit/portrait-doorway-0.jpg"],
+      "elapsedMs": 18403
+    },
+    {
+      "id": "portrait-hands",
+      "model": "xai/grok-imagine-image/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/grok-edit/portrait-hands-0.jpg"],
+      "elapsedMs": 20376
+    },
+    {
+      "id": "portrait-close",
+      "model": "fal-ai/flux-2-flex/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/flux2-flex/portrait-close-0.jpg"],
+      "elapsedMs": 15911
+    },
+    {
+      "id": "portrait-glasses",
+      "model": "fal-ai/flux-2-flex/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/flux2-flex/portrait-glasses-0.jpg"],
+      "elapsedMs": 17931
+    },
+    {
+      "id": "portrait-somali",
+      "model": "fal-ai/flux-2-flex/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/flux2-flex/portrait-somali-0.jpg"],
+      "elapsedMs": 17900
+    },
+    {
+      "id": "portrait-lehna",
+      "model": "fal-ai/flux-2-flex/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/flux2-flex/portrait-lehna-0.jpg"],
+      "elapsedMs": 18376
+    },
+    {
+      "id": "portrait-doorway",
+      "model": "fal-ai/flux-2-flex/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/flux2-flex/portrait-doorway-0.jpg"],
+      "elapsedMs": 20457
+    },
+    {
+      "id": "portrait-hands",
+      "model": "fal-ai/flux-2-flex/edit",
+      "ok": true,
+      "outputs": ["out/illustrated/flux2-flex/portrait-hands-0.jpg"],
+      "elapsedMs": 16147
+    }
+  ]
+}

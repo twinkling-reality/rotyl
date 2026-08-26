@@ -5,7 +5,8 @@
 **Rotyl is a local graphics engine for selective, full-resolution image and
 video stylisation.** Selections come from direct drawing, on-device
 segmentation, or object tracking. Three WebGPU shader pipelines render Comic,
-Poster, and Print treatments.
+Poster, and Print treatments. An optional hosted illustrated still sits beside
+those styles and is off until you accept its terms.
 
 Each treatment is composited only inside the selection. A still export
 preserves every unselected pixel byte for byte. A video export preserves the
@@ -14,9 +15,10 @@ unselected pixels by a few code values.
 
 [Open Rotyl](https://rotyl.glendonchin.com/)
 
-Media never leaves the browser. On first use, Rotyl fetches its versioned
-EdgeTAM model from the same deployment as the application and retains it in the
-browser cache.
+Comic, Poster and Print never leave the browser. The hosted illustrated still
+does, and only after you accept the current privacy, cost, latency and
+retention terms. On first use, Rotyl fetches its versioned EdgeTAM model from
+the same deployment as the application and retains it in the browser cache.
 
 ![A rectangle dragged across a photographer, with only the selected band
 switching from Comic ink to a Print halftone](docs/media/hero.gif)
@@ -63,7 +65,9 @@ See [selecting an object](docs/selection.md).
 **Styling.** Three chains, sharing nothing but the seam: a painterly flatten with
 inked contours, a flat poster snapped to a fitted palette, and a four-ink
 halftone over warm paper. A style is a texture and a mix, so adding one is a
-directory and a line in a table.
+directory and a line in a table. Illustrated is not a fourth chain. It is a
+hosted stills job, opt-in, documented in
+[stylisation decisions](docs/stylization-decision-log.md).
 See [how it is put together](docs/architecture.md).
 
 **Video.** Open an MP4 or a MOV, play it, scrub it, and select on any frame. An
@@ -132,22 +136,23 @@ revisions, byte lengths and SHA-256 digests live in
 The build verifies that manifest before it emits the application. The browser
 checks the same digest after fetching a model and before giving it to the
 inference runtime. Runtime requests stay on the origin that served Rotyl, under
-the immutable `edgetam-v1` path. Images and videos remain in the browser and are
-never uploaded.
+the immutable `edgetam-v1` path. Ordinary styles never upload a still. The
+hosted illustrated job does, after the current terms are accepted.
 
 ## Reading further
 
-| page                                           | what it covers                                                             |
-| ---------------------------------------------- | -------------------------------------------------------------------------- |
-| [How it is put together](docs/architecture.md) | the layers, the render path, what a style is, why the selection is a log   |
-| [Selecting an object](docs/selection.md)       | the model, the three readings of one click, and the guided filter          |
-| [Video](docs/video.md)                         | playing, holding a selection across frames, reading frames, writing a clip |
-| [Saving the work](docs/saving.md)              | the document, coming back from a crash, and which file it belongs to       |
-| [What was measured](docs/measurements.md)      | why every number lives on a generated page instead of in these files       |
-| [Deployment](docs/deployment.md)               | the production build, immutable model paths and release boundary           |
-| [The interface](docs/interface.md)             | closing a file, saying what is happening and what happened, type           |
-| [Known limits](docs/limits.md)                 | what it cannot do, in its own words                                        |
-| [Licence](docs/licences.md)                    | MIT, and what the dependencies are                                         |
+| page                                                      | what it covers                                                             |
+| --------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [How it is put together](docs/architecture.md)            | the layers, the render path, what a style is, why the selection is a log   |
+| [Selecting an object](docs/selection.md)                  | the model, the three readings of one click, and the guided filter          |
+| [Video](docs/video.md)                                    | playing, holding a selection across frames, reading frames, writing a clip |
+| [Saving the work](docs/saving.md)                         | the document, coming back from a crash, and which file it belongs to       |
+| [What was measured](docs/measurements.md)                 | why every number lives on a generated page instead of in these files       |
+| [Deployment](docs/deployment.md)                          | the production build, immutable model paths and release boundary           |
+| [The interface](docs/interface.md)                        | closing a file, saying what is happening and what happened, type           |
+| [Known limits](docs/limits.md)                            | what it cannot do, in its own words                                        |
+| [Licence](docs/licences.md)                               | MIT, and what the dependencies are                                         |
+| [Stylisation decisions](docs/stylization-decision-log.md) | the hosted illustrated still, and why the local paths failed               |
 
 **Every measurement is on `/research.html`**, linked from the top right before a
 file is open, and generated at build time from the benchmarks' own results rather

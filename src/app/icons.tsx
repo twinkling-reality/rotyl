@@ -5,7 +5,8 @@
  * than depended on: this is about a kilobyte of geometry, and a package plus a
  * bundler plugin plus a version to track is a poor trade for that.
  *
- * `sliders-horizontal` for the style control rather than a wand or sparkles.
+ * Seventeen Lucide paths, including `pencil` for the hosted still.
+ * `sliders-horizontal` for the style control rather than a wand or sparkles:
  * it opens parameter controls, and nothing here is magic. `mouse-pointer-click`
  * for object selection for the same reason: it is a click that selects a thing,
  * not a spell.
@@ -91,6 +92,19 @@ export function ContrastIcon(props: IconProps): JSX.Element {
     <Icon {...props}>
       <circle cx="12" cy="12" r="10" />
       <path d="M12 18a6 6 0 0 0 0-12v12z" />
+    </Icon>
+  );
+}
+
+/**
+ * `pencil` for the hosted illustrated still. It is a drawing job, not a
+ * local style, so it does not reuse the sliders mark.
+ */
+export function PencilIcon(props: IconProps): JSX.Element {
+  return (
+    <Icon {...props}>
+      <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+      <path d="m15 5 4 4" />
     </Icon>
   );
 }

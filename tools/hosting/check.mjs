@@ -31,6 +31,7 @@ const worker = await readFile(path.join(output, 'server', 'index.js'), 'utf8');
 const workerPolicy = [
   '/__rotyl',
   '.html.page',
+  '/api/illustrated',
   '/models/edgetam/edgetam-v1/',
   '/assets/',
   'public, max-age=31536000, immutable',

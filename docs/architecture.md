@@ -189,6 +189,14 @@ they deliberately do not share is the stage that makes each one what it is.
 a Kuwahara flatten and a bilateral flatten are not two settings of one thing,
 they are the difference between painterly and printed.
 
+**Illustrated is not a style.** A local shader and official DCT-Net both failed
+the person-to-animation bar. The path is a hosted job on a still, opt-in, after
+the terms are shown. A vision model reads the still and writes what to keep,
+then Nano Banana Pro draws it from that list. It produces a texture. The
+compositor blends that texture through the mask and does not learn what drew
+it. The Style list is unchanged. See
+[stylisation decisions](stylization-decision-log.md).
+
 ## Resolution is derived, not configured
 
 Every style has a characteristic length. A Kuwahara radius, a bilateral sigma,

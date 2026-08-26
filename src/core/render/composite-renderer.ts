@@ -1,6 +1,6 @@
 import { FullscreenPass } from '../gpu/fullscreen-pass.ts';
 import { DeferredRelease } from '../gpu/resource-pool.ts';
-import { OUTPUT_VIEW_FORMAT, SOURCE_VIEW_FORMAT } from '../gpu/formats.ts';
+import { OUTPUT_VIEW_FORMAT, SOURCE_FORMAT, SOURCE_VIEW_FORMAT } from '../gpu/formats.ts';
 import type {
   StyleControls,
   StyleDefinition,
@@ -11,6 +11,19 @@ import type {
 import type { Dimensions } from './resolution.ts';
 import colorWgsl from '../color/color.wgsl?raw';
 import compositeWgsl from './wgsl/composite.wgsl?raw';
+
+/**
+ * How the composite samples a styled layer.
+ *
+ * Style chains write linear working buffers. A hosted still is an 8-bit sRGB
+ * JPEG uploaded as rgba8unorm, so it has to be decoded at sample time or the
+ * mix happens in the wrong space and the selection reads as a pasted sticker.
+ */
+function layerView(texture: GPUTexture): GPUTextureView {
+  return texture.format === SOURCE_FORMAT
+    ? texture.createView({ format: SOURCE_VIEW_FORMAT })
+    : texture.createView();
+}
 
 export interface StyleRequest {
   /** rgba8unorm, created with SOURCE_VIEW_FORMAT in viewFormats. */
@@ -129,6 +142,21 @@ export class CompositeRenderer {
   }
 
   /**
+   * Use a layer that was not produced by a style chain.
+   *
+   * The hosted illustrated still is the only caller. It is a texture and a mix,
+   * which is all the composite knows how to read. A style pipeline already
+   * resident is left alone: clearing the illustrated layer has to be able to
+   * go back to Comic without rebuilding that chain.
+   *
+   * An 8-bit still is sRGB-encoded, so composite() samples it through an sRGB
+   * view. A style's working buffer is already linear and keeps its own view.
+   */
+  adoptLayer(texture: GPUTexture, mix: number): void {
+    this.#layer = { texture, mix };
+  }
+
+  /**
    * Blend the cached styled layer into the source through the mask.
    *
    * One pass over the output. This is what re-runs on every brush movement.
@@ -155,7 +183,7 @@ export class CompositeRenderer {
       layout: this.#layout,
       entries: [
         { binding: 0, resource: sourceTexture.createView({ format: SOURCE_VIEW_FORMAT }) },
-        { binding: 1, resource: layer.texture.createView() },
+        { binding: 1, resource: layerView(layer.texture) },
         { binding: 2, resource: maskTexture.createView() },
         { binding: 3, resource: this.#sampler },
         { binding: 4, resource: { buffer: this.#uniforms } },

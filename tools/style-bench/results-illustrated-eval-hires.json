@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "Nano Banana Pro, derived keep list, 2048 in and 4K out",
+  "note": "A bench question about size. The product still sends 1280 and asks for 1K.",
+  "stills": [
+    {
+      "id": "portrait-close",
+      "ok": true,
+      "elapsedMs": 60028,
+      "sentLongEdge": 2048,
+      "askedResolution": "4K",
+      "outputs": ["out/illustrated/hires-2048-4K/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "ok": true,
+      "elapsedMs": 54903,
+      "sentLongEdge": 2048,
+      "askedResolution": "4K",
+      "outputs": ["out/illustrated/hires-2048-4K/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "ok": true,
+      "elapsedMs": 42167,
+      "sentLongEdge": 2048,
+      "askedResolution": "4K",
+      "outputs": ["out/illustrated/hires-2048-4K/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "ok": true,
+      "outputs": ["out/illustrated/hires-2048-4K/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "ok": true,
+      "elapsedMs": 54441,
+      "sentLongEdge": 2048,
+      "askedResolution": "4K",
+      "outputs": ["out/illustrated/hires-2048-4K/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "ok": true,
+      "elapsedMs": 86122,
+      "sentLongEdge": 2048,
+      "askedResolution": "4K",
+      "outputs": ["out/illustrated/hires-2048-4K/portrait-hands-0.jpg"]
+    }
+  ]
+}

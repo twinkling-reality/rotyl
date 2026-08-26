@@ -134,6 +134,15 @@ export class RotylEngine {
    */
   #frame = 0;
 
+  /**
+   * A hosted illustrated still, or nothing.
+   *
+   * Not a style. When this is set the style chain is skipped and the
+   * compositor blends this texture through the mask. Destroyed with the
+   * device and with the file, because it is pixels of this photograph on
+   * this GPU.
+   */
+  #illustrated: GPUTexture | undefined;
   #styleDirty = true;
   #compositeDirty = true;
   #displayDirty = true;
@@ -287,7 +296,33 @@ export class RotylEngine {
     this.#styleDirty = true;
     this.#compositeDirty = true;
     this.#displayDirty = true;
+    // A new file, or a new device. The illustrated texture belonged to the
+    // previous source or the previous GPU and cannot be shown on this one.
+    this.clearIllustratedLayer();
     return sourceTexture;
+  }
+
+  /**
+   * Show a hosted illustrated still through the existing compositor.
+   *
+   * The engine takes the texture. The caller must not destroy it.
+   */
+  setIllustratedLayer(texture: GPUTexture): void {
+    this.clearIllustratedLayer();
+    this.#illustrated = texture;
+    this.#styleDirty = true;
+    this.#compositeDirty = true;
+  }
+
+  clearIllustratedLayer(): void {
+    this.#illustrated?.destroy();
+    this.#illustrated = undefined;
+    this.#styleDirty = true;
+    this.#compositeDirty = true;
+  }
+
+  get illustratedLayer(): GPUTexture | undefined {
+    return this.#illustrated;
   }
 
   /**
@@ -305,6 +340,7 @@ export class RotylEngine {
    */
   unloadMedia(): void {
     if (!this.#media) return;
+    this.clearIllustratedLayer();
     this.#media.mask.dispose();
     this.#media.pool.dispose();
     this.#media = undefined;
@@ -485,14 +521,18 @@ export class RotylEngine {
     this.#refiner.beginFrame();
 
     if (this.#styleDirty) {
-      this.#composite.renderStyle(encoder, {
-        sourceTexture: media.sourceTexture,
-        sourceSize: media.sourceSize,
-        outputSize: media.outputSize,
-        style: this.#style,
-        controls: this.#controls,
-        quality: this.#quality,
-      });
+      if (this.#illustrated) {
+        this.#composite.adoptLayer(this.#illustrated, 1);
+      } else {
+        this.#composite.renderStyle(encoder, {
+          sourceTexture: media.sourceTexture,
+          sourceSize: media.sourceSize,
+          outputSize: media.outputSize,
+          style: this.#style,
+          controls: this.#controls,
+          quality: this.#quality,
+        });
+      }
       this.#styleDirty = false;
       this.#compositeDirty = true;
     }
@@ -612,6 +652,7 @@ export class RotylEngine {
 
   dispose(): void {
     this.#unsubscribe();
+    this.clearIllustratedLayer();
     this.#media?.mask.dispose();
     this.#media?.pool.dispose();
     this.#media = undefined;

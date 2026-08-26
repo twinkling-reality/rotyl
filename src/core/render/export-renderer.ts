@@ -105,6 +105,7 @@ export class ExportRenderer {
     frame: number,
     style: StyleDefinition,
     controls: StyleControls,
+    illustrated?: GPUTexture,
   ): Promise<void> {
     const encoder = this.#device.createCommandEncoder({ label: 'export' });
     this.#mask.beginFrame();
@@ -119,14 +120,17 @@ export class ExportRenderer {
       guideSize: this.#sourceSize,
     });
 
-    this.#renderer.renderStyle(encoder, {
-      sourceTexture: this.#sourceTexture,
-      sourceSize: this.#sourceSize,
-      outputSize: this.#outputSize,
-      style,
-      controls,
-      quality: 'export',
-    });
+    if (illustrated) this.#renderer.adoptLayer(illustrated, 1);
+    else {
+      this.#renderer.renderStyle(encoder, {
+        sourceTexture: this.#sourceTexture,
+        sourceSize: this.#sourceSize,
+        outputSize: this.#outputSize,
+        style,
+        controls,
+        quality: 'export',
+      });
+    }
     // Written through an sRGB view, so the hardware performs the encode and the
     // stored bytes match the source exactly wherever coverage is zero. The one
     // place that rule is applied on the way out, so a target cannot arrive

@@ -891,6 +891,92 @@ button {
   }
 }
 
+/* ---------- hosted illustrated still ---------- */
+
+/*
+ * Not a style shelf. The terms have to be readable before a still leaves, so
+ * this is a column of sentences sitting on the same dock, not a fifth slider.
+ */
+.illustrated-shelf {
+  animation: rise var(--dur) var(--ease-out);
+  display: flex;
+  width: min(28rem, 100%);
+  max-width: 100%;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-bottom: -1px;
+  padding: var(--s-4) var(--s-4) var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg) var(--r-lg) var(--r-sm) var(--r-sm);
+  background: var(--bg);
+  box-shadow: 0 -8px 24px oklch(0% 0 0 / 0.04);
+  z-index: 0;
+}
+
+.illustrated-shelf__title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--fs-base);
+}
+
+.illustrated-shelf__lede,
+.illustrated-shelf__note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.illustrated-shelf__terms {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+}
+
+.illustrated-shelf__terms div {
+  display: grid;
+  gap: 2px;
+}
+
+.illustrated-shelf__terms dt {
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+}
+
+.illustrated-shelf__terms dd {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.illustrated-shelf__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.illustrated-shelf__button {
+  height: 28px;
+  padding: 0 var(--s-3);
+  border: 0;
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.illustrated-shelf__button--send:not(:disabled) {
+  background: var(--text-primary);
+  color: var(--bg);
+}
+
+.illustrated-shelf__button:disabled {
+  color: var(--line-strong);
+  cursor: default;
+}
+
 /* ---------- style shelf ---------- */
 
 /*

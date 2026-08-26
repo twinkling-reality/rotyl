@@ -70,6 +70,18 @@ over another one is a replace, so the line says what it would cost and names the
 two ways out, Save and the X. That is the close button's rule arriving at a
 gesture with no button to arm.
 
+## The hosted illustrated still
+
+Illustrated is a second control on a photograph, next to Style, and it is not
+on a clip. It is not in the Style list. Opening it prints privacy, cost,
+latency and retention before Send can do anything. Send stays disabled until
+there is a selection and the host has configured the job. The still leaves
+only after that click. Clearing the layer does not talk to the host.
+
+The product still has no dialog. The terms sit on the same dock the style
+shelf uses, because they have to be read in place, and a modal in front of the
+photograph would be the first dialog this interface has ever grown.
+
 ## Saying that it is working
 
 One component, `src/app/Activity.tsx`, and every wait in the product goes

@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "Product entry point, terms illustrated-v4",
+  "note": "Posted to handleIllustrated as the browser does. Publish-ready stays false until a person judges the licensed set and it clears.",
+  "stills": [
+    {
+      "id": "portrait-close",
+      "ok": true,
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 283073,
+      "elapsedMs": 40188,
+      "outputs": ["out/illustrated/product/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "ok": true,
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 480898,
+      "elapsedMs": 97089,
+      "outputs": ["out/illustrated/product/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "ok": true,
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 496085,
+      "elapsedMs": 42414,
+      "outputs": ["out/illustrated/product/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "ok": true,
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 1426456,
+      "elapsedMs": 44442,
+      "outputs": ["out/illustrated/product/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "ok": true,
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 782777,
+      "elapsedMs": 55491,
+      "outputs": ["out/illustrated/product/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "ok": true,
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 259109,
+      "elapsedMs": 58036,
+      "outputs": ["out/illustrated/product/portrait-hands-0.jpg"]
+    }
+  ]
+}

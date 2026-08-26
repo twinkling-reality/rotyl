@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "PhotoMaker (Tencent ARC, Apache-2.0) on Fal, photomaker-style, img2img from this still",
+  "termsVersion": "illustrated-v2",
+  "skipped": false,
+  "note": "Identity-preserving follow-up was judged. It fails the visual bar. Publish-ready stays false.",
+  "steps": 100,
+  "styleStrength": 20,
+  "candidates": 1,
+  "strengths": [0.3],
+  "falUnitPriceUsd": 0.00125,
+  "falUnit": "compute seconds",
+  "measuredWallMs": {
+    "min": 9472,
+    "max": 231997,
+    "longJob": 231997
+  },
+  "judgement": {
+    "clearsBar": false,
+    "summary": "Pulling toward the still kept glasses and stopped the beard and the gender swap. PhotoMaker still invents people. The doorway sitter becomes a young blonde. Jewelry, turban, and the leopard headband do not hold. portrait-close stays a photograph and invents a red cap band. No demo reel."
+  },
+  "stills": [
+    {
+      "id": "portrait-close",
+      "ok": true,
+      "strength": 0.3,
+      "elapsedMs": 231997,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s030/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "ok": true,
+      "strength": 0.3,
+      "elapsedMs": 9825,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s030/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "ok": true,
+      "strength": 0.3,
+      "elapsedMs": 9517,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s030/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "ok": true,
+      "strength": 0.3,
+      "elapsedMs": 9472,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s030/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "ok": true,
+      "strength": 0.3,
+      "elapsedMs": 27183,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s030/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "ok": true,
+      "strength": 0.3,
+      "elapsedMs": 11631,
+      "clearsBar": false,
+      "outputs": ["out/illustrated/s030/portrait-hands-0.jpg"]
+    }
+  ]
+}
