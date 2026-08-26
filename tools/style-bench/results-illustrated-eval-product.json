@@ -7,56 +7,77 @@
     {
       "id": "portrait-close",
       "ok": true,
-      "status": 200,
-      "contentType": "image/jpeg",
-      "bytes": 141290,
-      "elapsedMs": 29601,
-      "outputs": ["out/illustrated/product/portrait-close-0.jpg"]
+      "outputs": [
+        "out/illustrated/product/portrait-close-0.jpg"
+      ]
     },
     {
       "id": "portrait-glasses",
       "ok": true,
-      "status": 200,
-      "contentType": "image/jpeg",
-      "bytes": 162470,
-      "elapsedMs": 26697,
-      "outputs": ["out/illustrated/product/portrait-glasses-0.jpg"]
+      "outputs": [
+        "out/illustrated/product/portrait-glasses-0.jpg"
+      ]
     },
     {
       "id": "portrait-somali",
       "ok": true,
-      "status": 200,
-      "contentType": "image/jpeg",
-      "bytes": 236935,
-      "elapsedMs": 24646,
-      "outputs": ["out/illustrated/product/portrait-somali-0.jpg"]
+      "outputs": [
+        "out/illustrated/product/portrait-somali-0.jpg"
+      ]
     },
     {
       "id": "portrait-lehna",
       "ok": true,
-      "status": 200,
-      "contentType": "image/jpeg",
-      "bytes": 661315,
-      "elapsedMs": 29278,
-      "outputs": ["out/illustrated/product/portrait-lehna-0.jpg"]
+      "outputs": [
+        "out/illustrated/product/portrait-lehna-0.jpg"
+      ]
     },
     {
       "id": "portrait-doorway",
       "ok": true,
-      "status": 200,
-      "contentType": "image/jpeg",
-      "bytes": 350468,
-      "elapsedMs": 29345,
-      "outputs": ["out/illustrated/product/portrait-doorway-0.jpg"]
+      "outputs": [
+        "out/illustrated/product/portrait-doorway-0.jpg"
+      ]
     },
     {
       "id": "portrait-hands",
       "ok": true,
+      "outputs": [
+        "out/illustrated/product/portrait-hands-0.jpg"
+      ]
+    },
+    {
+      "id": "group-hikers",
+      "ok": true,
       "status": 200,
       "contentType": "image/jpeg",
-      "bytes": 112070,
-      "elapsedMs": 26784,
-      "outputs": ["out/illustrated/product/portrait-hands-0.jpg"]
+      "bytes": 126195,
+      "elapsedMs": 26865,
+      "outputs": [
+        "out/illustrated/product/group-hikers-0.jpg"
+      ]
+    },
+    {
+      "id": "group-adventurers",
+      "ok": true,
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 298724,
+      "elapsedMs": 26482,
+      "outputs": [
+        "out/illustrated/product/group-adventurers-0.jpg"
+      ]
+    },
+    {
+      "id": "profile-beard",
+      "ok": true,
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 143908,
+      "elapsedMs": 27199,
+      "outputs": [
+        "out/illustrated/product/profile-beard-0.jpg"
+      ]
     }
   ]
 }

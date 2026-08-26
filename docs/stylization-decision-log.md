@@ -517,6 +517,77 @@ which is a byte test and not a visual one.
 whether these sheets clear the visual bar is the user's judgement and has not
 been given.
 
+## Beyond the six: a group shot and a profile
+
+The six are single sitters, roughly frontal, decently lit. Three CC0 pictures
+outside that shape were run through the same product entry point. Sources are
+under `tools/style-bench/real/probe/` and are not committed.
+
+**Profile.** A man in a beanie, near profile on a stairwell. The beanie ribbing,
+the beard, the dark jacket, the railing and the head turn all hold, and it reads
+as him. Cheek patch: photo 119.5, sheet 100.6, drift -18.9. Darker, not lighter.
+
+**Group, six figures on rock.** Every figure survives in the right place and
+pose, including the one at a tripod, the red jacket and the blue ones, and the
+rock strata read correctly. The mist behind them does not. Soft atmospheric
+gradient becomes hard-edged flat blobs.
+
+**Group, four backlit silhouettes.** The figures, the packs and the poses
+survive. The photograph does not. The pipeline reads a backlit silhouette as an
+underexposure and corrects it: the ground is lit and detailed, the sky gradient
+becomes flat bands, and the sun becomes a drawn starburst with rays that are not
+in the frame.
+
+**The pattern.** Figures and named costume hold well outside the six. What fails
+is everything soft, atmospheric or low key. A keep list can only name what is
+visible, so where the photograph withholds detail the drawing invents it. That
+is the same invention failure this ledger has chased all along, arriving through
+the background instead of the face. Low-key and backlit frames are the case to
+fix next, and the fix is probably an instruction to preserve exposure and
+silhouette rather than to resolve them.
+
+The over-darkening seen on lehna repeats on the profile, at -18.9 against -27.4.
+That direction is now the consistent one, and it is a fidelity miss rather than
+the lightening this ledger recorded on Seedream.
+
+## What video would change
+
+Clips are not sent and `stillsOnly` is true. That is not a gap to be closed by
+pointing the same path at every frame.
+
+**Per frame does not work, for three separate reasons.** Ten seconds at 24 fps
+is 240 frames. At the measured fifteen cents a frame that is $36 for ten
+seconds, and at the measured 27 s a frame it is about 108 minutes run in
+sequence. Those two are merely bad. The third is fatal: every frame is drawn
+independently, so nothing holds the character design still between them. The
+line weight, the flat fill colours, and any detail the model invented for a soft
+area all change frame to frame. That is boiling, and this bench already has
+`flicker.ts` and `stability.ts` precisely because temporal stability was the
+thing that decided the local chains.
+
+**The keep list is unstable too.** It is derived per frame, so the same jacket
+can come back as dark, black, or charcoal on consecutive frames, and each
+wording pulls the drawing somewhere slightly different. A person walking into
+the shot is not in the first frame's description at all, so the character they
+are drawn as would be invented at the moment they appear and would keep
+changing as they grow in frame.
+
+**The selection would have to track.** The compositor writes unselected pixels
+from the original still. Across a clip that selection has to follow the person,
+which is rotoscoping, and nothing in the still path does it.
+
+**The shape that does work is a video-native model.** Those enforce temporal
+consistency inside the generation instead of hoping independent frames agree.
+`fal-ai/wan/v2.2-a14b/video-to-video` lists $0.08 a video second at 720p on a
+16 fps basis, so the same ten seconds is about $0.80 in one job rather than $36
+across 240. `fal-ai/wan-vace-14b` and `xai/grok-imagine-video/edit-video` are
+the other two live candidates. None of them has been run here and none is
+adopted.
+
+That would be a different authorization boundary from this one. A clip leaving
+the machine is not the still that the current terms describe, so it would need
+its own consent, its own cost and latency sentences, and its own judged run.
+
 ## Measurements
 
 Hosted latency and cost are Fal's, not this machine's. A 100-step still on

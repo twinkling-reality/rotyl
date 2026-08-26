@@ -73,6 +73,14 @@ if (Array.isArray(listed)) {
   }
 }
 
+// Extra pictures can be named on the command line, as paths under this folder.
+// The six are single frontal sitters, so a group shot or a profile is the kind
+// of thing that has to be run here rather than assumed from them.
+for (const arg of process.argv.slice(2)) {
+  const id = arg.replace(/^.*\//, '').replace(/\.[^.]+$/, '');
+  stills.push({ id, file: arg });
+}
+
 const key = process.env.FAL_KEY;
 if (!key) throw new Error('FAL_KEY is not set.');
 
