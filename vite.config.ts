@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { sites } from '@openai/sites-vite-plugin';
 import { defineConfig, type Plugin } from 'vite';
-import { renderResearchSite, researchFigures } from './tools/research/index.ts';
+import { renderResearchSite, researchFigures, researchLlmsTxt } from './tools/research/index.ts';
 import { modelAssets } from './tools/model-assets/vite.ts';
 
 /**
@@ -69,6 +69,13 @@ function researchPage(): Plugin {
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         const requested = request.url?.split('?')[0]?.replace(/^\//, '');
+        // Plain text, and at the root rather than under research/, which is
+        // where the convention puts it and where a program looks first.
+        if (requested === 'llms.txt') {
+          response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+          response.end(researchLlmsTxt());
+          return;
+        }
         if (!requested?.startsWith('research')) return next();
         // Rendered per request rather than once at startup, so re-running a
         // benchmark shows up on a refresh.
@@ -93,6 +100,7 @@ function researchPage(): Plugin {
       for (const figure of researchFigures()) {
         this.emitFile({ type: 'asset', fileName: figure.path, source: figure.bytes });
       }
+      this.emitFile({ type: 'asset', fileName: 'llms.txt', source: researchLlmsTxt() });
     },
   };
 }

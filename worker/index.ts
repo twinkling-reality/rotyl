@@ -35,6 +35,9 @@ export default {
     }
 
     if (pathname.endsWith('.gz')) headers.set('Content-Type', 'application/gzip');
+    // Stated rather than inherited, because `nosniff` is set above: a text file
+    // served as anything else would be refused rather than displayed.
+    if (pathname.endsWith('.txt')) headers.set('Content-Type', 'text/plain; charset=utf-8');
 
     return new Response(response.body, {
       status: response.status,

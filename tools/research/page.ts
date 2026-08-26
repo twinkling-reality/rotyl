@@ -110,6 +110,45 @@ export interface Entry {
   readonly trials?: readonly Trial[];
 }
 
+/** The canonical host, which an agent reading this needs in full. */
+const SITE = 'https://rotyl.glendonchin.com';
+
+/**
+ * The research library as one plain-text file, for a reader that is a program.
+ *
+ * Built from the same entries the pages are, so it cannot describe a study that
+ * is not there or miss one that is. The convention is llmstxt.org: a heading, a
+ * summary, then links with a sentence each.
+ *
+ * It lists rather than reproduces. An agent that wants the numbers follows a
+ * link and gets the page, which already states its own scope, date, machine and
+ * the command that re-takes it.
+ */
+export function renderLlmsTxt(entries: readonly Entry[]): string {
+  const lines: string[] = [
+    '# Rotyl',
+    '',
+    '> Rotyl is a local graphics engine for selective, full-resolution image and video stylisation. Selections come from direct drawing, on-device segmentation, or object tracking. Three WebGPU shader pipelines render Comic, Poster and Print, and each treatment is composited only inside the selection. Comic, Poster and Print never leave the browser.',
+    '',
+    'The pages below are the measured evidence behind those claims. Each one states the kind of evidence it carries, the boundary of the claim, the machine and browser it was taken on, and the command that takes it again.',
+    '',
+    'Negative results are kept. Several pages record an approach that was rejected, or a cause that was proposed and then ruled out by its own measurements. Those are as much a part of the record as the results that held.',
+    '',
+  ];
+  const kinds: readonly EvidenceKind[] = ['benchmark', 'investigation', 'decision', 'audit', 'historical'];
+  for (const kind of kinds) {
+    const group = entries.filter((entry) => entry.kind === kind);
+    if (group.length === 0) continue;
+    lines.push(`## ${EVIDENCE[kind].label}`, '', EVIDENCE[kind].description, '');
+    for (const entry of group) {
+      lines.push(`- [${entry.title}](${SITE}/research/${entry.slug}.html): ${entry.standfirst}`);
+    }
+    lines.push('');
+  }
+  lines.push('## Application', '', `- [Rotyl](${SITE}/): the editor itself.`, '');
+  return lines.join('\n');
+}
+
 const escape = (text: string): string =>
   text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
@@ -374,7 +413,6 @@ function shell(title: string, top: string, main: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escape(title)}</title>
 <meta name="color-scheme" content="light">
-<meta name="robots" content="noindex">
 <style>${STYLE}</style>
 </head>
 <body>
