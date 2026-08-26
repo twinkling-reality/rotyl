@@ -9,7 +9,7 @@ import {
   publicLaunchEntry,
   trackedSelectionEntry,
 } from './measurements.ts';
-import { renderEntry, renderIndex, type Entry, type FigureMeta } from './page.ts';
+import { renderEntry, renderIndex, renderLlmsTxt, type Entry, type FigureMeta } from './page.ts';
 import { TRIALS } from './trials.ts';
 
 /**
@@ -109,7 +109,13 @@ function figureMeta(root: string): readonly FigureMeta[] {
   });
 }
 
-export function renderResearchSite(root = '.'): readonly Emitted[] {
+/**
+ * The entries, stamped with their dates and hardware.
+ *
+ * Split out from `renderResearchSite` so `llms.txt` is built from the same list
+ * the pages are, rather than from a second one that could fall out of step.
+ */
+export function researchEntries(root = '.'): readonly Entry[] {
   const read = (path: string): unknown => JSON.parse(readFileSync(`${root}/${path}`, 'utf8'));
   const style = read('tools/style-bench/results.json');
   // Its own file because its own command writes it, and because its inputs have
@@ -259,6 +265,11 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
     ...lastChanged(entry.results),
   }));
 
+  return stamped;
+}
+
+export function renderResearchSite(root = '.'): readonly Emitted[] {
+  const stamped = researchEntries(root);
   const meta = figureMeta(root);
   return [
     { path: 'research.html', html: renderIndex(stamped) },
@@ -267,4 +278,15 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
       html: renderEntry(entry, meta),
     })),
   ];
+}
+
+/**
+ * The research library as `llms.txt`, from the same entries as the pages.
+ *
+ * Separate from `renderResearchSite` because it is not HTML and must not be
+ * served as if it were. It is at the site root rather than under research/,
+ * which is where the convention puts it and where a program looks first.
+ */
+export function researchLlmsTxt(root = '.'): string {
+  return renderLlmsTxt(researchEntries(root));
 }
