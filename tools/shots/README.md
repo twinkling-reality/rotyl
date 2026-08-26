@@ -84,3 +84,36 @@ behind by the end of the clip, three times, including with longer settle times.
 The committed demo uses a near-fixed camera because that is what works today.
 Following a turning subject on a moving camera is the next piece of work, and it
 is worth knowing before this is shown to anyone.
+
+## track-confidence
+
+```bash
+pnpm dev --port 5180
+node tools/shots/track-confidence.mjs        # ROTYL_CLIP, ROTYL_SUBJECT, ROTYL_GROW, OUT
+```
+
+Writes one row per tracked frame: the model's object score, its predicted IoU,
+and the mask's covered area and centroid on the 256 grid. It exists because a
+drifting track is invisible from outside, and the numbers below are why.
+
+**A drifting track reports itself as a good one.** On the Tears of Steel bridge
+crossing, where the tracker loses the walker, the predicted IoU never falls
+below 0.92 across 191 frames and the object score never once says absent. At
+frames 180 to 190, where the mask is no longer on her, the predicted IoU is
+0.98, the highest in the clip. Confidence RISES as it drifts, because a mask
+that has settled on a stable piece of background is an easy mask to predict.
+So nothing can be gated on the model's own scores: it is confidently wrong.
+
+**What actually fails is scale, not position.** The centroid follows her across
+the frame. The area does not follow her toward the camera:
+
+| clip           | subject                | mask area, first to last | ratio |
+| -------------- | ---------------------- | ------------------------ | ----- |
+| `traffic-720p` | car approaches         | 530 to 1125              | 2.12  |
+| `tos-crossing` | walker fills the frame | 6035 to 6339             | 1.05  |
+
+The car grows and its mask grows with it, so scale adaptation is not broken in
+general. On the crossing the walker ends up several times the area she started
+at and the mask stays the size it began, so by the end it covers a patch of
+street and hedge next to her rather than her. That is the bug to fix, and it is
+a different bug from the one this looked like from the outside.
