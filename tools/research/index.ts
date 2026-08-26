@@ -7,6 +7,7 @@ import {
   hostedCiEntry,
   modelDeliveryEntry,
   publicLaunchEntry,
+  trackedSelectionEntry,
 } from './measurements.ts';
 import { renderEntry, renderIndex, type Entry, type FigureMeta } from './page.ts';
 import { TRIALS } from './trials.ts';
@@ -201,6 +202,9 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
   // than a build or a local runtime. Re-taking it must not re-date either the
   // model-delivery finding or the hosted-runner finding.
   const launch = read('tools/launch-check/results.json');
+  // Its own file so that re-taking a tracking figure does not re-date the
+  // benchmarks, and so the investigation carries the date of its own evidence.
+  const trackedSelection = read('tools/shots/results-track-confidence.json');
 
   const taken = hardware(video);
   const pages: readonly Entry[] = [
@@ -229,6 +233,7 @@ export function renderResearchSite(root = '.'): readonly Emitted[] {
     ciStabilityEntry(ci),
     hostedCiEntry({ standard: hostedStandard, intel: hostedIntel, xlarge: hostedXlarge }, hostedBrowser),
     publicLaunchEntry(launch),
+    trackedSelectionEntry(trackedSelection),
     {
       slug: 'trials',
       title: 'Rejected approaches',

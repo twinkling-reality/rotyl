@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "environment": {
+    "browser": "Chrome 151",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+    "cpu": "Apple M3 Pro",
+    "platform": "macOS 26.5.1",
+    "node": "v24.15.0",
+    "hardwareConcurrency": 12,
+    "manual": "Seeds are placed by scripted clicks; masks and figures are written by the harness."
+  },
+  "clip": {
+    "name": "tos-crossing",
+    "width": 1280,
+    "height": 534,
+    "frames": 192,
+    "aspect": "2.40:1"
+  },
+  "maskGrid": 256,
+  "confidence": {
+    "frames": 191,
+    "predictedIouMin": 0.92,
+    "predictedIouMax": 0.986,
+    "predictedIouMean": 0.965,
+    "objectScoreMin": 7.63,
+    "objectScoreMax": 11.23,
+    "framesReportedAbsent": 0,
+    "predictedIouAtFrame185": 0.981
+  },
+  "aspect": {
+    "wide": {
+      "aspect": "2.40:1",
+      "maskWidthColumns": 41,
+      "areaFirst": 6035,
+      "areaLast": 6339
+    },
+    "cropped": {
+      "aspect": "1.50:1",
+      "maskWidthColumns": 66,
+      "areaFirst": 10328,
+      "areaLast": 9954
+    },
+    "cropRatio": 1.6
+  },
+  "lateSeed": {
+    "seededAtFrame": 150,
+    "framesTracked": 41,
+    "longRunAtLastFrame": {
+      "area": 6339,
+      "minX": 87,
+      "maxX": 126,
+      "width": 40
+    },
+    "lateRunAtLastFrame": {
+      "area": 5124,
+      "minX": 93,
+      "maxX": 126,
+      "width": 34
+    }
+  },
+  "carClip": {
+    "name": "traffic-720p",
+    "aspect": "1.78:1",
+    "areaFirst": 530,
+    "areaLast": 1125,
+    "ratio": 2.12
+  },
+  "exportAgreement": {
+    "frame": 185,
+    "renderWidth": 1000,
+    "maskColumns": [359, 503],
+    "styledColumns": [370, 502],
+    "note": "Mask and export captured in one run. Comparing across runs is not valid: two tracking runs need not agree."
+  },
+  "cause": {
+    "fault": "Pressing Escape between choosing an object proposal and starting tracking cancels the proposal while the preview continues to show the highlighted one.",
+    "effect": "The editor appears correct and the run tracks the smaller default proposal.",
+    "fix": "tools/shots/tracked-clip.mjs presses nothing between the proposal and Track."
+  }
+}

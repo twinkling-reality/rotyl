@@ -246,6 +246,17 @@ async function floatsFrom(tensor: EdgeTamTensor | undefined, name: string): Prom
  */
 const DECIDED_LOGIT = 2;
 
+declare global {
+  /** Set by `tools/shots/track-confidence.mjs`. Undefined in a normal run. */
+  // eslint-disable-next-line no-var
+  var rotylTrackLog: number[][] | undefined;
+  /** Frames whose mask bitmap to keep, set by the same tool. */
+  // eslint-disable-next-line no-var
+  var rotylTrackMaskAt: number[] | undefined;
+  // eslint-disable-next-line no-var
+  var rotylTrackMasks: Array<{ frame: number; bitmap: number[] }> | undefined;
+}
+
 function coverageFrom(logits: Float32Array, offset: number): CoverageMask {
   const coverage = new Uint8Array(MASK_SIZE * MASK_SIZE);
   for (let i = 0; i < coverage.length; i++) {
@@ -461,6 +472,58 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
           // rather than a count of pixels: an object behind something is not an
           // object that got smaller.
           const present = decoded.objectScore > 0;
+          // A drifting track looks like a working one from outside: the mask is
+          // the right shape and the model's own scores stay high all the way
+          // through. So that it can be measured rather than guessed at,
+          // `tools/shots/track-confidence.mjs` sets this and reads back what the
+          // decoder said per frame. Undefined in a normal run, which is one
+          // comparison per tracked frame.
+          if (globalThis.rotylTrackLog !== undefined) {
+            let covered = 0;
+            let sumX = 0;
+            let sumY = 0;
+            let minX = MASK_SIZE;
+            let maxX = -1;
+            let minY = MASK_SIZE;
+            let maxY = -1;
+            for (let at = 0; at < decoded.logits.length; at++) {
+              if ((decoded.logits[at] ?? -1) > 0) {
+                const x = at % MASK_SIZE;
+                const y = Math.floor(at / MASK_SIZE);
+                covered++;
+                sumX += x;
+                sumY += y;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+            }
+            // The scalars above say how big the mask is and where its middle is.
+            // Neither says what shape it is or what it is sitting on, and that
+            // turned out to be the whole question, so the frames named in
+            // `rotylTrackMaskAt` keep their mask as a flat 0/1 grid.
+            const frame = globalThis.rotylTrackLog.length;
+            if (globalThis.rotylTrackMaskAt?.includes(frame) === true) {
+              const bitmap: number[] = Array.from({ length: decoded.logits.length }, () => 0);
+              for (let at = 0; at < decoded.logits.length; at++) {
+                bitmap[at] = (decoded.logits[at] ?? -1) > 0 ? 1 : 0;
+              }
+              globalThis.rotylTrackMasks ??= [];
+              globalThis.rotylTrackMasks.push({ frame, bitmap });
+            }
+            globalThis.rotylTrackLog.push([
+              decoded.objectScore,
+              decoded.quality,
+              covered,
+              covered > 0 ? sumX / covered : -1,
+              covered > 0 ? sumY / covered : -1,
+              minX,
+              maxX,
+              minY,
+              maxY,
+            ]);
+          }
           // AND SAYING SO REACHES THE MASK, not just the flag. A decoder told
           // there is nothing there still draws something, and a run that wrote
           // it would replace the held-forward selection with a shape belonging
@@ -518,6 +581,8 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
     mask: CoverageMask;
     logits: Float32Array;
     objectScore: number;
+    /** The model's predicted IoU for the head it picked. Its own quality estimate. */
+    quality: number;
     pointer: Float32Array;
   }> {
     const tensors = embeddingTensors(scene);
@@ -556,6 +621,7 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
       mask: coverageFrom(masks, best * stride),
       logits: masks.slice(best * stride, (best + 1) * stride),
       objectScore: floatsOf(outputs.object_score_logits, 'object_score_logits')[0] ?? 0,
+      quality: scores[best] ?? 0,
       pointer: pointers.slice(best * POINTER_DIM, (best + 1) * POINTER_DIM),
     };
   }

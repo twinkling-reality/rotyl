@@ -3262,3 +3262,143 @@ export function hardware(video: unknown): string {
   const architecture = text(video, ['adapter', 'architecture']);
   return `Apple M3 Pro, OS version not recorded, Chrome ${chrome}, adapter ${vendor} / ${architecture}`;
 }
+
+/**
+ * The investigation that isolated a tracked selection leaving its subject.
+ *
+ * Kept as its own entry, and its own results file, because it is an
+ * investigation rather than a benchmark: most of what it records is the
+ * explanations that were measured and rejected, which is the part that stops
+ * the same ground being covered again.
+ */
+export function trackedSelectionEntry(results: unknown): Entry {
+  const grid = num(results, ['maskGrid']);
+  const frames = num(results, ['confidence', 'frames']);
+  const iouMin = num(results, ['confidence', 'predictedIouMin']);
+  const iouMax = num(results, ['confidence', 'predictedIouMax']);
+  const iouAt = num(results, ['confidence', 'predictedIouAtFrame185']);
+  const absent = num(results, ['confidence', 'framesReportedAbsent']);
+  const wideWidth = num(results, ['aspect', 'wide', 'maskWidthColumns']);
+  const cropWidth = num(results, ['aspect', 'cropped', 'maskWidthColumns']);
+  const cropRatio = num(results, ['aspect', 'cropRatio']);
+  const measuredRatio = cropWidth / wideWidth;
+  const maskFrom = num(results, ['exportAgreement', 'maskColumns', '0']);
+  const maskTo = num(results, ['exportAgreement', 'maskColumns', '1']);
+  const styledFrom = num(results, ['exportAgreement', 'styledColumns', '0']);
+  const styledTo = num(results, ['exportAgreement', 'styledColumns', '1']);
+  const exportFrame = num(results, ['exportAgreement', 'frame']);
+  const renderWidth = num(results, ['exportAgreement', 'renderWidth']);
+  const seededAt = num(results, ['lateSeed', 'seededAtFrame']);
+  const lateArea = num(results, ['lateSeed', 'lateRunAtLastFrame', 'area']);
+  const longArea = num(results, ['lateSeed', 'longRunAtLastFrame', 'area']);
+  const lateFrom = num(results, ['lateSeed', 'lateRunAtLastFrame', 'minX']);
+  const lateTo = num(results, ['lateSeed', 'lateRunAtLastFrame', 'maxX']);
+  const longFrom = num(results, ['lateSeed', 'longRunAtLastFrame', 'minX']);
+  const longTo = num(results, ['lateSeed', 'longRunAtLastFrame', 'maxX']);
+  const clip = text(results, ['clip', 'name']);
+  const clipFrames = num(results, ['clip', 'frames']);
+
+  return {
+    slug: 'tracked-selection',
+    results: 'tools/shots/results-track-confidence.json',
+    title: 'Tracked selection fault isolation',
+    standfirst:
+      'A selection that left its subject was traced to a cancelled object proposal. Four other explanations were measured first and none of them held.',
+    kind: 'investigation',
+    scope: `Object tracking in the shipped editor on one 2.40:1 clip, ${String(clipFrames)} frames, on the recorded Chrome build and machine.`,
+    repeatability:
+      'Scripted. The harness drives the shipped application, seeds a selection by clicking the canvas, and writes both the per-frame figures and the masks themselves.',
+    harness: 'tools/shots/track-confidence.mjs',
+    taken: `${text(results, ['environment', 'cpu'])}, ${text(results, ['environment', 'platform'])}, ${text(results, ['environment', 'browser'])}, Node ${text(results, ['environment', 'node'])}`,
+    hero: {
+      name: 'tracked-mask',
+      caption:
+        'The mask the tracker produced at frame 185, laid over the picture and then shown on its own. It is on the walker. The fault this investigation started on was in the harness that seeded it.',
+    },
+    lede: [
+      `A tracked selection on ${clip} finished the clip covering hedge and bridge instead of the walker it was seeded on. The fault was reproducible and the exported file showed it, which made it look like a limit of the tracker.`,
+      'The fault was a keypress in the harness. Pressing Escape between choosing an object proposal and starting the run cancels the proposal, while the preview continues to show the one that was highlighted. The editor looked correct and the run followed the smaller default proposal.',
+      'The measurements below were taken while that was still unknown. They are kept because each one rules an explanation out, and because two of them describe behaviour that would mislead the next reader in the same way.',
+    ],
+    sections: [
+      {
+        heading: 'The model reports high confidence while wrong',
+        prose: [
+          `Across ${String(frames)} tracked frames the decoder's predicted IoU stayed between ${iouMin.toFixed(3)} and ${iouMax.toFixed(3)}, and its object score reported the subject absent on ${String(absent)} frames. At frame ${String(exportFrame)}, where the mask was on the wrong region, the predicted IoU was ${iouAt.toFixed(3)}.`,
+          'A mask that has settled on a stable piece of background is an easy mask to predict, so confidence rises as the result gets worse. Gating memory admission on either score would not have detected this fault on this clip.',
+        ],
+        table: {
+          columns: ['signal', 'range across the run'],
+          rows: [
+            ['predicted IoU', `${iouMin.toFixed(3)} to ${iouMax.toFixed(3)}`],
+            ['predicted IoU where the mask was wrong', iouAt.toFixed(3)],
+            ['frames reported absent', String(absent)],
+          ],
+        },
+        command: 'node tools/shots/track-confidence.mjs',
+      },
+      {
+        heading: 'The squashed aspect is not the cause',
+        prose: [
+          `The model input is square and the clip is 2.40:1, so a standing person arrives stretched. Re-running on the same footage cropped to 1.50:1 gave a mask ${String(cropWidth)} grid columns wide against ${String(wideWidth)}, a ratio of ${measuredRatio.toFixed(2)} where the crop ratio is ${cropRatio.toFixed(2)}.`,
+          `The mask covers the same region of the picture at either aspect, on a ${String(grid)} column grid. The distortion changes what the numbers look like and does not change what is selected.`,
+        ],
+        table: {
+          columns: ['input aspect', 'mask width in grid columns'],
+          rows: [
+            ['2.40:1, as delivered', String(wideWidth)],
+            ['1.50:1, centre cropped', String(cropWidth)],
+          ],
+        },
+        caveat:
+          'One clip and one subject. The result shows this distortion did not cause this fault, not that aspect never matters.',
+        command: 'node tools/shots/track-confidence.mjs',
+      },
+      {
+        heading: 'The fault does not accumulate along the run',
+        prose: [
+          `Seeding at frame ${String(seededAt)}, where the subject is already close to the camera, and tracking only the frames after it reached the same place as a run seeded at the first frame. The two masks at the last frame cover columns ${String(lateFrom)} to ${String(lateTo)} and ${String(longFrom)} to ${String(longTo)}.`,
+          'A run with almost no history to drift through arrives where a run with the whole clip behind it arrives. Explanations that depend on memory filling with bad frames are therefore not supported here.',
+        ],
+        table: {
+          columns: ['run', 'mask area at the last frame', 'columns covered'],
+          rows: [
+            ['seeded at the first frame', String(longArea), `${String(longFrom)} to ${String(longTo)}`],
+            [
+              `seeded at frame ${String(seededAt)}`,
+              String(lateArea),
+              `${String(lateFrom)} to ${String(lateTo)}`,
+            ],
+          ],
+        },
+        command: 'ROTYL_START_FRAME=150 node tools/shots/track-confidence.mjs',
+      },
+      {
+        heading: 'The exported file agrees with the tracked mask',
+        prose: [
+          `At frame ${String(exportFrame)} the mask covers columns ${String(maskFrom)} to ${String(maskTo)} of ${String(renderWidth)}, and the pixels the exported file changes cover ${String(styledFrom)} to ${String(styledTo)}. The treatment lands where the selection is.`,
+          'An earlier reading of this comparison claimed the two disagreed. That reading compared a mask recorded in one run against a file exported from another, which is not a comparison, because two runs of the tracker need not produce the same mask. The harness now writes both from a single run.',
+        ],
+        table: {
+          columns: ['measured at the export size', 'columns'],
+          rows: [
+            ['tracked mask', `${String(maskFrom)} to ${String(maskTo)}`],
+            ['pixels the export changed', `${String(styledFrom)} to ${String(styledTo)}`],
+          ],
+        },
+        caveat:
+          'Differences were measured per colour channel. A luminance difference under-reports this treatment, which flattens colour while leaving brightness close to the source.',
+        command: 'ROTYL_EXPORT=out.mp4 ROTYL_MASK_AT=185 node tools/shots/track-confidence.mjs',
+      },
+      {
+        heading: 'What the fault was',
+        prose: [
+          text(results, ['cause', 'fault']),
+          text(results, ['cause', 'effect']),
+          'A preview that disagrees with committed state is worth more attention than the tracking behaviour this investigation started on. The harness now presses nothing between choosing a proposal and starting a run.',
+        ],
+        command: 'node tools/shots/tracked-clip.mjs',
+      },
+    ],
+  };
+}
