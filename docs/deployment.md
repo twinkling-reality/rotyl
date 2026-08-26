@@ -48,7 +48,7 @@ measurement behind that split is generated at `/research/hosted-ci.html`.
 
 An application release is the commit that passed the required Verify job, the
 saved Sites version built from that commit, and the tag placed on that same
-commit. The `v0.1.0` application release continues to use the independently
+commit. The `v0.2.0` application release continues to use the independently
 versioned `edgetam-v1` model release. An application tag never renames or
 replaces model assets.
 
