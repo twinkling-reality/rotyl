@@ -478,6 +478,45 @@ user's judgement and has not been given. What has changed is that the question
 is now worth asking about a real upload rather than about six rehearsed ones.
 Adopting means pointing the product POST at this path, which bumps the terms.
 
+## Adopted, and run through the product
+
+The product POST no longer calls PhotoMaker. `handleIllustrated` now calls
+`runIllustrated`, which reads the still, builds the keep list from what the
+reading found, and draws it with Nano Banana Pro. PhotoMaker stays in the file
+because the evals reference it, but nothing in the product path reaches it.
+
+Terms move to `illustrated-v3`. That is not a version bump for tidiness. A
+second model now sees the photograph, so the privacy sentence has to say so and
+the old consent cannot carry over. The terms name both jobs, quote the measured
+cost of about a cent to read and about fifteen cents to draw, and quote the
+measured twenty to forty seconds rather than the old two minutes.
+
+**The six through the real entry point.** Not a helper and not a bench prompt.
+`tools/style-bench/illustrated-eval-product.ts` posts a consented request to
+`handleIllustrated` exactly as the browser does, so consent gating, the terms
+version, the vision read, the keep list, and the draw all run as shipped. All
+six returned 200 with a JPEG, in 25 s to 30 s each.
+
+Skin drift on the three dark-skinned sitters, forehead patch, luma out of 255:
+somali +11.4, hands +3.8, lehna -27.4, mean absolute 14.2. For comparison on the
+same stills: generic 22.7, derived 16.1, hand written 15.8. The product path is
+the closest of the four, and it gets there with nothing written by hand.
+
+The lehna sheet now runs darker than the sitter rather than lighter, and its
+face carries less modelling than the photograph. That is still a fidelity miss,
+and it is the one to chase next, but it is not the lightening this ledger
+recorded on Seedream and it does not fall only on the dark-skinned sitters.
+
+**What is not proven.** Six CC0 portraits, all single sitters, all roughly
+frontal, all reasonably lit. Nothing here says what happens to a group photo, a
+profile, a child, a very dark frame, or a picture with no person in it at all.
+The compositor contract is still covered only by `test/illustrated-layer.test.ts`,
+which is a byte test and not a visual one.
+
+`publishReady` stays false. The path is adopted and the terms are bumped, but
+whether these sheets clear the visual bar is the user's judgement and has not
+been given.
+
 ## Measurements
 
 Hosted latency and cost are Fal's, not this machine's. A 100-step still on

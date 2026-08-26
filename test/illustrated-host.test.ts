@@ -65,9 +65,10 @@ describe('illustrated host', () => {
     expect(typeof error === 'string' ? error : '').toMatch(/terms/);
   });
 
-  it('sends a consented still through PhotoMaker and returns the layer', async () => {
+  it('reads the still, then draws it from what the reading found', async () => {
     const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
     const calls: string[] = [];
+    let drawPrompt = '';
     const response = await post(
       {
         consent: { version: ILLUSTRATED_TERMS_VERSION, accepted: true },
@@ -91,23 +92,41 @@ describe('illustrated host', () => {
           if (href.startsWith('https://fal.example/upload/')) {
             return new Response(null, { status: 200 });
           }
-          if (href === 'https://queue.fal.run/fal-ai/photomaker') {
+          if (href === 'https://queue.fal.run/fal-ai/any-llm/vision') {
             expect(headerValue(init?.headers, 'Authorization')).toBe('Key test-key');
             expect(headerValue(init?.headers, 'X-Fal-Store-IO')).toBe('0');
-            const body: unknown = JSON.parse(typeof init?.body === 'string' ? init.body : '{}');
-            expect(readField(body, 'base_pipeline')).toBe('photomaker-style');
-            expect(readField(body, 'style')).toBe('(No style)');
-            expect(readField(body, 'num_inference_steps')).toBe(100);
-            expect(readField(body, 'style_strength')).toBe(40);
-            expect(String(readField(body, 'prompt'))).toContain('img');
-            expect(String(readField(body, 'image_archive_url'))).toMatch(/^https:\/\/fal\.example\/file\//);
-            expect(String(readField(body, 'initial_image_url'))).toMatch(/^https:\/\/fal\.example\/file\//);
-            return new Response(JSON.stringify({ request_id: 'job-1' }), { status: 200 });
+            return new Response(
+              JSON.stringify({
+                request_id: 'job-v',
+                status_url: 'https://queue.fal.run/stub/requests/job-v/status',
+                response_url: 'https://queue.fal.run/stub/requests/job-v',
+              }),
+              { status: 200 },
+            );
           }
-          if (href.endsWith('/requests/job-1/status')) {
+          if (href === 'https://queue.fal.run/stub/requests/job-v/status') {
             return new Response(JSON.stringify({ status: 'COMPLETED' }), { status: 200 });
           }
-          if (href.endsWith('/requests/job-1')) {
+          if (href === 'https://queue.fal.run/stub/requests/job-v') {
+            return new Response(JSON.stringify({ output: 'a grey crew-neck shirt' }), { status: 200 });
+          }
+          if (href === 'https://queue.fal.run/fal-ai/nano-banana-pro/edit') {
+            const body: unknown = JSON.parse(typeof init?.body === 'string' ? init.body : '{}');
+            drawPrompt = String(readField(body, 'prompt'));
+            expect(String(readField(body, 'image_urls'))).toMatch(/^https:\/\/fal\.example\/file\//);
+            return new Response(
+              JSON.stringify({
+                request_id: 'job-1',
+                status_url: 'https://queue.fal.run/stub/requests/job-1/status',
+                response_url: 'https://queue.fal.run/stub/requests/job-1',
+              }),
+              { status: 200 },
+            );
+          }
+          if (href === 'https://queue.fal.run/stub/requests/job-1/status') {
+            return new Response(JSON.stringify({ status: 'COMPLETED' }), { status: 200 });
+          }
+          if (href === 'https://queue.fal.run/stub/requests/job-1') {
             return new Response(
               JSON.stringify({
                 images: [{ url: 'https://fal.example/out.jpg', content_type: 'image/jpeg' }],
@@ -125,7 +144,13 @@ describe('illustrated host', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('image/jpeg');
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(jpeg);
-    expect(calls).toContain('POST https://queue.fal.run/fal-ai/photomaker');
+    // The reading happens first, and what it found is carried into the drawing.
+    expect(calls).toContain('POST https://queue.fal.run/fal-ai/any-llm/vision');
+    expect(calls).toContain('POST https://queue.fal.run/fal-ai/nano-banana-pro/edit');
+    expect(drawPrompt).toContain('a grey crew-neck shirt');
+    // PhotoMaker invented people, so the product no longer calls it.
+    expect(calls.some((entry) => entry.includes('photomaker'))).toBe(false);
+    // Two jobs, so the still is uploaded once for each.
     expect(
       calls.filter((entry) => entry === 'POST https://rest.fal.ai/storage/upload/initiate'),
     ).toHaveLength(2);

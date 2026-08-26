@@ -7,12 +7,16 @@
  * the authorization boundary. Nothing may call the host until the user has
  * accepted this exact version of them.
  *
+ * v3 sends two jobs, not one. A vision model reads the still and writes the
+ * keep list, then the drawing is made from that list. That is a second model
+ * seeing the photograph, so it is a new consent, not a silent swap.
+ *
  * publishReady stays false until the licensed evaluation set clears the same
  * visual bar the local Anime slot and official DCT-Net failed. A working
  * request is not that bar.
  */
 
-export const ILLUSTRATED_TERMS_VERSION = 'illustrated-v2';
+export const ILLUSTRATED_TERMS_VERSION = 'illustrated-v3';
 
 /**
  * Longest edge sent to the host.
@@ -43,13 +47,13 @@ export interface IllustratedTerms {
 export const ILLUSTRATED_TERMS: IllustratedTerms = {
   version: ILLUSTRATED_TERMS_VERSION,
   title: 'Hosted illustrated still',
-  path: 'PhotoMaker (Tencent ARC, Apache-2.0) on Fal, photomaker-style, img2img from this still',
+  path: 'Two Fal jobs on this still: a vision model reads it and writes what to keep, then Nano Banana Pro draws it from that list',
   stillsOnly: true,
   privacy:
-    "The whole still leaves this machine. It goes to Rotyl's same-origin worker, then to Fal, which runs PhotoMaker. The selection stays here. Fal's API terms say they do not train on client content. The key never enters the browser.",
-  cost: "The host pays Fal's compute bill. A 100-step still measured about twenty cents at $0.00125 a compute second. Comic, Poster and Print stay free and local.",
+    "The whole still leaves this machine, and two models see it. It goes to Rotyl's same-origin worker, then to Fal. There a vision model reads the picture and writes a plain description of the person and their clothes, and that description is then sent with the still to Nano Banana Pro, which draws it. The description is about this photograph only and is not kept. The selection stays here. Fal's API terms say they do not train on client content. The key never enters the browser.",
+  cost: "The host pays Fal's compute bill. Measured on the licensed set at about a cent to read the still and about fifteen cents to draw it. Comic, Poster and Print stay free and local.",
   latency:
-    'About two minutes on the licensed set. The editor stays usable. Nothing comes back until the job finishes.',
+    'Measured at twenty to forty seconds on the licensed set, the reading and the drawing together. The editor stays usable. Nothing comes back until the job finishes.',
   retention:
     'Rotyl keeps nothing. The worker asks Fal not to store the request payload. Fal may still hold the generated file on its CDN for up to seven days. Export the PNG if you want the result. Closing the file drops the layer.',
   background:

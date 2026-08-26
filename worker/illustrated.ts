@@ -9,6 +9,7 @@ import {
   ILLUSTRATED_STRENGTH,
   ILLUSTRATED_STYLE_STRENGTH,
   KEEP_INSTRUCTION,
+  buildIllustratedPrompt,
 } from '../src/core/illustrated/prompt.ts';
 import { zipStore } from '../src/core/illustrated/zip.ts';
 
@@ -97,7 +98,7 @@ export async function handleIllustrated(request: Request, host: IllustratedHost)
 
   try {
     const still = base64ToBytes(parsed.value.image.data);
-    const result = await runPhotomaker({ still, mime: parsed.value.image.mime, host });
+    const result = await runIllustrated({ still, mime: parsed.value.image.mime, host });
     const image = result[0];
     if (!image) throw new Error('Fal finished without a still.');
     return imageResponse(image.bytes, image.mime);
@@ -833,6 +834,47 @@ export async function describeIllustratedKeep(job: FalKontextJob): Promise<strin
     image_urls: [stillUrl],
     model: job.model ?? 'google/gemini-2.5-flash',
     temperature: 0,
+  });
+}
+
+/**
+ * The adopted illustrated path.
+ *
+ * Reads the still, writes a keep list from what is actually in it, then draws
+ * with that list. PhotoMaker invented a new face and the hand-written bench
+ * keep lists could never reach a real upload, so neither is what ships.
+ *
+ * Nano Banana Pro is the family: it draws rather than traces, and unlike
+ * Seedream 5 Pro its complexion follows the keep list instead of the weights.
+ * If the still yields no description the draw request still goes out, because a
+ * plain drawing beats refusing the job.
+ */
+export async function runIllustrated(job: {
+  readonly still: Uint8Array;
+  readonly mime: string;
+  readonly host: IllustratedHost;
+  readonly giveUpMs?: number;
+}): Promise<PhotomakerImage[]> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  let keep = '';
+  try {
+    keep = await describeIllustratedKeep({
+      still: job.still,
+      mime: job.mime,
+      host: job.host,
+      prompt: '',
+      ...(job.giveUpMs === undefined ? {} : { giveUpMs: job.giveUpMs }),
+    });
+  } catch {
+    keep = '';
+  }
+  return runFalNanoProEdit({
+    still: job.still,
+    mime: job.mime,
+    host: job.host,
+    prompt: buildIllustratedPrompt(keep),
+    ...(job.giveUpMs === undefined ? {} : { giveUpMs: job.giveUpMs }),
   });
 }
 

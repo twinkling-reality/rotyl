@@ -23,7 +23,7 @@ function requestHref(url: Parameters<typeof fetch>[0]): string {
 }
 
 describe('illustrated kontext eval helper', () => {
-  it('does not change the product PhotoMaker POST', async () => {
+  it('keeps the eval families off the product POST', async () => {
     const calls: string[] = [];
     await handleIllustrated(
       new Request('http://rotyl.local/api/illustrated', {
@@ -75,7 +75,7 @@ describe('illustrated kontext eval helper', () => {
       },
     );
     expect(calls.some((entry) => entry.includes('flux-pro/kontext'))).toBe(false);
-    expect(calls).toContain('POST https://queue.fal.run/fal-ai/photomaker');
+    expect(calls.some((entry) => entry.includes('photomaker'))).toBe(false);
   });
 
   it('uploads the still and edits it on Kontext', async () => {

@@ -14,7 +14,9 @@ describe('illustrated terms', () => {
     expect(ILLUSTRATED_TERMS.cost.length).toBeGreaterThan(20);
     expect(ILLUSTRATED_TERMS.latency.length).toBeGreaterThan(20);
     expect(ILLUSTRATED_TERMS.retention.length).toBeGreaterThan(20);
-    expect(ILLUSTRATED_TERMS.path).toMatch(/PhotoMaker/);
+    expect(ILLUSTRATED_TERMS.path).toMatch(/Nano Banana Pro/);
+    // Two models see the still now, so the privacy sentence has to say so.
+    expect(ILLUSTRATED_TERMS.privacy).toMatch(/two models see it/);
   });
 
   it('accepts only a current, explicit consent', () => {
