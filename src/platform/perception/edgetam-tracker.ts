@@ -477,11 +477,21 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
             let covered = 0;
             let sumX = 0;
             let sumY = 0;
+            let minX = MASK_SIZE;
+            let maxX = -1;
+            let minY = MASK_SIZE;
+            let maxY = -1;
             for (let at = 0; at < decoded.logits.length; at++) {
               if ((decoded.logits[at] ?? -1) > 0) {
+                const x = at % MASK_SIZE;
+                const y = Math.floor(at / MASK_SIZE);
                 covered++;
-                sumX += at % MASK_SIZE;
-                sumY += Math.floor(at / MASK_SIZE);
+                sumX += x;
+                sumY += y;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
               }
             }
             globalThis.rotylTrackLog.push([
@@ -490,6 +500,10 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
               covered,
               covered > 0 ? sumX / covered : -1,
               covered > 0 ? sumY / covered : -1,
+              minX,
+              maxX,
+              minY,
+              maxY,
             ]);
           }
           // AND SAYING SO REACHES THE MASK, not just the flag. A decoder told

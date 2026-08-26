@@ -22,19 +22,37 @@ await page.evaluate(async (from) => {
 await page.locator('canvas').waitFor();
 await page.waitForTimeout(1500);
 
-await page.getByRole('button', { name: 'Object', exact: true }).click();
+// Seeding somewhere other than the first frame separates two explanations for
+// a lost track: a model that cannot hold a subject through a large change of
+// scale, and one that cannot represent the subject at the size it ends up.
+const startFrame = Number(process.env.ROTYL_START_FRAME ?? 0);
+if (startFrame > 0) {
+  await page.getByRole('slider', { name: 'Frame' }).fill(String(startFrame));
+  await page.waitForTimeout(2500);
+}
+
+// Seeding is a click on a frame that has to have decoded first, and a click on
+// a frame that has not is a click on nothing. Track staying disabled is how
+// that shows, so it is retried rather than left to fail minutes later.
 const box = await page.locator('canvas').boundingBox();
-await page.mouse.click(box.x + box.width * SUBJECT[0], box.y + box.height * SUBJECT[1]);
-await page.waitForTimeout(1200);
-for (let i = 0; i < GROW; i++) {
-  await page.keyboard.press('ArrowUp');
-  await page.waitForTimeout(600);
+const track = page.getByRole('button', { name: 'Track', exact: true });
+for (let attempt = 0; attempt < 4; attempt++) {
+  await page.getByRole('button', { name: 'Object', exact: true }).click();
+  await page.mouse.click(box.x + box.width * SUBJECT[0], box.y + box.height * SUBJECT[1]);
+  await page.waitForTimeout(1400);
+  for (let i = 0; i < GROW; i++) {
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(700);
+  }
+  if (await track.isEnabled()) break;
+  if (attempt === 3) throw new Error('nothing was selected: Track never became available');
+  await page.waitForTimeout(800);
 }
 
 await page.evaluate(() => {
   globalThis.rotylTrackLog = [];
 });
-await page.getByRole('button', { name: 'Track', exact: true }).click();
+await track.click();
 // Wait for it to START before waiting for it to stop, or the second wait is
 // satisfied by tracking never having begun.
 await page.waitForFunction(() => document.body.textContent?.includes('Tracking, frame'), null, {

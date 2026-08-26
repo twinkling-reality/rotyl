@@ -114,6 +114,33 @@ the frame. The area does not follow her toward the camera:
 
 The car grows and its mask grows with it, so scale adaptation is not broken in
 general. On the crossing the walker ends up several times the area she started
-at and the mask stays the size it began, so by the end it covers a patch of
-street and hedge next to her rather than her. That is the bug to fix, and it is
-a different bug from the one this looked like from the outside.
+at and the mask stays a band about 40 grid columns wide the whole way, so by the
+end it covers hedge and bridge beside her rather than her.
+
+**Three explanations were tested and are not it.**
+
+_Not the model losing confidence._ There is no signal to gate on, per the
+numbers above.
+
+_Not a shot cut._ `ffmpeg` scene detection finds nothing above 0.15 across the
+clip, and the frames either side are one continuous camera move.
+
+_Not the squashed aspect._ The clip is 2.40:1 and the model input is square, so
+a person arrives very tall and narrow, which looked like the obvious suspect.
+Re-running on the same footage cropped to 1.50:1 gives a mask 66 grid columns
+wide against 41, a ratio of 1.61 where the crop ratio is 1.60. The mask covers
+the same real region either way and grows just as little, 0.96 against 1.05.
+The distortion is not what is hurting it.
+
+_Not accumulated drift._ Seeding fresh at frame 150, where she is already large,
+and tracking only the last 41 frames reaches the same place as a track that ran
+from frame 0: area 5124 against 6339, columns 93 to 126 against 87 to 126. A
+track with no history to have drifted through arrives at the same answer, so
+what is wrong is not something that built up along the way.
+
+**So the mechanism is still open.** What is known is that the mask the model
+produces for this subject is a fixed-width band that does not widen as she
+approaches, that it produces the same band from a fresh prompt as from a long
+track, and that it reports high confidence throughout. Anyone picking this up
+should start there rather than at memory, aspect, or cut detection, all of which
+have been paid for already.
