@@ -619,6 +619,33 @@ less than they look. Anything adopted should be judged again at size.
 
 `publishReady` stays false.
 
+## The layer cap was raised
+
+The product sent 1280 and asked for 1K because that was the layer it
+composited. The entry above shows what that cost: every judgement on this page
+was made on a quarter-size drawing that was then looked at larger.
+`ILLUSTRATED_LONG_EDGE` is now 2048 and the product asks for the full-size
+answer.
+
+The six were run again through `handleIllustrated`, not through a bench helper.
+Layers come back between 3392 and 5056 pixels on the long edge, against 848 to
+1264 before. The line work is drawn rather than blurred, the leopard print on
+`portrait-hands` resolves into spots, and the hand at the chin has knuckles.
+
+Measured on that run: 40 s to 97 s a still, and $1.86 for the six, which is
+about $0.31 each against about $0.15 before. Terms move to `illustrated-v4`,
+because a larger picture leaving the machine is a change to what was consented
+to rather than a change of quality alone. The cost and the wait quoted in the
+terms are the ones measured here, and `test/illustrated-terms.test.ts` pins
+them so the sentence and the setting cannot drift apart.
+
+`ILLUSTRATED_MAX_BYTES` moves to 6 MB. The licensed set measures 0.5 MB to
+1.4 MB at 2048, so the cap sits well above the largest of them and still
+refuses a full-size camera dump.
+
+`publishReady` stays false. Raising the cap changes what the option produces,
+not who decides whether it clears the bar.
+
 ## Measurements
 
 Hosted latency and cost are Fal's, not this machine's. A 100-step still on

@@ -15,6 +15,10 @@ describe('illustrated terms', () => {
     expect(ILLUSTRATED_TERMS.latency.length).toBeGreaterThan(20);
     expect(ILLUSTRATED_TERMS.retention.length).toBeGreaterThan(20);
     expect(ILLUSTRATED_TERMS.path).toMatch(/Nano Banana Pro/);
+    // A bigger picture leaves the machine at v4, so the cost and the wait the
+    // terms quote have to be the ones that were measured at that size.
+    expect(ILLUSTRATED_TERMS.cost).toMatch(/thirty cents/);
+    expect(ILLUSTRATED_TERMS.latency).toMatch(/forty to a hundred seconds/);
     // Two models see the still now, so the privacy sentence has to say so.
     expect(ILLUSTRATED_TERMS.privacy).toMatch(/two models see it/);
   });

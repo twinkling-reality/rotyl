@@ -113,6 +113,9 @@ describe('illustrated host', () => {
           if (href === 'https://queue.fal.run/fal-ai/nano-banana-pro/edit') {
             const body: unknown = JSON.parse(typeof init?.body === 'string' ? init.body : '{}');
             drawPrompt = String(readField(body, 'prompt'));
+            // The layer is judged at the size it is looked at. A 1K answer to a
+            // 2048 still is what made every sheet in the ledger read as soft.
+            expect(readField(body, 'resolution')).toBe('4K');
             expect(String(readField(body, 'image_urls'))).toMatch(/^https:\/\/fal\.example\/file\//);
             return new Response(
               JSON.stringify({

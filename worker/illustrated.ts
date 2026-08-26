@@ -876,6 +876,9 @@ export async function runIllustrated(job: {
     mime: job.mime,
     host: job.host,
     prompt: buildIllustratedPrompt(keep),
+    // Full size, because the layer this becomes is judged at the size it is
+    // looked at rather than at the size it is convenient to send.
+    resolution: '4K',
     ...(job.giveUpMs === undefined ? {} : { giveUpMs: job.giveUpMs }),
   });
 }

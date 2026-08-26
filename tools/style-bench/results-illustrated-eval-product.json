@@ -1,83 +1,62 @@
 {
   "schema": 1,
   "publishReady": false,
-  "path": "Product entry point, terms illustrated-v3",
+  "path": "Product entry point, terms illustrated-v4",
   "note": "Posted to handleIllustrated as the browser does. Publish-ready stays false until a person judges the licensed set and it clears.",
   "stills": [
     {
       "id": "portrait-close",
       "ok": true,
-      "outputs": [
-        "out/illustrated/product/portrait-close-0.jpg"
-      ]
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 283073,
+      "elapsedMs": 40188,
+      "outputs": ["out/illustrated/product/portrait-close-0.jpg"]
     },
     {
       "id": "portrait-glasses",
       "ok": true,
-      "outputs": [
-        "out/illustrated/product/portrait-glasses-0.jpg"
-      ]
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 480898,
+      "elapsedMs": 97089,
+      "outputs": ["out/illustrated/product/portrait-glasses-0.jpg"]
     },
     {
       "id": "portrait-somali",
       "ok": true,
-      "outputs": [
-        "out/illustrated/product/portrait-somali-0.jpg"
-      ]
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 496085,
+      "elapsedMs": 42414,
+      "outputs": ["out/illustrated/product/portrait-somali-0.jpg"]
     },
     {
       "id": "portrait-lehna",
       "ok": true,
-      "outputs": [
-        "out/illustrated/product/portrait-lehna-0.jpg"
-      ]
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 1426456,
+      "elapsedMs": 44442,
+      "outputs": ["out/illustrated/product/portrait-lehna-0.jpg"]
     },
     {
       "id": "portrait-doorway",
       "ok": true,
-      "outputs": [
-        "out/illustrated/product/portrait-doorway-0.jpg"
-      ]
+      "status": 200,
+      "contentType": "image/jpeg",
+      "bytes": 782777,
+      "elapsedMs": 55491,
+      "outputs": ["out/illustrated/product/portrait-doorway-0.jpg"]
     },
     {
       "id": "portrait-hands",
       "ok": true,
-      "outputs": [
-        "out/illustrated/product/portrait-hands-0.jpg"
-      ]
-    },
-    {
-      "id": "group-hikers",
-      "ok": true,
       "status": 200,
       "contentType": "image/jpeg",
-      "bytes": 126195,
-      "elapsedMs": 26865,
-      "outputs": [
-        "out/illustrated/product/group-hikers-0.jpg"
-      ]
-    },
-    {
-      "id": "group-adventurers",
-      "ok": true,
-      "status": 200,
-      "contentType": "image/jpeg",
-      "bytes": 298724,
-      "elapsedMs": 26482,
-      "outputs": [
-        "out/illustrated/product/group-adventurers-0.jpg"
-      ]
-    },
-    {
-      "id": "profile-beard",
-      "ok": true,
-      "status": 200,
-      "contentType": "image/jpeg",
-      "bytes": 143908,
-      "elapsedMs": 27199,
-      "outputs": [
-        "out/illustrated/product/profile-beard-0.jpg"
-      ]
+      "bytes": 259109,
+      "elapsedMs": 58036,
+      "outputs": ["out/illustrated/product/portrait-hands-0.jpg"]
     }
   ]
 }
