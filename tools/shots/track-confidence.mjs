@@ -14,9 +14,21 @@ await page.addInitScript(() => {
   Reflect.deleteProperty(globalThis, 'showSaveFilePicker');
 });
 await page.goto(URL_BASE, { waitUntil: 'domcontentloaded' });
+// The editor restores the last document from its journal, and a restored one
+// leaves no file input to load through. Close it first when that has happened.
+const closer = page.getByRole('button', { name: 'Close file' });
+if ((await closer.count()) > 0) {
+  await closer.click();
+  await page.waitForTimeout(1000);
+  // Closing alone is not enough: the journal puts the document back. Reloading
+  // after the close is what leaves the picker on screen.
+  await page.goto(URL_BASE, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1500);
+}
 await page.evaluate(async (from) => {
   const bytes = await (await fetch(from)).arrayBuffer();
   const input = document.querySelector('input[type=file]');
+  if (!input) throw new Error('no file input: a document is still open');
   const t = new DataTransfer();
   t.items.add(new File([bytes], from.split('/').pop(), { type: 'video/mp4' }));
   input.files = t.files;
@@ -82,17 +94,22 @@ if (process.env.ROTYL_EXPORT) {
 const log = await page.evaluate(() => globalThis.rotylTrackLog ?? []);
 const masks = await page.evaluate(() => globalThis.rotylTrackMasks ?? []);
 if (masks.length > 0) {
-  const side = Math.round(Math.sqrt(masks[0].bitmap.length));
-  for (const { frame, bitmap } of masks) {
+  for (const { frame, packed } of masks) {
+    const bytes = Buffer.from(packed, 'base64');
+    const pixels = bytes.length * 8;
+    const side = Math.round(Math.sqrt(pixels));
+    const body = Buffer.alloc(pixels);
+    for (let at = 0; at < pixels; at++) {
+      body[at] = (bytes[at >> 3] & (128 >> (at & 7))) === 0 ? 0 : 255;
+    }
     // A plain PGM, so nothing has to be installed to look at it.
     const header = Buffer.from(`P5\n${side} ${side}\n255\n`, 'ascii');
-    const body = Buffer.from(bitmap.map((on) => (on === 1 ? 255 : 0)));
     writeFileSync(
       `${process.env.MASK_DIR ?? '.'}/mask-${String(frame).padStart(4, '0')}.pgm`,
       Buffer.concat([header, body]),
     );
   }
-  console.log(`masks written: ${masks.length} at ${side}x${side}`);
+  console.log(`masks written: ${masks.length}`);
 }
 await browser.close();
 writeFileSync(process.env.OUT ?? 'drift.json', JSON.stringify(log));
