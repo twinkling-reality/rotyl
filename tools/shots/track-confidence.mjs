@@ -49,9 +49,12 @@ for (let attempt = 0; attempt < 4; attempt++) {
   await page.waitForTimeout(800);
 }
 
-await page.evaluate(() => {
+const maskAt = (process.env.ROTYL_MASK_AT ?? '').split(',').filter(Boolean).map(Number);
+await page.evaluate((frames) => {
   globalThis.rotylTrackLog = [];
-});
+  globalThis.rotylTrackMasks = [];
+  globalThis.rotylTrackMaskAt = frames;
+}, maskAt);
 await track.click();
 // Wait for it to START before waiting for it to stop, or the second wait is
 // satisfied by tracking never having begun.
@@ -64,6 +67,20 @@ await page.waitForFunction(() => !document.body.textContent?.includes('Tracking,
   polling: 1000,
 });
 const log = await page.evaluate(() => globalThis.rotylTrackLog ?? []);
+const masks = await page.evaluate(() => globalThis.rotylTrackMasks ?? []);
+if (masks.length > 0) {
+  const side = Math.round(Math.sqrt(masks[0].bitmap.length));
+  for (const { frame, bitmap } of masks) {
+    // A plain PGM, so nothing has to be installed to look at it.
+    const header = Buffer.from(`P5\n${side} ${side}\n255\n`, 'ascii');
+    const body = Buffer.from(bitmap.map((on) => (on === 1 ? 255 : 0)));
+    writeFileSync(
+      `${process.env.MASK_DIR ?? '.'}/mask-${String(frame).padStart(4, '0')}.pgm`,
+      Buffer.concat([header, body]),
+    );
+  }
+  console.log(`masks written: ${masks.length} at ${side}x${side}`);
+}
 await browser.close();
 writeFileSync(process.env.OUT ?? 'drift.json', JSON.stringify(log));
 console.log(`frames logged: ${log.length}`);

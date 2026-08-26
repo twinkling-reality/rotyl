@@ -96,51 +96,33 @@ Writes one row per tracked frame: the model's object score, its predicted IoU,
 and the mask's covered area and centroid on the 256 grid. It exists because a
 drifting track is invisible from outside, and the numbers below are why.
 
-**A drifting track reports itself as a good one.** On the Tears of Steel bridge
-crossing, where the tracker loses the walker, the predicted IoU never falls
-below 0.92 across 191 frames and the object score never once says absent. At
-frames 180 to 190, where the mask is no longer on her, the predicted IoU is
-0.98, the highest in the clip. Confidence RISES as it drifts, because a mask
-that has settled on a stable piece of background is an easy mask to predict.
-So nothing can be gated on the model's own scores: it is confidently wrong.
+**Read this before trusting the section that used to be here.** It said the
+tracker drifts and that the mask fails to grow with the subject. Looking at the
+mask itself rather than at numbers derived from it does not support that, and
+the claim has been withdrawn. What follows is only what has been seen directly.
 
-**What actually fails is scale, not position.** The centroid follows her across
-the frame. The area does not follow her toward the camera:
+**The mask is correct where it was checked.** `ROTYL_MASK_AT` writes the mask
+out as a PGM per named frame. On the bridge crossing, frame 0 is a clean human
+silhouette, head to feet. Frame 185, unsquashed back to the frame's own shape
+and laid over the picture as a tint, sits on her hair, her face, her jacket and
+her body, with the background clear. That is a working track, not a drifting
+one, on the run that was instrumented.
 
-| clip           | subject                | mask area, first to last | ratio |
-| -------------- | ---------------------- | ------------------------ | ----- |
-| `traffic-720p` | car approaches         | 530 to 1125              | 2.12  |
-| `tos-crossing` | walker fills the frame | 6035 to 6339             | 1.05  |
+**The model's own scores say nothing useful.** Predicted IoU stays between 0.92
+and 0.99 for all 191 frames and the object score never reports absent. Whatever
+does go wrong, it cannot be detected from these.
 
-The car grows and its mask grows with it, so scale adaptation is not broken in
-general. On the crossing the walker ends up several times the area she started
-at and the mask stays a band about 40 grid columns wide the whole way, so by the
-end it covers hedge and bridge beside her rather than her.
+**Three things were tested and are not causes.** No shot cut: `ffmpeg` scene
+detection finds nothing above 0.15. Not the squashed aspect: re-running on the
+same footage cropped from 2.40:1 to 1.50:1 gives a mask 66 grid columns wide
+against 41, a ratio of 1.61 where the crop ratio is 1.60, so it covers the same
+real region either way. Not accumulated drift: seeding fresh at frame 150 and
+tracking only 41 frames lands where a track from frame 0 lands.
 
-**Three explanations were tested and are not it.**
-
-_Not the model losing confidence._ There is no signal to gate on, per the
-numbers above.
-
-_Not a shot cut._ `ffmpeg` scene detection finds nothing above 0.15 across the
-clip, and the frames either side are one continuous camera move.
-
-_Not the squashed aspect._ The clip is 2.40:1 and the model input is square, so
-a person arrives very tall and narrow, which looked like the obvious suspect.
-Re-running on the same footage cropped to 1.50:1 gives a mask 66 grid columns
-wide against 41, a ratio of 1.61 where the crop ratio is 1.60. The mask covers
-the same real region either way and grows just as little, 0.96 against 1.05.
-The distortion is not what is hurting it.
-
-_Not accumulated drift._ Seeding fresh at frame 150, where she is already large,
-and tracking only the last 41 frames reaches the same place as a track that ran
-from frame 0: area 5124 against 6339, columns 93 to 126 against 87 to 126. A
-track with no history to have drifted through arrives at the same answer, so
-what is wrong is not something that built up along the way.
-
-**So the mechanism is still open.** What is known is that the mask the model
-produces for this subject is a fixed-width band that does not widen as she
-approaches, that it produces the same band from a fresh prompt as from a long
-track, and that it reports high confidence throughout. Anyone picking this up
-should start there rather than at memory, aspect, or cut detection, all of which
-have been paid for already.
+**What is actually unexplained.** An exported clip and the editor do not agree.
+The editor shows her styled at frame 186. An exported MP4 of the same clip,
+differenced against its source frame and thresholded past codec noise, changes
+almost nothing at frame 185. The tracked mask is right; what reaches the file
+does not match it. So the next place to look is between the tracked selection
+and the exported frame, not inside the tracker. That has not been tested, and it
+is a guess until it is.

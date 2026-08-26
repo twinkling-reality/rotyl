@@ -250,6 +250,11 @@ declare global {
   /** Set by `tools/shots/track-confidence.mjs`. Undefined in a normal run. */
   // eslint-disable-next-line no-var
   var rotylTrackLog: number[][] | undefined;
+  /** Frames whose mask bitmap to keep, set by the same tool. */
+  // eslint-disable-next-line no-var
+  var rotylTrackMaskAt: number[] | undefined;
+  // eslint-disable-next-line no-var
+  var rotylTrackMasks: Array<{ frame: number; bitmap: number[] }> | undefined;
 }
 
 function coverageFrom(logits: Float32Array, offset: number): CoverageMask {
@@ -493,6 +498,19 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
                 if (y < minY) minY = y;
                 if (y > maxY) maxY = y;
               }
+            }
+            // The scalars above say how big the mask is and where its middle is.
+            // Neither says what shape it is or what it is sitting on, and that
+            // turned out to be the whole question, so the frames named in
+            // `rotylTrackMaskAt` keep their mask as a flat 0/1 grid.
+            const frame = globalThis.rotylTrackLog.length;
+            if (globalThis.rotylTrackMaskAt?.includes(frame) === true) {
+              const bitmap: number[] = Array.from({ length: decoded.logits.length }, () => 0);
+              for (let at = 0; at < decoded.logits.length; at++) {
+                bitmap[at] = (decoded.logits[at] ?? -1) > 0 ? 1 : 0;
+              }
+              globalThis.rotylTrackMasks ??= [];
+              globalThis.rotylTrackMasks.push({ frame, bitmap });
             }
             globalThis.rotylTrackLog.push([
               decoded.objectScore,
