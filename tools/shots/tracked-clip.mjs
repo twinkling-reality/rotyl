@@ -12,6 +12,9 @@
 // Chromium falls back to SwiftShader, which reports success while producing
 // different pixels.
 //
+// Two people stand in one frame and one of them is drawn. The comparison is
+// inside the shot, so nothing has to be said about what is being looked at.
+//
 // The clip is Tears of Steel, CC-BY 3.0, Blender Foundation, mango.blender.org.
 // It stays in the ignored bench cache; only the generated media is committed.
 
@@ -22,17 +25,17 @@ import { existsSync, mkdirSync, rmSync } from 'node:fs';
 const OUT = 'docs/media';
 const FRAMES = '.shots-tracked';
 const URL_BASE = process.env.ROTYL_URL ?? 'http://localhost:5180';
-const CLIP = process.env.ROTYL_CLIP ?? '/tools/style-bench/clips/traffic-720p.mp4';
+const CLIP = process.env.ROTYL_CLIP ?? '/tools/style-bench/real/evaluation/tos-occlusion.mp4';
 const SOURCE = CLIP.replace(/^\//, '');
 const VIEWPORT = { width: 1280, height: 760 };
 
 // Where the walker is at frame 1, and the proposal that is the whole person
 // rather than the print on her shirt.
 const SUBJECT = process.env.ROTYL_SUBJECT ? process.env.ROTYL_SUBJECT.split(',').map(Number) : [0.42, 0.72];
-const GROW = Number(process.env.ROTYL_GROW ?? 0);
+const GROW = Number(process.env.ROTYL_GROW ?? 1);
 
 if (!existsSync(SOURCE)) {
-  throw new Error(`${SOURCE} is not here. Bench clips come from tools/style-bench.`);
+  throw new Error(`${SOURCE} is not here. Run ./tools/style-bench/fetch-evaluation.sh first.`);
 }
 
 rmSync(FRAMES, { recursive: true, force: true });
@@ -137,21 +140,33 @@ execFileSync('ffmpeg', [
 // something without a click, and the README is where this has to land.
 const gif = `${OUT}/tracked-clip.gif`;
 const palette = `${FRAMES}/palette.png`;
-const gifFilters = 'fps=10,scale=560:-2:flags=lanczos';
+// Photographic frames are heavy in a 256-colour format, so the GIF is a window
+// on the clip rather than all of it. The MP4 above is the whole thing.
+const GIF_FROM = '0.8';
+const GIF_SECONDS = '3.0';
+const gifFilters = 'fps=10,scale=480:-2:flags=lanczos';
 execFileSync('ffmpeg', [
   '-y',
   '-v',
   'error',
+  '-ss',
+  GIF_FROM,
+  '-t',
+  GIF_SECONDS,
   '-i',
   mp4,
   '-vf',
-  `${gifFilters},palettegen=max_colors=96`,
+  `${gifFilters},palettegen=max_colors=64`,
   palette,
 ]);
 execFileSync('ffmpeg', [
   '-y',
   '-v',
   'error',
+  '-ss',
+  GIF_FROM,
+  '-t',
+  GIF_SECONDS,
   '-i',
   mp4,
   '-i',

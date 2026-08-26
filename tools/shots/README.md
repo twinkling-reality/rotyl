@@ -72,10 +72,15 @@ not visible until the end.
 the proposal while the preview goes on showing the one that was highlighted, so
 the editor looks right and the track follows the smaller default.
 
-**The default clip is the synthesised street, not a person.** A person on a
-moving camera was tried first, on the Tears of Steel bridge crossing. The seed
-was correct and verified, and the track still walked off her onto the trees
-behind by the end of the clip, repeatably. Following one object through a
-moving-camera shot of a person who turns is past what the tracker holds today.
-That is worth knowing before this is shown to anyone, and it is the honest
-reason the committed demo uses a fixed camera.
+**The default clip is two people, and only one of them is drawn.** That is the
+whole claim in one frame: his face carries ink and flat fill while her hair,
+a foot away, still resolves to individual strands. Nothing has to be said about
+what is being looked at.
+
+**A moving camera is past what the tracker holds.** This was tried first on the
+Tears of Steel bridge crossing, where the camera follows a walker who turns. The
+seed was correct and verified, and the track still walked off her onto the trees
+behind by the end of the clip, three times, including with longer settle times.
+The committed demo uses a near-fixed camera because that is what works today.
+Following a turning subject on a moving camera is the next piece of work, and it
+is worth knowing before this is shown to anyone.
