@@ -3310,6 +3310,11 @@ export function trackedSelectionEntry(results: unknown): Entry {
       'Scripted. The harness drives the shipped application, seeds a selection by clicking the canvas, and writes both the per-frame figures and the masks themselves.',
     harness: 'tools/shots/track-confidence.mjs',
     taken: `${text(results, ['environment', 'cpu'])}, ${text(results, ['environment', 'platform'])}, ${text(results, ['environment', 'browser'])}, Node ${text(results, ['environment', 'node'])}`,
+    hero: {
+      name: 'tracked-mask',
+      caption:
+        'The mask the tracker produced at frame 185, laid over the picture and then shown on its own. It is on the walker. The fault this investigation started on was in the harness that seeded it.',
+    },
     lede: [
       `A tracked selection on ${clip} finished the clip covering hedge and bridge instead of the walker it was seeded on. The fault was reproducible and the exported file showed it, which made it look like a limit of the tracker.`,
       'The fault was a keypress in the harness. Pressing Escape between choosing an object proposal and starting the run cancels the proposal, while the preview continues to show the one that was highlighted. The editor looked correct and the run followed the smaller default proposal.',

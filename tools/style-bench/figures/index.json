@@ -28,7 +28,7 @@
     "height": 360,
     "columns": 3,
     "tiles": [
-      "the picture’s own colour",
+      "the picture\u2019s own colour",
       "Mural",
       "Riso"
     ]
@@ -42,6 +42,16 @@
       "per frame, as it ships",
       "half of the last frame blended in",
       "where they differ, which is a rim around everything that moved"
+    ]
+  },
+  {
+    "name": "tracked-mask",
+    "width": 1282,
+    "height": 268,
+    "columns": 2,
+    "tiles": [
+      "the tracked mask over frame 185",
+      "the same mask on its own"
     ]
   }
 ]
