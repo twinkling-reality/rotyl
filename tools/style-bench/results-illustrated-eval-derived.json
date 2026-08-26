@@ -1,0 +1,122 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "Nano Banana Pro, keep list generic vs derived vs hand written",
+  "note": "Asks whether a model-written keep list matches a hand-written one. Publish-ready stays false.",
+  "stills": [
+    {
+      "id": "portrait-close",
+      "mode": "generic",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 22789,
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person.",
+      "outputs": ["out/illustrated/derived/generic/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "mode": "generic",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 19917,
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person.",
+      "outputs": ["out/illustrated/derived/generic/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "mode": "generic",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 40726,
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person.",
+      "outputs": ["out/illustrated/derived/generic/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "mode": "generic",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 19895,
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person.",
+      "outputs": ["out/illustrated/derived/generic/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "mode": "generic",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 28373,
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person.",
+      "outputs": ["out/illustrated/derived/generic/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "mode": "generic",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 19509,
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person.",
+      "outputs": ["out/illustrated/derived/generic/portrait-hands-0.jpg"]
+    },
+    {
+      "id": "portrait-close",
+      "mode": "derived",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 27326,
+      "keep": "The sitter appears to be in their late teens to early thirties, with a medium brown skin tone. Their hair is short, dark, and appears to be straight. They have some dark facial hair visible on their chin. There is no eyewear. They are wearing a black baseball cap with a red band on the back, facing backward. The only visible garment is a dark-colored, possibly black, t-shirt or top made of an unknown material. There is no visible jewelry. On the camera, the following lettering is visible: \"Mamiya 645\", \"No.18923\", \"f=80mm\", \"1:2.8\", and \"MAMIYA-SEKOR C\".",
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep all of the following exactly as photographed: The sitter appears to be in their late teens to early thirties, with a medium brown skin tone. Their hair is short, dark, and appears to be straight. They have some dark facial hair visible on their chin. There is no eyewear. They are wearing a black baseball cap with a red band on the back, facing backward. The only visible garment is a dark-colored, possibly black, t-shirt or top made of an unknown material. There is no visible jewelry. On the camera, the following lettering is visible: \"Mamiya 645\", \"No.18923\", \"f=80mm\", \"1:2.8\", and \"MAMIYA-SEKOR C\".",
+      "outputs": ["out/illustrated/derived/derived/portrait-close-0.jpg"]
+    },
+    {
+      "id": "portrait-glasses",
+      "mode": "derived",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 30953,
+      "keep": "The sitter appears to be in their 20s to 30s. Their skin tone is light. The hair is long, extending past the shoulders, appears straight or slightly wavy, and is light brown or blonde. There is no visible facial hair. The sitter is wearing eyeglasses with light brown or amber frames. There is no headwear. The visible garment is a sweater or knit top, appearing to be a dark green or olive color, made of a textured, possibly wool or acrylic, material. No jewelry is visible. No lettering is visible on any object.",
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep all of the following exactly as photographed: The sitter appears to be in their 20s to 30s. Their skin tone is light. The hair is long, extending past the shoulders, appears straight or slightly wavy, and is light brown or blonde. There is no visible facial hair. The sitter is wearing eyeglasses with light brown or amber frames. There is no headwear. The visible garment is a sweater or knit top, appearing to be a dark green or olive color, made of a textured, possibly wool or acrylic, material. No jewelry is visible. No lettering is visible on any object.",
+      "outputs": ["out/illustrated/derived/derived/portrait-glasses-0.jpg"]
+    },
+    {
+      "id": "portrait-somali",
+      "mode": "derived",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 24864,
+      "keep": "The sitter appears to be in their late teens to early twenties. Their skin tone is dark brown. Their hair is short, curly, and black. There is no visible facial hair. There is no visible eyewear. They are wearing a headscarf that is draped over their head and shoulders. The headscarf is primarily off-white or cream-colored, with a border pattern of black, white, and grey floral and geometric designs. The headscarf is made of a light, flowing fabric. No jewelry is visible. No lettering is visible on any object.",
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep all of the following exactly as photographed: The sitter appears to be in their late teens to early twenties. Their skin tone is dark brown. Their hair is short, curly, and black. There is no visible facial hair. There is no visible eyewear. They are wearing a headscarf that is draped over their head and shoulders. The headscarf is primarily off-white or cream-colored, with a border pattern of black, white, and grey floral and geometric designs. The headscarf is made of a light, flowing fabric. No jewelry is visible. No lettering is visible on any object.",
+      "outputs": ["out/illustrated/derived/derived/portrait-somali-0.jpg"]
+    },
+    {
+      "id": "portrait-lehna",
+      "mode": "derived",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 24620,
+      "keep": "The sitter appears to be in their 20s to 30s. Their skin tone is dark brown. Their hair is short, curly, and black. There is no visible facial hair. There is no eyewear. They are wearing a headwrap that is gold and black with a patterned design, facing forward. They are wearing a black turtleneck top made of a smooth fabric, and over it, a bright pink ribbed cardigan. They have a silver nose ring on their left nostril. They have two earrings, one in each ear, that appear to be long and dangle, with a dark, possibly wooden, top part and small reddish-brown beads hanging from them. There is no visible lettering on any object.",
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep all of the following exactly as photographed: The sitter appears to be in their 20s to 30s. Their skin tone is dark brown. Their hair is short, curly, and black. There is no visible facial hair. There is no eyewear. They are wearing a headwrap that is gold and black with a patterned design, facing forward. They are wearing a black turtleneck top made of a smooth fabric, and over it, a bright pink ribbed cardigan. They have a silver nose ring on their left nostril. They have two earrings, one in each ear, that appear to be long and dangle, with a dark, possibly wooden, top part and small reddish-brown beads hanging from them. There is no visible lettering on any object.",
+      "outputs": ["out/illustrated/derived/derived/portrait-lehna-0.jpg"]
+    },
+    {
+      "id": "portrait-doorway",
+      "mode": "derived",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 24992,
+      "keep": "The sitter appears to be in their late 60s or older, with a medium-dark skin tone. They have no visible hair on their head, but a long, thick, white mustache that extends past the corners of their mouth. There is no eyewear or jewelry visible. They are wearing a yellow turban, wrapped around their head, facing forward. They are wearing a long-sleeved, light cream-colored tunic with a collar and a partial button placket, which appears to be made of a light fabric. Underneath, they wear light cream-colored, loose-fitting trousers, also appearing to be made of a light fabric. There is no visible lettering on any object.",
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep all of the following exactly as photographed: The sitter appears to be in their late 60s or older, with a medium-dark skin tone. They have no visible hair on their head, but a long, thick, white mustache that extends past the corners of their mouth. There is no eyewear or jewelry visible. They are wearing a yellow turban, wrapped around their head, facing forward. They are wearing a long-sleeved, light cream-colored tunic with a collar and a partial button placket, which appears to be made of a light fabric. Underneath, they wear light cream-colored, loose-fitting trousers, also appearing to be made of a light fabric. There is no visible lettering on any object.",
+      "outputs": ["out/illustrated/derived/derived/portrait-doorway-0.jpg"]
+    },
+    {
+      "id": "portrait-hands",
+      "mode": "derived",
+      "model": "fal-ai/nano-banana-pro/edit",
+      "ok": true,
+      "elapsedMs": 29018,
+      "keep": "The sitter appears to be in their 20s to 30s, with a dark brown skin tone. Their hair is short, textured, and black, styled in dreadlocks or twists that are gathered on top of the head. There is no visible facial hair or eyewear. They are wearing a headwrap with a brown and black leopard print pattern, which covers the back and sides of the head, with the front of the hair exposed. The visible garment is a grey t-shirt made of what appears to be cotton. The only visible piece of jewellery is a small, round, silver-colored stud earring in the left earlobe. There is no visible lettering on any object.",
+      "prompt": "Transform this photograph into a cel-animation illustration with clean ink outlines and flat colour fills. Keep this exact person: the same face, age, skin, hair, eyes, expression, pose, and framing. Do not invent a different person. Keep all of the following exactly as photographed: The sitter appears to be in their 20s to 30s, with a dark brown skin tone. Their hair is short, textured, and black, styled in dreadlocks or twists that are gathered on top of the head. There is no visible facial hair or eyewear. They are wearing a headwrap with a brown and black leopard print pattern, which covers the back and sides of the head, with the front of the hair exposed. The visible garment is a grey t-shirt made of what appears to be cotton. The only visible piece of jewellery is a small, round, silver-colored stud earring in the left earlobe. There is no visible lettering on any object.",
+      "outputs": ["out/illustrated/derived/derived/portrait-hands-0.jpg"]
+    }
+  ]
+}

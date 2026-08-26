@@ -421,6 +421,63 @@ that still, not one sentence applied the same way to every sitter. Until that is
 dialled in and the full six are judged on it, `publishReady` stays false, product
 POST stays PhotoMaker, and terms stay `illustrated-v2`.
 
+## The keep list the still writes for itself
+
+The bench keep lists were written by a person looking at six known photographs.
+A real upload never gets that, and the product has only ever sent one generic
+sentence with no costume detail in it. So every judgement above was measuring
+these families under a condition the product cannot reproduce. That gap is now
+closed.
+
+A vision pass reads the still and writes its own keep list, and that answer
+becomes the keep clause. Nothing is hardcoded to one picture.
+`describeIllustratedKeep` calls `fal-ai/any-llm/vision` on the uploaded still
+with `KEEP_INSTRUCTION`, at temperature 0 so the same upload does not get a
+different list each run. It asks only for what is visibly in the frame and
+refuses to guess a name, a place, an occupation, or a mood, because guessing
+would put invention into the clause that exists to stop invention.
+
+**What it writes.** On lehna, unaided: a medium-dark brown skin tone, short
+curly black hair, a silver nose ring on the left nostril, a black and gold
+patterned headwrap, a black high-necked top, and a bright pink ribbed open
+cardigan. On close: a black baseball cap facing backward with red on the brim,
+chin stubble, and the camera lettering `Mamiya 645`, `No.18923`, `f=80mm`,
+`1:2.8`, `MAMIYA-SEKOR C`. It found the backward cap on its own, which is the
+detail three earlier sweeps scored as an invention. It is more specific than the
+hand-written list it replaces, and it names complexion, which the hand-written
+lists never did.
+
+**Three keep lists, one family, one set of stills.** Nano Banana Pro, generic
+against derived against hand written. Forehead patch drift, luma out of 255.
+
+| still           | photo | generic | derived | hand  |
+| --------------- | ----- | ------- | ------- | ----- |
+| portrait-somali | 47.0  | +29.6   | +20.8   | +26.6 |
+| portrait-hands  | 66.6  | +12.4   | -1.7    | +4.1  |
+| portrait-lehna  | 101.6 | -26.1   | -25.8   | -16.6 |
+
+Mean absolute drift on the three dark-skinned sitters: generic 22.7, derived
+16.1, hand 15.8. `portrait-glasses` is left out of that mean because it is a
+backlit near-silhouette, so any illustration that lights the face reads as a
+large positive number and the patch says nothing about complexion there.
+
+Costume goes the same way. The generic prompt turns the lehna cardigan red and
+loses the doorway red on the doors and the teal wash on the wall. The derived
+list keeps the magenta cardigan, the gold headwrap, the red doors, the teal
+wash, and puts `No.18923` on the camera body, which no hand-written list ever
+asked for.
+
+**What this settles.** A model-written keep list matches a hand-written one on
+this set, on skin and on costume, and beats the prompt the product actually
+sends. It costs about a cent a still and five to seven seconds. The option is no
+longer a demonstration that works on six photographs somebody studied. Nothing
+in the request is tied to a particular picture.
+
+`publishReady` stays false, because whether these sheets clear the bar is the
+user's judgement and has not been given. What has changed is that the question
+is now worth asking about a real upload rather than about six rehearsed ones.
+Adopting means pointing the product POST at this path, which bumps the terms.
+
 ## Measurements
 
 Hosted latency and cost are Fal's, not this machine's. A 100-step still on

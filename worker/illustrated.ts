@@ -8,6 +8,7 @@ import {
   ILLUSTRATED_STEPS,
   ILLUSTRATED_STRENGTH,
   ILLUSTRATED_STYLE_STRENGTH,
+  KEEP_INSTRUCTION,
 } from '../src/core/illustrated/prompt.ts';
 import { zipStore } from '../src/core/illustrated/zip.ts';
 
@@ -236,6 +237,7 @@ export const FAL_NANO_PRO_EDIT = 'fal-ai/nano-banana-pro/edit';
 export const FAL_QWEN_EDIT = 'fal-ai/qwen-image-edit-2511';
 export const FAL_GROK_EDIT = 'xai/grok-imagine-image/edit';
 export const FAL_FLUX2_FLEX_EDIT = 'fal-ai/flux-2-flex/edit';
+export const FAL_VISION = 'fal-ai/any-llm/vision';
 
 export interface FalKontextJob {
   readonly still: Uint8Array;
@@ -755,6 +757,82 @@ export async function runFalFlux2FlexEdit(job: FalKontextJob): Promise<Photomake
     guidance_scale: job.guidance ?? 3.5,
     output_format: 'jpeg',
     ...(job.seed === undefined ? {} : { seed: job.seed }),
+  });
+}
+
+/** Polls a queued Fal job that answers with text rather than images. */
+async function runFalQueuedText(
+  job: FalKontextJob,
+  model: string,
+  payload: Record<string, unknown>,
+): Promise<string> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const giveUpMs = job.giveUpMs ?? GIVE_UP_MS;
+  const submitted = await runtimeFetch(`https://queue.fal.run/${model}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Key ${key}`,
+      'Content-Type': 'application/json',
+      'X-Fal-Store-IO': '0',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!submitted.ok) {
+    const detail = await submitted.text();
+    throw new Error(`Fal refused the job (${String(submitted.status)}). ${detail}`.trim());
+  }
+  const submittedBody: unknown = await submitted.json();
+  const statusUrl = readField(submittedBody, 'status_url');
+  const responseUrl = readField(submittedBody, 'response_url');
+  if (typeof statusUrl !== 'string' || typeof responseUrl !== 'string') {
+    throw new Error('Fal did not name the job status.');
+  }
+  const started = Date.now();
+  while (Date.now() - started < giveUpMs) {
+    const statusResponse = await runtimeFetch(statusUrl, { headers: { Authorization: `Key ${key}` } });
+    if (!statusResponse.ok) {
+      const detail = await statusResponse.text();
+      throw new Error(
+        `Fal would not say how the job was doing (${String(statusResponse.status)}). ${detail}`.trim(),
+      );
+    }
+    const status = readField(await statusResponse.json(), 'status');
+    if (status === 'COMPLETED') {
+      const resultResponse = await runtimeFetch(responseUrl, {
+        headers: { Authorization: `Key ${key}` },
+      });
+      if (!resultResponse.ok) throw new Error('Fal finished and then would not hand the answer back.');
+      const output = readField(await resultResponse.json(), 'output');
+      if (typeof output !== 'string' || output.trim().length === 0) {
+        throw new Error('Fal finished without a description.');
+      }
+      return output.trim();
+    }
+    if (status === 'FAILED') throw new Error('Fal could not read the still.');
+    await wait(POLL_MS);
+  }
+  throw new Error(`The illustrated job took longer than ${String(giveUpMs / 1000)} seconds.`);
+}
+
+/**
+ * Looks at this still and writes the keep list for it.
+ *
+ * The eval keep lists were written by hand against six known photographs, which
+ * a real upload never gets. This derives the same thing from whatever the user
+ * actually sent, so nothing about the request is hardcoded to one picture.
+ */
+export async function describeIllustratedKeep(job: FalKontextJob): Promise<string> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const stillUrl = await uploadFalAsset(job.still, job.mime, 'still.jpg', runtimeFetch, key);
+  return runFalQueuedText(job, FAL_VISION, {
+    prompt: KEEP_INSTRUCTION,
+    image_urls: [stillUrl],
+    model: job.model ?? 'google/gemini-2.5-flash',
+    temperature: 0,
   });
 }
 
