@@ -96,10 +96,11 @@ Writes one row per tracked frame: the model's object score, its predicted IoU,
 and the mask's covered area and centroid on the 256 grid. It exists because a
 drifting track is invisible from outside, and the numbers below are why.
 
-**Read this before trusting the section that used to be here.** It said the
-tracker drifts and that the mask fails to grow with the subject. Looking at the
-mask itself rather than at numbers derived from it does not support that, and
-the claim has been withdrawn. What follows is only what has been seen directly.
+**This section records a hunt that found nothing, and that is the point of
+keeping it.** It claimed at various times that the tracker drifts, that masks do
+not grow with the subject, and that the export disagrees with the editor. None
+of those survived being checked. What is below is what was actually seen, and
+what it cost to find out.
 
 **The mask is correct where it was checked.** `ROTYL_MASK_AT` writes the mask
 out as a PGM per named frame. On the bridge crossing, frame 0 is a clean human
@@ -119,10 +120,17 @@ against 41, a ratio of 1.61 where the crop ratio is 1.60, so it covers the same
 real region either way. Not accumulated drift: seeding fresh at frame 150 and
 tracking only 41 frames lands where a track from frame 0 lands.
 
-**What is actually unexplained.** An exported clip and the editor do not agree.
-The editor shows her styled at frame 186. An exported MP4 of the same clip,
-differenced against its source frame and thresholded past codec noise, changes
-almost nothing at frame 185. The tracked mask is right; what reaches the file
-does not match it. So the next place to look is between the tracked selection
-and the exported frame, not inside the tracker. That has not been tested, and it
-is a guess until it is.
+**And the export agrees with the tracker.** Captured from one run rather than
+two: the mask at frame 185 spans columns 359 to 503 of a thousand, and the
+pixels the exported file changes span 370 to 502. The style lands where the mask
+is. An earlier note here claimed they disagreed. That was a mask from one run
+compared against a file from another, which is not a comparison: two runs of the
+tracker need not agree, so `ROTYL_EXPORT` now writes the clip from the same run
+that wrote the masks.
+
+**So what was the original fault?** Pressing Escape between choosing the
+proposal and tracking, which cancels the proposal while the preview goes on
+showing the highlighted one. The editor looked right and the track followed the
+smaller default. That is fixed, and everything measured since has been chasing
+a fault that was already gone. The measurements above are worth keeping because
+they say where the problem is NOT, but none of them describes a live bug.

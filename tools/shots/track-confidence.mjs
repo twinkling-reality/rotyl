@@ -10,6 +10,9 @@ const GROW = Number(process.env.ROTYL_GROW ?? 1);
 
 const browser = await chromium.launch({ channel: 'chrome', headless: false });
 const page = await browser.newPage({ viewport: { width: 1280, height: 760 } });
+await page.addInitScript(() => {
+  Reflect.deleteProperty(globalThis, 'showSaveFilePicker');
+});
 await page.goto(URL_BASE, { waitUntil: 'domcontentloaded' });
 await page.evaluate(async (from) => {
   const bytes = await (await fetch(from)).arrayBuffer();
@@ -66,6 +69,16 @@ await page.waitForFunction(() => !document.body.textContent?.includes('Tracking,
   timeout: 15 * 60 * 1000,
   polling: 1000,
 });
+// Exporting from the SAME run as the masks, because a mask from one run and a
+// file from another cannot be compared: two runs of the tracker do not have to
+// agree, and comparing across them is how this went wrong once already.
+if (process.env.ROTYL_EXPORT) {
+  const pending = page.waitForEvent('download', { timeout: 20 * 60 * 1000 });
+  await page.getByRole('button', { name: 'Clip', exact: true }).click();
+  await (await pending).saveAs(process.env.ROTYL_EXPORT);
+  console.log(`exported ${process.env.ROTYL_EXPORT}`);
+}
+
 const log = await page.evaluate(() => globalThis.rotylTrackLog ?? []);
 const masks = await page.evaluate(() => globalThis.rotylTrackMasks ?? []);
 if (masks.length > 0) {
