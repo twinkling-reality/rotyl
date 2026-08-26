@@ -6,7 +6,7 @@
 video stylisation.** Selections come from direct drawing, on-device
 segmentation, or object tracking. Three WebGPU shader pipelines render Comic,
 Poster, and Print treatments. An optional hosted illustrated still sits beside
-those styles and is off until you accept its terms. It is not publish-ready.
+those styles and is off until you accept its terms.
 
 Each treatment is composited only inside the selection. A still export
 preserves every unselected pixel byte for byte. A video export preserves the

@@ -436,11 +436,14 @@ one, and the measurement behind it is on `/research.html`.
   Playwright remains a separate real-Chrome command rather than part of the CI
   unit gate, because it is evidence about the browser and GPU it actually ran
   on.
-- **The hosted illustrated still is not publish-ready.** It is a separate
-  opt-in job, stills only, and it sends the whole still to Fal after the terms
-  are accepted. The compositor keeps unselected pixels. The licensed set was
-  run on PhotoMaker and failed the visual bar: identity, clothes, and
-  silhouette do not hold, and several sheets invent a different person. Do
-  not call it a character generator and do not cut a demo from it. Clips are
+- **The hosted illustrated still holds people and not weather.** It is a
+  separate opt-in job, stills only, and it sends the whole still to Fal after
+  the terms are accepted. The compositor keeps unselected pixels. The licensed
+  set clears the visual bar on the six portraits it was judged on. Outside
+  them, figures and named clothing still hold, and soft content does not: mist
+  resolves into flat shapes, and a backlit silhouette is lit and filled in
+  rather than kept dark, because a keep list can only name what is visible.
+  Complexion holds within about 14 luma of the photograph on the licensed set
+  and drifts further on some frames. It is not a character generator. Clips are
   refused. Without a host `FAL_KEY` the panel still opens and nothing leaves.
   See [stylisation decisions](stylization-decision-log.md).

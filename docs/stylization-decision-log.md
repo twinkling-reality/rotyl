@@ -646,6 +646,40 @@ refuses a full-size camera dump.
 `publishReady` stays false. Raising the cap changes what the option produces,
 not who decides whether it clears the bar.
 
+## Adopted
+
+The licensed set was judged to clear the visual bar on the six sheets the
+product path produces at full size, and `publishReady` is true. The judgement is
+the user's. This page records what it was given: six portraits, drawn at 2048 in
+and full size out, through `handleIllustrated` rather than through a bench
+helper.
+
+What the flag asserts is that those six read as drawn characters who are still
+these people, dressed, with the photograph around the selection unchanged. It
+does not assert that every picture will, and three limits measured on this page
+survive it.
+
+**Soft and low-key content.** Mist behind a group resolves into hard flat
+shapes. A backlit silhouette is read as an underexposure, so the ground is lit,
+the sky flattens into bands, and a drawn sun appears with rays that are not in
+the frame. A keep list can only name what is visible, so where the photograph
+withholds detail the drawing invents it.
+
+**Complexion.** The product path holds skin within a mean of 14.2 luma of the
+photograph across the three dark-skinned sitters, against 22.7 for a generic
+prompt. Individual frames drift further, and `portrait-lehna` ran 27.4 darker
+than the sitter. The direction is now darker rather than lighter, which is the
+opposite of the failure recorded against Seedream on this page.
+
+**Coverage.** Six CC0 portraits, plus one profile and two group shots. All
+single or small groups, all reasonably lit, none of them a child, a crowd, or a
+frame with no person in it.
+
+Product POST is the derived keep list on Nano Banana Pro. Terms are
+`illustrated-v4`. `README.md`, `docs/architecture.md` and `docs/limits.md` no
+longer say the job failed the bar, and `docs/limits.md` now carries the three
+limits above instead.
+
 ## Measurements
 
 Hosted latency and cost are Fal's, not this machine's. A 100-step still on

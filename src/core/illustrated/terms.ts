@@ -16,9 +16,19 @@
  * about twice as much and takes about twice as long. Both are stated below, and
  * more of the photograph leaving the machine is itself a reason to ask again.
  *
- * publishReady stays false until the licensed evaluation set clears the same
- * visual bar the local Anime slot and official DCT-Net failed. A working
- * request is not that bar.
+ * publishReady was false from the first version of this file until the licensed
+ * set was judged to clear the same visual bar the local Anime slot and official
+ * DCT-Net failed. That judgement is the user's rather than this file's, and it
+ * was given on the six sheets the product path produces at full size. What it
+ * asserts is that those sheets read as drawn characters who are still these
+ * people, dressed, with the photograph around the selection unchanged.
+ *
+ * It does not assert that every picture will. Soft and low-key content is the
+ * known weakness: mist resolves into flat shapes and a backlit silhouette is
+ * lit and filled in rather than kept dark. Complexion is held within about 14
+ * luma of the photograph on the licensed set and drifts further on some frames.
+ * Both are recorded with their measurements in
+ * `docs/stylization-decision-log.md`.
  */
 
 export const ILLUSTRATED_TERMS_VERSION = 'illustrated-v4';
@@ -57,7 +67,8 @@ export interface IllustratedTerms {
   readonly latency: string;
   readonly retention: string;
   readonly background: string;
-  readonly publishReady: false;
+  /** Whether the licensed set has been judged to clear the visual bar. */
+  readonly publishReady: boolean;
 }
 
 export const ILLUSTRATED_TERMS: IllustratedTerms = {
@@ -74,7 +85,7 @@ export const ILLUSTRATED_TERMS: IllustratedTerms = {
     'Rotyl keeps nothing. The worker asks Fal not to store the request payload. Fal may still hold the generated file on its CDN for up to seven days. Export the PNG if you want the result. Closing the file drops the layer.',
   background:
     'The photograph around the selection never goes through the generator on the way back. The compositor writes those pixels from the original still.',
-  publishReady: false,
+  publishReady: true,
 };
 
 export interface IllustratedConsent {

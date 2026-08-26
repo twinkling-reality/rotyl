@@ -9,7 +9,9 @@ describe('illustrated terms', () => {
   it('states privacy, cost, latency and retention on the current version', () => {
     expect(ILLUSTRATED_TERMS.version).toBe(ILLUSTRATED_TERMS_VERSION);
     expect(ILLUSTRATED_TERMS.stillsOnly).toBe(true);
-    expect(ILLUSTRATED_TERMS.publishReady).toBe(false);
+    // Judged to clear the bar on the six sheets the product path produces at
+    // full size. The limits that survive that judgement are in the ledger.
+    expect(ILLUSTRATED_TERMS.publishReady).toBe(true);
     expect(ILLUSTRATED_TERMS.privacy.length).toBeGreaterThan(40);
     expect(ILLUSTRATED_TERMS.cost.length).toBeGreaterThan(20);
     expect(ILLUSTRATED_TERMS.latency.length).toBeGreaterThan(20);
