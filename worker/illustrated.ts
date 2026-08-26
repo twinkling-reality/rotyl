@@ -247,6 +247,8 @@ export interface FalKontextJob {
   readonly prompt: string;
   readonly model?: string;
   readonly aspectRatio?: string;
+  /** Nano Banana Pro output size. The product stays at 1K; the bench asks for more. */
+  readonly resolution?: string;
   readonly numImages?: number;
   readonly guidance?: number;
   readonly seed?: number;
@@ -697,7 +699,7 @@ export async function runFalNanoProEdit(job: FalKontextJob): Promise<PhotomakerI
     prompt: job.prompt,
     image_urls: [stillUrl],
     aspect_ratio: 'auto',
-    resolution: '1K',
+    resolution: job.resolution ?? '1K',
     output_format: 'jpeg',
     num_images: 1,
     limit_generations: true,

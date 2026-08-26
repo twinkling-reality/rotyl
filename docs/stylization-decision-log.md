@@ -588,6 +588,37 @@ That would be a different authorization boundary from this one. A clip leaving
 the machine is not the still that the current terms describe, so it would need
 its own consent, its own cost and latency sentences, and its own judged run.
 
+## Every sheet on this page was judged at a quarter of its size
+
+The product resizes a still to `ILLUSTRATED_LONG_EDGE`, 1280, before sending,
+and asks Nano Banana Pro for `1K`. That is correct for the thing it makes: the
+composited layer is 1280 and the terms say so. It is wrong for deciding whether
+the drawing is any good, and every judgement above was made that way. The lehna
+source is 5737 pixels on the long edge. It was sent at 1280 and came back at
+1264, and then looked at larger. Soft was the honest reading of it, and soft was
+a setting rather than the model.
+
+The same request, with the still sent at 2048 and `4K` asked for, comes back at
+5056 by 3376. Sixteen times the pixels. The line work is a drawn line rather
+than a soft one, the gold on the headwrap resolves into pattern, the nose ring
+and the lashes are drawn, and the hand at the chin in `portrait-hands` has
+knuckles. `portrait-doorway` renders the door bolt, the kurta buttons, and the
+wall stencils. Nothing else changed: same family, same derived keep list, same
+prompt.
+
+Measured at $0.31 a still and 42 s to 86 s, against $0.15 and 22 s to 39 s at
+1K. `tools/style-bench/illustrated-eval-hires.ts` runs it and takes the long
+edge and the resolution as arguments.
+
+**What this does not change.** The product still sends 1280 and asks for 1K,
+because that is the layer it composites and the terms describe it. Nothing here
+is a reason to change that without saying so in the terms. What it changes is
+the evidence: the earlier entries on this page compared families at a size that
+flattened the differences between them, so the family judgements above are worth
+less than they look. Anything adopted should be judged again at size.
+
+`publishReady` stays false.
+
 ## Measurements
 
 Hosted latency and cost are Fal's, not this machine's. A 100-step still on
