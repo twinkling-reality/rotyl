@@ -5,7 +5,10 @@ import { writeFileSync } from 'node:fs';
 
 const URL_BASE = process.env.ROTYL_URL ?? 'http://localhost:5181';
 const CLIP = process.env.ROTYL_CLIP ?? '/tools/style-bench/real/evaluation/tos-crossing.mp4';
-const SUBJECT = (process.env.ROTYL_SUBJECT ?? '0.356,0.455').split(',').map(Number);
+// A fraction of the clip, not of the canvas. The vertical was 0.455 while it was
+// read against the canvas, which on a 534-tall clip letterboxed inside a
+// 664-tall canvas is the same point as 0.444 of the clip.
+const SUBJECT = (process.env.ROTYL_SUBJECT ?? '0.356,0.444').split(',').map(Number);
 const GROW = Number(process.env.ROTYL_GROW ?? 1);
 
 const browser = await chromium.launch({ channel: 'chrome', headless: false });
@@ -38,10 +41,25 @@ if (startFrame > 0) {
 // a frame that has not is a click on nothing. Track staying disabled is how
 // that shows, so it is retried rather than left to fail minutes later.
 const box = await page.locator('canvas').boundingBox();
+
+// SUBJECT is a fraction of the clip, and the canvas is the whole viewport with
+// the clip fitted inside it. Landscape footage all but fills the canvas so the
+// two agree; a portrait clip here is letterboxed by 450 pixels a side, and a
+// seed meant for the middle of the subject lands on the floor beside it.
+const shape = await page.evaluate(() => {
+  const found = /(\d+)\s*×\s*(\d+)/.exec(document.body.textContent ?? '');
+  return found ? { width: Number(found[1]), height: Number(found[2]) } : undefined;
+});
+if (!shape) throw new Error('the app did not say what shape the clip is');
+const drawnWidth = Math.min(box.width, (box.height * shape.width) / shape.height);
+const drawnHeight = Math.min(box.height, (box.width * shape.height) / shape.width);
+const seedX = box.x + (box.width - drawnWidth) / 2 + drawnWidth * SUBJECT[0];
+const seedY = box.y + (box.height - drawnHeight) / 2 + drawnHeight * SUBJECT[1];
+
 const track = page.getByRole('button', { name: 'Track', exact: true });
 for (let attempt = 0; attempt < 4; attempt++) {
   await page.getByRole('button', { name: 'Object', exact: true }).click();
-  await page.mouse.click(box.x + box.width * SUBJECT[0], box.y + box.height * SUBJECT[1]);
+  await page.mouse.click(seedX, seedY);
   await page.waitForTimeout(1400);
   for (let i = 0; i < GROW; i++) {
     await page.keyboard.press('ArrowUp');

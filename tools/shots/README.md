@@ -72,6 +72,19 @@ not visible until the end.
 the proposal while the preview goes on showing the one that was highlighted, so
 the editor looks right and the track follows the smaller default.
 
+**`ROTYL_SUBJECT` is a fraction of the clip, not a fraction of the canvas.** The
+canvas is the whole viewport and the clip is fitted inside it, so the two agree
+only when the footage is about as wide as the viewport. The Tears of Steel clips
+are, which is why this went unnoticed. A portrait clip is letterboxed by 450
+pixels a side, and a seed meant for the middle of the subject lands on the floor
+beside it. Both scripts now read the clip's shape from the header and map
+through the drawn rectangle, so the fraction means the same thing whatever shape
+the footage is. Both defaults were renumbered at the same time and the seed did
+not move: on the 534-tall Tears of Steel clips, 0.72 of the canvas and 0.774 of
+the clip are the same pixel to within a quarter of one. Any `ROTYL_SUBJECT`
+written down before this change is in the old frame of reference and wants the
+same correction.
+
 **The default clip is two people, and only one of them is drawn.** That is the
 whole claim in one frame: his face carries ink and flat fill while her hair,
 a foot away, still resolves to individual strands. Nothing has to be said about
@@ -108,6 +121,23 @@ silhouette, head to feet. Frame 185, unsquashed back to the frame's own shape
 and laid over the picture as a tint, sits on her hair, her face, her jacket and
 her body, with the background clear. That is a working track, not a drifting
 one, on the run that was instrumented.
+
+**`ROTYL_MASK_AT` names frames and has no wildcard.** It is matched with
+`includes`, so `-1` matches nothing and writes no masks at all, quietly, after
+a full track has already been paid for. Every frame means every frame:
+`ROTYL_MASK_AT="$(seq -s, 0 80)"`. Note that an N-frame clip logs N-1 frames, so
+the last frame has no mask and the last one has to be held over if whatever
+consumes them wants all N.
+
+**A mask is a square grid, and a painted clip need not share the source's
+frame rate.** The grid is 256 by 256 whatever shape the frame is, so it is
+stretched back and wants a pixel or two of blur before it is used as an alpha:
+at 1280 tall one cell is five pixels and a hard edge shows every one of them.
+Compositing is `alphamerge` and `overlay`, never `maskedmerge`, which blends
+chroma globally and tints the whole frame. If the painted clip came back from a
+video model it may be tagged at a different rate than the source while holding
+the same frames, and pairing those by timestamp drops and duplicates; `setpts`
+re-times both by frame index so frame N meets frame N.
 
 **The model's own scores say nothing useful.** Predicted IoU stays between 0.92
 and 0.99 for all 191 frames and the object score never reports absent. Whatever
