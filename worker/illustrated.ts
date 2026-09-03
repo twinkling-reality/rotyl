@@ -239,6 +239,8 @@ export const FAL_QWEN_EDIT = 'fal-ai/qwen-image-edit-2511';
 export const FAL_GROK_EDIT = 'xai/grok-imagine-image/edit';
 export const FAL_FLUX2_FLEX_EDIT = 'fal-ai/flux-2-flex/edit';
 export const FAL_VISION = 'fal-ai/any-llm/vision';
+export const FAL_WAN_V2V = 'fal-ai/wan/v2.2-a14b/video-to-video';
+export const FAL_WAN_VACE = 'fal-ai/wan-vace-14b';
 
 export interface FalKontextJob {
   readonly still: Uint8Array;
@@ -881,6 +883,104 @@ export async function runIllustrated(job: {
     resolution: '4K',
     ...(job.giveUpMs === undefined ? {} : { giveUpMs: job.giveUpMs }),
   });
+}
+
+/**
+ * Restyle a whole clip on Fal. Eval-only, and a different question from the
+ * stills path.
+ *
+ * A still redrawn per frame boils: nothing holds the drawing still between
+ * frames, and at the stills price a five second clip costs more than the whole
+ * licensed sweep did. A video model decides the whole clip at once, which is
+ * what makes a drawn look survive motion at all. Whether it survives it well
+ * enough is the thing being asked.
+ */
+export async function runFalWanVideo(job: {
+  readonly video: Uint8Array;
+  readonly mime: string;
+  readonly host: IllustratedHost;
+  readonly prompt: string;
+  readonly resolution?: string;
+  readonly strength?: number;
+  readonly numFrames?: number;
+  readonly giveUpMs?: number;
+  readonly model?: string;
+  /**
+   * Overriding this matters more than it looks. The control model ships a
+   * default that suppresses "style, artwork, painting, picture", so asking it
+   * for a painting while leaving the default in place asks it for two opposite
+   * things and it obeys the default.
+   */
+  readonly negativePrompt?: string;
+  readonly preprocess?: boolean;
+  readonly guidance?: number;
+}): Promise<{ bytes: Uint8Array; mime: string }> {
+  const key = job.host.FAL_KEY;
+  if (!key) throw new Error('The host has not configured the illustrated stills job.');
+  const runtimeFetch = job.host.fetch ?? fetch;
+  const giveUpMs = job.giveUpMs ?? 900_000;
+  const videoUrl = await uploadFalAsset(job.video, job.mime, 'clip.mp4', runtimeFetch, key);
+  const model = job.model ?? FAL_WAN_V2V;
+  const vace = model === FAL_WAN_VACE;
+  const submitted = await runtimeFetch(`https://queue.fal.run/${model}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Key ${key}`,
+      'Content-Type': 'application/json',
+      'X-Fal-Store-IO': '0',
+    },
+    body: JSON.stringify({
+      prompt: job.prompt,
+      video_url: videoUrl,
+      num_frames: job.numFrames ?? 81,
+      enable_safety_checker: false,
+      ...(job.negativePrompt === undefined ? {} : { negative_prompt: job.negativePrompt }),
+      ...(vace
+        ? {
+            preprocess: job.preprocess ?? true,
+            guidance_scale: job.guidance ?? 5,
+            video_quality: 'high',
+            match_input_num_frames: true,
+          }
+        : {
+            resolution: job.resolution ?? '720p',
+            strength: job.strength ?? 0.9,
+          }),
+    }),
+  });
+  if (!submitted.ok) {
+    const detail = await submitted.text();
+    throw new Error(`Fal refused the job (${String(submitted.status)}). ${detail}`.trim());
+  }
+  const body: unknown = await submitted.json();
+  const statusUrl = readField(body, 'status_url');
+  const responseUrl = readField(body, 'response_url');
+  if (typeof statusUrl !== 'string' || typeof responseUrl !== 'string') {
+    throw new Error('Fal did not name the job status.');
+  }
+  const started = Date.now();
+  while (Date.now() - started < giveUpMs) {
+    const statusResponse = await runtimeFetch(statusUrl, { headers: { Authorization: `Key ${key}` } });
+    if (!statusResponse.ok) throw new Error('Fal would not say how the job was doing.');
+    const status = readField(await statusResponse.json(), 'status');
+    if (status === 'COMPLETED') {
+      const result = await runtimeFetch(responseUrl, { headers: { Authorization: `Key ${key}` } });
+      if (!result.ok) throw new Error('Fal finished and then would not hand the clip back.');
+      const video = readField(await result.json(), 'video');
+      const url = readField(video, 'url');
+      if (typeof url !== 'string') throw new Error('Fal finished without a clip.');
+      const download = await runtimeFetch(url);
+      if (!download.ok) throw new Error('The generated clip could not be fetched.');
+      const contentType = readField(video, 'content_type');
+      return {
+        bytes: new Uint8Array(await download.arrayBuffer()),
+        mime: typeof contentType === 'string' ? contentType : 'video/mp4',
+      };
+    }
+    if (status === 'FAILED') throw new Error('Fal could not finish the clip.');
+    await wait(POLL_MS);
+  }
+  throw new Error('The clip job took too long.');
 }
 
 function wait(ms: number): Promise<void> {

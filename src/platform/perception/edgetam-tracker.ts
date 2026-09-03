@@ -254,7 +254,7 @@ declare global {
   // eslint-disable-next-line no-var
   var rotylTrackMaskAt: number[] | undefined;
   // eslint-disable-next-line no-var
-  var rotylTrackMasks: Array<{ frame: number; bitmap: number[] }> | undefined;
+  var rotylTrackMasks: Array<{ frame: number; packed: string }> | undefined;
 }
 
 function coverageFrom(logits: Float32Array, offset: number): CoverageMask {
@@ -504,13 +504,21 @@ export async function loadEdgeTamTracker(options: EdgeTamTrackerOptions): Promis
             // turned out to be the whole question, so the frames named in
             // `rotylTrackMaskAt` keep their mask as a flat 0/1 grid.
             const frame = globalThis.rotylTrackLog.length;
-            if (globalThis.rotylTrackMaskAt?.includes(frame) === true) {
-              const bitmap: number[] = Array.from({ length: decoded.logits.length }, () => 0);
+            // -1 asks for every frame. A mask is a quarter of a million values,
+            // so it is packed one bit per pixel before it leaves: a whole clip
+            // of them moves as about a megabyte instead of hundreds.
+            const wanted = globalThis.rotylTrackMaskAt;
+            if (wanted?.includes(-1) === true || wanted?.includes(frame) === true) {
+              const packed = new Uint8Array(Math.ceil(decoded.logits.length / 8));
               for (let at = 0; at < decoded.logits.length; at++) {
-                bitmap[at] = (decoded.logits[at] ?? -1) > 0 ? 1 : 0;
+                if ((decoded.logits[at] ?? -1) > 0) {
+                  packed[at >> 3] = (packed[at >> 3] ?? 0) | (128 >> (at & 7));
+                }
               }
+              let binary = '';
+              for (const byte of packed) binary += String.fromCharCode(byte);
               globalThis.rotylTrackMasks ??= [];
-              globalThis.rotylTrackMasks.push({ frame, bitmap });
+              globalThis.rotylTrackMasks.push({ frame, packed: btoa(binary) });
             }
             globalThis.rotylTrackLog.push([
               decoded.objectScore,
