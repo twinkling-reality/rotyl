@@ -30,8 +30,11 @@ const SOURCE = CLIP.replace(/^\//, '');
 const VIEWPORT = { width: 1280, height: 760 };
 
 // Where the walker is at frame 1, and the proposal that is the whole person
-// rather than the print on her shirt.
-const SUBJECT = process.env.ROTYL_SUBJECT ? process.env.ROTYL_SUBJECT.split(',').map(Number) : [0.42, 0.72];
+// rather than the print on her shirt. A fraction of the clip, not of the canvas:
+// this was 0.72 while it was read against the canvas, which on a 534-tall clip
+// letterboxed inside a 664-tall canvas is the same point as 0.774 of the clip.
+// The number changed so that the seed would not.
+const SUBJECT = process.env.ROTYL_SUBJECT ? process.env.ROTYL_SUBJECT.split(',').map(Number) : [0.42, 0.774];
 const GROW = Number(process.env.ROTYL_GROW ?? 1);
 
 if (!existsSync(SOURCE)) {
@@ -68,7 +71,25 @@ await page.waitForTimeout(1500);
 await page.getByRole('button', { name: 'Object', exact: true }).click();
 const canvas = await page.locator('canvas').boundingBox();
 if (!canvas) throw new Error('no canvas');
-await page.mouse.click(canvas.x + canvas.width * SUBJECT[0], canvas.y + canvas.height * SUBJECT[1]);
+
+// ROTYL_SUBJECT is a fraction of the CLIP, which is not a fraction of the
+// canvas: the canvas is the whole viewport and the clip is fitted inside it.
+// Landscape footage all but fills the canvas, so the two agree to within a few
+// pixels and the difference stays invisible. A portrait clip in this landscape
+// viewport is letterboxed by 450 pixels a side, and a seed meant for the middle
+// of the subject lands on the floor beside it.
+const shape = await page.evaluate(() => {
+  const found = /(\d+)\s*×\s*(\d+)/.exec(document.body.textContent ?? '');
+  return found ? { width: Number(found[1]), height: Number(found[2]) } : undefined;
+});
+if (!shape) throw new Error('the app did not say what shape the clip is');
+const aspect = shape.width / shape.height;
+const drawnWidth = Math.min(canvas.width, canvas.height * aspect);
+const drawnHeight = Math.min(canvas.height, canvas.width / aspect);
+await page.mouse.click(
+  canvas.x + (canvas.width - drawnWidth) / 2 + drawnWidth * SUBJECT[0],
+  canvas.y + (canvas.height - drawnHeight) / 2 + drawnHeight * SUBJECT[1],
+);
 await page.waitForTimeout(1200);
 for (let i = 0; i < GROW; i++) {
   await page.keyboard.press('ArrowUp');
