@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "publishReady": false,
+  "path": "Wan VACE 14B on Fal, paint a whole clip, composited inside a tracked mask",
+  "skipped": false,
+  "note": "Two runs on one clip. The first was judged and failed on identity; the second changed the prompt and the guidance together and cleared the bar. Eval-only, and the source is private footage rather than a licensed clip, so nothing here is committed as media and none of it is regenerable. Publish-ready stays false for that reason and not for the drawing.",
+  "clip": {
+    "name": "dog-treat",
+    "width": 720,
+    "height": 1280,
+    "frames": 81,
+    "fps": 20,
+    "seconds": 4.05,
+    "note": "Private footage, not committed. iPhone HLG BT.2020 10-bit HEVC at 3840x2160/60, tonemapped to BT.709 8-bit through a generated 65-cube LUT because this ffmpeg has neither zscale nor libplacebo. Portrait, which is what exposed the seeding bug fixed on main."
+  },
+  "models": [
+    {
+      "id": "fal-ai/wan-vace-14b",
+      "tag": "dog-painted",
+      "listPriceUsd": 0.405
+    },
+    {
+      "id": "fal-ai/wan-vace-14b",
+      "tag": "dog-painted-shiba",
+      "listPriceUsd": 0.405
+    }
+  ],
+  "falListPriceUsd": {
+    "perVideoSecond720p": 0.08,
+    "videoSecondBasisFps": 16,
+    "unit": "video second",
+    "note": "Video seconds are frames divided by 16, not wall clock and not the source frame rate. 81 frames is 5.0625 video seconds, so 0.405 a run. Measured against the account balance, which went 1.362175 to 0.957175 to 0.552175."
+  },
+  "measuredWallMs": {
+    "firstRun": 120546,
+    "secondRun": 178733
+  },
+  "judgement": {
+    "clearsBar": true,
+    "summary": "The second run clears it. A drawn subject survives motion and deformation across the whole clip, holds identity, and sits inside a tracked mask with the photograph untouched a centimetre away. The first run does not: it painted beautifully and painted the wrong animal."
+  },
+  "runs": [
+    {
+      "tag": "dog-painted",
+      "ok": true,
+      "elapsedMs": 120546,
+      "clearsBar": false,
+      "parameters": {
+        "preprocess": true,
+        "guidanceScale": 5,
+        "numFrames": 81,
+        "negativePrompt": "",
+        "videoQuality": "high",
+        "matchInputNumFrames": true
+      },
+      "prompt": "Redraw this footage as a hand-painted illustration. Flat gouache shapes in a limited palette, loose visible brushwork, simplified forms, no photographic texture and no photographic shading. Keep the dog, the hand and everything else exactly where it is and keep the motion exactly as filmed.",
+      "finding": "Painterly and wrong. Flat gouache shapes and visible brushwork, exactly as asked, on an animal that is not the one filmed: bold orange and white patches, a white blaze, round eyes, reading as a Jack Russell where the source is a cream and tan Shiba Inu. The head also breaks between roughly frames 45 and 65, during the fast tilt, with a displaced eye and a doubled ear. The background was reinvented entirely, which does not matter because only the masked region is kept."
+    },
+    {
+      "tag": "dog-painted-shiba",
+      "ok": true,
+      "elapsedMs": 178733,
+      "clearsBar": true,
+      "parameters": {
+        "preprocess": true,
+        "guidanceScale": 3,
+        "numFrames": 81,
+        "negativePrompt": "",
+        "videoQuality": "high",
+        "matchInputNumFrames": true
+      },
+      "prompt": "Redraw this footage as a hand-painted illustration of a cream and tan Shiba Inu with a white chest, a white muzzle, small dark almond eyes and pricked ears. Flat gouache shapes in a limited palette, loose visible brushwork, simplified forms, no photographic texture and no photographic shading. Keep the dog, the hand and everything else exactly where it is and keep the motion exactly as filmed.",
+      "finding": "The right dog, and the tilted head is anatomically clean where the first run's was broken. The cost is brushwork: at guidance 3 the paint is smoother and more airbrushed than the first run's gouache. Prompt and guidance changed in the same run, so which of the two repaired the head is not separated here."
+    }
+  ],
+  "whatThisEstablishes": [
+    "Identity comes from the prompt, not from any style knob. With preprocess true the input is reduced to a control signal and coat markings go with it, so whatever the prompt does not name, the model invents. Naming the breed and its markings is what fixed this, and it should be the first thing tried rather than the last.",
+    "strength and resolution never reach this model. runFalWanVideo sends them only on the wan v2.2 video-to-video branch; the VACE branch sends preprocess, guidance_scale, video_quality and match_input_num_frames. Earlier strength readings around 0.98 and 0.92 describe the other model and do not transfer.",
+    "The negative prompt has to be set to override it. The eval omits negative_prompt entirely when ROTYL_NEGATIVE is unset, which hands the job Fal's default, and that default suppresses style, artwork and painting. Asking for a painting while it stands asks for two opposite things.",
+    "Compositing is alphamerge and overlay, never maskedmerge, which blends chroma globally and tints the whole frame. The mask is a 256 by 256 grid whatever shape the frame is, so it is stretched back and wants a pixel or two of blur before use as an alpha.",
+    "The painted clip came back tagged 16 fps against a 20 fps source while holding the same 81 frames. Pairing those by timestamp drops and duplicates; setpts re-times both by frame index so frame N meets frame N."
+  ]
+}

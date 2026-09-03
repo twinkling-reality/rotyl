@@ -581,12 +581,28 @@ consistency inside the generation instead of hoping independent frames agree.
 `fal-ai/wan/v2.2-a14b/video-to-video` lists $0.08 a video second at 720p on a
 16 fps basis, so the same ten seconds is about $0.80 in one job rather than $36
 across 240. `fal-ai/wan-vace-14b` and `xai/grok-imagine-video/edit-video` are
-the other two live candidates. None of them has been run here and none is
-adopted.
+the other two live candidates. `fal-ai/wan-vace-14b` has since been run and
+judged; the other two have not. None is adopted.
 
 That would be a different authorization boundary from this one. A clip leaving
 the machine is not the still that the current terms describe, so it would need
 its own consent, its own cost and latency sentences, and its own judged run.
+
+**VACE draws a clip, and what it draws is whatever the prompt named.** Two runs
+on 81 frames of private footage, $0.405 each on the pricing above, recorded in
+`results-illustrated-eval-clip.json`. A drawn subject does survive motion and
+deformation across a whole clip, which is the thing the still path could not do.
+But with `preprocess` on, the input is reduced to a control signal and surface
+detail goes with it, so the first run drew a different animal from the one
+filmed: the prompt said only "the dog" and the model supplied the rest. Naming
+the breed and its markings fixed it. The knobs are not where identity lives.
+
+**The strength readings on this page do not transfer to it.** `runFalWanVideo`
+sends `strength` and `resolution` only on the v2.2 video-to-video branch. The
+VACE branch sends `preprocess`, `guidance_scale`, `video_quality` and
+`match_input_num_frames`, so a strength chosen against v2.2 is not a setting
+VACE ever sees. Dropping guidance from 5 to 3 held the geometry through a fast
+head turn and cost brushwork, which is the trade to expect there.
 
 ## Every sheet on this page was judged at a quarter of its size
 

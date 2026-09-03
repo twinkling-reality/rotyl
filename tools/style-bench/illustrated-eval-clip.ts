@@ -7,6 +7,18 @@
 // price per frame and holds nothing still between them. This asks a video model
 // for the whole clip instead, which is the only shape in which a drawn look can
 // survive motion. Eval-only. Nothing in the product sends a clip.
+//
+// ROTYL_STRENGTH and ROTYL_RES only reach the wan v2.2 video-to-video model.
+// The VACE branch of runFalWanVideo does not send either, so a strength read off
+// a v2.2 run says nothing about a VACE one. The knobs here are ROTYL_GUIDANCE
+// and ROTYL_PREPROCESS, and ROTYL_NEGATIVE has to be set to something before it
+// is sent at all: left unset the job takes Fal's default, and that default
+// suppresses style, artwork and painting.
+//
+// Whatever the prompt does not name, the model invents. With preprocess on, the
+// input becomes a control signal and surface detail goes with it, so a prompt
+// saying only "the dog" returned a different breed. See
+// results-illustrated-eval-clip.json.
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -37,6 +49,8 @@ const out = await runFalWanVideo({
   numFrames: Number(process.env.ROTYL_FRAMES ?? 81),
   ...(process.env.ROTYL_VACE ? { model: FAL_WAN_VACE } : {}),
   ...(process.env.ROTYL_NEGATIVE === undefined ? {} : { negativePrompt: process.env.ROTYL_NEGATIVE }),
+  ...(process.env.ROTYL_GUIDANCE === undefined ? {} : { guidance: Number(process.env.ROTYL_GUIDANCE) }),
+  ...(process.env.ROTYL_PREPROCESS === undefined ? {} : { preprocess: process.env.ROTYL_PREPROCESS !== '0' }),
 });
 const relative = `out/illustrated/clip/${tag}.mp4`;
 await writeFile(join(here, relative), out.bytes);
