@@ -79,6 +79,15 @@ frame, and what that costs was measured rather than assumed: a chain invents
 nothing, so the flicker that is left is the input, and both ways of filtering it
 out were priced and neither is here. See [video](docs/video.md).
 
+![A shiba inu sitting for a treat, drawn in flat colour and ink, while the hand
+offering the treat stays photographic](docs/media/tracked-clip-dog.gif)
+
+One object, clicked once on the first frame and followed forward. The dog keeps
+ink and flat fill through a head turn, an open mouth and a tongue, while the
+hand a centimetre from its nose keeps its skin, its nail and the light on it,
+and the carpet weave under both stays a photograph. Nothing separated the two by
+hand.
+
 **Exporting.** The frame on screen as a picture, or the clip as an MP4, whole or
 between an In and an Out. Both are the preview's renderer at the preview's
 parameters stopping at the same pass, so a saved file cannot drift from what was

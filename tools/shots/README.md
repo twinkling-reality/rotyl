@@ -29,11 +29,16 @@ so the change reads without an unexplained jump.
 
 ## What it costs, and why those numbers
 
-| file        | size   |
-| ----------- | ------ |
-| hero.gif    | 424 KB |
-| video.webp  | 44 KB  |
-| styles.webp | 52 KB  |
+| file                  | size    |
+| --------------------- | ------- |
+| hero.gif              | 424 KB  |
+| video.webp            | 44 KB   |
+| styles.webp           | 52 KB   |
+| tracked-clip.gif      | 1156 KB |
+| tracked-clip.mp4      | 824 KB  |
+| tracked-clip-dog.gif  | 1196 KB |
+| tracked-clip-dog.mp4  | 980 KB  |
+| footage/dog-treat.mp4 | 3.0 MB  |
 
 A GIF is the only moving format GitHub renders from a repository path. It is
 held to 680 pixels across 32 frames and 256 colours. The real portrait needs
@@ -46,6 +51,15 @@ The stills use Riso and Mural because the hazy synthetic street otherwise gives
 the palette fitter almost no hue to preserve. The portrait needs no corrective
 palette: its skin, blue sky, black camera and warm landscape already give Comic
 and Print meaningful source colour.
+
+The two tracked clips cost about a megabyte each in GIF and cannot be made to
+cost much less. Every frame of them is a moving photograph rather than flat
+chrome, so almost nothing repeats between frames and there is little for the
+format to collapse. Both are therefore a window on the clip rather than all of
+it, and the dog is cut to 24 frames on a 48-colour palette to sit beside the
+walker's 30 rather than above it. The MP4s are the whole thing and are held to a
+thousand pixels on the long edge, which is a width for the walker and a height
+for the dog.
 
 Hero source: [_Photographer in close-up_ by Cameron Kirby](https://commons.wikimedia.org/wiki/File:Photographer_in_close-up_%28Unsplash%29.jpg),
 CC0 1.0 via Wikimedia Commons.
@@ -64,9 +78,34 @@ app writes the MP4 itself through its own export, so what lands here is what a
 user gets rather than a screen recording of the editor.
 
 `ROTYL_CLIP`, `ROTYL_SUBJECT` and `ROTYL_GROW` pick a different clip and a
-different thing in it. `SELECT_ONLY=1` writes the seeded frame and stops, which
-is worth doing first: tracking is minutes long and a click one proposal off is
-not visible until the end.
+different thing in it. `ROTYL_OUT_NAME` names what it writes, and
+`ROTYL_GIF_FROM`, `ROTYL_GIF_SECONDS` and `ROTYL_GIF_COLORS` choose the window
+the GIF is cut from, because the moment worth showing is not in the same place
+twice. `SELECT_ONLY=1` writes the seeded frame and stops, which is worth doing
+first: tracking is minutes long and a click one proposal off is not visible
+until the end.
+
+**The second demo is a dog, and its footage is committed.** The README's moving
+picture is `tracked-clip-dog.gif`, taken from `footage/dog-treat.mp4`:
+
+```bash
+ROTYL_CLIP=/tools/shots/footage/dog-treat.mp4 ROTYL_SUBJECT=0.435,0.633 \
+ROTYL_GROW=0 ROTYL_OUT_NAME=tracked-clip-dog ROTYL_GIF_FROM=1.5 \
+ROTYL_GIF_SECONDS=2.4 ROTYL_GIF_COLORS=48 node tools/shots/tracked-clip.mjs
+```
+
+The Tears of Steel clips are CC-BY and stay in the ignored bench cache, which is
+why nothing regenerates them without `fetch-evaluation.sh`. This one is owned
+outright, so committing it costs three megabytes and buys a demo anybody with
+the repository can regenerate from nothing. The committed file is already
+normalised: the camera wrote HLG BT.2020 10-bit HEVC at 3840x2160 and 60fps, and
+what is here is BT.709 8-bit at 720x1280 and 20fps, cut to the 81 frames the
+whole gesture fits in.
+
+**A hand a centimetre from the muzzle is the point of it.** The bridge crossing
+puts two people a foot apart and only draws one. This puts skin, a fingernail
+and the light on them against inked fur close enough to touch, which is a harder
+thing to fake and needs no caption at all.
 
 **Do not press Escape between choosing the proposal and tracking.** It cancels
 the proposal while the preview goes on showing the one that was highlighted, so

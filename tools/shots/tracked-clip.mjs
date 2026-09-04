@@ -36,9 +36,13 @@ const VIEWPORT = { width: 1280, height: 760 };
 // The number changed so that the seed would not.
 const SUBJECT = process.env.ROTYL_SUBJECT ? process.env.ROTYL_SUBJECT.split(',').map(Number) : [0.42, 0.774];
 const GROW = Number(process.env.ROTYL_GROW ?? 1);
+const NAME = process.env.ROTYL_OUT_NAME ?? 'tracked-clip';
 
 if (!existsSync(SOURCE)) {
-  throw new Error(`${SOURCE} is not here. Run ./tools/style-bench/fetch-evaluation.sh first.`);
+  const hint = SOURCE.startsWith('tools/style-bench/real/')
+    ? ' Run ./tools/style-bench/fetch-evaluation.sh first.'
+    : '';
+  throw new Error(`${SOURCE} is not here.${hint}`);
 }
 
 rmSync(FRAMES, { recursive: true, force: true });
@@ -117,6 +121,13 @@ if (process.env.SELECT_ONLY) {
 // slow part and there is no network in it.
 console.log('tracking the walker through the clip');
 await page.getByRole('button', { name: 'Track', exact: true }).click();
+// Wait for it to START before waiting for it to stop, or the second wait is
+// satisfied by tracking never having begun and what gets exported is the clip
+// untouched, which looks like a working run until someone watches it.
+await page.waitForFunction(() => document.body.textContent?.includes('Tracking, frame'), null, {
+  timeout: 60_000,
+  polling: 200,
+});
 await page.waitForFunction(() => !document.body.textContent?.includes('Tracking, frame'), null, {
   timeout: 15 * 60 * 1000,
   polling: 1000,
@@ -137,7 +148,12 @@ await browser.close();
 
 if (!existsSync(exported)) throw new Error('the app did not write a clip');
 
-const mp4 = `${OUT}/tracked-clip.mp4`;
+// Held to a long edge rather than a width, so a portrait clip comes out the
+// same size on the page as a landscape one instead of a thousand pixels tall.
+// For the 2.40:1 default the long edge is the width, so this is what it was.
+const longEdge = (edge) => `scale='if(gte(iw,ih),${edge},-2)':'if(gte(iw,ih),-2,${edge})':flags=lanczos`;
+
+const mp4 = `${OUT}/${NAME}.mp4`;
 execFileSync('ffmpeg', [
   '-y',
   '-v',
@@ -145,7 +161,7 @@ execFileSync('ffmpeg', [
   '-i',
   exported,
   '-vf',
-  'scale=1000:-2:flags=lanczos,format=yuv420p',
+  `${longEdge(1000)},format=yuv420p`,
   '-c:v',
   'libx264',
   '-preset',
@@ -159,13 +175,17 @@ execFileSync('ffmpeg', [
 
 // A GIF as well, because a repository path is the only place GitHub will play
 // something without a click, and the README is where this has to land.
-const gif = `${OUT}/tracked-clip.gif`;
+const gif = `${OUT}/${NAME}.gif`;
 const palette = `${FRAMES}/palette.png`;
 // Photographic frames are heavy in a 256-colour format, so the GIF is a window
 // on the clip rather than all of it. The MP4 above is the whole thing.
-const GIF_FROM = '0.8';
-const GIF_SECONDS = '3.0';
-const gifFilters = 'fps=10,scale=480:-2:flags=lanczos';
+// Which window, and how many colours, is per clip: the moment worth showing is
+// not in the same place twice and a busier frame needs a bigger palette to stay
+// photographic before the edit.
+const GIF_FROM = process.env.ROTYL_GIF_FROM ?? '0.8';
+const GIF_SECONDS = process.env.ROTYL_GIF_SECONDS ?? '3.0';
+const GIF_COLORS = process.env.ROTYL_GIF_COLORS ?? '64';
+const gifFilters = `fps=10,${longEdge(480)}`;
 execFileSync('ffmpeg', [
   '-y',
   '-v',
@@ -177,7 +197,7 @@ execFileSync('ffmpeg', [
   '-i',
   mp4,
   '-vf',
-  `${gifFilters},palettegen=max_colors=64`,
+  `${gifFilters},palettegen=max_colors=${GIF_COLORS}`,
   palette,
 ]);
 execFileSync('ffmpeg', [
